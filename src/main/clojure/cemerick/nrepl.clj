@@ -71,7 +71,14 @@
                 (catch Exception ex
                   (ex-fn (get-root-cause ex))))))))
 
-
+(def version
+  (when-let [in (-> submit class (.getResourceAsStream "/cemerick/nrepl/version.txt"))]
+    (let [reader (-> in (InputStreamReader. "UTF-8") BufferedReader.)
+          string (.readLine reader)]
+      (.close reader)
+      (->> (re-find #"(\d+)\.(\d+)\.(\d+)-?(.*)" string)
+        rest
+        (zipmap [:major :minor :incremental :qualifier])))))
 
 ;Message format:
 ;<integer>
