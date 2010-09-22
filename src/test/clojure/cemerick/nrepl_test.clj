@@ -5,7 +5,7 @@
 
 (def *server-port* nil)
 
-(defn- repl-server-fixture
+(defn repl-server-fixture
   [f]
   (let [[server-socket accept-future] (repl/start-server)]
     (try
@@ -19,10 +19,11 @@
 
 (defmacro def-repl-test
   [name & body]
-  `(deftest ~name
+  `(deftest ~(with-meta name {:private true})
      (let [connection# (repl/connect "localhost" *server-port*)
            ~'connection connection#
-           ~'repl (partial send-wait-read connection#)
+           ~'repl (partial repl/send-and-wait connection#)
+           ~'repl-read (partial send-wait-read connection#)
            ~'repl-value (partial (comp :value send-wait-read) connection#)]
        ~@body)))
 
@@ -60,7 +61,7 @@
     (is (= history (repl-value "*1")))))
 
 (def-repl-test exceptions
-  (let [{:keys [out status value]} (repl "(throw (Exception. \"bad, bad code\"))")]
+  (let [{:keys [out status value]} (repl-read "(throw (Exception. \"bad, bad code\"))")]
     (is (= "error" status))
     (is (nil? value))
     (is (.contains out "bad, bad code"))
@@ -70,7 +71,7 @@
   (is (= 18 (repl-value "5 (/ 5 0) (+ 5 6 7)"))))
 
 (def-repl-test return-on-incomplete-expr
-  (let [{:keys [out status value]} (repl "(apply + (range 20)")]
+  (let [{:keys [out status value]} (repl-read "(apply + (range 20)")]
     (is (nil? value))
     ; this behaviour sucks; there's currently no way for the network repl impl
     ; to know if an EOF exception is due to the end of stream being reached
@@ -78,11 +79,11 @@
     (is (= nil status))))
 
 (def-repl-test switch-ns
-  (is (= "otherns" (:ns (repl "(ns otherns) (defn function [] 12)"))))
+  (is (= "otherns" (:ns (repl-read "(ns otherns) (defn function [] 12)"))))
   (is (= 12 (repl-value "(otherns/function)"))))
 
 (def-repl-test timeout
-  ;(is (= "timeout" (:status (repl "(Thread/sleep 60000)" :timeout 1000))))
+  ;(is (= "timeout" (:status (repl-read "(Thread/sleep 60000)" :timeout 1000))))
   )
 
 (def-repl-test interrupt

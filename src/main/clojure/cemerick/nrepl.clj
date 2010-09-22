@@ -126,13 +126,6 @@
    :print-level *print-level*, :compile-path *compile-path*
    :command-line-args *command-line-args*})
 
-(defn load-with-debug-info
-  "Load a string using the source-path and file name for debug info."
-  [str-data source-path file]
-  (clojure.lang.Compiler/load
-    #^Reader (StringReader. str-data)
-    #^String source-path #^String file))
-
 (defmacro #^{:private true} set!-many
   [& body]
   (let [pairs (partition 2 body)]
