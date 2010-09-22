@@ -27,7 +27,7 @@
 
 (def #^ExecutorService executor (Executors/newCachedThreadPool
                                   (proxy [ThreadFactory] []
-                                    (newThread [r]
+                                    (newThread [#^Runnable r]
                                       (doto (Thread. r)
                                         (.setDaemon true))))))
 
