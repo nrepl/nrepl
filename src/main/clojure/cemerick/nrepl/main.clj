@@ -16,7 +16,7 @@
       (flush)
       ((:send connection) (pr-str (read)))
       (let [{:keys [out ns value]} ((:receive connection))]
-        (when (seq out) (println out))
+        (when (seq out) (print out))
         (recur ns)))))
 
 (defn -main
