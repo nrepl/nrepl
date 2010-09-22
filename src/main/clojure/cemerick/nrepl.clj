@@ -112,11 +112,10 @@
           (into {}))))))
 
 (defn- is-eof-ex?
-  [#^Throwable throwable]
-  (and (instance? clojure.lang.LispReader$ReaderException throwable)
-    (or
-      (.startsWith (.getMessage throwable) "java.lang.Exception: EOF while reading")
-      (.startsWith (.getMessage throwable) "java.io.IOException: Write end dead"))))
+  [#^Throwable t]
+  (and (instance? clojure.lang.LispReader$ReaderException t)
+    (or (-> t .getMessage (.contains "EOF while reading"))
+      (-> t .getMessage (.contains "Write end dead")))))
 
 (defn- capture-client-state
   "Returns a map containing the 'baseline' client state of the current thread; everything
@@ -132,9 +131,9 @@
   [str-data source-path file]
   (clojure.lang.Compiler/load
     #^Reader (StringReader. str-data)
-        #^String source-path #^String file))
+    #^String source-path #^String file))
 
-(defmacro set!-many
+(defmacro #^{:private true} set!-many
   [& body]
   (let [pairs (partition 2 body)]
     `(do ~@(for [[var value] pairs] (list 'set! var value)))))
@@ -224,11 +223,16 @@
     (catch TimeoutException e
       (write-message {:id id :status "timeout"}))
     (catch ExecutionException e
-      ; this should never happen
-      (.printStackTrace e))
+      ; this should never happen, insofar as clojure.main/repl catches all Throwables
+      (.printStackTrace e)
+      (write-message {:id id :status "server-failure"
+                      :error "ExecutionException; this is probably an nREPL bug."}))
     (catch InterruptedException e
-      ; this should never happen
-      (.printStackTrace e))))
+      ; I'm not clear as to when this can happen; if a thread pool thread is interrupted
+      ; in conjunction with a cancellation, that's reported separately above...
+      (.printStackTrace e)
+      (write-message {:id id :status "server-failure"
+                      :error "InterruptedException; this might be an nREPL bug"}))))
   
 (defn- message-dispatch
   [client-state read-message write-message]
@@ -277,6 +281,11 @@
              :code (str code "\n")))))
 
 (defn send-and-wait
+  "Synchronously sends code (and optional options) over the provided connection,
+   and then waits for and returns the first associated response message.
+   Note that other received messages are simply discarded.  This is intended
+   for fully-synchronous operation, and assumes that no other messages are being
+   sent or received using the same connection."
   [{:keys [send receive]} code & options]
   (let [id (apply send code options)]
     (loop []
@@ -293,15 +302,17 @@
   "Connects to a hosted REPL at the given host and port, returning
    a map containing three functions:
 
-   - send: see client-send (which is already has its write fn param applied)
-   - receive: see read-message (which also already has its read fn param applied)
+   - send: a function that takes at least one argument (a code string
+           to be evaluated) and a variety of optional kwargs:
+           :timeout - number in milliseconds specifying the maximum runtime of
+                      accompanying code (default: 60000, one minute)
+           :id - a string message ID (default: a randomly-generated UUID)
+   - receive: a no-arg function that returns a message sent by the remote REPL
    - close: no-arg function that closes the underlying socket"
   [host port]
   (let [sock (java.net.Socket. host port)
         [in out] (configure-streams sock)]
-    {:in in
-     :out out
-     :send (partial client-send (partial write-message out))
+    {:send (partial client-send (partial write-message out))
      :receive (partial read-message in)
      :close #(.close sock)}))
 
