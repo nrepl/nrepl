@@ -295,13 +295,18 @@
                       accompanying code (default: 60000, one minute)
            :id - a string message ID (default: a randomly-generated UUID)
    - receive: a no-arg function that returns a message sent by the remote REPL
-   - close: no-arg function that closes the underlying socket"
+   - close: no-arg function that closes the underlying socket
+
+   Note that the connection/map object also implements java.io.Closeable,
+   and is therefore usable with with-open."
   [#^String host #^Integer port]
   (let [sock (java.net.Socket. host port)
         [in out] (configure-streams sock)]
-    {:send (partial client-send (partial write-message out))
-     :receive (partial read-message in)
-     :close #(.close sock)}))
+    (proxy [clojure.lang.PersistentArrayMap java.io.Closeable]
+      [(into-array Object [:send (partial client-send (partial write-message out))
+                           :receive (partial read-message in)
+                           :close #(.close sock)])]
+      (close [] (.close sock)))))
 
 ;; TODO
 ;; - ack

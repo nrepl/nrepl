@@ -93,3 +93,8 @@
                           "cancelled"
                           "ok")))
           (recur (set/difference ids #{id})))))))
+
+(def-repl-test ensure-closeable
+  (is (= 5 (repl-value "5")))
+  (.close connection)
+  (is (thrown? java.net.SocketException (repl-value "5"))))
