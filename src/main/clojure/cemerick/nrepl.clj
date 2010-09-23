@@ -286,8 +286,8 @@
   (update-in response-message [:value] #(when % (read-string %))))
 
 (defn connect
-  "Connects to a hosted REPL at the given host and port, returning
-   a map containing three functions:
+  "Connects to a hosted REPL at the given host (defaults to localhost) and port,
+   returning a map containing three functions:
 
    - send: a function that takes at least one argument (a code string
            to be evaluated) and a variety of optional kwargs:
@@ -299,14 +299,16 @@
 
    Note that the connection/map object also implements java.io.Closeable,
    and is therefore usable with with-open."
-  [#^String host #^Integer port]
-  (let [sock (java.net.Socket. host port)
-        [in out] (configure-streams sock)]
-    (proxy [clojure.lang.PersistentArrayMap java.io.Closeable]
-      [(into-array Object [:send (partial client-send (partial write-message out))
-                           :receive (partial read-message in)
-                           :close #(.close sock)])]
-      (close [] (.close sock)))))
+  ([port] (connect nil port))
+  ([#^String host #^Integer port]
+    (let [sock (java.net.Socket. (or host "localhost") port)
+          [in out] (configure-streams sock)]
+      (proxy [clojure.lang.PersistentArrayMap java.io.Closeable]
+        [(into-array Object [:send (partial client-send (partial write-message out))
+                             :receive (partial read-message in)
+                             :close #(.close sock)])]
+        (close [] (.close sock))))))
+
 
 ;; TODO
 ;; - ack

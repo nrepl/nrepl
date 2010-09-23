@@ -20,7 +20,7 @@
 (defmacro def-repl-test
   [name & body]
   `(deftest ~(with-meta name {:private true})
-     (let [connection# (repl/connect "localhost" *server-port*)
+     (let [connection# (repl/connect *server-port*)
            ~'connection connection#
            ~'repl (partial repl/send-and-wait connection#)
            ~'repl-read (partial send-wait-read connection#)
