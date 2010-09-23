@@ -80,8 +80,7 @@
   (is (= 12 (repl-value "(otherns/function)"))))
 
 (def-repl-test timeout
-  ;(is (= "timeout" (:status (repl-read "(Thread/sleep 60000)" :timeout 1000))))
-  )
+  (is (= "timeout" (:status (repl-read "(Thread/sleep 60000)" :timeout 1000)))))
 
 (def-repl-test interrupt
   (let [req-id ((:send connection) "(Thread/sleep 60000)")
