@@ -118,20 +118,15 @@
           (map #(vector (-> % first keyword) (second %)))
           (into {}))))))
 
-(defn- is-eof-ex?
-  [#^Throwable t]
-  (and (instance? clojure.lang.LispReader$ReaderException t)
-    (or (-> t .getMessage (.contains "EOF while reading"))
-      (-> t .getMessage (.contains "Write end dead")))))
-
-(defn- capture-client-state
+(defn- init-client-state
   "Returns a map containing the 'baseline' client state of the current thread; everything
    that with-bindings binds, except for the prior result values, *e, and *ns*."
   []
   {:warn-on-reflection *warn-on-reflection*, :math-context *math-context*,
    :print-meta *print-meta*, :print-length *print-length*,
    :print-level *print-level*, :compile-path *compile-path*
-   :command-line-args *command-line-args*})
+   :command-line-args *command-line-args*
+   :ns (create-ns 'user)})
 
 (defmacro #^{:private true} set!-many
   [& body]
@@ -170,17 +165,10 @@
                 *err* out-pw]
         (clojure.main/repl
           :init repl-init
-          :read (fn [prompt exit] (read))
+          :read (fn [prompt exit] (read *in* false exit))
           :caught (fn [#^Throwable e]
-                    (reset! client-state-atom (assoc (capture-client-state)
-                                                :value-3 *3
-                                                :value-2 *2
-                                                :value-1 *1
-                                                :last-exception *e
-                                                :ns *ns*))
-                    (if (is-eof-ex? e)
-                      (throw e)
-                      (reset! return ["error" nil]))
+                    (swap! client-state-atom assoc :last-exception e)
+                    (reset! return ["error" nil])
                     (if *print-stack-trace-on-error*
                       (.printStackTrace e *out*)
                       (prn (clojure.main/repl-exception e)))
@@ -188,16 +176,16 @@
           :prompt (fn [])
           :need-prompt (constantly false)
           :print (fn [value]
+                   (swap! client-state-atom assoc
+                     :value-3 *2
+                     :value-2 *1
+                     :value-1 value
+                     :ns *ns*)
                    (reset! return ["ok" value])
                    (if (pretty-print?)
                      (pprint value)
                      (prn value)))))
-      (catch clojure.lang.LispReader$ReaderException ex
-        ; almost surely hit EOF
-        (when-not (is-eof-ex? ex) (throw ex)))
-      (catch java.lang.InterruptedException ex)
-      (catch java.nio.channels.ClosedByInterruptException ex)
-      (finally (flush)))
+      (finally (.flush out-pw)))
     
     {:out (str out)
      :ns (-> @client-state-atom :ns .name str)
@@ -256,8 +244,7 @@
   [#^ServerSocket ss]
   (let [sock (.accept ss)
         [in out] (configure-streams sock)
-        client-state (atom (assoc (capture-client-state)
-                             :ns (create-ns 'user)))]
+        client-state (atom (init-client-state))]
     (submit-looping (partial message-dispatch
                       client-state
                       (partial read-message in)
@@ -309,7 +296,7 @@
            :id - a string message ID (default: a randomly-generated UUID)
    - receive: a no-arg function that returns a message sent by the remote REPL
    - close: no-arg function that closes the underlying socket"
-  [host port]
+  [#^String host #^Integer port]
   (let [sock (java.net.Socket. host port)
         [in out] (configure-streams sock)]
     {:send (partial client-send (partial write-message out))
@@ -318,4 +305,6 @@
 
 ;; TODO
 ;; - ack
+;; - support for multiple response messages (:seq key)
+;; - command-line support for starting server, connecting to server, and optionally running other clojure script(s)/java mains
 ;; - HELO, init handshake, version compat check, etc

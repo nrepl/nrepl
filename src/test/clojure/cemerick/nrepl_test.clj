@@ -73,10 +73,7 @@
 (def-repl-test return-on-incomplete-expr
   (let [{:keys [out status value]} (repl-read "(apply + (range 20)")]
     (is (nil? value))
-    ; this behaviour sucks; there's currently no way for the network repl impl
-    ; to know if an EOF exception is due to the end of stream being reached
-    ; or due to a malformed chunk of code; this should return status of "error" IMO
-    (is (= nil status))))
+    (is (= "error" status))))
 
 (def-repl-test switch-ns
   (is (= "otherns" (:ns (repl-read "(ns otherns) (defn function [] 12)"))))
