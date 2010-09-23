@@ -250,12 +250,6 @@
                       (partial read-message in)
                       (partial write-message out)))))
 
-(defn start-server
-  ([] (start-server 0))
-  ([port]
-    (let [ss (ServerSocket. port)]
-      [ss (submit-looping (partial accept-connection ss))])))
-
 (defn- client-send
   "Sends a new message via the write fn containing
    at minimum the provided code string and an id (optionally included as part
@@ -309,9 +303,38 @@
                              :close #(.close sock)])]
         (close [] (.close sock))))))
 
+; could be a lot fancier, but it'll do for now
+(def ack-port-promise (atom nil))
+
+(defn reset-ack-port!
+  []
+  (reset! ack-port-promise (promise))
+  ; save people the misery of ever trying to deref the empty promise in their REPL
+  nil)
+
+(defn wait-for-ack!
+  [timeout]
+  (let [#^Future f (future @@ack-port-promise)]
+    (try
+      (.get f timeout TimeUnit/MILLISECONDS)
+      (catch TimeoutException e))))
+
+(defn- send-ack
+  [my-port ack-port]
+  (let [connection (connect "localhost" ack-port)]
+    (send-and-wait connection (format "(deliver @cemerick.nrepl/ack-port-promise %d)" my-port))))
+
+(defn start-server
+  ([] (start-server 0))
+  ([port] (start-server port 0))
+  ([port ack-port]
+    (let [ss (ServerSocket. port)
+          accept-future (submit-looping (partial accept-connection ss))]
+      [ss accept-future (when (pos? ack-port)
+                          (send-ack (.getLocalPort ss) ack-port))])))
 
 ;; TODO
-;; - ack
+;; - websockets adapter
 ;; - support for multiple response messages (:seq key)
 ;; - command-line support for starting server, connecting to server, and optionally running other clojure script(s)/java mains
 ;; - HELO, init handshake, version compat check, etc

@@ -98,3 +98,19 @@
   (is (= 5 (repl-value "5")))
   (.close connection)
   (is (thrown? java.net.SocketException (repl-value "5"))))
+
+(def-repl-test ack
+  (repl/reset-ack-port!)
+  (let [server-process (.exec (Runtime/getRuntime)
+                         (into-array ["java" "-Dnreplacktest=y" "-cp" (System/getProperty "java.class.path")
+                                      "cemerick.nrepl.main" "--ack" (str *server-port*)]))
+        acked-port (repl/wait-for-ack! 20000)]
+    (try
+      (is acked-port "Timed out waiting for ack")
+      (when acked-port
+        (with-open [c2 (repl/connect acked-port)]
+          ; just a sanity check
+          (is (= "y" (:value (send-wait-read c2 "(System/getProperty \"nreplacktest\")"))))))
+      (finally
+        (.destroy server-process)))))
+
