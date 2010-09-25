@@ -15,17 +15,17 @@
 
 (use-fixtures :once repl-server-fixture)
 
-(def send-wait-read (comp repl/read-response-value repl/send-and-wait))
-
 (defmacro def-repl-test
   [name & body]
   `(deftest ~(with-meta name {:private true})
      (let [connection# (repl/connect *server-port*)
            ~'connection connection#
-           ~'repl (partial repl/send-and-wait connection#)
-           ~'repl-read (partial send-wait-read connection#)
-           ~'repl-value (partial (comp :value send-wait-read) connection#)]
-       ~@body)))
+           ~'repl (:send connection#)
+           ~'repl-receive (comp (fn [r#] (r#)) ~'repl)
+           ~'repl-read (comp repl/read-response-value ~'repl-receive)
+           ~'repl-value (comp :value ~'repl-read)]
+       ~@body
+       ((:close connection#)))))
 
 (def-repl-test eval-literals
   (are [literal] (= literal (-> literal pr-str repl-value))
@@ -83,21 +83,45 @@
   (is (= "timeout" (:status (repl-read "(Thread/sleep 60000)" :timeout 1000)))))
 
 (def-repl-test interrupt
-  (let [req-id ((:send connection) "(Thread/sleep 60000)")
-        _ (Thread/sleep 1000)
-        cancel-id ((:send connection) (str "(cemerick.nrepl/interrupt \"" req-id "\")"))]
-    (loop [ids #{req-id cancel-id}]
-      (if-not (empty? ids)
-        (let [{:keys [status id]} ((:receive connection))]
-          (is (= status (if (= id req-id)
-                          "cancelled"
-                          "ok")))
-          (recur (set/difference ids #{id})))))))
+  (let [resp (repl "(Thread/sleep 60000)")]
+    (Thread/sleep 1000)
+    (is (= "ok" (:status (resp :interrupt))))
+    (is (= "interrupted" (:status (resp))))))
 
 (def-repl-test ensure-closeable
   (is (= 5 (repl-value "5")))
   (.close connection)
   (is (thrown? java.net.SocketException (repl-value "5"))))
+
+(def-repl-test unordered-message-reads
+  ; check that messages are being retained properly when read out of order
+  (let [{:keys [send receive]} connection
+        digits (range 10)
+        response-fns (->> digits
+                       (map (comp send str))
+                       reverse)
+        results (for [f response-fns] (f))]
+    (is (= digits (->> results
+                    (map (comp :value repl/read-response-value))
+                    reverse)))))
+
+; Testing java.lang.ref stuff is always tricky, but it's critical that promises
+; associated with unreferenced response fns are being expired out of the WeakHashMap properly
+(deftest response-promise-expiration
+  (let [promises-map (#'repl/response-promises-map)]
+    (binding [repl/response-promises-map (constantly promises-map)]
+      (let [{:keys [send close]} (repl/connect *server-port*)]
+        (doseq [response (->> (take 1000 (repeatedly #(send "5" :timeout 100)))
+                           (pmap #(% 5000)))]
+          (when-not (and (is (= "ok" (:status response)))
+                    (is (= 5 (-> response repl/read-response-value :value))))
+            ; fail fast if something is wrong to avoid waiting for 1000 failures
+            (throw (Exception. (str "Failed response " response)))))
+        
+        (System/gc)
+        (println "Should be less than 1,000:" (count promises-map))
+        (is (< (count promises-map) 1000) "Response promises map has not been pruned at all; weak ref scheme (maybe) not working.")
+        (close)))))
 
 (def-repl-test ack
   (repl/reset-ack-port!)
@@ -110,7 +134,6 @@
       (when acked-port
         (with-open [c2 (repl/connect acked-port)]
           ; just a sanity check
-          (is (= "y" (:value (send-wait-read c2 "(System/getProperty \"nreplacktest\")"))))))
+          (is (= "y" (-> (((:send c2) "(System/getProperty \"nreplacktest\")")) repl/read-response-value :value)))))
       (finally
         (.destroy server-process)))))
-

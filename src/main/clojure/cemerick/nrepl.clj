@@ -1,6 +1,8 @@
 (ns cemerick.nrepl
   (:require clojure.main)
   (:import (java.net ServerSocket)
+    java.lang.ref.WeakReference
+    java.util.LinkedHashMap
     (java.io Reader InputStreamReader BufferedReader PushbackReader StringReader
       Writer OutputStreamWriter BufferedWriter PrintWriter StringWriter
       IOException)
@@ -207,7 +209,7 @@
       (write-message (assoc (select-keys result [:status :value :out :ns])
                        :id id)))
     (catch CancellationException e
-      (write-message {:id id :status "cancelled"}))
+      (write-message {:id id :status "interrupted"}))
     (catch TimeoutException e
       (write-message {:id id :status "timeout"}))
     (catch ExecutionException e
@@ -250,61 +252,110 @@
                       (partial read-message in)
                       (partial write-message out)))))
 
-(defn- client-send
-  "Sends a new message via the write fn containing
-   at minimum the provided code string and an id (optionally included as part
-   of the kwargs), along with any other options specified in the kwards.
-   Returns the id of the sent message as returned by the write-message fn."
-  [write code & options]
-  (let [{:keys [id] :as options} (apply hash-map options)]
-    (write (assoc options
-             :id (or id (str (java.util.UUID/randomUUID)))
-             :code (str code "\n")))))
-
-(defn send-and-wait
-  "Synchronously sends code (and optional options) over the provided connection,
-   and then waits for and returns the first associated response message.
-   Note that other received messages are simply discarded.  This is intended
-   for fully-synchronous operation, and assumes that no other messages are being
-   sent or received using the same connection."
-  [{:keys [send receive]} code & options]
-  (let [id (apply send code options)]
-    (loop []
-      (let [msg (receive)]
-        (if (= id (:id msg))
-          msg
-          (recur))))))
+(defn- client-message
+  "Returns a new message containing
+   at minimum the provided code string and a generated unique id,
+   along with any other options specified in the kwargs."
+  [code & options]
+  (assoc (apply hash-map options)
+    :id (str (java.util.UUID/randomUUID))
+    :code (str code "\n")))
 
 (defn read-response-value
+  "Returns the provided response message, replacing its :value string with
+   the result of (read)ing it."
   [response-message]
   (update-in response-message [:value] #(when % (read-string %))))
 
+(defn- send-client-message
+  [response-promises out & message-args]
+  (let [outgoing-msg (apply client-message message-args)
+        p (promise)
+        msg (assoc outgoing-msg ::response-promise p)]
+    (.put response-promises (:id msg) (WeakReference. msg))
+    (write-message out outgoing-msg)
+    (fn response
+      ([] (response default-timeout))
+      ([x]
+        (if (= :interrupt x)
+          ((send-client-message
+             response-promises
+             out
+             (format "(cemerick.nrepl/interrupt \"%s\")" (:id msg))))
+          (try
+            (.get (future @p) x TimeUnit/MILLISECONDS)
+            (catch TimeoutException e)))))))
+
+(defn- response-promises-map
+  "Here only so we can force a connection to use a given map in tests
+   to ensure that messages/promises are being released
+   in conjunction with their associated response fns."
+  []
+  (java.util.Collections/synchronizedMap
+    (java.util.WeakHashMap.)))
+
+(defn- get-root-cause
+  "Returns the root cause of the given Throwable."
+  [#^Throwable t]
+  (loop [c t]
+    (if-let [c (.getCause c)]
+      (recur c)
+      c)))
+
 (defn connect
   "Connects to a hosted REPL at the given host (defaults to localhost) and port,
-   returning a map containing three functions:
+   returning a map containing two functions:
 
    - send: a function that takes at least one argument (a code string
-           to be evaluated) and a variety of optional kwargs:
+           to be evaluated) and optional kwargs:
            :timeout - number in milliseconds specifying the maximum runtime of
                       accompanying code (default: 60000, one minute)
-           :id - a string message ID (default: a randomly-generated UUID)
-   - receive: a no-arg function that returns a message sent by the remote REPL
+           (send ...) returns a response function, described below.
    - close: no-arg function that closes the underlying socket
 
    Note that the connection/map object also implements java.io.Closeable,
-   and is therefore usable with with-open."
+   and is therefore usable with with-open.
+
+   Response functions, returned from invocations of (send ...), accept zero or
+   one argument. The one-arg arity accepts either:
+       - a number of milliseconds, which is the maximum time that the invocation will block
+         before returning the associated response message.  If the timeout is exceeded, nil
+         is returned.
+       - the :interrupt keyword. This sends an interrupt message for the request
+         associated with the response function, and blocks for default-timeout milliseconds
+         for confirmation of the interrupt.
+   
+   The 0-arg response function arity is the same as invoking (receive-fn default-timeout)."
   ([port] (connect nil port))
   ([#^String host #^Integer port]
     (let [sock (java.net.Socket. (or host "localhost") port)
-          [in out] (configure-streams sock)]
+          [in out] (configure-streams sock)
+          ; Map<message-id, WeakReference<client-message>>
+          ; this works as an "expiration" mechanism because the response fn
+          ; is the only thing that closes over the client-message, which is
+          ; where the message-id is sourced
+          response-promises (response-promises-map)]
+      (future (try
+                (loop []
+                  (let [response (read-message in)
+                        #^WeakReference msg-ref (get response-promises (:id response))]
+                    (when msg-ref
+                      (deliver (-> msg-ref .get ::response-promise) response)))
+                  (when-not (.isClosed sock) (recur)))
+                (catch Throwable t
+                  (let [root (get-root-cause t)]
+                    (when-not (and (instance? java.net.SocketException)
+                                (.isClosed sock))
+                      ; TODO need to get this pushed into an atom so clients can see what's gone sideways
+                      (.printStackTrace t)
+                      (throw t))))))
       (proxy [clojure.lang.PersistentArrayMap java.io.Closeable]
-        [(into-array Object [:send (partial client-send (partial write-message out))
-                             :receive (partial read-message in)
+        [(into-array Object [:send (partial send-client-message response-promises out)
                              :close #(.close sock)])]
         (close [] (.close sock))))))
 
 ; could be a lot fancier, but it'll do for now
-(def ack-port-promise (atom nil))
+(def #^{:private true} ack-port-promise (atom nil))
 
 (defn reset-ack-port!
   []
@@ -322,7 +373,7 @@
 (defn- send-ack
   [my-port ack-port]
   (let [connection (connect "localhost" ack-port)]
-    (send-and-wait connection (format "(deliver @cemerick.nrepl/ack-port-promise %d)" my-port))))
+    (((:send connection) (format "(deliver @@#'cemerick.nrepl/ack-port-promise %d)" my-port)))))
 
 (defn start-server
   ([] (start-server 0))
@@ -334,7 +385,9 @@
                           (send-ack (.getLocalPort ss) ack-port))])))
 
 ;; TODO
+;; - add convenience fns for toggling pprinting
 ;; - websockets adapter
-;; - support for multiple response messages (:seq key)
+;; - support for multiple response messages (:seq msg), making getting incremental output from long-running invocations possible/easy
+;; - proper error handling on the receive loop
 ;; - command-line support for starting server, connecting to server, and optionally running other clojure script(s)/java mains
 ;; - HELO, init handshake, version compat check, etc
