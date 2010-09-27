@@ -88,6 +88,12 @@
     (is (= "ok" (:status (resp :interrupt))))
     (is (= "interrupted" (:status (resp))))))
 
+(def-repl-test verify-interrupt-on-timeout
+  (let [resp (repl "(def a 0)(def a (apply + (iterate inc 0)))" :timeout 2000)]
+    (is (= "timeout" (:status (resp))))
+    (Thread/sleep 1000)
+    (is (= 0 (repl-value "a")))))
+
 (def-repl-test ensure-closeable
   (is (= 5 (repl-value "5")))
   (.close connection)

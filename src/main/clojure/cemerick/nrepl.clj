@@ -211,7 +211,8 @@
     (catch CancellationException e
       (write-message {:id id :status "interrupted"}))
     (catch TimeoutException e
-      (write-message {:id id :status "timeout"}))
+      (write-message {:id id :status "timeout"})
+      (interrupt id))
     (catch ExecutionException e
       ; this should never happen, insofar as clojure.main/repl catches all Throwables
       (.printStackTrace e)
