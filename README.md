@@ -22,11 +22,111 @@ Ping `cemerick` on freenode irc or twitter.
 
 ## Specification
 
+It is intended that nREPL's protocol and implementation semantics are such that:
+
+- compatible servers may be implemented for any version/host combination that Clojure
+is likely to be found on (with reasonable degradation otherwise)
+- non-Clojure and non-JVM clients may be written without undue difficulty 
+
 ### Protocol
+
+nREPL's protocol is text- and message-oriented, with all communications encoded using
+UTF-8.
+
+Each message is a set of key/value pairs prefixed by the number of entries in the
+resulting map, each atom of which is delineated by a linebreak. A pseudocode formalism
+for the message "format" might be:
+
+    <integer>
+    <EOL>
+    (<string: key>
+     <EOL>
+     (<string: value> | <number: value>)
+     <EOL>)+
+
+String keys and values must be quoted and escaped per Clojure standards
+(which should align well with e.g. json, etc).
+
+One can connect to a running nREPL server with a telnet client and interact with
+it using its "wire" message protocol; this isn't intended as a proper usage example,
+but may be a handy way for toolmakers and REPL client authors to get a quick feel
+for the protocol and/or do dirty debugging.  Example:
+
+    [catapult:~] chas% telnet localhost 25000
+    Trying 127.0.0.1...
+    Connected to localhost.
+    Escape character is '^]'.
+    2
+    "id"
+    "foo"
+    "code"
+    "(println 5)"
+    5
+    "id"
+    "foo"
+    "ns"
+    "user"
+    "out"
+    "5\nnil\n"
+    "value"
+    "nil"
+    "status"
+    "ok"
+
+### Websockets support
+
+*coming soon*
 
 ### Messages
 
+nREPL provides for only one type of (request) message, which is used for sending code
+to the server to be loaded/evaluated.  All other REPL behaviours (such as environment
+introspection, symbol completion, quit/restart, etc.) can be accomplished through
+evaluating code.
+
+Each request message consists of the following slots:
+
+- *id* Must be a unique string identifying the request. UUIDs are suitable, and automatic
+       in the provided nREPL client.
+- *code* The code to be evaluated.
+- *timeout* The maximum amount of time, in milliseconds, that the provided code will be
+       allowed to run before a `timeout` response is sent.  This is optional; if not provided,
+       a default timeout will be assigned by the server (currently always 60s).
+
+Server responses have the following slots:
+
+- *id* The ID of the request for which the response was generated.
+- *ns* The stringified value of `*ns*` after the request's code was finished being evaluated.
+- *out* The intermingled content written to `*out*` and `*err*` while the request's
+       code was being evaluated.
+- *value* The result of printing (via `pr`) the last result in the body of code evaluated.
+       In contrast to the output written to `*out*` and `*err*`, this may be usefully/reliably
+       read and utilized by the client, e.g. in tooling contexts, assuming the evaluated code
+       returns a printable and readable value.
+- *status* One of:
+    - `ok`
+    - `error` Indicates an error occurred evaluating the requested code.  The `value` slot
+       will contain the printed exception.
+    - `timeout` Indicates that the timeout specified by the requesting message
+       expired before the code was fully evaluated.
+    - `interrupted` Indicates that the evaluation of the request's code was interrupted.
+
+When a response's `status` is `timeout` or `interrupted`, the `value`, `out`, and `ns`
+response slots will be absent.
+
 ### Timeouts and Interrupts
+
+Each message has a timeout associated with it, which controls the maximum time that a
+message's code will be allowed to run before being interrupted and a response message
+being sent indicating a status of `timeout`.
+
+The processing of a message may be interrupted by a client by sending another message
+containing code that invokes the `cemerick.nrepl/interrupt` function, providing it with
+the string ID of the message to be interrupted.  The interrupt will be responded to
+separately as with any other message.
+
+Note that nREPL's client provides a simple abstraction for handling responses that makes
+issuing interrupts very straightforward.
 
 ## Why another REPL implementation?
 

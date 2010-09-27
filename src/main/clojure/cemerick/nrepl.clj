@@ -82,14 +82,7 @@
         rest
         (zipmap [:major :minor :incremental :qualifier])))))
 
-;Message format:
-;<integer>
-;<EOL>
-;(<string: key>
-; <EOL>
-; (<string: value> | <number: value>)
-; <EOL>)+
-;The initial integer specifies how many k/v pairs are in the next message.
+;See the README for message format
 ;
 ;Not simply printing and reading maps because the client
 ;may not be clojure: e.g. whatever vimclojure might use to
@@ -227,6 +220,7 @@
   
 (defn- message-dispatch
   [client-state read-message write-message]
+  ; TODO ouch, need some error handling here :-/
   (let [{:keys [id code] :as msg} (read-message)]
     (if-not code
       (write-message {:status "error"
