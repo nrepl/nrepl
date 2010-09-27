@@ -34,8 +34,8 @@ nREPL's protocol is text- and message-oriented, with all communications encoded 
 UTF-8.
 
 Each message is a set of key/value pairs prefixed by the number of entries in the
-resulting map, each atom of which is delineated by a linebreak. A pseudocode formalism
-for the message "format" might be:
+resulting map, each atom of which is delineated by a linebreak. Keys may only be strings;
+values may be strings or numbers.  A pseudocode formalism for the message "format" might be:
 
     <integer>
     <EOL>
