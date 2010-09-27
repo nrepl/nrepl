@@ -19,22 +19,25 @@
         (when (seq out) (print out))
         (recur ns)))))
 
+(def #^{:private true} unary-options #{"--repl"})
+
 (defn- split-args
   [args]
   (loop [[arg & rem-args :as args] args
          options {}]
     (if-not (and arg (re-matches #"--.*" arg))
       [options args]
-      (if (#{"--repl"} arg)
-            (recur rem-args
-              (assoc options arg true))
-            (recur (rest rem-args)
-              (assoc options arg (first rem-args)))))))
+      (if (unary-options arg)
+        (recur rem-args
+          (assoc options arg true))
+        (recur (rest rem-args)
+          (assoc options arg (first rem-args)))))))
 
 (defn -main
   [& args]
-  (let [[ssocket _] (repl/start-server)
-        [options args] (split-args args)]
+  (let [[options args] (split-args args)
+        _ (println options)
+        [ssocket _] (repl/start-server (Integer/parseInt (or (options "--port") "0")))]
     (when-let [ack-port (options "--ack")]
       (binding [*out* *err*]
         (println (format "ack'ing my port %d to other server running on port %s"

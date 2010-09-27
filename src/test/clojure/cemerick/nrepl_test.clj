@@ -137,3 +137,18 @@
           (is (= "y" (-> (((:send c2) "(System/getProperty \"nreplacktest\")")) repl/read-response-value :value)))))
       (finally
         (.destroy server-process)))))
+
+(def-repl-test explicit-port-argument
+  (repl/reset-ack-port!)
+  (let [free-port (with-open [ss (java.net.ServerSocket.)]
+                    (.bind ss nil)
+                    (.getLocalPort ss))
+        server-process (.exec (Runtime/getRuntime)
+                         (into-array ["java" "-Dnreplacktest=y" "-cp" (System/getProperty "java.class.path")
+                                      "cemerick.nrepl.main" "--port" (str free-port) "--ack" (str *server-port*)]))
+        acked-port (repl/wait-for-ack! 20000)]
+    (try
+      (is acked-port "Timed out waiting for ack")
+      (is (= acked-port free-port))
+      (finally
+        (.destroy server-process)))))
