@@ -164,6 +164,10 @@ implement it (hopefully within this same project as a separate batch
 of methods), with allowances for hosts that lack the concurrency primitives
 to support e.g. asynchronous evaluation, interrupts, etc.
 
+## Of historical note
+
+The original design notes for nREPL are available [here](https://docs.google.com/document/edit?id=1dnb1ONTpK9ttO5W4thxiXkU5Ki89gK62anRqKEK4YZI&authkey=CMuszuMI&hl=en#). 
+
 ## Thanks
 
 Thanks to Laurent Petit, Eric Thorsen, Justin Balthrop, Christophe Grand,
