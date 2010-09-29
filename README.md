@@ -86,24 +86,28 @@ evaluating code.
 
 Each request message consists of the following slots:
 
-- *id* Must be a unique string identifying the request. UUIDs are suitable, and automatic
+- `id` Must be a unique string identifying the request. UUIDs are suitable, and automatic
 in the provided nREPL client.
-- *code* The code to be evaluated.
-- *timeout* The maximum amount of time, in milliseconds, that the provided code will be
+- `code` The code to be evaluated.
+- `in` A string containing content to be bound (via a Reader) to `*in*` for the duration
+of `code`'s execution
+- `timeout` The maximum amount of time, in milliseconds, that the provided code will be
 allowed to run before a `timeout` response is sent.  This is optional; if not provided,
 a default timeout will be assigned by the server (currently always 60s).
 
+Only `id` and `code` are required in every request.
+
 Server responses have the following slots:
 
-- *id* The ID of the request for which the response was generated.
-- *ns* The stringified value of `*ns*` after the request's code was finished being evaluated.
-- *out* The intermingled content written to `*out*` and `*err*` while the request's
+- `id` The ID of the request for which the response was generated.
+- `ns` The stringified value of `*ns*` after the request's code was finished being evaluated.
+- `out` The intermingled content written to `*out*` and `*err*` while the request's
 code was being evaluated.
-- *value* The result of printing (via `pr`) the last result in the body of code evaluated.
+- `value` The result of printing (via `pr`) the last result in the body of code evaluated.
 In contrast to the output written to `*out*` and `*err*`, this may be usefully/reliably
 read and utilized by the client, e.g. in tooling contexts, assuming the evaluated code
 returns a printable and readable value.
-- *status* One of:
+- `status` One of:
     - `ok`
     - `error` Indicates an error occurred evaluating the requested code.  The `value` slot
 will contain the printed exception.

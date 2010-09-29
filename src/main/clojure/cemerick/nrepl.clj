@@ -1,6 +1,7 @@
 (ns cemerick.nrepl
   (:require clojure.main)
   (:import (java.net ServerSocket)
+    clojure.lang.LineNumberingPushbackReader
     java.lang.ref.WeakReference
     java.util.LinkedHashMap
     (java.io Reader InputStreamReader BufferedReader PushbackReader StringReader
@@ -129,7 +130,7 @@
     `(do ~@(for [[var value] pairs] (list 'set! var value)))))
 
 (defn- handle-request
-  [client-state-atom {:keys [code]}]
+  [client-state-atom {:keys [code in]}]
   (let [{:keys [value-3 value-2 value-1 last-exception ns warn-on-reflection
                 math-context print-meta print-length print-level compile-path
                 command-line-args]} @client-state-atom
@@ -140,6 +141,7 @@
         out (StringWriter.)
         out-pw (PrintWriter. out)
         return (atom nil)
+        code-reader (LineNumberingPushbackReader. (StringReader. code))
         repl-init (fn []
                     (in-ns (.name ns))
                     (set!-many
@@ -155,12 +157,12 @@
                       *compile-path* compile-path
                       *command-line-args* command-line-args))]
     (try
-      (binding [*in* (clojure.lang.LineNumberingPushbackReader. (StringReader. code))
+      (binding [*in* (LineNumberingPushbackReader. (StringReader. in))
                 *out* out-pw
                 *err* out-pw]
         (clojure.main/repl
           :init repl-init
-          :read (fn [prompt exit] (read *in* false exit))
+          :read (fn [prompt exit] (read code-reader false exit))
           :caught (fn [#^Throwable e]
                     (swap! client-state-atom assoc :last-exception e)
                     (reset! return ["error" e])

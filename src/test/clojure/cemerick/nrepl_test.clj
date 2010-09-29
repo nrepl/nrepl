@@ -99,6 +99,9 @@
   (.close connection)
   (is (thrown? java.net.SocketException (repl-value "5"))))
 
+(def-repl-test use-sent-*in*
+  (is (= 6 (repl-value "(eval (read))" :in "(+ 1 2 3)"))))
+
 (def-repl-test unordered-message-reads
   ; check that messages are being retained properly when read out of order
   (let [{:keys [send receive]} connection
