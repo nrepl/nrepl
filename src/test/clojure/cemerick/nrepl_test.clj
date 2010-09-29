@@ -50,6 +50,11 @@
     "(range 40)"
     "(apply + (range 100))"))
 
+(def-repl-test separate-value-from-*out*
+  (let [{:keys [out value]} (repl-read "(println 5)")]
+    (is (nil? value))
+    (is (= "5" (.trim out)))))
+
 (def-repl-test defining-fns
   (repl-value "(defn foobar [] 6)")
   (is (= 6 (repl-value "(foobar)"))))

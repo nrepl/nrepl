@@ -52,7 +52,7 @@ it using its "wire" message protocol; this isn't intended as a proper usage exam
 but may be a handy way for toolmakers and REPL client authors to get a quick feel
 for the protocol and/or do dirty debugging.  Example:
 
-    [catapult:~] chas% telnet localhost 25000
+    [catapult:~] chas% telnet localhost <port-number>
     Trying 127.0.0.1...
     Connected to localhost.
     Escape character is '^]'.
@@ -67,9 +67,9 @@ for the protocol and/or do dirty debugging.  Example:
     "ns"
     "user"
     "out"
-    "5\nnil\n"
+    "5\n"
     "value"
-    "nil"
+    "nil\n"
     "status"
     "ok"
 

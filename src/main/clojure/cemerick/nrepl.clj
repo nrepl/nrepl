@@ -178,16 +178,16 @@
                      :value-2 *1
                      :value-1 value
                      :ns *ns*)
-                   (reset! return ["ok" value])
-                   (if (pretty-print?)
-                     (pprint value)
-                     (prn value)))))
+                   (reset! return ["ok" (with-out-str
+                                          (if (pretty-print?)
+                                            (pprint value)
+                                            (prn value)))]))))
       (finally (.flush out-pw)))
     
     {:out (str out)
      :ns (-> @client-state-atom :ns .name str)
      :status (first @return)
-     :value (pr-str (second @return))}))
+     :value (second @return)}))
 
 (def #^{:private true
         :doc "Currently one minute; this can't just be Long/MAX_VALUE, or we'll inevitably
@@ -385,7 +385,7 @@
 ;; - add java main to avoid :gen-class (which limits cross-clojure-version compat)
 ;; - bind out-of-band message options for evaluated code to access?
 ;; - add convenience fns for toggling pprinting
-;; - websockets adapter
+;; - websockets adapter/handler (should be able to run on the same port!)
 ;; - support for multiple response messages (:seq msg), making getting incremental output from long-running invocations possible/easy
 ;;   - what to do about *out* / *err* in futures, agent sends, etc?
 ;;   - people want redirection of System/out and System/err?! How to connect that back to particular messages?
