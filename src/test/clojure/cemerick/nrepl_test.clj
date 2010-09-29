@@ -89,9 +89,9 @@
     (is (= "interrupted" (:status (resp))))))
 
 (def-repl-test verify-interrupt-on-timeout
-  (let [resp (repl "(def a 0)(def a (apply + (iterate inc 0)))" :timeout 2000)]
+  (let [resp (repl "(def a 0)(def a (do (Thread/sleep 3000) 1))" :timeout 1000)]
     (is (= "timeout" (:status (resp))))
-    (Thread/sleep 1000)
+    (Thread/sleep 5000)
     (is (= 0 (repl-value "a")))))
 
 (def-repl-test ensure-closeable
