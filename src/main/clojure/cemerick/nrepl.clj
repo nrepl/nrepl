@@ -382,9 +382,12 @@
                           (send-ack (.getLocalPort ss) ack-port))])))
 
 ;; TODO
+;; - add java main to avoid :gen-class (which limits cross-clojure-version compat)
+;; - bind out-of-band message options for evaluated code to access?
 ;; - add convenience fns for toggling pprinting
 ;; - websockets adapter
 ;; - support for multiple response messages (:seq msg), making getting incremental output from long-running invocations possible/easy
+;;   - what to do about *out* / *err* in futures, agent sends, etc?
+;;   - people want redirection of System/out and System/err?! How to connect that back to particular messages?
 ;; - proper error handling on the receive loop
 ;; - command-line support for starting server, connecting to server, and optionally running other clojure script(s)/java mains
-;; - HELO, init handshake, version compat check, etc
