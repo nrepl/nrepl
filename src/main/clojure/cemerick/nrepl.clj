@@ -130,7 +130,7 @@
     `(do ~@(for [[var value] pairs] (list 'set! var value)))))
 
 (defn- handle-request
-  [client-state-atom {:keys [code in]}]
+  [client-state-atom {:keys [code in] :or {in ""}}]
   (let [{:keys [value-3 value-2 value-1 last-exception ns warn-on-reflection
                 math-context print-meta print-length print-level compile-path
                 command-line-args]} @client-state-atom
