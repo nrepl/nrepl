@@ -61,9 +61,9 @@
     (is (= history (repl-value "*1")))))
 
 (def-repl-test exceptions
-  (let [{:keys [out status value] :as f} (repl-receive "(throw (Exception. \"bad, bad code\"))")]
+  (let [{:keys [out status value] :as f} (repl-read "(throw (Exception. \"bad, bad code\"))")]
     (is (= "error" status))
-    (is (.contains value "bad, bad code"))
+    (is (nil? value))
     (is (.contains out "bad, bad code"))
     (is (= true (repl-value "(.contains (str *e) \"bad, bad code\")")))))
 

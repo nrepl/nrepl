@@ -165,7 +165,7 @@
           :read (fn [prompt exit] (read code-reader false exit))
           :caught (fn [#^Throwable e]
                     (swap! client-state-atom assoc :last-exception e)
-                    (reset! return ["error" e])
+                    (reset! return ["error" nil])
                     (if *print-stack-trace-on-error*
                       (.printStackTrace e *out*)
                       (prn (clojure.main/repl-exception e)))
