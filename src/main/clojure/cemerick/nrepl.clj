@@ -458,9 +458,9 @@
                           (send-ack (.getLocalPort ss) ack-port))])))
 
 ;; TODO
-;; - add java main to avoid :gen-class (which limits cross-clojure-version compat)
 ;; - bind out-of-band message options for evaluated code to access?
 ;; - add convenience fns for toggling pprinting
+;; - make write-response a send-off to avoid blocking in the REP loop.
 ;; - websockets adapter/handler (should be able to run on the same port!)
 ;; - support for multiple response messages (:seq msg), making getting incremental output from long-running invocations possible/easy
 ;;   - what to do about *out* / *err* in futures, agent sends, etc?

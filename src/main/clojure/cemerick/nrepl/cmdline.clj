@@ -1,5 +1,4 @@
-(ns cemerick.nrepl.main
-  (:gen-class)
+(ns cemerick.nrepl.cmdline
   (:require [cemerick.nrepl :as repl]))
 
 (defn- run-repl
@@ -19,7 +18,7 @@
         (when (seq out) (print out))
         (recur ns)))))
 
-(def #^{:private true} unary-options #{"--repl"})
+(def #^{:private true} unary-options #{"--repl" "--server"})
 
 (defn- split-args
   [args]
@@ -33,7 +32,7 @@
         (recur (rest rem-args)
           (assoc options arg (first rem-args)))))))
 
-(defn -main
+(defn main
   [& args]
   (let [[options args] (split-args args)
         _ (println options)
