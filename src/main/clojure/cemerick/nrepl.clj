@@ -459,13 +459,19 @@
                           (send-ack (.getLocalPort ss) ack-port))])))
 
 ;; TODO
-;; - bind out-of-band message options for evaluated code to access?
-;; - add convenience fns for toggling pprinting
-;; - make cmdline usable as just a client (--connect instead of --repl, making --server a new option)
-;; - make write-response a send-off to avoid blocking in the REP loop.
-;; - websockets adapter/handler (should be able to run on the same port!)
-;; - support for multiple response messages (:seq msg), making getting incremental output from long-running invocations possible/easy
+;; - core
+;;   - proper error handling on the receive loop
+;;   - make write-response a send-off to avoid blocking in the REP loop.
+;;   - bind out-of-band message options for evaluated code to access?
+;; - tools
+;;   - add convenience fns for toggling pprinting
+;; - streams
 ;;   - what to do about *out* / *err* in futures, agent sends, etc?
-;;   - people want redirection of System/out and System/err?! How to connect that back to particular messages?
-;; - proper error handling on the receive loop
-;; - command-line support for starting server, connecting to server, and optionally running other clojure script(s)/java mains
+;;   - optionally multiplex System/out and System/err
+;;   - optionally join multiplexed S/out and S/err, receive :stdout, :stderr msgs
+;; - protocols and transport
+;;   - dependency-free websockets adapter (should be able to run on the same port!)
+;;   - STOMP when dep-free client and broker impls are available
+;; - cmdline
+;;   - support for connecting to a server
+;;   - optionally running other clojure script(s)/java mains prior to starting/connecting to a server
