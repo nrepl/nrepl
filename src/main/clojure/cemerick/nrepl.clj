@@ -3,7 +3,7 @@
   (:import (java.net ServerSocket)
     clojure.lang.LineNumberingPushbackReader
     java.lang.ref.WeakReference
-    java.util.LinkedHashMap
+    (java.util Collections Map WeakHashMap)
     (java.io Reader InputStreamReader BufferedReader PushbackReader StringReader
       Writer OutputStreamWriter BufferedWriter PrintWriter StringWriter
       IOException)
@@ -12,21 +12,31 @@
       CancellationException ExecutionException TimeoutException)))
 
 (def *print-stack-trace-on-error* false)
+(def *pretty-print* false)
 
-(try
-  (try
-    (require '[clojure.pprint :as pprint]) ; clojure 1.2.0+
-    (catch Exception e
-      ; clojure 1.0.0+ w/ contrib
-      (require '[clojure.contrib.pprint :as pprint])))
-  ; clojure 1.1.0 requires this eval, throws exception not finding pprint ns
-  ; I think 1.1.0 was resolving vars in the reader instead of the compiler?
-  (eval '(defn- pretty-print? [] pprint/*print-pretty*))
-  (eval '(def pprint pprint/pprint))
-  (catch Exception e
-    ; no contrib available, fall back to prn
-    (def pprint prn)
-    (defn- pretty-print? [] false)))
+(def pprint prn)
+(def pretty-print? (constantly false))
+(def pretty-print-available? (constantly false))
+
+(defn- configure-pprinting
+  []
+  (when (try
+          (require '[clojure.pprint :as pprint]) ; clojure 1.2.0+
+          true
+          (catch Exception e
+            ; clojure 1.0.0+ w/ contrib
+            (try
+              (require '[clojure.contrib.pprint :as pprint])
+              true
+              (catch Exception e))))
+    ; clojure 1.1.0 requires this eval, throws exception not finding pprint ns
+    ; I think 1.1.0 was resolving vars in the reader instead of the compiler?
+    (alter-var-root pretty-print-available? (constantly (constantly true)))
+    (alter-var-root pretty-print? (eval '(fn pretty-print? [] (and *pretty-print* pprint/*print-pretty*))))
+    (alter-var-root pprint (eval '(def pprint pprint/pprint)))
+    true))
+
+(configure-pprinting)
 
 (def #^ExecutorService executor (Executors/newCachedThreadPool
                                   (proxy [ThreadFactory] []
@@ -123,8 +133,10 @@
   {:warn-on-reflection *warn-on-reflection*, :math-context *math-context*,
    :print-meta *print-meta*, :print-length *print-length*,
    :print-level *print-level*, :compile-path *compile-path*
-   :command-line-args *command-line-args* :print-stack-trace-on-error *print-stack-trace-on-error*
-   :ns (create-ns 'user)})
+   :command-line-args *command-line-args*
+   :ns (create-ns 'user)
+   :print-stack-trace-on-error *print-stack-trace-on-error*
+   :pretty-print *pretty-print*})
 
 (defmacro #^{:private true} set!-many
   [& body]
@@ -163,7 +175,7 @@
   [client-state-atom write-response {:keys [code in] :or {in ""}}]
   (let [{:keys [value-3 value-2 value-1 last-exception ns warn-on-reflection
                 math-context print-meta print-length print-level compile-path
-                command-line-args print-stack-trace-on-error]} @client-state-atom
+                command-line-args print-stack-trace-on-error pretty-print]} @client-state-atom
         ; it seems like there's more value in combining *out* and *err*
         ; (thereby preserving the interleaved nature of that output, as typically rendered)
         ; than there is in separating them for the client
@@ -179,6 +191,7 @@
                       *1 value-1
                       *e last-exception
                       *print-stack-trace-on-error* print-stack-trace-on-error
+                      *pretty-print* pretty-print
                       *warn-on-reflection* warn-on-reflection
                       *math-context* math-context
                       *print-meta* print-meta
@@ -190,7 +203,8 @@
       (binding [*in* (LineNumberingPushbackReader. (StringReader. in))
                 *out* out
                 *err* err
-                *print-stack-trace-on-error* *print-stack-trace-on-error*]
+                *print-stack-trace-on-error* *print-stack-trace-on-error*
+                *pretty-print* *pretty-print*]
         (clojure.main/repl
           :init repl-init
           :read (fn [prompt exit] (read code-reader false exit))
@@ -210,7 +224,8 @@
                      :value-2 *1
                      :value-1 value
                      :ns *ns*
-                     :print-stack-trace-on-error *print-stack-trace-on-error*)
+                     :print-stack-trace-on-error *print-stack-trace-on-error*
+                     :pretty-print *pretty-print*)
                    (write-response :value (with-out-str
                                             (if (pretty-print?)
                                               (pprint value)
@@ -301,7 +316,7 @@
     response-message))
 
 (defn- send-client-message
-  [response-promises out & message-args]
+  [#^Map response-promises out & message-args]
   (let [outgoing-msg (apply client-message message-args)
         q (LinkedBlockingQueue.)
         msg (assoc outgoing-msg ::response-queue q)]
@@ -373,8 +388,7 @@
    to ensure that messages/response queues are being released
    in conjunction with their associated response fns."
   []
-  (java.util.Collections/synchronizedMap
-    (java.util.WeakHashMap.)))
+  (Collections/synchronizedMap (WeakHashMap.)))
 
 (defn connect
   "Connects to a hosted REPL at the given host (defaults to localhost) and port,
