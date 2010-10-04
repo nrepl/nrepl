@@ -77,12 +77,12 @@
     (is (= history (repl-value "*1")))))
 
 (def-repl-test exceptions
-  (let [{:keys [out status value] :as f} (->> (repl "(throw (Exception. \"bad, bad code\"))")
+  (let [{:keys [err status value] :as f} (->> (repl "(throw (Exception. \"bad, bad code\"))")
                                            repl/response-seq
                                            repl/combine-responses)]
     (is (= #{"error" "done"} status))
     (is (nil? value))
-    (is (.contains out "bad, bad code"))
+    (is (.contains err "bad, bad code"))
     (is (= true (repl-value "(.contains (str *e) \"bad, bad code\")")))))
 
 (def-repl-test multiple-expressions-return

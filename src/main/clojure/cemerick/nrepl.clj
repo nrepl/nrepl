@@ -156,7 +156,7 @@
 (defn- create-response
   [client-state-atom & options]
   (assoc (apply hash-map options)
-    :ns (-> @client-state-atom :ns .name str)))
+    :ns (-> @client-state-atom :ns ns-name str)))
 
 (defn- handle-request
   [client-state-atom write-response {:keys [code in] :or {in ""}}]
@@ -171,7 +171,7 @@
         [out-agent out] (create-repl-out :out write-response)
         [err-agent err] (create-repl-out :err write-response)
         repl-init (fn []
-                    (in-ns (.name ns))
+                    (in-ns (ns-name ns))
                     (set!-many
                       *3 value-3
                       *2 value-2
@@ -193,10 +193,11 @@
           :read (fn [prompt exit] (read code-reader false exit))
           :caught (fn [#^Throwable e]
                     (swap! client-state-atom assoc :last-exception e)
-                    (if *print-stack-trace-on-error*
-                      (.printStackTrace e *out*)
-                      (prn (clojure.main/repl-exception e)))
-                    (flush)
+                    (binding [*out* *err*]
+                      (if *print-stack-trace-on-error*
+                        (.printStackTrace (clojure.main/repl-exception e) *out*)
+                        (prn (clojure.main/repl-exception e)))
+                      (flush))
                     (write-response :status "error"))
           :prompt (fn [])
           :need-prompt (constantly false)
@@ -210,7 +211,7 @@
                                             (if (pretty-print?)
                                               (pprint value)
                                               (prn value)))))))
-      (finally (.flush *out*) (.flush *err*)))
+      (finally (.flush out) (.flush err)))
     
     (await out-agent err-agent)))
 
@@ -460,6 +461,7 @@
 ;; TODO
 ;; - bind out-of-band message options for evaluated code to access?
 ;; - add convenience fns for toggling pprinting
+;; - make cmdline usable as just a client (--connect instead of --repl, making --server a new option)
 ;; - make write-response a send-off to avoid blocking in the REP loop.
 ;; - websockets adapter/handler (should be able to run on the same port!)
 ;; - support for multiple response messages (:seq msg), making getting incremental output from long-running invocations possible/easy
