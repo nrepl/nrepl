@@ -166,3 +166,25 @@
       (is (= acked-port free-port))
       (finally
         (.destroy server-process)))))
+
+(deftest repl-out-writer
+  (let [responses (atom [])
+        [w-agent w] (#'repl/create-repl-out :out #(swap! responses conj %&))]
+    (doto w
+      .flush
+      (.write "abcd")
+      .flush
+      .flush
+      (.write "no writes\nkeyed on linebreaks")
+      .flush)
+    (with-open [out (java.io.PrintWriter. w)]
+      (binding [*out* out]
+        (newline)
+        (prn #{})
+        (flush)))
+    
+    (await w-agent)
+    (is (= [[:out "abcd"]
+            [:out "no writes\nkeyed on linebreaks"]
+            [:out "\n#{}\n"]]
+          @responses))))

@@ -129,6 +129,28 @@
   (let [pairs (partition 2 body)]
     `(do ~@(for [[var value] pairs] (list 'set! var value)))))
 
+(defn- create-repl-out
+  [stream-key write-response]
+  (let [sw (agent (StringBuilder.))
+        writer (PrintWriter. (proxy [Writer] []
+                               (close []
+                                 (.flush this))
+                               (write
+                                 [& [x off len]]
+                                 (if (number? x)
+                                   (send sw #(.append #^StringBuilder % (char x)))
+                                   (send sw #(.append #^StringBuilder % x off len))))
+                               (flush []
+                                 (send-off sw
+                                   #(if (zero? (.length %))
+                                      %
+                                      (do
+                                        (write-response stream-key (str %))
+                                        ; would use (.setLength % 0) here, but clojure 1.1 fails that with
+                                        ; => Can't call public method of non-public class: public void java.lang.AbstractStringBuilder.setLength
+                                        (StringBuilder.)))))))]
+    [sw writer]))
+
 (defn- handle-request
   [client-state-atom {:keys [code in] :or {in ""}}]
   (let [{:keys [value-3 value-2 value-1 last-exception ns warn-on-reflection
