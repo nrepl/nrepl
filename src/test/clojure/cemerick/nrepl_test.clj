@@ -85,6 +85,14 @@
     (is (.contains err "bad, bad code"))
     (is (= true (repl-value "(.contains (str *e) \"bad, bad code\")")))))
 
+(def-repl-test auto-print-stack-trace
+  (is (= true (repl-value "(set! cemerick.nrepl/*print-stack-trace-on-error* true)")))
+  (is (.contains (->> (repl "(throw (Exception. \"foo\" (Exception. \"nested exception\")))")
+                   repl/response-seq
+                   repl/combine-responses
+                   :err)
+        "nested exception")))
+
 (def-repl-test multiple-expressions-return
   (is (= [5 18] (->> (repl-seq "5 (/ 5 0) (+ 5 6 7)")
                   (map repl/read-response-value)

@@ -123,7 +123,7 @@
   {:warn-on-reflection *warn-on-reflection*, :math-context *math-context*,
    :print-meta *print-meta*, :print-length *print-length*,
    :print-level *print-level*, :compile-path *compile-path*
-   :command-line-args *command-line-args*
+   :command-line-args *command-line-args* :print-stack-trace-on-error *print-stack-trace-on-error*
    :ns (create-ns 'user)})
 
 (defmacro #^{:private true} set!-many
@@ -163,7 +163,7 @@
   [client-state-atom write-response {:keys [code in] :or {in ""}}]
   (let [{:keys [value-3 value-2 value-1 last-exception ns warn-on-reflection
                 math-context print-meta print-length print-level compile-path
-                command-line-args]} @client-state-atom
+                command-line-args print-stack-trace-on-error]} @client-state-atom
         ; it seems like there's more value in combining *out* and *err*
         ; (thereby preserving the interleaved nature of that output, as typically rendered)
         ; than there is in separating them for the client
@@ -178,6 +178,7 @@
                       *2 value-2
                       *1 value-1
                       *e last-exception
+                      *print-stack-trace-on-error* print-stack-trace-on-error
                       *warn-on-reflection* warn-on-reflection
                       *math-context* math-context
                       *print-meta* print-meta
@@ -188,7 +189,8 @@
     (try
       (binding [*in* (LineNumberingPushbackReader. (StringReader. in))
                 *out* out
-                *err* err]
+                *err* err
+                *print-stack-trace-on-error* *print-stack-trace-on-error*]
         (clojure.main/repl
           :init repl-init
           :read (fn [prompt exit] (read code-reader false exit))
@@ -207,7 +209,8 @@
                      :value-3 *2
                      :value-2 *1
                      :value-1 value
-                     :ns *ns*)
+                     :ns *ns*
+                     :print-stack-trace-on-error *print-stack-trace-on-error*)
                    (write-response :value (with-out-str
                                             (if (pretty-print?)
                                               (pprint value)
