@@ -139,9 +139,10 @@
                                  (.flush this))
                                (write
                                  [& [x off len]]
-                                 (if (number? x)
-                                   (send sw #(.append #^StringBuilder % (char x)))
-                                   (send sw #(.append #^StringBuilder % x off len))))
+                                 (cond
+                                   (number? x) (send sw #(.append #^StringBuilder % (char x)))
+                                   (not off) (send sw #(.append #^StringBuilder % x))
+                                   off (send sw #(.append #^StringBuilder % x off len))))
                                (flush []
                                  (send-off sw
                                    #(if (zero? (.length %))

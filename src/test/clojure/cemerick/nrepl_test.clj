@@ -192,6 +192,10 @@
     (doto w
       .flush
       (.write "abcd")
+      (.write (.toCharArray "ef") 0 2)
+      (.write "gh" 0 2)
+      (.write (.toCharArray "ij"))
+      (.write 32)
       .flush
       .flush
       (.write "no writes\nkeyed on linebreaks")
@@ -203,7 +207,7 @@
         (flush)))
     
     (await w-agent)
-    (is (= [[:out "abcd"]
+    (is (= [[:out "abcdefghij "]
             [:out "no writes\nkeyed on linebreaks"]
             [:out "\n#{}\n"]]
           @responses))))
