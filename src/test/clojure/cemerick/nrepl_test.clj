@@ -21,6 +21,7 @@
      (let [connection# (repl/connect *server-port*)
            ~'connection connection#
            ~'repl (:send connection#)
+           ~'repl-seq (comp repl/response-seq ~'repl)
            ~'repl-receive (comp (fn [r#] (r#)) ~'repl)
            ~'repl-read (comp repl/read-response-value ~'repl-receive)
            ~'repl-value (comp :value ~'repl-read)]
@@ -51,9 +52,19 @@
     "(apply + (range 100))"))
 
 (def-repl-test separate-value-from-*out*
-  (let [{:keys [out value]} (repl-read "(println 5)")]
-    (is (nil? value))
+  (let [{:keys [out value]} (->> (repl-seq "(println 5)")
+                              (map repl/read-response-value)
+                              repl/combine-responses)]
+    (is (nil? (first value)))
     (is (= "5" (.trim out)))))
+
+(def-repl-test streaming-out
+  (is (= (for [x (range 10)]
+           (str x \newline))
+        (->> (repl "(dotimes [x 10] (println x))")
+          repl/response-seq
+          (map :out)
+          (remove nil?)))))
 
 (def-repl-test defining-fns
   (repl-value "(defn foobar [] 6)")
@@ -66,14 +77,19 @@
     (is (= history (repl-value "*1")))))
 
 (def-repl-test exceptions
-  (let [{:keys [out status value] :as f} (repl-read "(throw (Exception. \"bad, bad code\"))")]
-    (is (= "error" status))
+  (let [{:keys [out status value] :as f} (->> (repl "(throw (Exception. \"bad, bad code\"))")
+                                           repl/response-seq
+                                           repl/combine-responses)]
+    (is (= #{"error" "done"} status))
     (is (nil? value))
     (is (.contains out "bad, bad code"))
     (is (= true (repl-value "(.contains (str *e) \"bad, bad code\")")))))
 
 (def-repl-test multiple-expressions-return
-  (is (= 18 (repl-value "5 (/ 5 0) (+ 5 6 7)"))))
+  (is (= [5 18] (->> (repl-seq "5 (/ 5 0) (+ 5 6 7)")
+                  (map repl/read-response-value)
+                  repl/combine-responses
+                  :value))))
 
 (def-repl-test return-on-incomplete-expr
   (let [{:keys [out status value]} (repl-read "(apply + (range 20)")]
@@ -90,11 +106,12 @@
 (def-repl-test interrupt
   (let [resp (repl "(Thread/sleep 60000)")]
     (Thread/sleep 1000)
-    (is (= "ok" (:status (resp :interrupt))))
+    (is (= true (-> (resp :interrupt) repl/read-response-value :value)))
     (is (= "interrupted" (:status (resp))))))
 
 (def-repl-test verify-interrupt-on-timeout
   (let [resp (repl "(def a 0)(def a (do (Thread/sleep 3000) 1))" :timeout 1000)]
+    (is (:value (resp)))
     (is (= "timeout" (:status (resp))))
     (Thread/sleep 5000)
     (is (= 0 (repl-value "a")))))
@@ -126,9 +143,11 @@
     (binding [repl/response-promises-map (constantly promises-map)]
       (let [{:keys [send close]} (repl/connect *server-port*)]
         (doseq [response (->> (take 1000 (repeatedly #(send "5" :timeout 100)))
-                           (pmap #(% 5000)))]
-          (when-not (and (is (= "ok" (:status response)))
-                    (is (= 5 (-> response repl/read-response-value :value))))
+                           (pmap #(->> (repl/response-seq % 5000)
+                                    (map repl/read-response-value)
+                                    repl/combine-responses)))]
+          (when-not (and (is (= #{"done"} (:status response)))
+                      (is (= [5] (:value response))))
             ; fail fast if something is wrong to avoid waiting for 1000 failures
             (throw (Exception. (str "Failed response " response)))))
         

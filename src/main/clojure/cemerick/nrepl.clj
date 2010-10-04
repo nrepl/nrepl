@@ -7,8 +7,8 @@
     (java.io Reader InputStreamReader BufferedReader PushbackReader StringReader
       Writer OutputStreamWriter BufferedWriter PrintWriter StringWriter
       IOException)
-    (java.util.concurrent Callable Future ExecutorService Executors TimeUnit
-      ThreadFactory
+    (java.util.concurrent Callable Future ExecutorService Executors LinkedBlockingQueue
+      TimeUnit ThreadFactory
       CancellationException ExecutionException TimeoutException)))
 
 (def *print-stack-trace-on-error* false)
@@ -52,8 +52,10 @@
   [#^Callable function]
   (.submit executor function))
 
-(defn- get-root-cause [throwable]
-  (loop [#^Throwable cause throwable]
+; here only because the one in clojure.main is private
+(defn- root-cause
+  [#^Throwable throwable]
+  (loop [cause throwable]
     (if-let [cause (.getCause cause)]
       (recur cause)
       cause)))
@@ -72,7 +74,7 @@
                 (function)
                 (recur)
                 (catch Exception ex
-                  (ex-fn (get-root-cause ex))))))))
+                  (ex-fn (root-cause ex))))))))
 
 (def version
   (when-let [in (-> submit class (.getResourceAsStream "/cemerick/nrepl/version.txt"))]
@@ -151,8 +153,13 @@
                                         (StringBuilder.)))))))]
     [sw writer]))
 
+(defn- create-response
+  [client-state-atom & options]
+  (assoc (apply hash-map options)
+    :ns (-> @client-state-atom :ns .name str)))
+
 (defn- handle-request
-  [client-state-atom {:keys [code in] :or {in ""}}]
+  [client-state-atom write-response {:keys [code in] :or {in ""}}]
   (let [{:keys [value-3 value-2 value-1 last-exception ns warn-on-reflection
                 math-context print-meta print-length print-level compile-path
                 command-line-args]} @client-state-atom
@@ -160,10 +167,9 @@
         ; (thereby preserving the interleaved nature of that output, as typically rendered)
         ; than there is in separating them for the client
         ; (which could never recombine them properly, unless we timestamp each line or something)
-        out (StringWriter.)
-        out-pw (PrintWriter. out)
-        return (atom nil)
         code-reader (LineNumberingPushbackReader. (StringReader. code))
+        [out-agent out] (create-repl-out :out write-response)
+        [err-agent err] (create-repl-out :err write-response)
         repl-init (fn []
                     (in-ns (.name ns))
                     (set!-many
@@ -180,18 +186,18 @@
                       *command-line-args* command-line-args))]
     (try
       (binding [*in* (LineNumberingPushbackReader. (StringReader. in))
-                *out* out-pw
-                *err* out-pw]
+                *out* out
+                *err* err]
         (clojure.main/repl
           :init repl-init
           :read (fn [prompt exit] (read code-reader false exit))
           :caught (fn [#^Throwable e]
                     (swap! client-state-atom assoc :last-exception e)
-                    (reset! return ["error" nil])
                     (if *print-stack-trace-on-error*
                       (.printStackTrace e *out*)
                       (prn (clojure.main/repl-exception e)))
-                    (flush))
+                    (flush)
+                    (write-response :status "error"))
           :prompt (fn [])
           :need-prompt (constantly false)
           :print (fn [value]
@@ -200,16 +206,13 @@
                      :value-2 *1
                      :value-1 value
                      :ns *ns*)
-                   (reset! return ["ok" (with-out-str
-                                          (if (pretty-print?)
-                                            (pprint value)
-                                            (prn value)))]))))
-      (finally (.flush out-pw)))
+                   (write-response :value (with-out-str
+                                            (if (pretty-print?)
+                                              (pprint value)
+                                              (prn value)))))))
+      (finally (.flush *out*) (.flush *err*)))
     
-    {:out (str out)
-     :ns (-> @client-state-atom :ns .name str)
-     :status (first @return)
-     :value (second @return)}))
+    (await out-agent err-agent)))
 
 (def #^{:private true
         :doc "Currently one minute; this can't just be Long/MAX_VALUE, or we'll inevitably
@@ -220,39 +223,41 @@
 (defn- handle-response
   [#^Future future
    {:keys [id timeout] :or {timeout default-timeout}}
-   write-message]
+   write-response]
   (try
-    (let [result (.get future timeout TimeUnit/MILLISECONDS)]
-      (write-message (assoc (select-keys result [:status :value :out :ns])
-                       :id id)))
+    (.get future timeout TimeUnit/MILLISECONDS)
+    (write-response :status "done")
     (catch CancellationException e
-      (write-message {:id id :status "interrupted"}))
+      (write-response :status "interrupted"))
     (catch TimeoutException e
-      (write-message {:id id :status "timeout"})
+      (write-response :status "timeout")
       (interrupt id))
     (catch ExecutionException e
-      ; this should never happen, insofar as clojure.main/repl catches all Throwables
-      (.printStackTrace e)
-      (write-message {:id id :status "server-failure"
-                      :error "ExecutionException; this is probably an nREPL bug."}))
+      ; clojure.main.repl catches all Throwables, so this most often happens when
+      ; attempting to send a :done message to a client that's already disconnected after
+      ; getting their value(s), etc
+      (when-not (instance? java.net.SocketException (root-cause e))
+        (.printStackTrace e)
+        (write-response :status "server-failure"
+          :error "ExecutionException; this is probably an nREPL bug.")))
     (catch InterruptedException e
-      ; I'm not clear as to when this can happen; if a thread pool thread is interrupted
-      ; in conjunction with a cancellation, that's reported separately above...
+      ; only happens if the thread running handle-response is interrupted -- should
+      ; *should* be never
       (.printStackTrace e)
-      (write-message {:id id :status "server-failure"
-                      :error "InterruptedException; this might be an nREPL bug"}))))
+      (write-response :status "server-failure"
+        :error "handle-response interrupted; this is probably an nREPL bug"))))
   
 (defn- message-dispatch
-  [client-state read-message write-message]
+  [client-state read-message write-response]
   ; TODO ouch, need some error handling here :-/
-  (let [{:keys [id code] :as msg} (read-message)]
+  (let [{:keys [id code] :as msg} (read-message)
+        write-response (partial write-response :id id)]
     (if-not code
-      (write-message {:status "error"
-                      :error "Received message with no code."})
-      (let [future (submit #(#'handle-request client-state msg))]
+      (write-response :status "error" :error "Received message with no code.")
+      (let [future (submit #(#'handle-request client-state write-response msg))]
         (swap! repl-futures assoc id future)
         (submit #(try
-                   (handle-response future msg write-message)
+                   (handle-response future msg write-response)
                    (finally
                      (swap! repl-futures dissoc id))))))))
 
@@ -269,7 +274,8 @@
     (submit-looping (partial message-dispatch
                       client-state
                       (partial read-message in)
-                      (partial write-message out)))))
+                      (comp (partial write-message out)
+                        (partial create-response client-state))))))
 
 (defn- client-message
   "Returns a new message containing
@@ -282,44 +288,88 @@
 
 (defn read-response-value
   "Returns the provided response message, replacing its :value string with
-   the result of (read)ing it."
+   the result of (read)ing it.  Returns the message unchanged if the :value
+   slot is empty."
   [response-message]
-  (update-in response-message [:value] #(when % (read-string %))))
+  (if-let [value (:value response-message)]
+    (assoc response-message :value (read-string value))
+    response-message))
 
 (defn- send-client-message
   [response-promises out & message-args]
   (let [outgoing-msg (apply client-message message-args)
-        p (promise)
-        msg (assoc outgoing-msg ::response-promise p)]
+        q (LinkedBlockingQueue.)
+        msg (assoc outgoing-msg ::response-queue q)]
     (.put response-promises (:id msg) (WeakReference. msg))
     (write-message out outgoing-msg)
     (fn response
       ([] (response default-timeout))
       ([x]
-        (if (= :interrupt x)
-          ((send-client-message
-             response-promises
-             out
-             (format "(cemerick.nrepl/interrupt \"%s\")" (:id msg))))
-          (try
-            (.get (future @p) x TimeUnit/MILLISECONDS)
-            (catch TimeoutException e)))))))
+        (cond
+          (number? x) (.poll q x TimeUnit/MILLISECONDS)
+          (= :interrupt x) ((send-client-message
+                              response-promises
+                              out
+                              (format "(cemerick.nrepl/interrupt \"%s\")" (:id msg))))
+          :else (throw (IllegalArgumentException. (str "Invalid argument to REPL response fn: " x))))))))
+
+(defn response-seq
+  "Returns a lazy seq of the responses available through repeated invocations
+   of the provided response function.  An optional timeout value can be provided,
+   which will be passed along to the response function on each invocation."
+  ([response-fn]
+    (response-seq response-fn default-timeout))
+  ([response-fn timeout]
+    (lazy-seq
+      (when-let [response (response-fn timeout)]
+        (cons response
+          (when-not (#{"done" "timeout" "interrupted"} (:status response))
+            (response-seq response-fn timeout)))))))
+
+(defn- conj*
+  [coll coll? empty v]
+  (conj
+    (if coll
+      (if (coll? coll)
+        coll
+        (conj empty coll))
+      empty)
+    v))
+
+(defn combine-responses
+  "Combines the provided response messages into a single response map.
+   Typical usage being:
+
+       (combine-responses (repl-response-seq ((:send connection) \"(some-expression)\")))
+
+   Certain message slots are combined in special ways:
+
+     - only the second :ns (last in a reduction) is retained
+     - :value is accumulated into a vector
+     - :status is accumulated into a set
+     - string values (associated with e.g. :out and :err) are concatenated"
+  [responses]
+  (let [r (reduce
+            (fn [m [k v]]
+              (cond
+                (#{:id :ns} k) (assoc m k v)
+                (= k :value) (update-in m [k] conj* vector? [] v)
+                (= k :status) (update-in m [k] conj* set? #{} v)
+                (string? v) (update-in m [k] #(str % v))
+                :else (assoc m k v)))            
+            {} (mapcat seq responses))
+        v (:value r)]
+    (if (and v (not (vector? v)))
+      (assoc r :value [v])
+      r)))
 
 (defn- response-promises-map
   "Here only so we can force a connection to use a given map in tests
-   to ensure that messages/promises are being released
+   to ensure that messages/response queues are being released
    in conjunction with their associated response fns."
   []
   (java.util.Collections/synchronizedMap
     (java.util.WeakHashMap.)))
-
-(defn- get-root-cause
-  "Returns the root cause of the given Throwable."
-  [#^Throwable t]
-  (loop [c t]
-    (if-let [c (.getCause c)]
-      (recur c)
-      c)))
 
 (defn connect
   "Connects to a hosted REPL at the given host (defaults to localhost) and port,
@@ -338,8 +388,12 @@
    Response functions, returned from invocations of (send ...), accept zero or
    one argument. The one-arg arity accepts either:
        - a number of milliseconds, which is the maximum time that the invocation will block
-         before returning the associated response message.  If the timeout is exceeded, nil
-         is returned.
+         before returning the next response message.  If the timeout is exceeded, nil
+         is returned.  Multiple response messages are expected for each sent request; a
+         response message with a :status of \"done\" indicates that the associated request
+         has been fully processed, and that no further response messages should be expected.
+         See response-seq and combine-responses for some utilities for consuming message
+         responses.
        - the :interrupt keyword. This sends an interrupt message for the request
          associated with the response function, and blocks for default-timeout milliseconds
          for confirmation of the interrupt.
@@ -358,11 +412,11 @@
                 (loop []
                   (let [response (read-message in)
                         #^WeakReference msg-ref (get response-promises (:id response))]
-                    (when msg-ref
-                      (deliver (-> msg-ref .get ::response-promise) response)))
+                    (when-let [#^LinkedBlockingQueue q (and msg-ref (-> msg-ref .get ::response-queue))]
+                      (.put q response)))
                   (when-not (.isClosed sock) (recur)))
                 (catch Throwable t
-                  (let [root (get-root-cause t)]
+                  (let [root (root-cause t)]
                     (when-not (and (instance? java.net.SocketException)
                                 (.isClosed sock))
                       ; TODO need to get this pushed into an atom so clients can see what's gone sideways
