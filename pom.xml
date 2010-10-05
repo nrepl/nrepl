@@ -21,6 +21,7 @@
 
     <build>
         <sourceDirectory>src/main/clojure</sourceDirectory>
+        <testSourceDirectory>src/test/clojure</testSourceDirectory>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>

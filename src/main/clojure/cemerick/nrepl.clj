@@ -33,7 +33,7 @@
     ; I think 1.1.0 was resolving vars in the reader instead of the compiler?
     (alter-var-root #'pretty-print-available? (constantly (constantly true)))
     (alter-var-root #'pretty-print? (constantly (eval '(fn pretty-print? [] (and *pretty-print* pprint/*print-pretty*)))))
-    (alter-var-root #'pprint (constantly (eval '(def pprint pprint/pprint))))
+    (alter-var-root #'pprint (constantly (eval 'pprint/pprint)))
     true))
 
 (configure-pprinting)
@@ -492,7 +492,7 @@
 ;;   - make write-response a send-off to avoid blocking in the REP loop.
 ;;   - bind out-of-band message options for evaluated code to access?
 ;; - tools
-;;   - add convenience fns for toggling pprinting
+;;   - add convenience fns for toggling pprinting, auto printing of stacktraces
 ;; - streams
 ;;   - what to do about *out* / *err* in futures, agent sends, etc?
 ;;   - optionally multiplex System/out and System/err
