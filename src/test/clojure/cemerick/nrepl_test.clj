@@ -4,6 +4,12 @@
     [clojure.set :as set]))
 
 (println (format "Testing with Clojure v%s" (clojure-version)))
+(println (str "Clojure contrib available? " (or (try
+                                                  (require 'clojure.contrib.core)
+                                                  "yes"
+                                                  (catch Throwable t))
+                                              "no")))
+(println (str "Pretty-printing available? " (repl/pretty-print-available?)))
 
 (def *server-port* nil)
 
