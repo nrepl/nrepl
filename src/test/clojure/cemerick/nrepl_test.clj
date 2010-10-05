@@ -108,9 +108,11 @@
                   :value))))
 
 (def-repl-test return-on-incomplete-expr
-  (let [{:keys [out status value]} (repl-read "(apply + (range 20)")]
+  (let [{:keys [out status value]} (-> (repl "(apply + (range 20)")
+                                     repl/response-seq
+                                     repl/combine-responses)]
     (is (nil? value))
-    (is (= "error" status))))
+    (is (= #{"done" "error"} status))))
 
 (def-repl-test switch-ns
   (is (= "otherns" (:ns (repl-read "(ns otherns) (defn function [] 12)"))))
