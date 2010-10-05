@@ -3,6 +3,8 @@
   (:require [cemerick.nrepl :as repl]
     [clojure.set :as set]))
 
+(println (format "Testing with Clojure v%s" (clojure-version)))
+
 (def *server-port* nil)
 
 (defn repl-server-fixture
@@ -111,11 +113,15 @@
 (def-repl-test timeout
   (is (= "timeout" (:status (repl-read "(Thread/sleep 60000)" :timeout 1000)))))
 
-(def-repl-test interrupt
-  (let [resp (repl "(Thread/sleep 60000)")]
+(def-repl-test interrupt==halt
+  ; tests interrupts as well as ensures that the interrupt is halting all further output
+  (let [resp (repl "(def halted? true)(Thread/sleep 6000)(def halted? false)")]
     (Thread/sleep 1000)
     (is (= true (-> (resp :interrupt) repl/read-response-value :value)))
-    (is (= "interrupted" (:status (resp))))))
+    (let [resp (repl/response-seq resp 8000)]
+      (is (= 2 (count resp)))
+      (is (= "interrupted" (-> resp second :status)))
+      (is (= true (repl-value "halted?"))))))
 
 (def-repl-test verify-interrupt-on-timeout
   (let [resp (repl "(def a 0)(def a (do (Thread/sleep 3000) 1))" :timeout 1000)]
@@ -150,7 +156,8 @@
   (let [promises-map (#'repl/response-promises-map)]
     (binding [repl/response-promises-map (constantly promises-map)]
       (let [{:keys [send close]} (repl/connect *server-port*)]
-        (doseq [response (->> (take 1000 (repeatedly #(send "5" :timeout 100)))
+        (doseq [response (->> (repeatedly #(send "5" :timeout 1000))
+                           (take 1000)
                            (pmap #(->> (repl/response-seq % 5000)
                                     (map repl/read-response-value)
                                     repl/combine-responses)))]

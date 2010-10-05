@@ -55,8 +55,9 @@
 
 (defn interrupt
   [msg-id]
-  (when-let [#^Future f (@repl-futures msg-id)]
-    (.cancel f true)))
+  (when-let [{:keys [#^Future future interrupt-atom]} (@repl-futures msg-id)]
+    (reset! interrupt-atom true)
+    (.cancel future true)))
 
 (defn- submit
   [#^Callable function]
@@ -172,7 +173,7 @@
     :ns (-> @client-state-atom :ns ns-name str)))
 
 (defn- handle-request
-  [client-state-atom write-response {:keys [code in] :or {in ""}}]
+  [client-state-atom write-response {:keys [code in interrupt-atom] :or {in ""}}]
   (let [{:keys [value-3 value-2 value-1 last-exception ns warn-on-reflection
                 math-context print-meta print-length print-level compile-path
                 command-line-args print-stack-trace-on-error pretty-print]} @client-state-atom
@@ -209,13 +210,16 @@
           :init repl-init
           :read (fn [prompt exit] (read code-reader false exit))
           :caught (fn [#^Throwable e]
-                    (swap! client-state-atom assoc :last-exception e)
-                    (binding [*out* *err*]
-                      (if *print-stack-trace-on-error*
-                        (.printStackTrace (clojure.main/repl-exception e) *out*)
-                        (prn (clojure.main/repl-exception e)))
-                      (flush))
-                    (write-response :status "error"))
+                    (if @interrupt-atom ; we're interrupted, bugger out ASAP
+                      (throw e)
+                      (let [repl-exception (clojure.main/repl-exception e)]
+                        (swap! client-state-atom assoc :last-exception e)
+                        (binding [*out* *err*]
+                          (if *print-stack-trace-on-error*
+                            (.printStackTrace repl-exception *out*)
+                            (prn repl-exception))
+                          (flush))
+                        (write-response :status "error"))))
           :prompt (fn [])
           :need-prompt (constantly false)
           :print (fn [value]
@@ -242,7 +246,7 @@
 
 (defn- handle-response
   [#^Future future
-   {:keys [id timeout] :or {timeout default-timeout}}
+   {:keys [id timeout interrupt-atom] :or {timeout default-timeout}}
    write-response]
   (try
     (.get future timeout TimeUnit/MILLISECONDS)
@@ -256,12 +260,13 @@
       ; clojure.main.repl catches all Throwables, so this most often happens when
       ; attempting to send a :done message to a client that's already disconnected after
       ; getting their value(s), etc
-      (when-not (instance? java.net.SocketException (root-cause e))
+      (when-not (or @interrupt-atom
+                  (instance? java.net.SocketException (root-cause e)))
         (.printStackTrace e)
         (write-response :status "server-failure"
           :error "ExecutionException; this is probably an nREPL bug.")))
     (catch InterruptedException e
-      ; only happens if the thread running handle-response is interrupted -- should
+      ; only happens if the thread running handle-response is interrupted
       ; *should* be never
       (.printStackTrace e)
       (write-response :status "server-failure"
@@ -270,16 +275,21 @@
 (defn- message-dispatch
   [client-state read-message write-response]
   ; TODO ouch, need some error handling here :-/
-  (let [{:keys [id code] :as msg} (read-message)
+  (let [interrupt-atom (atom false)
+        {:keys [id code] :as msg} (assoc (read-message) :interrupt-atom interrupt-atom)
         write-response (partial write-response :id id)]
     (if-not code
       (write-response :status "error" :error "Received message with no code.")
-      (let [future (submit #(#'handle-request client-state write-response msg))]
-        (swap! repl-futures assoc id future)
-        (submit #(try
-                   (handle-response future msg write-response)
-                   (finally
-                     (swap! repl-futures dissoc id))))))))
+      (submit (fn []
+                (try
+                  (let [interruptable-write-response #(when-not @interrupt-atom
+                                                        (apply write-response %&))
+                        future (submit #(#'handle-request client-state interruptable-write-response msg))]
+                    (swap! repl-futures assoc id {:future future
+                                                  :interrupt-atom interrupt-atom})
+                    (handle-response future msg write-response))
+                  (finally
+                    (swap! repl-futures dissoc id))))))))
 
 (defn- configure-streams
   [#^java.net.Socket sock]
@@ -291,7 +301,7 @@
   (let [sock (.accept ss)
         [in out] (configure-streams sock)
         client-state (atom (init-client-state))]
-    (submit-looping (partial message-dispatch
+    (submit-looping (partial #'message-dispatch
                       client-state
                       (partial read-message in)
                       (comp (partial write-message out)
