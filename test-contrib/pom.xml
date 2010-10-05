@@ -1,0 +1,28 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>cemerick</groupId>
+        <artifactId>nrepl-parent</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <artifactId>nrepl-test-clojure-contrib</artifactId>
+    <name>nREPL (Clojure Contrib tests)</name>
+
+    <properties>
+        <clojureTestDirectory>${basedir}/../base/src/test/clojure</clojureTestDirectory>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.clojure</groupId>
+            <artifactId>clojure-contrib</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nrepl</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+</project>

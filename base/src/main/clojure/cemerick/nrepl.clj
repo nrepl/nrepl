@@ -31,9 +31,9 @@
               (catch Exception e))))
     ; clojure 1.1.0 requires this eval, throws exception not finding pprint ns
     ; I think 1.1.0 was resolving vars in the reader instead of the compiler?
-    (alter-var-root pretty-print-available? (constantly (constantly true)))
-    (alter-var-root pretty-print? (eval '(fn pretty-print? [] (and *pretty-print* pprint/*print-pretty*))))
-    (alter-var-root pprint (eval '(def pprint pprint/pprint)))
+    (alter-var-root #'pretty-print-available? (constantly (constantly true)))
+    (alter-var-root #'pretty-print? (constantly (eval '(fn pretty-print? [] (and *pretty-print* pprint/*print-pretty*)))))
+    (alter-var-root #'pprint (constantly (eval '(def pprint pprint/pprint))))
     true))
 
 (configure-pprinting)
@@ -436,7 +436,7 @@
                   (when-not (.isClosed sock) (recur)))
                 (catch Throwable t
                   (let [root (root-cause t)]
-                    (when-not (and (instance? java.net.SocketException)
+                    (when-not (and (instance? java.net.SocketException root)
                                 (.isClosed sock))
                       ; TODO need to get this pushed into an atom so clients can see what's gone sideways
                       (.printStackTrace t)
