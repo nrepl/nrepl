@@ -214,12 +214,12 @@
                       (throw e)
                       (let [repl-exception (clojure.main/repl-exception e)]
                         (swap! client-state-atom assoc :last-exception e)
+                        (write-response :status "error")
                         (binding [*out* *err*]
                           (if *print-stack-trace-on-error*
                             (.printStackTrace repl-exception *out*)
                             (prn repl-exception))
-                          (flush))
-                        (write-response :status "error"))))
+                          (flush)))))
           :prompt (fn [])
           :need-prompt (constantly false)
           :print (fn [value]
