@@ -400,6 +400,15 @@
   []
   (Collections/synchronizedMap (WeakHashMap.)))
 
+(defmacro in-repl
+  "Sends the body of code using the provided connection (literally! No
+   interpolation/quasiquoting of locals or other references is performed),
+   returning a REPL response function."
+  [connection & body]
+  `(let [send# (or (:send ~connection) ~connection)
+         code# (apply str (map pr-str (quote [~@body])))]
+     (send# code#)))
+
 (defn connect
   "Connects to a hosted REPL at the given host (defaults to localhost) and port,
    returning a map containing two functions:
@@ -492,7 +501,7 @@
 ;;   - make write-response a send-off to avoid blocking in the REP loop.
 ;;   - bind out-of-band message options for evaluated code to access?
 ;; - tools
-;;   - add convenience fns for toggling pprinting, auto printing of stacktraces
+;;   - add ClojureQL-style quasiquoting to in-repl
 ;; - streams
 ;;   - what to do about *out* / *err* in futures, agent sends, etc?
 ;;   - optionally multiplex System/out and System/err

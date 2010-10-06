@@ -251,3 +251,20 @@
             [:out "no writes\nkeyed on linebreaks"]
             [:out "\n#{}\n"]]
           @responses))))
+
+(def-repl-test in-repl
+  (let [deffn (repl/in-repl connection
+                (ns in-repl-test)
+                (defn as-seqs
+                  [& colls]
+                  (map seq colls)))]
+    (is (= #{"done"} (-> deffn repl/response-seq repl/combine-responses :status)))
+    (is (= (take 3 (repeat [1 2 3]))
+          (->> (repl/in-repl connection
+                 (in-repl-test/as-seqs
+                   '(1 2 3) [1 2 3] (into (sorted-set) #{1 2 3})))
+             repl/response-seq
+             (map repl/read-response-value)
+             repl/combine-responses
+             :value
+             first)))))
