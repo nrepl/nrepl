@@ -158,7 +158,7 @@
                                    off (send sw #(.append #^StringBuilder % x off len))))
                                (flush []
                                  (send-off sw
-                                   #(if (zero? (.length %))
+                                   #(if (zero? (.length #^StringBuilder %))
                                       %
                                       (do
                                         (write-response stream-key (str %))
@@ -200,16 +200,16 @@
                       *print-level* print-level
                       *compile-path* compile-path
                       *command-line-args* command-line-args))]
-    (try
-      (binding [*in* (LineNumberingPushbackReader. (StringReader. in))
-                *out* out
-                *err* err
-                *print-stack-trace-on-error* *print-stack-trace-on-error*
-                *pretty-print* *pretty-print*]
+    (binding [*in* (LineNumberingPushbackReader. (StringReader. in))
+              *out* out
+              *err* err
+              *print-stack-trace-on-error* *print-stack-trace-on-error*
+              *pretty-print* *pretty-print*]
+      (try
         (clojure.main/repl
           :init repl-init
           :read (fn [prompt exit] (read code-reader false exit))
-          :caught (fn [#^Throwable e]
+          :caught (fn [e]
                     (if @interrupt-atom ; we're interrupted, bugger out ASAP
                       (throw e)
                       (let [repl-exception (clojure.main/repl-exception e)]
@@ -233,8 +233,8 @@
                    (write-response :value (with-out-str
                                             (if (pretty-print?)
                                               (pprint value)
-                                              (prn value)))))))
-      (finally (.flush out) (.flush err)))
+                                              (prn value))))))
+        (finally (.flush *out*) (.flush *err*))))
     
     (await out-agent err-agent)))
 
