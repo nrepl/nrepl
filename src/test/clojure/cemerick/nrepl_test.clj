@@ -114,6 +114,13 @@
     (is (nil? value))
     (is (= #{"done" "error"} status))))
 
+(def-repl-test throw-on-unreadable-return
+  (is (thrown-with-msg? Exception #".*#<ArrayList \[\]>.*"
+        (->> (repl "(java.util.ArrayList.)")
+          repl/response-seq
+          (map repl/read-response-value)
+          doall))))
+
 (def-repl-test switch-ns
   (is (= "otherns" (:ns (repl-read "(ns otherns) (defn function [] 12)"))))
   (is (= 12 (repl-value "(otherns/function)"))))

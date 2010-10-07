@@ -322,7 +322,10 @@
    slot is empty."
   [response-message]
   (if-let [value (:value response-message)]
-    (assoc response-message :value (read-string value))
+    (try
+      (assoc response-message :value (read-string value))
+      (catch Exception e
+        (throw (IllegalStateException. (str "Could not read response value: " (.trim value)) e))))    
     response-message))
 
 (defn- send-client-message
