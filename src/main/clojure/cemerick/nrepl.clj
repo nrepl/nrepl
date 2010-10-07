@@ -403,7 +403,15 @@
   []
   (Collections/synchronizedMap (WeakHashMap.)))
 
-(defmacro in-repl
+(defn response-values
+  [response-fn]
+  (->> response-fn
+    response-seq
+    (map read-response-value)
+    combine-responses
+    :value))
+
+(defmacro send-with
   "Sends the body of code using the provided connection (literally! No
    interpolation/quasiquoting of locals or other references is performed),
    returning a REPL response function."
@@ -411,6 +419,10 @@
   `(let [send# (or (:send ~connection) ~connection)
          code# (apply str (map pr-str (quote [~@body])))]
      (send# code#)))
+
+(defmacro values-with
+  [connection & body]
+  `(response-values (send-with ~connection ~@body)))
 
 (defn connect
   "Connects to a hosted REPL at the given host (defaults to localhost) and port,

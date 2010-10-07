@@ -123,7 +123,7 @@
 
 (def-repl-test switch-ns
   (is (= "otherns" (:ns (repl-read "(ns otherns) (defn function [] 12)"))))
-  (is (= 12 (repl-value "(otherns/function)"))))
+  (is (= [12] (repl/values-with connection (otherns/function)))))
 
 (def-repl-test timeout
   (is (= "timeout" (:status (repl-read "(Thread/sleep 60000)" :timeout 1000)))))
@@ -259,19 +259,23 @@
             [:out "\n#{}\n"]]
           @responses))))
 
-(def-repl-test in-repl
-  (let [deffn (repl/in-repl connection
-                (ns in-repl-test)
+(def-repl-test repl-literal
+  (let [deffn (repl/send-with connection
+                (ns send-with-test)
                 (defn as-seqs
                   [& colls]
                   (map seq colls)))]
     (is (= #{"done"} (-> deffn repl/response-seq repl/combine-responses :status)))
     (is (= (take 3 (repeat [1 2 3]))
-          (->> (repl/in-repl connection
-                 (in-repl-test/as-seqs
+          (->> (repl/send-with connection
+                 (send-with-test/as-seqs
                    '(1 2 3) [1 2 3] (into (sorted-set) #{1 2 3})))
              repl/response-seq
              (map repl/read-response-value)
              repl/combine-responses
              :value
              first)))))
+
+(def-repl-test eval-literal
+  (is (= [5] (repl/values-with connection 5)))
+  (is (= [5 124750] (repl/values-with connection 5 (apply + (range 500))))))
