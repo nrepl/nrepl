@@ -30,7 +30,7 @@
     (let [connection (repl/connect "localhost" port)
           {:keys [major minor incremental qualifier]} *clojure-version*]
       (println "network-repl")
-      (print (str "Clojure " (clojure-version)))
+      (println (str "Clojure " (clojure-version)))
       (loop [ns "user"]
         (prompt ns)
         (flush)
