@@ -208,7 +208,7 @@
   (let [server-process (.exec (Runtime/getRuntime)
                          (into-array ["java" "-Dnreplacktest=y" "-cp" (System/getProperty "java.class.path")
                                       "cemerick.nrepl.main" "--ack" (str *server-port*)]))
-        acked-port (repl/wait-for-ack! 20000)]
+        acked-port (repl/wait-for-ack 20000)]
     (try
       (is acked-port "Timed out waiting for ack")
       (when acked-port
@@ -226,7 +226,7 @@
         server-process (.exec (Runtime/getRuntime)
                          (into-array ["java" "-Dnreplacktest=y" "-cp" (System/getProperty "java.class.path")
                                       "cemerick.nrepl.main" "--port" (str free-port) "--ack" (str *server-port*)]))
-        acked-port (repl/wait-for-ack! 20000)]
+        acked-port (repl/wait-for-ack 20000)]
     (try
       (is acked-port "Timed out waiting for ack")
       (is (= acked-port free-port))

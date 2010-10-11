@@ -489,7 +489,7 @@
   ; save people the misery of ever trying to deref the empty promise in their REPL
   nil)
 
-(defn wait-for-ack!
+(defn wait-for-ack
   [timeout]
   (let [#^Future f (future @@ack-port-promise)]
     (try
