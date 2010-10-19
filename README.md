@@ -1,3 +1,5 @@
+_Please note that this repo has yet to conform to Clojure-Contrib standards (in terms of namespace naming, etc); it is currently just a clone of the [original nREPL repo](http://github.com/cemerick/nREPL). Significant changes will be made shortly.  In the meantime, enjoy tinkering. :-)_
+
 # nREPL
 
 [nREPL](http://github.com/cemerick/nREPL) is a Clojure *n*etwork REPL
