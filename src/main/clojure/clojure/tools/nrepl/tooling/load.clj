@@ -1,7 +1,9 @@
-(ns cemerick.nrepl.tooling.load
+(ns #^{:doc ""
+       :author "Chas Emerick"}
+  clojure.tools.nrepl.tooling.load
   (:import (java.io File StringReader))
   (:require
-    [cemerick.nrepl.helpers :as helpers]))
+    [clojure.tools.nrepl.helpers :as helpers]))
 
 (defn load-with-debug-info
   "Load a code string using a source file path and name source-path for debug info
@@ -15,7 +17,7 @@
 (defn load-file-command
   [#^File f source-paths]
   (apply format
-    "(cemerick.nrepl.tooling.load/load-with-debug-info %s %s %s)"
+    "(clojure.tools.nrepl.tooling.load/load-with-debug-info %s %s %s)"
     (map helpers/string-argument
       [(slurp f "UTF-8")
        (.toAbsolutePath f)

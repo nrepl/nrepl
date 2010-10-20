@@ -1,8 +1,6 @@
-_Please note that this repo has yet to conform to Clojure-Contrib standards (in terms of namespace naming, etc); it is currently just a clone of the [original nREPL repo](http://github.com/cemerick/nREPL). Significant changes will be made shortly.  In the meantime, enjoy tinkering. :-)_
-
 # nREPL
 
-[nREPL](http://github.com/cemerick/nREPL) is a Clojure *n*etwork REPL
+[nREPL](http://github.com/clojure/tools.nrepl) is a Clojure *n*etwork REPL
 that provides a REPL server and client, along with some common APIs
 of use to IDEs and other tools that may need to evaluate Clojure
 code in remote environments.
@@ -14,7 +12,7 @@ code in remote environments.
 ### Embedding nREPL
 
 This library is in its infancy.  More info to come.  In the meantime,
-check out the tests or cemerick.nrepl.main for usage examples.
+check out the tests or clojure.tools.nrepl.main for usage examples.
 
 ### Debugging
 
@@ -190,14 +188,14 @@ the time of printing, a pretty-printer will be used instead:
     1. One of the following is available:
         1. Clojure [1.2.0) (and therefore `clojure.pprint`)
         2. Clojure Contrib (and therefore `clojure.contrib.pprint`)
-    2. `cemerick.nrepl/*pretty-print*` is `set!`'ed to true (which persists for the
+    2. `clojure.tools.nrepl/*pretty-print*` is `set!`'ed to true (which persists for the
 duration of the client connection)
 - `status` One of:
     - `error` Indicates an error occurred evaluating the requested code.  The related
 exception is bound to `*e` per usual, and printed to `*err*`, which will be delivered
 via a later message.
 The caught exception is printed using `prn` by default; if
-`cemerick.nrepl/*print-stack-trace-on-error*` is `set!`'ed to true (which persists for the duration
+`clojure.tools.nrepl/*print-stack-trace-on-error*` is `set!`'ed to true (which persists for the duration
 of the client connection), then exception stack traces are automatically printed to
 `*err*` instead. 
     - `timeout` Indicates that the timeout specified by the requesting message
@@ -222,7 +220,7 @@ message's code will be allowed to run before being interrupted and a response me
 being sent indicating a status of `timeout`.
 
 The processing of a message may be interrupted by a client by sending another message
-containing code that invokes the `cemerick.nrepl/interrupt` function, providing it with
+containing code that invokes the `clojure.tools.nrepl/interrupt` function, providing it with
 the string ID of the message to be interrupted.  The interrupt will be responded to
 separately as with any other message. (The provided client implementation provides a
 simple abstraction for handling responses that makes issuing interrupts very

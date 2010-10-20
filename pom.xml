@@ -1,11 +1,22 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>cemerick</groupId>
+    <groupId>clojure.tools</groupId>
     <artifactId>nrepl</artifactId>
     <version>0.0.2-SNAPSHOT</version>
     <name>nREPL</name>
 
+    <developers>
+        <developer>
+            <name>Chas Emerick</name>
+            <email>cemerick@snowtide.com</email>
+            <organization>Snowtide Informatics</organization>
+            <organizationUrl>http://snowtide.com</organizationUrl>
+            <timezone>-5</timezone>
+            <url>http://cemerick.com</url>
+        </developer>
+    </developers>
+    
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>

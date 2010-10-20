@@ -1,7 +1,9 @@
-(ns cemerick.nrepl.pprinting-test
-  (:use [cemerick.nrepl-test :only (def-repl-test repl-server-fixture)]
+(ns #^{:doc ""
+       :author "Chas Emerick"}
+  clojure.tools.nrepl.pprinting-test
+  (:use [clojure.tools.nrepl-test :only (def-repl-test repl-server-fixture)]
     clojure.test)
-  (:require [cemerick.nrepl :as repl]))
+  (:require [clojure.tools.nrepl :as repl]))
 
 (use-fixtures :once repl-server-fixture)
 
@@ -9,7 +11,7 @@
   [name & body]
   (when (repl/pretty-print-available?)
     `(def-repl-test ~name
-       (~'repl-receive "(set! cemerick.nrepl/*pretty-print* true)")
+       (~'repl-receive "(set! clojure.tools.nrepl/*pretty-print* true)")
        ~@body)))
 
 (def-pp-test simple-collection
@@ -22,8 +24,8 @@
                count))))
 
 (def-pp-test toggle-pprinting
-  (is (repl-value "cemerick.nrepl/*pretty-print*"))
-  (is (repl-value "(cemerick.nrepl/pretty-print?)"))
-  (repl-receive "(set! cemerick.nrepl/*pretty-print* false)")
-  (is (not (repl-value "cemerick.nrepl/*pretty-print*")))
-  (is (not (repl-value "(cemerick.nrepl/pretty-print?)"))))
+  (is (repl-value "clojure.tools.nrepl/*pretty-print*"))
+  (is (repl-value "(clojure.tools.nrepl/pretty-print?)"))
+  (repl-receive "(set! clojure.tools.nrepl/*pretty-print* false)")
+  (is (not (repl-value "clojure.tools.nrepl/*pretty-print*")))
+  (is (not (repl-value "(clojure.tools.nrepl/pretty-print?)"))))

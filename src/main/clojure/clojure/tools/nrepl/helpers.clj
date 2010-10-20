@@ -1,4 +1,6 @@
-(ns cemerick.nrepl.helpers
+(ns #^{:doc ""
+       :author "Chas Emerick"}
+  clojure.tools.nrepl.helpers
   (:import (java.io File StringReader)))
 
 (defn escape

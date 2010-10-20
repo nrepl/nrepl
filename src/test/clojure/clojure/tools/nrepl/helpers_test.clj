@@ -1,7 +1,9 @@
-(ns cemerick.nrepl.helpers-test
+(ns #^{:doc ""
+       :author "Chas Emerick"}
+  clojure.tools.nrepl.helpers-test
   (:use clojure.test)
   (:require
-    [cemerick.nrepl.helpers :as helpers]))
+    [clojure.tools.nrepl.helpers :as helpers]))
 
 (deftest escape-and-string-argument
   (are [string escaped] (= escaped (helpers/escape string))

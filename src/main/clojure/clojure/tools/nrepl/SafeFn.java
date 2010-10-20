@@ -1,9 +1,12 @@
-package cemerick.nrepl;
+package clojure.tools.nrepl;
 
 import clojure.lang.IFn;
 import clojure.lang.ISeq;
 import clojure.lang.RT;
 
+/**
+ * @author Chas Emerick
+ */
 public class SafeFn implements IFn {
     private IFn f;
 

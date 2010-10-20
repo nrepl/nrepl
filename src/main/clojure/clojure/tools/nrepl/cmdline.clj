@@ -1,5 +1,7 @@
-(ns cemerick.nrepl.cmdline
-  (:require [cemerick.nrepl :as repl]))
+(ns #^{:doc ""
+       :author "Chas Emerick"}
+  clojure.tools.nrepl.cmdline
+  (:require [clojure.tools.nrepl :as repl]))
 
 (defn- ensure-newline
   [s]
@@ -64,7 +66,7 @@
       (binding [*out* *err*]
         (println (format "ack'ing my port %d to other server running on port %s"
                    (.getLocalPort ssocket) ack-port)
-          (:status (#'cemerick.nrepl/send-ack (.getLocalPort ssocket) (Integer/parseInt ack-port))))))
+          (:status (#'clojure.tools.nrepl/send-ack (.getLocalPort ssocket) (Integer/parseInt ack-port))))))
     (if (options "--repl")
       (run-repl (.getLocalPort ssocket) (when (options "--color") colored-output))
       ; need to hold process open with a non-daemon thread -- this should end up being super-temporary
