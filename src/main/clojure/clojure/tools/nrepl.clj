@@ -514,6 +514,8 @@
 
 ;; TODO
 ;; - core
+;;   - support/require :ns on each request?
+;;   - provide ability to reconnect to prior session
 ;;   - proper error handling on the receive loop
 ;;   - make write-response a send-off to avoid blocking in the REP loop.
 ;;   - bind out-of-band message options for evaluated code to access?
