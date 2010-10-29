@@ -38,6 +38,13 @@
        ~@body
        ((:close connection#)))))
 
+(defn- full-response
+  [response-fn]
+  (->> response-fn
+    repl/response-seq
+    (map repl/read-response-value)
+    repl/combine-responses))
+
 (def-repl-test eval-literals
   (are [literal] (= literal (-> literal pr-str repl-value))
     5
@@ -87,9 +94,7 @@
     (is (= history (repl-value "*1")))))
 
 (def-repl-test exceptions
-  (let [{:keys [err status value] :as f} (->> (repl "(throw (Exception. \"bad, bad code\"))")
-                                           repl/response-seq
-                                           repl/combine-responses)]
+  (let [{:keys [err status value] :as f} (full-response (repl "(throw (Exception. \"bad, bad code\"))"))]
     (is (= #{"error" "done"} status))
     (is (nil? value))
     (is (.contains err "bad, bad code"))
@@ -97,9 +102,8 @@
 
 (def-repl-test auto-print-stack-trace
   (is (= true (repl-value "(set! clojure.tools.nrepl/*print-stack-trace-on-error* true)")))
-  (is (.contains (->> (repl "(throw (Exception. \"foo\" (Exception. \"nested exception\")))")
-                   repl/response-seq
-                   repl/combine-responses
+  (is (.contains (-> (repl "(throw (Exception. \"foo\" (Exception. \"nested exception\")))")
+                   full-response
                    :err)
         "nested exception")))
 
@@ -110,18 +114,13 @@
                   :value))))
 
 (def-repl-test return-on-incomplete-expr
-  (let [{:keys [out status value]} (-> (repl "(apply + (range 20)")
-                                     repl/response-seq
-                                     repl/combine-responses)]
+  (let [{:keys [out status value]} (full-response (repl "(apply + (range 20)"))]
     (is (nil? value))
     (is (= #{"done" "error"} status))))
 
 (def-repl-test throw-on-unreadable-return
   (is (thrown-with-msg? Exception #".*#<ArrayList \[\]>.*"
-        (->> (repl "(java.util.ArrayList.)")
-          repl/response-seq
-          (map repl/read-response-value)
-          doall))))
+        (full-response (repl "(java.util.ArrayList.)")))))
 
 (def-repl-test switch-ns
   (is (= "otherns" (:ns (repl-read "(ns otherns) (defn function [] 12)"))))
@@ -269,15 +268,47 @@
                   (map seq colls)))]
     (is (= #{"done"} (-> deffn repl/response-seq repl/combine-responses :status)))
     (is (= (take 3 (repeat [1 2 3]))
-          (->> (repl/send-with connection
+          (-> (repl/send-with connection
                  (send-with-test/as-seqs
                    '(1 2 3) [1 2 3] (into (sorted-set) #{1 2 3})))
-             repl/response-seq
-             (map repl/read-response-value)
-             repl/combine-responses
+             full-response
              :value
              first)))))
 
 (def-repl-test eval-literal
   (is (= [5] (repl/values-with connection 5)))
   (is (= [5 124750] (repl/values-with connection 5 (apply + (range 500))))))
+
+(def-repl-test retained-session
+  (let [session-id (-> (repl/send-with connection
+                         (clojure.tools.nrepl/retain-session!))
+                     full-response
+                     :value
+                     first)
+        resp (with-open [c2 (repl/connect *server-port*)]
+               (full-response ((:send c2)
+                      "(throw (Exception. \"retainedsession\")) (range 5) :foo {:a 5}"
+                      :session-id session-id)))]
+    (is session-id)
+    (is (.contains (:err resp) "retainedsession"))
+    (is (= (:value resp) [(range 5) :foo {:a 5}]))
+    (is (= #{"done" "error"} (:status resp)))
+    
+    (let [[[ex & restvals]] (with-open [c2 (repl/connect *server-port*)]
+                              (-> ((:send c2) "[(str *e) *3 *2 *1]" :session-id session-id)
+                                full-response
+                                :value))]
+      (is (.contains ex "retainedsession"))
+      (is (= restvals [(range 5) :foo {:a 5}])))
+    
+    (is (with-open [c2 (repl/connect *server-port*)]
+          (->> ((:send c2) "(clojure.tools.nrepl/release-session!)" :session-id session-id)
+            full-response
+            :value
+            first)))
+    
+    (is (nil? (with-open [c2 (repl/connect *server-port*)]
+                (->> ((:send c2) "*e" :session-id session-id)
+                  full-response
+                  :value
+                  first))))))

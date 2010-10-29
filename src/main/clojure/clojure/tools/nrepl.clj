@@ -51,6 +51,11 @@
               keyed by the evaluations' messages' IDs."}
        repl-futures (atom {}))
 
+(def #^{:private true
+        :doc "A map of session-ids -> client-state-atoms.  Sessions are not retained
+              except by client request."}
+  retained-sessions (atom {}))
+
 (defn get-all-msg-ids
   []
   (keys @repl-futures))
@@ -110,9 +115,7 @@
     (binding [*out* out]
       (prn (count msg))
       (doseq [[k v] msg]
-        (if (string? k)
-          (prn k)
-          (prn (name k)))
+        (prn (if (string? k) k (name k)))
         (prn v))
       (flush)))
   (:id msg))
@@ -152,8 +155,7 @@
         writer (PrintWriter. (proxy [Writer] []
                                (close []
                                  (.flush this))
-                               (write
-                                 [& [x off len]]
+                               (write [& [x off len]]
                                  (cond
                                    (number? x) (send sw #(.append #^StringBuilder % (char x)))
                                    (not off) (send sw #(.append #^StringBuilder % x))
@@ -170,46 +172,71 @@
     [sw writer]))
 
 (defn- create-response
-  [client-state-atom & options]
+  [current-session & options]
   (assoc (apply hash-map options)
-    :ns (-> @client-state-atom :ns ns-name str)))
+    :ns (-> @@current-session :ns ns-name str)))
+
+(defn retain-session!
+  "Retains the current repl session, returning the opaque string ID it
+   is associated with.  This only needs to be done once per session to
+   maintain its retention.  Other connections must specify a session-id
+   in order to use the corresponding session.
+
+   Please use release-session when you're done with one, or it'll never
+   get GC'd.  This is an implementation detail; future versions of nrepl
+   may institute some kind of reasonable session expiration policy."
+  [client-state-atom]
+  (let [session-id (or (:session-id @client-state-atom)
+                     (str (java.util.UUID/randomUUID)))]
+    (swap! client-state-atom assoc :session-id session-id)
+    (swap! retained-sessions assoc session-id client-state-atom)
+    (println "Retained session" (select-keys @client-state-atom [:session-id :value-1 :value-2 :value-3 :last-exception]))
+    session-id))
+
+(defn release-session!
+  "Releases the current session, indicating that it will not be requested
+   again.  Returns true iff the session had been previously retained."
+  [client-state-atom]
+  (when-let [session-id (:session-id @client-state-atom)]
+    (swap! retained-sessions dissoc session-id)
+    true))
+
+(defn- apply-session!
+  [client-state]
+  (let [{:keys [value-3 value-2 value-1 last-exception ns warn-on-reflection
+                math-context print-meta print-length print-level compile-path
+                command-line-args print-stack-trace-on-error pretty-print]} client-state]
+    (in-ns (ns-name ns))
+    (set!-many
+      *3 value-3
+      *2 value-2
+      *1 value-1
+      *e last-exception
+      *print-stack-trace-on-error* print-stack-trace-on-error
+      *pretty-print* pretty-print
+      *warn-on-reflection* warn-on-reflection
+      *math-context* math-context
+      *print-meta* print-meta
+      *print-length* print-length
+      *print-level* print-level
+      *compile-path* compile-path
+      *command-line-args* command-line-args)))
 
 (defn- handle-request
   [client-state-atom write-response {:keys [code in interrupt-atom] :or {in ""}}]
-  (let [{:keys [value-3 value-2 value-1 last-exception ns warn-on-reflection
-                math-context print-meta print-length print-level compile-path
-                command-line-args print-stack-trace-on-error pretty-print]} @client-state-atom
-        ; it seems like there's more value in combining *out* and *err*
-        ; (thereby preserving the interleaved nature of that output, as typically rendered)
-        ; than there is in separating them for the client
-        ; (which could never recombine them properly, unless we timestamp each line or something)
-        code-reader (LineNumberingPushbackReader. (StringReader. code))
+  (let [code-reader (LineNumberingPushbackReader. (StringReader. code))
         [out-agent out] (create-repl-out :out write-response)
-        [err-agent err] (create-repl-out :err write-response)
-        repl-init (fn []
-                    (in-ns (ns-name ns))
-                    (set!-many
-                      *3 value-3
-                      *2 value-2
-                      *1 value-1
-                      *e last-exception
-                      *print-stack-trace-on-error* print-stack-trace-on-error
-                      *pretty-print* pretty-print
-                      *warn-on-reflection* warn-on-reflection
-                      *math-context* math-context
-                      *print-meta* print-meta
-                      *print-length* print-length
-                      *print-level* print-level
-                      *compile-path* compile-path
-                      *command-line-args* command-line-args))]
+        [err-agent err] (create-repl-out :err write-response)]
     (binding [*in* (LineNumberingPushbackReader. (StringReader. in))
               *out* out
               *err* err
               *print-stack-trace-on-error* *print-stack-trace-on-error*
-              *pretty-print* *pretty-print*]
+              *pretty-print* *pretty-print*
+              release-session! (partial release-session! client-state-atom)
+              retain-session! (partial retain-session! client-state-atom)]
       (try
         (clojure.main/repl
-          :init repl-init
+          :init (partial apply-session! @client-state-atom)
           :read (fn [prompt exit] (read code-reader false exit))
           :caught (fn [e]
                     (if @interrupt-atom ; we're interrupted, bugger out ASAP
@@ -275,18 +302,20 @@
         :error "handle-response interrupted; this is probably an nREPL bug"))))
   
 (defn- message-dispatch
-  [client-state read-message write-response]
+  [current-session read-message write-response]
   ; TODO ouch, need some error handling here :-/
   (let [interrupt-atom (atom false)
-        {:keys [id code] :as msg} (assoc (read-message) :interrupt-atom interrupt-atom)
+        {:keys [id code session-id] :as msg} (assoc (read-message) :interrupt-atom interrupt-atom)
         write-response (partial write-response :id id)]
+    (when-let [requested-session (and session-id (@retained-sessions session-id))]
+      (reset! current-session requested-session))
     (if-not code
       (write-response :status "error" :error "Received message with no code.")
       (submit (fn []
                 (try
                   (let [interruptable-write-response #(when-not @interrupt-atom
                                                         (apply write-response %&))
-                        future (submit #(#'handle-request client-state interruptable-write-response msg))]
+                        future (submit #(#'handle-request @current-session interruptable-write-response msg))]
                     (swap! repl-futures assoc id {:future future
                                                   :interrupt-atom interrupt-atom})
                     (handle-response future msg write-response))
@@ -302,12 +331,12 @@
   [#^ServerSocket ss]
   (let [sock (.accept ss)
         [in out] (configure-streams sock)
-        client-state (atom (init-client-state))]
+        current-session (atom (atom (init-client-state)))]
     (submit-looping (partial #'message-dispatch
-                      client-state
+                      current-session
                       (partial read-message in)
                       (comp (partial write-message out)
-                        (partial create-response client-state))))))
+                        (partial create-response current-session))))))
 
 (defn- client-message
   "Returns a new message containing
@@ -515,7 +544,6 @@
 ;; TODO
 ;; - core
 ;;   - support/require :ns on each request?
-;;   - provide ability to reconnect to prior session
 ;;   - proper error handling on the receive loop
 ;;   - make write-response a send-off to avoid blocking in the REP loop.
 ;;   - bind out-of-band message options for evaluated code to access?
