@@ -312,3 +312,11 @@
                   full-response
                   :value
                   first))))))
+
+(def-repl-test explicit-ns
+  (= "baz" (-> (repl/send-with connection
+                 (def bar 5)
+                 (ns baz))
+             full-response
+             :ns))
+  (= 5 (repl-value "bar" :ns "user")))

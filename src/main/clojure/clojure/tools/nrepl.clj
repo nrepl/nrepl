@@ -223,7 +223,7 @@
       *command-line-args* command-line-args)))
 
 (defn- handle-request
-  [client-state-atom write-response {:keys [code in interrupt-atom] :or {in ""}}]
+  [client-state-atom write-response {:keys [code in interrupt-atom ns] :or {in ""} :as msg}]
   (let [code-reader (LineNumberingPushbackReader. (StringReader. code))
         [out-agent out] (create-repl-out :out write-response)
         [err-agent err] (create-repl-out :err write-response)]
@@ -236,7 +236,9 @@
               retain-session! (partial retain-session! client-state-atom)]
       (try
         (clojure.main/repl
-          :init (partial apply-session! @client-state-atom)
+          :init (partial apply-session! (if ns
+                                          (assoc @client-state-atom :ns (symbol ns))
+                                          @client-state-atom))
           :read (fn [prompt exit] (read code-reader false exit))
           :caught (fn [e]
                     (if @interrupt-atom ; we're interrupted, bugger out ASAP
@@ -543,7 +545,7 @@
 
 ;; TODO
 ;; - core
-;;   - support/require :ns on each request?
+;;   - include :ns in responses only alongside :value and [:status "done"]
 ;;   - proper error handling on the receive loop
 ;;   - make write-response a send-off to avoid blocking in the REP loop.
 ;;   - bind out-of-band message options for evaluated code to access?
