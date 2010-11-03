@@ -14,11 +14,9 @@
     <developers>
         <developer>
             <name>Chas Emerick</name>
-            <email>cemerick@snowtide.com</email>
-            <organization>Snowtide Informatics</organization>
-            <organizationUrl>http://snowtide.com</organizationUrl>
-            <timezone>-5</timezone>
             <url>http://cemerick.com</url>
+            <email>cemerick@snowtide.com</email>
+            <timezone>-5</timezone>
         </developer>
     </developers>
 
