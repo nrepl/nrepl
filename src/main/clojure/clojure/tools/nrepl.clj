@@ -545,6 +545,9 @@
 
 ;; TODO
 ;; - core
+;;   - instead of using .printStackTrace when *print-stack-trace-on-error*,
+;;     invoke a session-retained set!-able fn; easy place to swap in clj-stacktrace, etc
+;;   - add support for clojure 1.3.0 (var changes being the big issue there)
 ;;   - include :ns in responses only alongside :value and [:status "done"]
 ;;   - proper error handling on the receive loop
 ;;   - make write-response a send-off to avoid blocking in the REP loop.
