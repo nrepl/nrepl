@@ -1,7 +1,7 @@
 (ns #^{:doc ""
        :author "Chas Emerick"}
   clojure.tools.nrepl
-  (:require clojure.main)
+  (:require clojure.main clojure.tools.nrepl.helpers)
   (:import (java.net ServerSocket)
     clojure.lang.LineNumberingPushbackReader
     java.lang.ref.WeakReference
@@ -547,15 +547,16 @@
 ;; - core
 ;;   - instead of using .printStackTrace when *print-stack-trace-on-error*,
 ;;     invoke a session-retained set!-able fn; easy place to swap in clj-stacktrace, etc
+;;   - ensure init-client-state includes all defaults set by main/with-bindings
 ;;   - add support for clojure 1.3.0 (var changes being the big issue there)
+;;   - figure out why tests are being run multiple times
 ;;   - include :ns in responses only alongside :value and [:status "done"]
 ;;   - proper error handling on the receive loop
 ;;   - make write-response a send-off to avoid blocking in the REP loop.
 ;;   - bind out-of-band message options for evaluated code to access?
 ;; - tools
-;;   - add ClojureQL-style quasiquoting to in-repl
+;;   - add ClojureQL-style quasiquoting to send-with
 ;; - streams
-;;   - what to do about *out* / *err* in futures, agent sends, etc?
 ;;   - optionally multiplex System/out and System/err
 ;;   - optionally join multiplexed S/out and S/err, receive :stdout, :stderr msgs
 ;; - protocols and transport
