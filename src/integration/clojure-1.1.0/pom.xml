@@ -24,7 +24,7 @@
             <plugin>
                 <groupId>com.theoryinpractise</groupId>
                 <artifactId>clojure-maven-plugin</artifactId>
-                <version>1.3.3</version>
+                <version>1.3.5</version>
                 <configuration>
                     <baseTestSourceDirectory>@basedir@/src/test/clojure</baseTestSourceDirectory>
                 </configuration>

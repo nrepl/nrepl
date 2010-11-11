@@ -32,11 +32,12 @@
         (nrepl/values-with connection
           (-> #'dfunction
             meta
-            (select-keys [:file :line])))))
-  
+            (select-keys [:file :line]))))))
+
+(def-repl-test load-file-with-debug-info
   (repl-receive (helpers/load-file-command
-                  (File. "src/test/clojure/clojure/tools/nrepl/load_file_sample.clj")
-                  (File. "src/test/clojure")))
+                  (File. "load-file-test/clojure/tools/nrepl/load_file_sample.clj")
+                  (File. "load-file-test")))
   (is (= [{:file "clojure/tools/nrepl/load_file_sample.clj" :line 5}]
         (nrepl/values-with connection
           (-> #'clojure.tools.nrepl.load-file-sample/dfunction
