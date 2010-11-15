@@ -236,7 +236,7 @@
 
 (deftest repl-out-writer
   (let [responses (atom [])
-        [w-agent w] (#'repl/create-repl-out :out #(swap! responses conj %&))]
+        w (#'repl/create-repl-out :out #(swap! responses conj %&))]
     (doto w
       .flush
       (.write "abcd")
@@ -254,7 +254,6 @@
         (prn #{})
         (flush)))
     
-    (await w-agent)
     (is (= [[:out "abcdefghij "]
             [:out "no writes\nkeyed on linebreaks"]
             [:out "\n#{}\n"]]
@@ -320,3 +319,14 @@
              full-response
              :ns))
   (= 5 (repl-value "bar" :ns "user")))
+
+(def-repl-test proper-response-ordering
+  (is (= [[nil "100\n"] ; printed number
+          ["nil\n" nil] ; return val from println
+          ["42\n" nil]  ; return val from `42`
+          [nil nil]]             ; :done message
+        (->> (repl/send-with connection
+               (println 100)
+               42)
+          repl/response-seq
+          (map (juxt :value :out))))))

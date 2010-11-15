@@ -112,7 +112,8 @@
   "Writes the given message to the writer. Returns the :id of the message."
   [#^Writer out msg]
   (locking out
-    (binding [*out* out]
+    (binding [*out* out
+              *print-readably* true]
       (prn (count msg))
       (doseq [[k v] msg]
         (prn (if (string? k) k (name k)))
@@ -151,25 +152,24 @@
 
 (defn- create-repl-out
   [stream-key write-response]
-  (let [sw (agent (StringBuilder.))
-        writer (PrintWriter. (proxy [Writer] []
-                               (close []
-                                 (.flush this))
-                               (write [& [x off len]]
-                                 (cond
-                                   (number? x) (send sw #(.append #^StringBuilder % (char x)))
-                                   (not off) (send sw #(.append #^StringBuilder % x))
-                                   off (send sw #(.append #^StringBuilder % x off len))))
-                               (flush []
-                                 (send-off sw
-                                   #(if (zero? (.length #^StringBuilder %))
-                                      %
-                                      (do
-                                        (write-response stream-key (str %))
-                                        ; would use (.setLength % 0) here, but clojure 1.1 fails that with
-                                        ; => Can't call public method of non-public class: public void java.lang.AbstractStringBuilder.setLength
-                                        (StringBuilder.)))))))]
-    [sw writer]))
+  (let [sb (ref (StringBuilder.))]
+    (PrintWriter. (proxy [Writer] []
+                    (close []
+                      (.flush this))
+                    (write [& [x off len]]
+                      (dosync
+                        (cond
+                          (number? x) (alter sb #(.append #^StringBuilder % (char x)))
+                          (not off) (alter sb #(.append #^StringBuilder % x))
+                          off (alter sb #(.append #^StringBuilder % x off len)))))
+                    (flush []
+                      ; would use (.setLength % 0) here, but clojure 1.1 fails that with
+                      ; => Can't call public method of non-public class: public void java.lang.AbstractStringBuilder.setLength
+                      (let [buffer (dosync (let [buffer @sb]
+                                             (ref-set sb (StringBuilder.))
+                                             buffer))]
+                        (when (pos? (.length #^StringBuilder buffer))
+                          (write-response stream-key (str buffer)))))))))
 
 (defn- create-response
   [current-session & options]
@@ -190,7 +190,6 @@
                      (str (java.util.UUID/randomUUID)))]
     (swap! client-state-atom assoc :session-id session-id)
     (swap! retained-sessions assoc session-id client-state-atom)
-    (println "Retained session" (select-keys @client-state-atom [:session-id :value-1 :value-2 :value-3 :last-exception]))
     session-id))
 
 (defn release-session!
@@ -225,8 +224,8 @@
 (defn- handle-request
   [client-state-atom write-response {:keys [code in interrupt-atom ns] :or {in ""} :as msg}]
   (let [code-reader (LineNumberingPushbackReader. (StringReader. code))
-        [out-agent out] (create-repl-out :out write-response)
-        [err-agent err] (create-repl-out :err write-response)]
+        out (create-repl-out :out write-response)
+        err (create-repl-out :err write-response)]
     (binding [*in* (LineNumberingPushbackReader. (StringReader. in))
               *out* out
               *err* err
@@ -265,9 +264,7 @@
                                             (if (pretty-print?)
                                               (pprint value)
                                               (prn value))))))
-        (finally (.flush *out*) (.flush *err*))))
-    
-    (await out-agent err-agent)))
+        (finally (.flush *out*) (.flush *err*))))))
 
 (def #^{:private true
         :doc "Currently one minute; this can't just be Long/MAX_VALUE, or we'll inevitably
@@ -557,6 +554,7 @@
 ;; - tools
 ;;   - add ClojureQL-style quasiquoting to send-with
 ;; - streams
+;;   - multiplex new *out*'s to System/out (or things like clojure.test/*test-out* will just disappear into the ether)
 ;;   - optionally multiplex System/out and System/err
 ;;   - optionally join multiplexed S/out and S/err, receive :stdout, :stderr msgs
 ;; - protocols and transport
