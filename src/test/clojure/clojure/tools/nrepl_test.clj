@@ -101,7 +101,7 @@
     (is (= true (repl-value "(.contains (str *e) \"bad, bad code\")")))))
 
 (def-repl-test auto-print-stack-trace
-  (is (= true (repl-value "(set! clojure.tools.nrepl/*print-stack-trace-on-error* true)")))
+  (is (= true (repl-value "(set! clojure.tools.nrepl/*print-detail-on-error* true)")))
   (is (.contains (-> (repl "(throw (Exception. \"foo\" (Exception. \"nested exception\")))")
                    full-response
                    :err)
@@ -300,3 +300,17 @@
                42)
           repl/response-seq
           (map (juxt :value :out))))))
+
+(def-repl-test install-custom-error-detail-fn
+  (->> (repl/send-with connection
+         (set! clojure.tools.nrepl/*print-error-detail*
+           (fn [ex] (print "custom printing!")))
+         (set! clojure.tools.nrepl/*print-detail-on-error* true))
+    repl/response-seq
+    doall)
+  (is (= "custom printing!"
+        (->> (repl/send-with connection
+               (throw (Exception. "foo")))
+          full-response
+          :err))))
+
