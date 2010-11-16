@@ -10,6 +10,6 @@ import clojure.lang.Var;
 public class main {
     public static void main (String[] args) throws Exception {
         RT.var("clojure.core", "require").invoke(Symbol.intern("clojure.tools.nrepl.cmdline"));
-        RT.var("clojure.tools.nrepl.cmdline", "main").applyTo(RT.seq(args));
+        RT.var("clojure.tools.nrepl.cmdline", "-main").applyTo(RT.seq(args));
     }
 }

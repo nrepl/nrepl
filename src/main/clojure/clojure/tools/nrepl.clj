@@ -546,7 +546,6 @@
 ;;     invoke a session-retained set!-able fn; easy place to swap in clj-stacktrace, etc
 ;;   - ensure init-client-state includes all defaults set by main/with-bindings
 ;;   - add support for clojure 1.3.0 (var changes being the big issue there)
-;;   - figure out why tests are being run multiple times
 ;;   - include :ns in responses only alongside :value and [:status "done"]
 ;;   - proper error handling on the receive loop
 ;;   - make write-response a send-off to avoid blocking in the REP loop.

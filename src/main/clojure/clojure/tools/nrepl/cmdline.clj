@@ -44,7 +44,7 @@
                      (when (:err res) (err (:err res)))
                      ns))))))))
 
-(def #^{:private true} unary-options #{"--repl" "--server" "--color"})
+(def #^{:private true} unary-options #{"--interactive" "--color"})
 
 (defn- split-args
   [args]
@@ -58,7 +58,7 @@
         (recur (rest rem-args)
           (assoc options arg (first rem-args)))))))
 
-(defn main
+(defn -main
   [& args]
   (let [[options args] (split-args args)
         [ssocket _] (repl/start-server (Integer/parseInt (or (options "--port") "0")))]
@@ -67,7 +67,7 @@
         (println (format "ack'ing my port %d to other server running on port %s"
                    (.getLocalPort ssocket) ack-port)
           (:status (#'clojure.tools.nrepl/send-ack (.getLocalPort ssocket) (Integer/parseInt ack-port))))))
-    (if (options "--repl")
+    (if (options "--interactive")
       (run-repl (.getLocalPort ssocket) (when (options "--color") colored-output))
       ; need to hold process open with a non-daemon thread -- this should end up being super-temporary
       (Thread/sleep Long/MAX_VALUE))))
