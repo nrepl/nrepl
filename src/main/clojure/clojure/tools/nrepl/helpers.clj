@@ -24,19 +24,19 @@
    when loaded)."
   ([f] (load-file-command f nil))
   ([f source-root]
-    (let [abspath (.getAbsolutePath f)
+    (let [abspath (if (string? f) f (.getAbsolutePath f))
           source-root (cond
                           (nil? source-root) ""
                           (string? source-root) source-root
                           (instance? File source-root) (.getAbsolutePath source-root))]
-      (load-file-command (slurp (.getAbsolutePath f) "UTF-8")
+      (load-file-command (slurp abspath "UTF-8")
         (if (and (seq source-root)
               (.startsWith abspath source-root))
           (-> abspath
             (.substring (count source-root))
             (.replaceAll "^[/\\\\]" ""))
           abspath)
-        (.getName f))))
+        (-> abspath File. .getName))))
   ([code file-path file-name]
     (apply format
       "(clojure.lang.Compiler/load (java.io.StringReader. %s) %s %s)"
