@@ -19,6 +19,12 @@
             <timezone>-5</timezone>
         </developer>
     </developers>
+    
+    <scm>
+        <connection>scm:git:git@github.com:clojure/tools.nrepl.git</connection>
+        <developerConnection>scm:git:git@github.com:clojure/tools.nrepl.git</developerConnection>
+        <url>git@github.com:clojure/tools.nrepl.git</url>
+    </scm>
 
     <repositories>
         <!-- if our parent pom were a release (and in central), then this would be unnecessary -->
