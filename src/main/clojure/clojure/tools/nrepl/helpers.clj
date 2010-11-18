@@ -3,14 +3,6 @@
   clojure.tools.nrepl.helpers
   (:import (java.io File StringReader)))
 
-(defn escape
-  [#^String s]
-  (.replace s "\"" "\\\""))
-
-(defn string-argument
-  [s]
-  (str \" (escape s) \"))
-
 (defn load-file-command
   "Returns a string expression that can be sent to an nREPL session to
    load the code in given local file in the remote REPL's environment,
@@ -40,4 +32,4 @@
   ([code file-path file-name]
     (apply format
       "(clojure.lang.Compiler/load (java.io.StringReader. %s) %s %s)"
-      (map string-argument [code file-path file-name]))))
+      (map pr-str [code file-path file-name]))))

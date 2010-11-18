@@ -10,14 +10,6 @@
 
 (use-fixtures :once repl-server-fixture)
 
-(deftest escape-and-string-argument
-  (are [string escaped] (= escaped (helpers/escape string))
-    "a" "a"
-    "\"a" "\\\"a")
-  (are [string arg] (= arg (helpers/string-argument string))
-    "a" "\"a\""
-    "\"a" "\"\\\"a\""))
-
 (def-repl-test load-code-with-debug-info
   (repl-receive "\n\n\n(defn function [])")
   (is (= {:file "NO_SOURCE_PATH" :line 4}

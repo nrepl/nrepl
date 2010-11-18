@@ -2,4 +2,6 @@
 
 
 
-(defn dfunction [])
+(defn dfunction
+  "Ensure \t that \n the \r various \f escapes \" work \\ as expected \\\""
+  [])
