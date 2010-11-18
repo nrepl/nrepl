@@ -553,7 +553,7 @@
 
 ;; TODO
 ;; - core
-;;   - ensure init-client-state includes all defaults set by main/with-bindings
+;;   - ensure init-client-state includes all defaults set by main/with-bindings (e.g. *compile-path* is missing)
 ;;   - add support for clojure 1.3.0 (var changes being the big issue there)
 ;;   - include :ns in responses only alongside :value and [:status "done"]
 ;;   - proper error handling on the receive loop
