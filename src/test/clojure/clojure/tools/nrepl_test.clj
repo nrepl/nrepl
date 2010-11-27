@@ -187,23 +187,6 @@
         (is (< (count promises-map) 1000) "Response promises map has not been pruned at all; weak ref scheme (maybe) not working.")
         (close)))))
 
-(defn- redirect-process-output
-  [process]
-  (future (try
-            (let [out (-> process .getInputStream java.io.InputStreamReader. java.io.BufferedReader.)
-                  err (-> process .getErrorStream java.io.InputStreamReader. java.io.BufferedReader.)]
-              (println (.readLine err))
-              (println (.readLine err))
-              (println (.readLine err))
-              (println (.readLine err))
-              (println (.readLine err))
-              (println (.readLine err))
-              (println (.readLine err))
-              (println (.readLine err))
-              (println (.readLine err)))
-            (catch Throwable t
-              (.printStackTrace t)))))
-
 (deftest repl-out-writer
   (let [responses (atom [])
         w (#'repl/create-repl-out :out #(swap! responses conj %&))]

@@ -419,7 +419,7 @@
    Certain message slots are combined in special ways:
 
      - only the second :ns (last in a reduction) is retained
-     - :value is accumulated into a vector
+     - :value is accumulated into an ordered collection
      - :status is accumulated into a set
      - string values (associated with e.g. :out and :err) are concatenated"
   [responses]

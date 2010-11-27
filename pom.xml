@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.clojure</groupId>
         <artifactId>pom.contrib</artifactId>
-        <version>0.0.9</version>
+        <version>0.0.20-SNAPSHOT</version>
     </parent>
 
     <developers>
