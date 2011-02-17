@@ -34,6 +34,10 @@
         </repository>
     </repositories>
 
+    <properties>
+        <clojure.version>1.2.0</clojure.version>
+    </properties>
+
     <build>
         <resources>
             <resource>

@@ -559,6 +559,7 @@
 ;;   - proper error handling on the receive loop
 ;;   - make write-response a send-off to avoid blocking in the REP loop.
 ;;   - bind out-of-band message options for evaluated code to access?
+;;   - eliminate :status set in combined response (attempting to have value and status per form in a request)
 ;; - tools
 ;;   - add ClojureQL-style quasiquoting to send-with
 ;; - streams
