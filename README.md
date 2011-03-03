@@ -9,6 +9,20 @@ code in remote environments.
 
 ### "Installation"
 
+nREPL is available in Maven central.  Add it to your Maven project's `pom.xml`:
+
+    <dependency>
+      <groupId>org.clojure</groupId>
+      <artifactId>tools.nrepl</artifactId>
+      <version>0.0.4</version>
+    </dependency>
+
+or your leiningen project.clj:
+
+    [org.clojure/tools.nrepl "0.0.4"]
+
+Please note the changelog below.
+
 ### Embedding nREPL
 
 This library is in its infancy.  More info to come.  In the meantime,
@@ -230,6 +244,15 @@ straightforward.)
 limitations of Java’s threading model.  For more read
 [here](http://download.oracle.com/javase/1.5.0/docs/api/java/lang/Thread.html#interrupt%28%29)
 and [here](http://download.oracle.com/javase/1.5.0/docs/guide/misc/threadPrimitiveDeprecation.html).*
+
+## Change Log
+
+`0.0.4`:
+
+- fixed (hacked) obtaining `clojure.test` output when `clojure.test` is initially
+loaded within an nREPL session
+- eliminated 1-minute default timeout on expression evaluation
+- all standard REPL var bindings are now properly established and maintained within a session
 
 ## Thanks
 
