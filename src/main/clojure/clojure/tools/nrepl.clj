@@ -141,22 +141,23 @@
 
 (defn- create-repl-out
   [stream-key write-response]
-  (let [sb (ref (StringBuilder.))]
+  (let [sb (atom (StringBuilder.))]
     (PrintWriter. (proxy [Writer] []
                     (close []
                       (.flush this))
                     (write [& [x off len]]
-                      (dosync
+                      (locking sb
                         (cond
-                          (number? x) (alter sb #(.append #^StringBuilder % (char x)))
-                          (not off) (alter sb #(.append #^StringBuilder % x))
-                          off (alter sb #(.append #^StringBuilder % x off len)))))
+                          (number? x) (swap! sb #(.append #^StringBuilder % (char x)))
+                          (not off) (swap! sb #(.append #^StringBuilder % x))
+                          off (swap! sb #(.append #^StringBuilder % x off len)))))
                     (flush []
                       ; would use (.setLength % 0) here, but clojure 1.1 fails that with
                       ; => Can't call public method of non-public class: public void java.lang.AbstractStringBuilder.setLength
-                      (let [buffer (dosync (let [buffer @sb]
-                                             (ref-set sb (StringBuilder.))
-                                             buffer))]
+                      (let [buffer (locking sb
+                                     (let [buffer @sb]
+                                       (reset! sb (StringBuilder.))
+                                       buffer))]
                         (when (pos? (.length #^StringBuilder buffer))
                           (write-response stream-key (str buffer)))))))))
 
