@@ -3,7 +3,8 @@
   clojure.tools.nrepl
   (:require clojure.main
     clojure.stacktrace
-    clojure.tools.nrepl.helpers)
+    clojure.tools.nrepl.helpers
+    clojure.test)
   (:import (java.net ServerSocket)
     (clojure.lang Var LineNumberingPushbackReader)
     java.lang.ref.WeakReference
@@ -205,6 +206,11 @@
                                        {#'*in* (LineNumberingPushbackReader. (StringReader. in))
                                         #'*out* out
                                         #'*err* err
+                                        ; clojure.test captures *out* at load-time, so we need to make sure
+                                        ; runtime output of test status/results is redirected properly
+                                        ; TODO is this something we need to consider in general, or is this
+                                        ; specific hack reasonable?
+                                        #'clojure.test/*test-out* out
                                         #'release-session! (partial release-session! client-state-atom)
                                         #'retain-session! (partial retain-session! client-state-atom)}
                                        (when ns {#'*ns* (-> ns symbol find-ns)})))
@@ -520,7 +526,10 @@
 ;; - tools
 ;;   - add ClojureQL-style quasiquoting to send-with
 ;; - streams
-;;   - multiplex new *out*'s to System/out (or things like clojure.test/*test-out* will just disappear into the ether)
+;;   - multiplex new *out*'s to System/out
+;;        (still won't solve clojure.test/*test-out* content will disappearing into the ether
+;;          when it's loaded when *out* is bound to an nREPL out; maybe we should ensure *out* is bound to
+;;          System/out while code is being loaded?)
 ;;   - optionally multiplex System/out and System/err
 ;;   - optionally join multiplexed S/out and S/err, receive :stdout, :stderr msgs
 ;; - protocols and transport
