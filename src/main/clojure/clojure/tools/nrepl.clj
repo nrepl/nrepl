@@ -5,7 +5,7 @@
     clojure.stacktrace
     clojure.tools.nrepl.helpers)
   (:import (java.net ServerSocket)
-    clojure.lang.LineNumberingPushbackReader
+    (clojure.lang Var LineNumberingPushbackReader)
     java.lang.ref.WeakReference
     (java.util Collections Map WeakHashMap)
     (java.io Reader InputStreamReader BufferedReader PushbackReader StringReader
@@ -139,24 +139,6 @@
           (map #(vector (-> % first keyword) (second %)))
           (into {}))))))
 
-(defn- init-client-state
-  "Returns a map containing the 'baseline' client state of the current thread; everything
-   that with-bindings binds, except for the prior result values, *e, and *ns*."
-  []
-  {:warn-on-reflection *warn-on-reflection*, :math-context *math-context*,
-   :print-meta *print-meta*, :print-length *print-length*,
-   :print-level *print-level*, :compile-path *compile-path*
-   :command-line-args *command-line-args*
-   :ns (create-ns 'user)
-   :print-detail-on-error *print-detail-on-error*
-   :pretty-print *pretty-print*
-   :print-error-detail clojure.stacktrace/print-cause-trace})
-
-(defmacro #^{:private true} set!-many
-  [& body]
-  (let [pairs (partition 2 body)]
-    `(do ~@(for [[var value] pairs] (list 'set! var value)))))
-
 (defn- create-repl-out
   [stream-key write-response]
   (let [sb (ref (StringBuilder.))]
@@ -181,7 +163,7 @@
 (defn- create-response
   [current-session & options]
   (assoc (apply hash-map options)
-    :ns (-> @@current-session :ns ns-name str)))
+    :ns (-> (get @@current-session #'*ns*) ns-name str)))
 
 (defn retain-session!
   "Retains the current repl session, returning the opaque string ID it
@@ -193,9 +175,9 @@
    get GC'd.  This is an implementation detail; future versions of nrepl
    may institute some kind of reasonable session expiration policy."
   [client-state-atom]
-  (let [session-id (or (:session-id @client-state-atom)
+  (let [session-id (or (-> @client-state-atom meta :session-id)
                      (str (java.util.UUID/randomUUID)))]
-    (swap! client-state-atom assoc :session-id session-id)
+    (swap! client-state-atom vary-meta assoc :session-id session-id)
     (swap! retained-sessions assoc session-id client-state-atom)
     session-id))
 
@@ -203,89 +185,64 @@
   "Releases the current session, indicating that it will not be requested
    again.  Returns true iff the session had been previously retained."
   [client-state-atom]
-  (when-let [session-id (:session-id @client-state-atom)]
+  (when-let [session-id (-> @client-state-atom meta :session-id)]
     (swap! retained-sessions dissoc session-id)
     true))
-
-(defn- apply-session!
-  [client-state]
-  (let [{:keys [value-3 value-2 value-1 last-exception ns warn-on-reflection
-                math-context print-meta print-length print-level compile-path
-                command-line-args print-detail-on-error pretty-print
-                print-error-detail]} client-state]
-    (in-ns (ns-name ns))
-    (set!-many
-      *3 value-3
-      *2 value-2
-      *1 value-1
-      *e last-exception
-      *print-detail-on-error* print-detail-on-error
-      *print-error-detail* print-error-detail
-      *pretty-print* pretty-print
-      *warn-on-reflection* warn-on-reflection
-      *math-context* math-context
-      *print-meta* print-meta
-      *print-length* print-length
-      *print-level* print-level
-      *compile-path* compile-path
-      *command-line-args* command-line-args)))
 
 (defn- handle-request
   [client-state-atom write-response {:keys [code in interrupt-atom ns] :or {in ""} :as msg}]
   (let [code-reader (LineNumberingPushbackReader. (StringReader. code))
         out (create-repl-out :out write-response)
         err (create-repl-out :err write-response)]
-    (binding [*in* (LineNumberingPushbackReader. (StringReader. in))
-              *out* out
-              *err* err
-              *print-detail-on-error* *print-detail-on-error*
-              *pretty-print* *pretty-print*
-              *print-error-detail* clojure.stacktrace/print-cause-trace
-              release-session! (partial release-session! client-state-atom)
-              retain-session! (partial retain-session! client-state-atom)]
-      (try
-        (clojure.main/repl
-          :init (partial apply-session! (if ns
-                                          (assoc @client-state-atom :ns (symbol ns))
-                                          @client-state-atom))
-          :read (fn [prompt exit] (read code-reader false exit))
-          :caught (fn [e]
-                    (if @interrupt-atom ; we're interrupted, bugger out ASAP
-                      (throw e)
-                      (let [repl-exception (clojure.main/repl-exception e)]
-                        (swap! client-state-atom assoc :last-exception e)
-                        (write-response :status "error")
-                        (binding [*out* *err*]
-                          (if *print-detail-on-error*
-                            (*print-error-detail* repl-exception)
-                            (prn repl-exception))
-                          (flush)))))
-          :prompt (fn [])
-          :need-prompt (constantly false)
-          :print (fn [value]
-                   (swap! client-state-atom assoc
-                     :value-3 *2
-                     :value-2 *1
-                     :value-1 value
-                     :ns *ns*
-                     :print-detail-on-error *print-detail-on-error*
-                     :print-error-detail *print-error-detail*
-                     :pretty-print *pretty-print*)
-                   (write-response :value (with-out-str
-                                            (if (pretty-print?)
-                                              (pprint value)
-                                              (prn value))))))
-        (finally (.flush *out*) (.flush *err*))))))
+    (try
+      (clojure.main/repl
+        :init #(push-thread-bindings (merge
+                                       {#'*print-detail-on-error* *print-detail-on-error*
+                                        #'*pretty-print* *pretty-print*
+                                        #'*print-error-detail* clojure.stacktrace/print-cause-trace}
+                                       @client-state-atom
+                                       {#'*in* (LineNumberingPushbackReader. (StringReader. in))
+                                        #'*out* out
+                                        #'*err* err
+                                        #'release-session! (partial release-session! client-state-atom)
+                                        #'retain-session! (partial retain-session! client-state-atom)}
+                                       (when ns {#'*ns* (-> ns symbol find-ns)})))
+        :read (fn [prompt exit] (read code-reader false exit))
+        :caught (fn [e]
+                  (if @interrupt-atom ; we're interrupted, bugger out ASAP
+                    (throw e)
+                    (let [repl-exception (clojure.main/repl-exception e)]
+                      (swap! client-state-atom assoc #'*e e)
+                      (write-response :status "error")
+                      (binding [*out* *err*]
+                        (if *print-detail-on-error*
+                          (*print-error-detail* repl-exception)
+                          (prn repl-exception))
+                        (flush)))))
+        :prompt (fn [])
+        :need-prompt (constantly false)
+        :print (fn [value]
+                 (swap! client-state-atom (fn [m]
+                                            ;; carrying over :session-id in particular
+                                            (with-meta (assoc (get-thread-bindings)
+                                                         #'*3 *2
+                                                         #'*2 *1
+                                                         #'*1 value)
+                                              (meta m))))
+                 (write-response :value (with-out-str
+                                          (if (pretty-print?)
+                                            (pprint value)
+                                            (prn value))))))
+      (finally
+        (pop-thread-bindings)
+        (.flush out)
+        (.flush err)))))
 
-(def #^{:private true
-        :doc "Currently one minute; this can't just be Long/MAX_VALUE, or we'll inevitably
-              foul up the executor's threadpool with hopelessly-blocked threads.
-              This can be overridden on a per-request basis by the client."}
-       default-timeout (* 1000 60))
+(def default-timeout (* 1000 60))
 
 (defn- handle-response
   [#^Future future
-   {:keys [id timeout interrupt-atom] :or {timeout default-timeout}}
+   {:keys [id timeout interrupt-atom] :or {timeout Long/MAX_VALUE}}
    write-response]
   (try
     (.get future timeout TimeUnit/MILLISECONDS)
@@ -341,7 +298,7 @@
   [#^ServerSocket ss]
   (let [sock (.accept ss)
         [in out] (configure-streams sock)
-        current-session (atom (atom (init-client-state)))]
+        current-session (atom (atom {#'*ns* (create-ns 'user)}))]
     (submit-looping (partial #'message-dispatch
                       current-session
                       (partial read-message in)
@@ -472,7 +429,7 @@
    - send: a function that takes at least one argument (a code string
            to be evaluated) and optional kwargs:
            :timeout - number in milliseconds specifying the maximum runtime of
-                      accompanying code (default: 60000, one minute)
+                      accompanying code (default: no limit)
            (send ...) returns a response function, described below.
    - close: no-arg function that closes the underlying socket
 
@@ -553,7 +510,6 @@
 
 ;; TODO
 ;; - core
-;;   - ensure init-client-state includes all defaults set by main/with-bindings (e.g. *compile-path* is missing)
 ;;   - add support for clojure 1.3.0 (var changes being the big issue there)
 ;;   - include :ns in responses only alongside :value and [:status "done"]
 ;;   - proper error handling on the receive loop

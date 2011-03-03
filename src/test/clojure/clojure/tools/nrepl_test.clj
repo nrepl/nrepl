@@ -239,8 +239,8 @@
                      first)
         resp (with-open [c2 (repl/connect *server-port*)]
                (full-response ((:send c2)
-                      "(throw (Exception. \"retainedsession\")) (range 5) :foo {:a 5}"
-                      :session-id session-id)))]
+                                "(throw (Exception. \"retainedsession\")) (range 5) :foo {:a 5}"
+                                :session-id session-id)))]
     (is session-id)
     (is (.contains (:err resp) "retainedsession"))
     (is (= (:value resp) [(range 5) :foo {:a 5}]))
@@ -297,3 +297,16 @@
           full-response
           :err))))
 
+(def-repl-test standard-bindings
+  (->> (repl/send-with connection
+         (set! *warn-on-reflection* true)
+         (set! *compile-path* "classes"))
+    repl/response-seq
+    doall)
+  
+  (is (= [true "classes"]
+        (->> (repl/send-with connection
+               [*warn-on-reflection* *compile-path*])
+          full-response
+          :value
+          first))))
