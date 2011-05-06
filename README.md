@@ -14,12 +14,12 @@ nREPL is available in Maven central.  Add it to your Maven project's `pom.xml`:
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>tools.nrepl</artifactId>
-      <version>0.0.4</version>
+      <version>0.0.5</version>
     </dependency>
 
 or your leiningen project.clj:
 
-    [org.clojure/tools.nrepl "0.0.4"]
+    [org.clojure/tools.nrepl "0.0.5"]
 
 Please note the changelog below.
 
@@ -246,6 +246,10 @@ limitations of Java’s threading model.  For more read
 and [here](http://download.oracle.com/javase/1.5.0/docs/guide/misc/threadPrimitiveDeprecation.html).*
 
 ## Change Log
+
+`0.0.5`:
+
+- added Clojure 1.3.0 (ALPHA) compatibility
 
 `0.0.4`:
 

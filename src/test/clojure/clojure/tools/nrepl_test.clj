@@ -183,8 +183,8 @@
             (throw (Exception. (str "Failed response " response)))))
         
         (System/gc)
-        (println "Should be less than 1,000:" (count promises-map))
-        (is (< (count promises-map) 1000) "Response promises map has not been pruned at all; weak ref scheme (maybe) not working.")
+        (is (< (count promises-map) 1000) "Response promises map has not been pruned at all; weak ref scheme (maybe) not working. 
+This mechanism depends upon GC, so it *can* fail sporadically. Run the test again before hunting for strange bugs.")
         (close)))))
 
 (deftest repl-out-writer
