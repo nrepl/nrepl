@@ -16,8 +16,8 @@
       TimeUnit ThreadFactory
       CancellationException ExecutionException TimeoutException)))
 
-(def *print-detail-on-error* false)
-(def *pretty-print* false)
+(def #^{:dynamic true} *print-detail-on-error* false)
+(def #^{:dynamic true} *pretty-print* false)
 
 (def pprint prn)
 (def pretty-print? (constantly false))
@@ -95,11 +95,13 @@
                                  (pr-str "submit-looping: exception occured: " cause)))))
   ([function ex-fn]
     (submit (fn []
-              (try
-                (function)
-                (recur)
-                (catch Exception ex
-                  (ex-fn (root-cause ex))))))))
+              (when (try
+                      (function)
+                      true
+                      (catch Exception ex
+                        (ex-fn (root-cause ex))
+                        false))
+                (recur))))))
 
 (def version
   (when-let [in (-> submit class (.getResourceAsStream "/clojure/tools/nrepl/version.txt"))]
@@ -167,7 +169,7 @@
   (assoc (apply hash-map options)
     :ns (-> (get @@current-session #'*ns*) ns-name str)))
 
-(defn retain-session!
+(defn #^{:dynamic true} retain-session!
   "Retains the current repl session, returning the opaque string ID it
    is associated with.  This only needs to be done once per session to
    maintain its retention.  Other connections must specify a session-id
@@ -183,7 +185,7 @@
     (swap! retained-sessions assoc session-id client-state-atom)
     session-id))
 
-(defn release-session!
+(defn #^{:dynamic true} release-session!
   "Releases the current session, indicating that it will not be requested
    again.  Returns true iff the session had been previously retained."
   [client-state-atom]
@@ -401,7 +403,7 @@
       (assoc r :value [v])
       r)))
 
-(defn- response-promises-map
+(defn- #^{:dynamic true} response-promises-map
   "Here only so we can force a connection to use a given map in tests
    to ensure that messages/response queues are being released
    in conjunction with their associated response fns."

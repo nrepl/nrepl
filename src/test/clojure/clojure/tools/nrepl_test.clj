@@ -13,7 +13,7 @@
                                               "no")))
 (println (str "Pretty-printing available? " (repl/pretty-print-available?)))
 
-(def *server-port* nil)
+(def #^{:dynamic true} *server-port* nil)
 
 (defn repl-server-fixture
   [f]

@@ -13,7 +13,12 @@
 
    If appropriate, the source path from which the code is being loaded may
    be provided as well (suitably trimming the file's path to a relative one
-   when loaded)."
+   when loaded).
+
+   The 3-arg variation of this function expects the full source of the file to be loaded,
+   the source-root-relative path of the source file, and the name of the file.  e.g.:
+
+     (load-file-command \"…code here…\" \"some/ns/name/file.clj\" \"file.clj\")"
   ([f] (load-file-command f nil))
   ([f source-root]
     (let [abspath (if (string? f) f (.getAbsolutePath f))
