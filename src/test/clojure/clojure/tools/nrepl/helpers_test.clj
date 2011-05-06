@@ -8,6 +8,8 @@
     [clojure.tools.nrepl :as nrepl]
     [clojure.tools.nrepl.helpers :as helpers]))
 
+(def project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
+
 (use-fixtures :once repl-server-fixture)
 
 (def-repl-test load-code-with-debug-info
@@ -28,11 +30,11 @@
 
 (def-repl-test load-file-with-debug-info
   (repl-receive (helpers/load-file-command
-                  (File. "load-file-test/clojure/tools/nrepl/load_file_sample.clj")
-                  (File. "load-file-test")))
+                  (File. project-base-dir "load-file-test/clojure/tools/nrepl/load_file_sample.clj")
+                  (File. project-base-dir "load-file-test")))
   (repl-receive (helpers/load-file-command
-                  (.getAbsolutePath (File. "load-file-test/clojure/tools/nrepl/load_file_sample.clj"))
-                  (File. "load-file-test")))
+                  (.getAbsolutePath (File. project-base-dir "load-file-test/clojure/tools/nrepl/load_file_sample.clj"))
+                  (File. project-base-dir "load-file-test")))
   (is (= [{:file "clojure/tools/nrepl/load_file_sample.clj" :line 5}]
         (nrepl/values-with connection
           (-> #'clojure.tools.nrepl.load-file-sample/dfunction
