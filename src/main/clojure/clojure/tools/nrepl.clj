@@ -518,6 +518,9 @@
                           (send-ack (.getLocalPort ss) ack-port))])))
 
 ;; TODO
+;; - FIX
+;;   - => (println " ")
+;;     nil
 ;; - core
 ;;   - add support for clojure 1.3.0 (var changes being the big issue there)
 ;;   - include :ns in responses only alongside :value and [:status "done"]
@@ -536,7 +539,10 @@
 ;;   - optionally join multiplexed S/out and S/err, receive :stdout, :stderr msgs
 ;; - protocols and transport
 ;;   - dependency-free websockets adapter (should be able to run on the same port!)
+;;     - replacement/corollary for https://github.com/weavejester/lein-beanstalk
 ;;   - STOMP when dep-free client and broker impls are available
+;;   - expose REPL service as JMX bean?
+;;   - adopt default port (7889)?
 ;; - cmdline
 ;;   - support for connecting to a server
 ;;   - optionally running other clojure script(s)/java mains prior to starting/connecting to a server
