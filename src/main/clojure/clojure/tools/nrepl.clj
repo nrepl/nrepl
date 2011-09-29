@@ -542,7 +542,7 @@
 ;;     - replacement/corollary for https://github.com/weavejester/lein-beanstalk
 ;;   - STOMP when dep-free client and broker impls are available
 ;;   - expose REPL service as JMX bean?
-;;   - adopt default port (7889)?
+;;   - adopt default port (7888 is availabe…)?
 ;; - cmdline
 ;;   - support for connecting to a server
 ;;   - optionally running other clojure script(s)/java mains prior to starting/connecting to a server
