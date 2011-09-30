@@ -23,6 +23,8 @@ or your leiningen project.clj:
 
 Please note the changelog below.
 
+nREPL is compatible with Clojure 1.1.0 - 1.3.0.
+
 ### Embedding nREPL
 
 This library is in its infancy.  More info to come.  In the meantime,
