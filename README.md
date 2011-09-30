@@ -115,7 +115,9 @@ values may be strings or numbers.  A pseudocode formalism for the message "forma
      <EOL>)+
 
 String keys and values must be quoted and escaped per Clojure standards
-(which should align well with e.g. json, etc).
+(which should align well with e.g. json, etc).  Certain slots may have multiple
+entries, represented as multiple key/value pairs with the same key.  Such slots
+should be treated as having set semantics with regard to the pairs' values.
 
 One can connect to a running nREPL server with a telnet client and interact with
 it using its "wire" message protocol; this isn't intended as a proper usage example,

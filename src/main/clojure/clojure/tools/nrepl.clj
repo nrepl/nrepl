@@ -112,6 +112,21 @@
         rest
         (zipmap [:major :minor :incremental :qualifier])))))
 
+(defn- conj*
+  [coll coll? empty v]
+  (conj
+    (if coll
+      (if (coll? coll)
+        coll
+        (conj empty coll))
+      empty)
+    v))
+
+(defn- as-collection
+  "If v is a collection, returns it, else returns a collection containing v."
+  [v]
+  (if (or (coll? v) (instance? java.util.Collection v)) v [v]))
+
 ;See the README for message format
 ;
 ;Not simply printing and reading maps because the client
@@ -124,7 +139,8 @@
     (binding [*out* out
               *print-readably* true]
       (prn (count msg))
-      (doseq [[k v] msg]
+      (doseq [[k v] msg
+              v (as-collection v)]
         (prn (if (string? k) k (name k)))
         (prn v))
       (flush)))
@@ -139,8 +155,8 @@
         (->> (repeatedly read)
           (take (* 2 msg-size))
           (partition 2)
-          (map #(vector (-> % first keyword) (second %)))
-          (into {}))))))
+          (map #(hash-map (-> % first keyword) (second %)))
+          (apply merge-with hash-set))))))
 
 (defn- create-repl-out
   [stream-key write-response]
@@ -365,16 +381,6 @@
         (cons response
           (when-not (#{"done" "timeout" "interrupted"} (:status response))
             (response-seq response-fn timeout)))))))
-
-(defn- conj*
-  [coll coll? empty v]
-  (conj
-    (if coll
-      (if (coll? coll)
-        coll
-        (conj empty coll))
-      empty)
-    v))
 
 (defn combine-responses
   "Combines the provided response messages into a single response map.
