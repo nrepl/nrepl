@@ -517,12 +517,8 @@
       [ss accept-future (when (pos? ack-port)
                           (send-ack (.getLocalPort ss) ack-port))])))
 
-;; TODO
-;; - FIX
-;;   - => (println " ")
-;;     nil
+;; Ideas:
 ;; - core
-;;   - add support for clojure 1.3.0 (var changes being the big issue there)
 ;;   - include :ns in responses only alongside :value and [:status "done"]
 ;;   - proper error handling on the receive loop
 ;;   - make write-response a send-off to avoid blocking in the REP loop.
@@ -530,19 +526,11 @@
 ;;   - eliminate :status set in combined response (attempting to have value and status per form in a request)
 ;; - tools
 ;;   - add ClojureQL-style quasiquoting to send-with
-;; - streams
-;;   - multiplex new *out*'s to System/out
-;;        (still won't solve clojure.test/*test-out* content will disappearing into the ether
-;;          when it's loaded when *out* is bound to an nREPL out; maybe we should ensure *out* is bound to
-;;          System/out while code is being loaded?)
-;;   - optionally multiplex System/out and System/err
-;;   - optionally join multiplexed S/out and S/err, receive :stdout, :stderr msgs
 ;; - protocols and transport
 ;;   - dependency-free websockets adapter (should be able to run on the same port!)
 ;;     - replacement/corollary for https://github.com/weavejester/lein-beanstalk
 ;;   - STOMP when dep-free client and broker impls are available
 ;;   - expose REPL service as JMX bean?
-;;   - adopt default port (7888 is availabe…)?
 ;; - cmdline
 ;;   - support for connecting to a server
 ;;   - optionally running other clojure script(s)/java mains prior to starting/connecting to a server
