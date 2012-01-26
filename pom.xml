@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.clojure</groupId>
         <artifactId>pom.contrib</artifactId>
-        <version>0.0.20</version>
+        <version>0.0.25</version>
     </parent>
 
     <developers>
@@ -25,14 +25,6 @@
         <developerConnection>scm:git:git@github.com:clojure/tools.nrepl.git</developerConnection>
         <url>git@github.com:clojure/tools.nrepl.git</url>
     </scm>
-
-    <repositories>
-        <!-- if our parent pom were a release (and in central), then this would be unnecessary -->
-        <repository>
-            <id>sonatype-oss-snapshots</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </repository>
-    </repositories>
 
     <properties>
         <clojure.version>1.2.0</clojure.version>
