@@ -125,6 +125,13 @@
     (Integer. "42") "i42e"
     (Long. "42")    "i42e"))
 
+(deftest test-named-writing
+  (are [x y] (= (>output x :writer write-bencode) y)
+    :foo      "3:foo"
+    :foo/bar  "7:foo/bar"
+    'foo      "3:foo"
+    'foo/bar  "7:foo/bar"))
+
 (deftest test-list-writing
   (are [x y] (= (>output x :writer write-bencode) y)
     []                      "le"

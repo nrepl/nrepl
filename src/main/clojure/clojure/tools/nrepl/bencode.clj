@@ -309,13 +309,17 @@
   "Write the given thing to the output stream. “Thing” means here a
   string, map, sequence or integer. Alternatively an ByteArray may
   be provided whose contents are written as a bytestring. Similar
-  the contents of a given InputStream are written as a byte string."
+  the contents of a given InputStream are written as a byte string.
+  Named things (symbols or keywords) are written in the form
+  'namespace/name'."
   (fn [_output thing]
     (cond
       (instance? (RT/classForName "[B") thing) :bytes
       (instance? InputStream thing) :input-stream
       (integer? thing) :integer
       (string? thing)  :string
+      (symbol? thing)  :named
+      (keyword? thing) :named
       (map? thing)     :map
       ;; Check for various sequency things. Yes. This is tedious. But as long
       ;; as we don't have a Seqable protocol, we can't do much about it.
@@ -359,6 +363,19 @@
     (.write (int i))
     (.write (string>payload (str n)))
     (.write (int e))))
+
+;; Symbols and keywords are converted to a string of the
+;; form 'namespace/name' or just 'name' in case its not
+;; qualified. We do not add colons for keywords since the
+;; other side might not have the notion of keywords.
+
+(defmethod write-bencode :named
+  [output thing]
+  (let [nspace (namespace thing)
+        name   (name thing)]
+    (->> (str (when nspace (str nspace "/")) name)
+      string>payload
+      (write-netstring* output))))
 
 ;; Lists as well as maps work recursively to print their elements.
 
