@@ -13,7 +13,8 @@
   (:import
     java.io.InputStream
     java.io.OutputStream
-    java.io.PushbackInputStream))
+    java.io.PushbackInputStream
+    clojure.lang.RT))
 
 ;; # Motivation
 ;;
@@ -303,9 +304,11 @@
 
 (defmulti write-bencode
   "Write the given thing to the output stream. “Thing” means here a
-  string, map, sequence or integer."
+  string, map, sequence or integer. Alternatively an ByteArray may
+  be provided whose contents are written as a bytestring."
   (fn [_output thing]
     (cond
+      (instance? (RT/classForName "[B") thing) :bytes
       (string? thing) :string
       (map? thing)    :map
       ;; Check for various sequency things. Yes. This is tedious. But as long
@@ -322,8 +325,17 @@
           (instance? Long thing))
       :integer)))
 
-;; The following methods should be pretty straight-forward. For strings
-;; we simply write the string as a netstring without trailing comma.
+;; The following methods should be pretty straight-forward.
+;;
+;; The easiest case is of course when we already have a byte array.
+;; We can simply pass it on to the underlying machinery.
+
+(defmethod write-bencode :bytes
+  [output bytes]
+  (write-netstring* output bytes))
+
+;; For strings we simply write the string as a netstring without
+;; trailing comma after encoding the string as UTF-8 bytes.
 
 (defmethod write-bencode :string
   [output string]

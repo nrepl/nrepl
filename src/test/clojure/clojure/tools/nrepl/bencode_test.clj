@@ -89,6 +89,13 @@
     "Hällö, Würld!"  "16:Hällö, Würld!,"
     "Здравей, Свят!" "25:Здравей, Свят!,"))
 
+(deftest test-byte-array-writing
+  (are [x y] (= (>output (>bytes x) :writer write-bencode) y)
+    ""               "0:"
+    "Hello, World!"  "13:Hello, World!"
+    "Hällö, Würld!"  "16:Hällö, Würld!"
+    "Здравей, Свят!" "25:Здравей, Свят!"))
+
 (deftest test-string-writing
   (are [x y] (= (>output x :writer write-bencode) y)
     ""               "0:"
