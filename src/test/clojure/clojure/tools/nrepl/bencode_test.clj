@@ -103,6 +103,14 @@
     "Hällö, Würld!"  "16:Hällö, Würld!"
     "Здравей, Свят!" "25:Здравей, Свят!"))
 
+(deftest test-input-stream-writing
+  (are [x y] (= (>output (ByteArrayInputStream. (>bytes x))
+                         :writer write-bencode) y)
+    ""               "0:"
+    "Hello, World!"  "13:Hello, World!"
+    "Hällö, Würld!"  "16:Hällö, Würld!"
+    "Здравей, Свят!" "25:Здравей, Свят!"))
+
 (deftest test-integer-writing
   (are [x y] (= (>output x :writer write-bencode) y)
       0 "i0e"

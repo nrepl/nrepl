@@ -10,7 +10,10 @@
 (ns #^{:author "Meikel Brandmeyer"
        :doc "A netstring and bencode implementation for Clojure."}
   clojure.tools.nrepl.bencode
+  (:require
+    [clojure.java.io :as io])
   (:import
+    java.io.ByteArrayOutputStream
     java.io.InputStream
     java.io.OutputStream
     java.io.PushbackInputStream
@@ -305,10 +308,12 @@
 (defmulti write-bencode
   "Write the given thing to the output stream. “Thing” means here a
   string, map, sequence or integer. Alternatively an ByteArray may
-  be provided whose contents are written as a bytestring."
+  be provided whose contents are written as a bytestring. Similar
+  the contents of a given InputStream are written as a byte string."
   (fn [_output thing]
     (cond
       (instance? (RT/classForName "[B") thing) :bytes
+      (instance? InputStream thing) :input-stream
       (string? thing) :string
       (map? thing)    :map
       ;; Check for various sequency things. Yes. This is tedious. But as long
@@ -340,6 +345,16 @@
 (defmethod write-bencode :string
   [output string]
   (write-netstring* output (string>payload string)))
+
+;; Streaming does not really work, since we need to know the
+;; number of bytes to write upfront. So we read in everything
+;; for InputStreams and pass on the byte array.
+
+(defmethod write-bencode :input-stream
+  [output stream]
+  (let [bytes (ByteArrayOutputStream.)]
+    (io/copy stream bytes)
+    (write-netstring* output (.toByteArray bytes))))
 
 ;; Integers are again the ugly special case.
 
