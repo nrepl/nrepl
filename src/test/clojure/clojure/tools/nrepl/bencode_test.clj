@@ -118,6 +118,8 @@
     -42 "i-42e"
 
     ; Works for all integral types.
+    ; Note: BigInts (42N) not tested, since they are not
+    ; supported in 1.2.
     (Byte. "42")    "i42e"
     (Short. "42")   "i42e"
     (Integer. "42") "i42e"

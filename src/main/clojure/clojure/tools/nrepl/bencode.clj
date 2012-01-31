@@ -314,21 +314,16 @@
     (cond
       (instance? (RT/classForName "[B") thing) :bytes
       (instance? InputStream thing) :input-stream
-      (string? thing) :string
-      (map? thing)    :map
+      (integer? thing) :integer
+      (string? thing)  :string
+      (map? thing)     :map
       ;; Check for various sequency things. Yes. This is tedious. But as long
       ;; as we don't have a Seqable protocol, we can't do much about it.
       (or (vector? thing)
           (list? thing)
           (seq? thing)
           (.isArray (class thing)))
-      :list
-      ;; Similar for the numbers.
-      (or (instance? Byte thing)
-          (instance? Short thing)
-          (instance? Integer thing)
-          (instance? Long thing))
-      :integer)))
+      :list)))
 
 ;; The following methods should be pretty straight-forward.
 ;;
