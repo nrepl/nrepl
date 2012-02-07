@@ -199,3 +199,8 @@
   (session {:op :stdin :stdin "a\nb\nc\n"})
   (doseq [x "abc"]
     (is (= [(str x)] (repl-values session "(read-line)")))))
+
+(def-repl-test test-url-connect
+  (with-open [conn (url-connect (str "nrepl://localhost:" *server-port*))]
+    (transport/send conn {:op :eval :code "(+ 1 1)"})
+    (is (= [2] (response-values (response-seq conn 100))))))
