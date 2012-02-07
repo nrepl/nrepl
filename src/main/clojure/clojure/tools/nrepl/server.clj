@@ -18,12 +18,13 @@
     (recur handler transport)))
 
 (defn- accept-connection
-  [{:keys [^ServerSocket ss transport-fn handler] :as server-state}]
+  [{:keys [^ServerSocket ss transport greeting handler] :as server-state}]
   (returning server-state
     (when-not (.isClosed ss)
-      (let [sock (.accept ss)
-            transport (transport-fn sock)]
-        (future (with-open [sock sock] (handle handler transport)))
+      (let [sock (.accept ss)]
+        (future (with-open [transport (transport sock)]
+                  (when greeting (greeting transport))
+                  (handle handler transport)))
         (send-off *agent* accept-connection)))))
 
 (defn stop-server
@@ -46,9 +47,10 @@
 
    Returns a handle to the server that is started, which may be stopped
    either via `stop-server`, (.close server), or automatically via `with-open`."
-  [& {:keys [port transport-fn handler ack-port] :or {port 0}}]
+  [& {:keys [port transport-fn handler ack-port greeting-fn] :or {port 0}}]
   (let [smap {:ss (ServerSocket. port)
-              :transport-fn (or transport-fn transport/bencode) 
+              :transport (or transport-fn transport/bencode)
+              :greeting greeting-fn
               :handler (or handler
                            (clojure.tools.nrepl.handlers/default-handler))}
         server (proxy [clojure.lang.Agent java.io.Closeable] [smap]

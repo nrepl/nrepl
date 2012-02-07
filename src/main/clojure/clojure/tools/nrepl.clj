@@ -186,7 +186,7 @@
 (def connect-defaults
   {"nrepl" {:transport-fn transport/bencode
             :port 7888}
-   "telnet" {:transport-fn transport/terminal}})
+   "telnet" {:transport-fn transport/tty}})
 
 (defn url-connect
   [url]

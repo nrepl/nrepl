@@ -1,10 +1,11 @@
 (ns clojure.tools.nrepl.transport
   (:require [clojure.tools.nrepl.bencode :as be]
             [clojure.java.io :as io]
-            clojure.walk)
+            (clojure walk set))
+  (:use [clojure.tools.nrepl.misc :only (returning uuid)])
   (:refer-clojure :exclude (send))
   (:import (java.io InputStream OutputStream PushbackInputStream
-                    Reader Writer)
+                    PushbackReader Reader Writer)
            java.net.Socket
            (java.util.concurrent BlockingQueue LinkedBlockingQueue
                                  SynchronousQueue TimeUnit)))
@@ -67,18 +68,43 @@
         (when s #(.close s))
         (when s #(.isClosed s))))))
 
-; TODO bad name?
-(defn terminal
-  ([^Socket s] (terminal s s s))
+(defn tty
+  ([^Socket s] (tty s s s))
   ([in out & [^Socket s]]
-    (let [in (io/reader in)
-          out (io/writer out)
-          ; TODO
-          write #()
-          read #()]
+    (let [r (PushbackReader. (io/reader in))
+          w (io/writer out)
+          cns (atom "user")
+          prompt (fn [newline?]
+                   (when newline? (.write w (int \newline)))
+                   (.write w (str @cns "=> ")))
+          session-id (atom nil)
+          read-msg #(let [code (read r)]
+                      (merge {:op "eval" :code [code] :ns @cns :id (str "eval" (uuid))}
+                             (when @session-id {:session @session-id})))
+          read-seq (atom (cons {:op "clone"} (repeatedly read-msg)))
+          write (fn [{:strs [out err value status ns new-session id] :as msg}]
+                  (when new-session (reset! session-id new-session))
+                  (when ns (reset! cns ns))
+                  (doseq [x [out err value] :when x]
+                    (.write w x))
+                  (when (and (= status #{:done}) id (.startsWith id "eval"))
+                    (prompt true))
+                  (.flush w))
+          read #(let [head (promise)]
+                  (swap! read-seq (fn [s]
+                                     (deliver head (first s))
+                                     (rest s)))
+                  @head)]
       (fn-transport read write            
-        (when s #(.close s))
+        (when s
+          (swap! read-seq (partial cons {:session @session-id :op "close"}))
+          #(.close s))
         (when s #(.isClosed s))))))
+
+(defn tty-greeting
+  [transport]
+  (send transport {:out (str ";; Clojure " (clojure-version)
+                             \newline "user=> ")}))
 
 (deftype QueueTransport [^BlockingQueue in ^BlockingQueue out]
   Transport

@@ -21,12 +21,15 @@
    It is assumed that `bindings` will contain useful/appropriate entries
    for all vars indicated by `clojure.main/with-bindings`."
   [bindings {:keys [code ns transport] :as msg}]
-  (let [code-reader (LineNumberingPushbackReader. (StringReader. code))
-        bindings (atom (merge bindings (when ns {#'*ns* (-> ns symbol find-ns)})))]
+  (let [bindings (atom (merge bindings (when ns {#'*ns* (-> ns symbol find-ns)})))]
     (try
       (clojure.main/repl
         :init (fn [] (push-thread-bindings @bindings))
-        :read (fn [prompt exit] (read code-reader false exit))
+        :read (if (string? code)
+                (let [reader (LineNumberingPushbackReader. (StringReader. code))]
+                  #(read reader false %2))
+                (let [q (java.util.concurrent.ArrayBlockingQueue. (count code) false code)]
+                  #(or (.poll q 0 java.util.concurrent.TimeUnit/MILLISECONDS) %2)))
         :prompt (fn [])
         :need-prompt (constantly false)
         ; TODO pretty-print?
@@ -45,7 +48,7 @@
                     (reset! bindings (-> (get-thread-bindings)
                                        (assoc #'*e e)
                                        (dissoc #'*agent*)))
-                    (transport/send transport (response-for msg {:status "error"}))
+                    (transport/send transport (response-for msg {:status :eval-error}))
                     (clojure.main/repl-caught e))))
       @bindings
       (finally
@@ -175,7 +178,7 @@
   (fn [{:keys [op session interrupt-id id transport] :as msg}]
     (case op
       "eval"
-      (if-not (string? (:code msg))
+      (if-not (:code msg)
         (transport/send transport (response-for msg {:status #{:error :no-code}}))
         (send-off session
           (fn [bindings]
