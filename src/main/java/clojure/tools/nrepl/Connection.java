@@ -1,13 +1,18 @@
 package clojure.tools.nrepl;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import clojure.lang.AFn;
+import clojure.lang.ArraySeq;
 import clojure.lang.Delay;
 import clojure.lang.IFn;
+import clojure.lang.ISeq;
 import clojure.lang.Keyword;
+import clojure.lang.PersistentHashMap;
 import clojure.lang.RT;
 import clojure.lang.Symbol;
 import clojure.lang.Var;
@@ -15,60 +20,73 @@ import clojure.lang.Var;
 /**
  * @author Chas Emerick
  */
-public class Connection {    
+public class Connection implements Closeable {
     static {
-        Object initClojure = RT.OUT;
         try {
             RT.var("clojure.core", "require").invoke(Symbol.intern("clojure.tools.nrepl"));
+            RT.var("clojure.core", "require").invoke(Symbol.intern("clojure.walk"));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static Var find (String ns, String name) {
+        return Var.find(Symbol.intern(ns, name));
+    }
+    
+    private static Var connect = find("clojure.tools.nrepl", "connect"),
+        urlConnect = find("clojure.tools.nrepl", "url-connect"),
+        createClient = find("clojure.tools.nrepl", "client"),
+        session = find("clojure.tools.nrepl", "session"),
+        message = find("clojure.tools.nrepl", "message"),
+        combineResponses = find("clojure.tools.nrepl", "combine-responses"),
+        map = find("clojure.core", "map"),
+        readString = find("clojure.core", "read-string"),
+        stringifyKeys = find("clojure.walk", "stringify-keys");
+    
+    public final Closeable transport;
+    public final IFn client;
+    public final String url;
+    
+    public Connection (String url) throws Exception {
+        transport = (Closeable)urlConnect.invoke(this.url = url);
+        client = (IFn)createClient.invoke(transport, Long.MAX_VALUE);
+    }
+    
+    public void close () throws IOException {
+        transport.close();
+    }
+    
+    public Response send (String... kvs) {
+        try {
+            return new Response((ISeq)message.invoke(client, PersistentHashMap.createWithCheck(kvs)));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
     
-    private static SafeFn connect = SafeFn.find("clojure.tools.nrepl", "connect"),
-        readResponseValue = SafeFn.find("clojure.tools.nrepl", "read-response-value"),
-        combineResponses = SafeFn.find("clojure.tools.nrepl", "combine-responses"),
-        responseSeq = SafeFn.find("clojure.tools.nrepl", "response-seq"),
-        evalResponse = SafeFn.find("clojure.tools.nrepl", "eval-response"),
-        map = SafeFn.find("clojure.core", "map"),
-        readString = SafeFn.find("clojure.core", "read-string");
-    
-    public final Map<Keyword, IFn> conn;
-    private final SafeFn send, close;
-    public final String host;
-    public final int port;
-    
+    public Response sendSession (String session, String... kvs) {
+        try {
+            return new Response((ISeq)message.invoke(
+                    Connection.this.session.invoke(client, Keyword.intern("session"), session), PersistentHashMap.createWithCheck(kvs)));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @SuppressWarnings("unchecked")
-    public Connection (String host, int port) throws Exception {
-        this.host = host;
-        this.port = port;
-        conn = (Map<Keyword, IFn>)connect.invoke(host, port);
-        send = SafeFn.wrap(conn.get(Keyword.intern("send")));
-        close = SafeFn.wrap(conn.get(Keyword.intern("close")));
-    }
-    
-    public Response send (String code) {
-        return new Response(SafeFn.wrap((IFn)send.sInvoke(code)));
-    }
-    
-    public void close () {
-        close.sInvoke();
-    }
-    
     public static class Response {
-        public final SafeFn responseFn;
         private final Delay combinedResponse;
         
-        private Response (SafeFn responseFn) {
-            this.responseFn = responseFn;
+        private Response (final ISeq responses) {
             combinedResponse = new Delay(new AFn () {
                public Object invoke () throws Exception {
-                   return combineResponses.invoke(responseSeq.invoke(Response.this.responseFn));
+                   return stringifyKeys.invoke(combineResponses.invoke(responses));
                }
             });
         }
-        
-        public Map<Keyword, Object> combinedResponse () {
+
+        public Map<String, Object> combinedResponse () {
             try {
                 return (Map)combinedResponse.deref();
             } catch (Exception e) {
@@ -78,14 +96,18 @@ public class Connection {
         
         public Set<String> statuses () {
             try {
-                return (Set<String>)combinedResponse().get(Keyword.intern("status"));
+                return (Set<String>)combinedResponse().get("status");
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
         
         public List<Object> values () {
-            return (List<Object>)map.sInvoke(readString, combinedResponse().get(Keyword.intern("value")));
+            try {
+                return (List<Object>)map.invoke(readString, combinedResponse().get("value"));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
     
