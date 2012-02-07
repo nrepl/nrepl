@@ -36,11 +36,6 @@
         <artifactId>tools.logging</artifactId>
         <version>0.2.3</version>
       </dependency>
-<!--       <dependency> -->
-<!--         <groupId>org.clojure</groupId> -->
-<!--         <artifactId>java.jmx</artifactId> -->
-<!--         <version>0.1</version> -->
-<!--       </dependency> -->
     </dependencies>
 
     <build>
@@ -76,6 +71,16 @@
                     </execution>
                 </executions>
             </plugin>
+
+	        <plugin>
+		        <groupId>org.apache.maven.plugins</groupId>
+		        <artifactId>maven-jar-plugin</artifactId>
+		        <configuration>
+		          <archive>
+		            <manifestFile>META-INF/MANIFEST.MF</manifestFile>
+		          </archive>
+		        </configuration>
+	        </plugin>
         </plugins>
     </build>
 </project>
