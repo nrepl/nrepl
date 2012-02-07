@@ -323,9 +323,7 @@
       (map? thing)     :map
       ;; Check for various sequency things. Yes. This is tedious. But as long
       ;; as we don't have a Seqable protocol, we can't do much about it.
-      (or (vector? thing)
-          (list? thing)
-          (seq? thing)
+      (or (coll? thing)
           (.isArray (class thing)))
       :list)))
 

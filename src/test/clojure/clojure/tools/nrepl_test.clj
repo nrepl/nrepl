@@ -1,312 +1,201 @@
-(ns #^{:doc ""
-       :author "Chas Emerick"}
-  clojure.tools.nrepl-test
-  (:use clojure.test)
-  (:require [clojure.tools.nrepl :as repl]
-    [clojure.set :as set]))
+(ns clojure.tools.nrepl-test
+  (:use clojure.test
+        clojure.tools.nrepl
+        [clojure.tools.nrepl.server :only (start-server)])
+  (:require [clojure.tools.nrepl.transport :as transport]))
 
-(println (format "Testing with Clojure v%s" (clojure-version)))
-(println (str "Clojure contrib available? " (or (try
-                                                  (require 'clojure.contrib.core)
-                                                  "yes"
-                                                  (catch Throwable t))
-                                              "no")))
-(println (str "Pretty-printing available? " (repl/pretty-print-available?)))
-
-(def #^{:dynamic true} *server-port* nil)
+(def ^{:dynamic true} *server-port* nil)
 
 (defn repl-server-fixture
   [f]
-  (let [[server-socket accept-future] (repl/start-server)]
-    (try
-      (binding [*server-port* (.getLocalPort server-socket)]
-        (f))
-      (finally (.close server-socket)))))
+  (with-open [server (start-server)]
+    (binding [*server-port* (.getLocalPort (:ss @server))]
+      (f))))
 
 (use-fixtures :once repl-server-fixture)
+
+(defn- response-values
+  [repl-responses]
+  (->> repl-responses combine-responses :value (map read-string)))
 
 (defmacro def-repl-test
   [name & body]
   `(deftest ~(with-meta name {:private true})
-     (let [connection# (repl/connect *server-port*)
-           ~'connection connection#
-           ~'repl (:send connection#)
-           ~'repl-seq (comp repl/response-seq ~'repl)
-           ~'repl-receive (comp (fn [r#] (r#)) ~'repl)
-           ~'repl-read (comp repl/read-response-value ~'repl-receive)
-           ~'repl-value (comp :value ~'repl-read)]
-       ~@body
-       ((:close connection#)))))
-
-(defn- full-response
-  [response-fn]
-  (->> response-fn
-    repl/response-seq
-    (map repl/read-response-value)
-    repl/combine-responses))
+     (with-open [transport# (connect :port *server-port*)]
+       (let [~'transport transport#
+             ~'client (client transport# 10000)
+             ~'session (client-session ~'client)
+             ~'repl-eval #(message % {:op :eval :code %2})
+             ~'repl-values (comp response-values ~'repl-eval)]
+         ~@body))))
 
 (def-repl-test eval-literals
-  (are [literal] (= literal (-> literal pr-str repl-value))
-    5
-    0xff
-    5.1
-    -2e12
-    ;1/4
-    :keyword
-    ::local-ns-keyword
-    :other.ns/keyword
-    "string"
-    "string\nwith\r\nlinebreaks"
-    [1 2 3]
-    {1 2 3 4}
-    #{1 2 3 4}))
+  (are [literal] (= (binding [*ns* (find-ns 'user)] ; needed for the ::keyword
+                      (-> literal read-string eval list))
+                    (repl-values client literal))
+    "5"
+    "0xff"
+    "5.1"
+    "-2e12"
+    "1/4"
+    "'symbol"
+    "'namespace/symbol"
+    ":keyword"
+    "::local-ns-keyword"
+    ":other.ns/keyword"
+    "\"string\""
+    "\"string\\nwith\\r\\nlinebreaks\""
+    "'(1 2 3)"
+    "[1 2 3]"
+    "{1 2 3 4}"
+    "#{1 2 3 4}")
+  
+  (is (= (->> "#\"regex\"" read-string eval list (map str))
+         (->> "#\"regex\"" (repl-values client) (map str)))))
 
 (def-repl-test simple-expressions
-  (are [expression] (= (-> expression read-string eval) (repl-value expression))
-    "'(1 2 3)"
-    "'symbol"
-    "(range 40)"
-    "(apply + (range 100))"))
+  (are [expr] (= [(eval expr)] (repl-values client (pr-str expr)))
+    '(range 40)
+    '(apply + (range 100))))
+
+(def-repl-test defining-fns
+  (repl-values client "(defn x [] 6)")
+  (is (= [6] (repl-values client "(x)"))))
+
+(def-repl-test unknown-op
+  (is (= {:op "abc" :status #{"error" "unknown-op"}}
+         (-> (message client {:op :abc}) combine-responses (select-keys [:op :status])))))
+
+(def-repl-test session-lifecycle
+  (is (= #{"error" "unknown-session"}
+         (-> (message client {:session "abc"}) combine-responses :status)))
+  (let [session-id (new-session client)
+        session-alive? #(contains? (-> (message client {:op :ls-sessions})
+                                     combine-responses
+                                     :sessions
+                                     set)
+                                   session-id)]
+    (is session-id)
+    (is (session-alive?))
+    (is (= #{"done" "session-closed"} (-> (message client {:op :close :session session-id})
+                                        combine-responses
+                                        :status)))
+    (is (not (session-alive?)))))
 
 (def-repl-test separate-value-from-*out*
-  (let [{:keys [out value]} (->> (repl-seq "(println 5)")
-                              (map repl/read-response-value)
-                              repl/combine-responses)]
-    (is (nil? (first value)))
-    (is (= "5" (.trim out)))))
+  (is (= {:value [nil] :out "5\n"}
+         (-> (map read-response-value (repl-eval client "(println 5)"))
+           combine-responses
+           (select-keys [:value :out])))))
 
 (def-repl-test streaming-out
   (is (= (for [x (range 10)]
            (str x \newline))
-        (->> (repl "(dotimes [x 10] (println x))")
-          repl/response-seq
+        (->> (repl-eval client "(dotimes [x 10] (println x))")
           (map :out)
           (remove nil?)))))
 
-(def-repl-test defining-fns
-  (repl-value "(defn foobar [] 6)")
-  (is (= 6 (repl-value "(foobar)"))))
+(def-repl-test session-return-recall
+  (repl-eval session (code
+                       (apply + (range 6))
+                       (str 12 \c)
+                       (keyword "hello")))
+  (let [history [[15 "12c" :hello]]]
+    (is (= history (repl-values session "[*3 *2 *1]")))
+    (is (= history (repl-values session "*1"))))
+  
+  (is (= [nil] (repl-values client "*1"))))
 
-(def-repl-test repl-value-history
-  (doall (map repl-value ["(apply + (range 6))" "(str 12 \\c)" "(keyword \"hello\")"]))
-  (let [history [15 "12c" :hello]]
-    (is (= history (repl-value "[*3 *2 *1]")))
-    (is (= history (repl-value "*1")))))
+(def-repl-test session-set!
+  (repl-eval session (code
+                       (set! *compile-path* "badpath")
+                       (set! *warn-on-reflection* true)))
+  (is (= [["badpath" true]] (repl-values session (code [*compile-path* *warn-on-reflection*])))))
 
 (def-repl-test exceptions
-  (let [{:keys [err status value] :as f} (full-response (repl "(throw (Exception. \"bad, bad code\"))"))]
+  (let [{:keys [status err value]} (combine-responses (repl-eval session "(throw (Exception. \"bad, bad code\"))"))]
     (is (= #{"error" "done"} status))
     (is (nil? value))
     (is (.contains err "bad, bad code"))
-    (is (= true (repl-value "(.contains (str *e) \"bad, bad code\")")))))
-
-(def-repl-test auto-print-stack-trace
-  (is (= true (repl-value "(set! clojure.tools.nrepl/*print-detail-on-error* true)")))
-  (is (.contains (-> (repl "(throw (Exception. \"foo\" (Exception. \"nested exception\")))")
-                   full-response
-                   :err)
-        "nested exception")))
+    (is (= [true] (repl-values session "(.contains (str *e) \"bad, bad code\")")))))
 
 (def-repl-test multiple-expressions-return
-  (is (= [5 18] (->> (repl-seq "5 (/ 5 0) (+ 5 6 7)")
-                  (map repl/read-response-value)
-                  repl/combine-responses
-                  :value))))
+  (is (= [5 18] (repl-values session "5 (/ 5 0) (+ 5 6 7)"))))
 
 (def-repl-test return-on-incomplete-expr
-  (let [{:keys [out status value]} (full-response (repl "(apply + (range 20)"))]
+  (let [{:keys [out status value]} (combine-responses (repl-eval session "(missing paren"))]
     (is (nil? value))
-    (is (= #{"done" "error"} status))))
-
-(def-repl-test throw-on-unreadable-return
-  (is (thrown-with-msg? Exception #".*#<ArrayList \[\]>.*"
-        (full-response (repl "(java.util.ArrayList.)")))))
+    (is (= #{"done" "error"} status))
+    (is (re-seq #"EOF while reading" (first (repl-values session "(.getMessage *e)"))))))
 
 (def-repl-test switch-ns
-  (is (= "otherns" (:ns (repl-read "(ns otherns) (defn function [] 12)"))))
-  (is (= [12] (repl/values-with connection (otherns/function)))))
+  (is (= "otherns" (-> (repl-eval session "(ns otherns) (defn function [] 12)")
+                     combine-responses
+                     :ns)))
+  (is (= [12] (repl-values session "(function)")))
+  (repl-eval session "(in-ns 'user)")
+  (is (= [12] (repl-values session "(otherns/function)"))))
 
-(def-repl-test timeout
-  (is (= "timeout" (:status (repl-read "(Thread/sleep 60000)" :timeout 1000)))))
-
-(def-repl-test interrupt==halt
-  ; tests interrupts as well as ensures that the interrupt is halting all further output
-  (let [resp (repl "(def halted? true)(Thread/sleep 6000)(def halted? false)")]
-    (Thread/sleep 1000)
-    (is (= true (-> (resp :interrupt) repl/read-response-value :value)))
-    (let [resp (repl/response-seq resp 8000)]
-      (is (= 2 (count resp)))
-      (is (= "interrupted" (-> resp second :status)))
-      (is (= true (repl-value "halted?"))))))
-
-(def-repl-test verify-interrupt-on-timeout
-  (let [resp (repl "(def a 0)(def a (do (Thread/sleep 3000) 1))" :timeout 1000)]
-    (is (:value (resp)))
-    (is (= "timeout" (:status (resp))))
-    (Thread/sleep 5000)
-    (is (= 0 (repl-value "a")))))
-
-(def-repl-test ensure-closeable
-  (is (= 5 (repl-value "5")))
-  (.close connection)
-  (is (thrown? java.net.SocketException (repl-value "5"))))
-
-(def-repl-test use-sent-*in*
-  (is (= 6 (repl-value "(eval (read))" :in "(+ 1 2 3)"))))
-
-(def-repl-test unordered-message-reads
-  ; check that messages are being retained properly when read out of order
-  (let [{:keys [send receive]} connection
-        digits (range 10)
-        response-fns (->> digits
-                       (map (comp send str))
-                       reverse)
-        results (for [f response-fns] (f))]
-    (is (= digits (->> results
-                    (map (comp :value repl/read-response-value))
-                    reverse)))))
-
-; Testing java.lang.ref stuff is always tricky, but it's critical that promises
-; associated with unreferenced response fns are being expired out of the WeakHashMap properly
-(deftest response-promise-expiration
-  (let [promises-map (#'repl/response-promises-map)]
-    (binding [repl/response-promises-map (constantly promises-map)]
-      (let [{:keys [send close]} (repl/connect *server-port*)]
-        (doseq [response (->> (repeatedly #(send "5" :timeout 1000))
-                           (take 1000)
-                           (pmap #(->> (repl/response-seq % 5000)
-                                    (map repl/read-response-value)
-                                    repl/combine-responses)))]
-          (when-not (and (is (= #{"done"} (:status response)))
-                      (is (= [5] (:value response))))
-            ; fail fast if something is wrong to avoid waiting for 1000 failures
-            (throw (Exception. (str "Failed response " response)))))
-        
-        (System/gc)
-        (is (< (count promises-map) 1000) "Response promises map has not been pruned at all; weak ref scheme (maybe) not working. 
-This mechanism depends upon GC, so it *can* fail sporadically. Run the test again before hunting for strange bugs.")
-        (close)))))
-
-(deftest repl-out-writer
-  (let [responses (atom [])
-        w (#'repl/create-repl-out :out #(swap! responses conj %&))]
-    (doto w
-      .flush
-      (.write "abcd")
-      (.write (.toCharArray "ef") 0 2)
-      (.write "gh" 0 2)
-      (.write (.toCharArray "ij"))
-      (.write 32)
-      .flush
-      .flush
-      (.write "no writes\nkeyed on linebreaks")
-      .flush)
-    (with-open [out (java.io.PrintWriter. w)]
-      (binding [*out* out]
-        (newline)
-        (prn #{})
-        (flush)))
-    
-    (is (= [[:out "abcdefghij "]
-            [:out "no writes\nkeyed on linebreaks"]
-            [:out "\n#{}\n"]]
-          @responses))))
-
-(def-repl-test repl-literal
-  (let [deffn (repl/send-with connection
-                (ns send-with-test)
-                (defn as-seqs
-                  [& colls]
-                  (map seq colls)))]
-    (is (= #{"done"} (-> deffn repl/response-seq repl/combine-responses :status)))
-    (is (= (take 3 (repeat [1 2 3]))
-          (-> (repl/send-with connection
-                 (send-with-test/as-seqs
-                   '(1 2 3) [1 2 3] (into (sorted-set) #{1 2 3})))
-             full-response
-             :value
-             first)))))
-
-(def-repl-test eval-literal
-  (is (= [5] (repl/values-with connection 5)))
-  (is (= [5 124750] (repl/values-with connection 5 (apply + (range 500))))))
-
-(def-repl-test retained-session
-  (let [session-id (-> (repl/send-with connection
-                         (clojure.tools.nrepl/retain-session!))
-                     full-response
-                     :value
-                     first)
-        resp (with-open [c2 (repl/connect *server-port*)]
-               (full-response ((:send c2)
-                                "(throw (Exception. \"retainedsession\")) (range 5) :foo {:a 5}"
-                                :session-id session-id)))]
-    (is session-id)
-    (is (.contains (:err resp) "retainedsession"))
-    (is (= (:value resp) [(range 5) :foo {:a 5}]))
-    (is (= #{"done" "error"} (:status resp)))
-    
-    (let [[[ex & restvals]] (with-open [c2 (repl/connect *server-port*)]
-                              (-> ((:send c2) "[(str *e) *3 *2 *1]" :session-id session-id)
-                                full-response
-                                :value))]
-      (is (.contains ex "retainedsession"))
-      (is (= restvals [(range 5) :foo {:a 5}])))
-    
-    (is (with-open [c2 (repl/connect *server-port*)]
-          (->> ((:send c2) "(clojure.tools.nrepl/release-session!)" :session-id session-id)
-            full-response
-            :value
-            first)))
-    
-    (is (nil? (with-open [c2 (repl/connect *server-port*)]
-                (->> ((:send c2) "*e" :session-id session-id)
-                  full-response
-                  :value
-                  first))))))
+(def-repl-test switch-ns
+  (is (= "otherns" (-> (repl-eval session (code
+                                            (ns otherns)
+                                            (defn function [] 12)))
+                     combine-responses
+                     :ns)))
+  (is (= [12] (repl-values session "(function)")))
+  (repl-eval session "(in-ns 'user)")
+  (is (= [12] (repl-values session "(otherns/function)")))
+  (is (= "user" (-> (repl-eval session "nil") combine-responses :ns))))
 
 (def-repl-test explicit-ns
-  (= "baz" (-> (repl/send-with connection
-                 (def bar 5)
-                 (ns baz))
-             full-response
-             :ns))
-  (= 5 (repl-value "bar" :ns "user")))
+  (is (= "user" (-> (repl-eval session "nil") combine-responses :ns)))
+  (is (= "baz" (-> (repl-eval session (code
+                                        (def bar 5)
+                                        (ns baz)))
+                 combine-responses
+                 :ns)))
+  (is (= [5] (response-values (message session {:op :eval :code "bar" :ns "user"})))))
 
 (def-repl-test proper-response-ordering
   (is (= [[nil "100\n"] ; printed number
-          ["nil\n" nil] ; return val from println
-          ["42\n" nil]  ; return val from `42`
-          [nil nil]]             ; :done message
-        (->> (repl/send-with connection
-               (println 100)
-               42)
-          repl/response-seq
-          (map (juxt :value :out))))))
+          ["nil" nil] ; return val from println
+          ["42" nil]  ; return val from `42`
+          [nil nil]]    ; :done message
+         (map (juxt :value :out) (repl-eval client "(println 100) 42")))))
 
-(def-repl-test install-custom-error-detail-fn
-  (->> (repl/send-with connection
-         (set! clojure.tools.nrepl/*print-error-detail*
-           (fn [ex] (print "custom printing!")))
-         (set! clojure.tools.nrepl/*print-detail-on-error* true))
-    repl/response-seq
-    doall)
-  (is (= "custom printing!"
-        (->> (repl/send-with connection
-               (throw (Exception. "foo")))
-          full-response
-          :err))))
-
-(def-repl-test standard-bindings
-  (->> (repl/send-with connection
-         (set! *warn-on-reflection* true)
-         (set! *compile-path* "classes"))
-    repl/response-seq
-    doall)
+(def-repl-test interrupt
+  (is (= #{"error" "interrupt-id-mismatch" "done"}
+         (-> (message client {:op :interrupt :interrupt-id "foo"})
+           first
+           :status
+           set)))
   
-  (is (= [true "classes"]
-        (->> (repl/send-with connection
-               [*warn-on-reflection* *compile-path*])
-          full-response
-          :value
-          first))))
+  (let [resp (message session {:op :eval :code (code (do
+                                                       (def halted? true)
+                                                       halted?
+                                                       (Thread/sleep 30000)
+                                                       (def halted? false)))})]
+    (Thread/sleep 100)
+    (is (= #{"done"} (-> (message session {:op :interrupt})
+                      first :status set)))
+    (is (= #{"done" "interrupted"} (-> resp combine-responses :status)))
+    (is (= [true] (repl-values session "halted?")))))
+
+(def-repl-test read-timeout
+  (is (= [] (repl-values session "(Thread/sleep 11000)"))))
+
+(def-repl-test ensure-closeable
+  (is (= [5] (repl-values session "5")))
+  (.close transport)
+  (is (thrown? java.net.SocketException (repl-values session "5"))))
+
+(def-repl-test request-*in*
+  (is (= '((1 2 3)) (response-values (for [resp (repl-eval session "(read)")]
+                                       (do
+                                         (when (-> resp :status set (contains? "need-input"))
+                                           (session {:op :stdin :stdin "(1 2 3)"}))
+                                         resp)))))
+  
+  (session {:op :stdin :stdin "a\nb\nc\n"})
+  (doseq [x "abc"]
+    (is (= [(str x)] (repl-values session "(read-line)")))))

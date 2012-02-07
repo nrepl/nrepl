@@ -8,6 +8,7 @@
     [clojure.tools.nrepl :as nrepl]
     [clojure.tools.nrepl.helpers :as helpers]))
 
+(comment ;TODO
 (def project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
 
 (use-fixtures :once repl-server-fixture)
@@ -40,3 +41,4 @@
           (-> #'clojure.tools.nrepl.load-file-sample/dfunction
             meta
             (select-keys [:file :line]))))))
+)

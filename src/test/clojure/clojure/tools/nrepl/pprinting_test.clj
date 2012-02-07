@@ -7,6 +7,7 @@
 
 (use-fixtures :once repl-server-fixture)
 
+(comment ; TODO
 (defmacro def-pp-test
   [name & body]
   (when (repl/pretty-print-available?)
@@ -28,4 +29,4 @@
   (is (repl-value "(clojure.tools.nrepl/pretty-print?)"))
   (repl-receive "(set! clojure.tools.nrepl/*pretty-print* false)")
   (is (not (repl-value "clojure.tools.nrepl/*pretty-print*")))
-  (is (not (repl-value "(clojure.tools.nrepl/pretty-print?)"))))
+  (is (not (repl-value "(clojure.tools.nrepl/pretty-print?)")))))
