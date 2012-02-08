@@ -16,10 +16,6 @@
 
 (use-fixtures :once repl-server-fixture)
 
-(defn- response-values
-  [repl-responses]
-  (->> repl-responses combine-responses :value (map read-string)))
-
 (defmacro def-repl-test
   [name & body]
   `(deftest ~(with-meta name {:private true})
@@ -184,10 +180,11 @@
     (is (= [true] (repl-values session "halted?")))))
 
 (def-repl-test read-timeout
-  (is (= [] (repl-values session "(Thread/sleep 11000)"))))
+  (is (nil? (repl-values session "(Thread/sleep 11000)"))))
 
 (def-repl-test ensure-closeable
   (is (= [5] (repl-values session "5")))
+  (is (instance? java.io.Closeable transport))
   (.close transport)
   (is (thrown? java.net.SocketException (repl-values session "5"))))
 

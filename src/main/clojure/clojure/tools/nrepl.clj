@@ -2,9 +2,8 @@
        :author "Chas Emerick"}
   clojure.tools.nrepl
   (:require [clojure.tools.nrepl.transport :as transport]
-            clojure.main
-            [clojure.java.io :as io]
-            [clojure.tools.logging :as log])
+            clojure.set
+            [clojure.java.io :as io])
   (:use [clojure.tools.nrepl.misc :only (uuid)])
   (:import clojure.lang.LineNumberingPushbackReader
            (java.io Reader StringReader Writer PrintWriter)))
@@ -143,10 +142,9 @@
       (catch Exception e
         (throw (IllegalStateException. (str "Could not read response value: " value) e))))))
 
-#_(defn response-values
-  [response-fn]
-  (->> response-fn
-    response-seq
+(defn response-values
+  [responses]
+  (->> responses
     (map read-response-value)
     combine-responses
     :value))
