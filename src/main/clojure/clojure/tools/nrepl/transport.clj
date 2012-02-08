@@ -31,9 +31,15 @@
   (send [this msg] (-> msg clojure.walk/stringify-keys send-fn) this)
   (recv [this] (.recv this Long/MAX_VALUE))
   (recv [this timeout] (clojure.walk/keywordize-keys (recv-fn timeout)))
-  CloseableTransport
-  (closed? [this] (closeable? closed?) (closed?))
+  java.io.Closeable
   (close [this] (closeable? close) (close)))
+
+(extend-type FnTransport
+  CloseableTransport
+  (close [this] (.close this))
+  (closed? [this]
+    (closeable? (.closed? this))
+    ((.closed? this))))
 
 (defn fn-transport
   ([read write] (fn-transport read write nil nil))
