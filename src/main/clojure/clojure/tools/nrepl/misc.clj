@@ -1,5 +1,18 @@
 (ns clojure.tools.nrepl.misc)
 
+(try
+  (require 'clojure.tools.logging)
+  (defmacro log [& args] `(clojure.tools.logging/error ~@args))
+  (catch Throwable t
+    (println "clojure.tools.logging not available, falling back to stdout/err")
+    (defn log
+      [ex & msgs]
+      (let [ex (when (instance? Throwable ex) ex)
+            msgs (if ex msgs (cons ex msgs))]
+        (binding [*out* *err*]
+          (apply println "ERROR:" msgs)
+          (when ex (.printStackTrace ex)))))))
+
 (defmacro returning
   "Executes `body`, returning `x`."
   [x & body]

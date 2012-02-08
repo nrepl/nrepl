@@ -58,7 +58,7 @@
     (try
       (handler (assoc msg :transport transport))
       (catch Throwable t
-        (log/error t "Unhandled REPL handler exception processing message" msg)))
+        (log t "Unhandled REPL handler exception processing message" msg)))
     (recur handler transport)))
 
 (defn- accept-connection

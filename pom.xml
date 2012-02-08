@@ -35,6 +35,7 @@
         <groupId>org.clojure</groupId>
         <artifactId>tools.logging</artifactId>
         <version>0.2.3</version>
+        <optional>true</optional>
       </dependency>
     </dependencies>
 

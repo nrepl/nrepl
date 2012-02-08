@@ -1,8 +1,7 @@
 (ns clojure.tools.nrepl.handlers
-  (:use [clojure.tools.nrepl.misc :only (uuid response-for returning)])
+  (:use [clojure.tools.nrepl.misc :only (uuid response-for returning log)])
   (:require (clojure main test)
-            [clojure.tools.nrepl.transport :as transport]
-            [clojure.tools.logging :as log])
+            [clojure.tools.nrepl.transport :as transport])
   (:import clojure.tools.nrepl.transport.Transport 
            (java.io PipedReader PipedWriter Reader Writer PrintWriter StringReader)
            clojure.lang.LineNumberingPushbackReader))
@@ -119,7 +118,7 @@
   #_(when-not (or (instance? InterruptedException ex)
                 (instance? ThreadDeath ex))
     )
-  (log/error ex "Session error, id " (-> session-agent meta :id)))
+  (log ex "Session error, id " (-> session-agent meta :id)))
 
 (defn- create-session
   ([transport] (create-session transport {}))
