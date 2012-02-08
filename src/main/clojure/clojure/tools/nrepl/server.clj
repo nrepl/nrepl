@@ -1,54 +1,10 @@
 (ns clojure.tools.nrepl.server
   (:require [clojure.tools.nrepl :as repl]
             (clojure.tools.nrepl handlers
-                                 [transport :as transport])
-            [clojure.tools.logging :as log])
-  (:use [clojure.tools.nrepl.misc :only (returning response-for)])
-  (:import (java.util.concurrent Future TimeUnit TimeoutException)
-           (java.net Socket ServerSocket)))
-
-; could be a lot fancier, but it'll do for now
-(def ^{:private true} ack-port-promise (atom nil))
-
-(defn reset-ack-port!
-  []
-  (reset! ack-port-promise (promise))
-  ; save people the misery of ever trying to deref the empty promise in their REPL
-  nil)
-
-(defn ack
-  [h]
-  (fn [{:keys [op port transport] :as msg}]
-    (if (= op "ack")
-      (do
-        (deliver @ack-port-promise (Integer/parseInt port))
-        (transport/send transport (response-for msg {:status :done})))
-      (h msg))))
-
-(defn wait-for-ack
-  "Waits for a presumably just-launched nREPL server to connect and
-   deliver its port number.  Returns that number if it's delivered
-   within `timeout` ms, otherwise nil.  Assumes that `ack`
-   middleware has been applied to the local nREPL server handler.
-
-   Expected usage:
-
-   (reset-ack-port!)
-   (start-server already-running-server-port)
-   => (wait-for-ack)
-   59872 ; the port of the server started via start-server"
-  [timeout]
-  (let [^Future f (future @@ack-port-promise)]
-    (try
-      ; no deref with timeout in 1.2
-      (.get f timeout TimeUnit/MILLISECONDS)
-      (catch TimeoutException e))))
-
-(defn send-ack
-  [my-port ack-port]
-  (with-open [session (repl/connect ack-port)]
-    ;; TODO 
-    (eval session (pr-str `(deliver @@#'ack-port-promise ~my-port)))))
+                                 [ack :as ack]
+                                 [transport :as transport]))
+  (:use [clojure.tools.nrepl.misc :only (returning response-for log)])
+  (:import (java.net Socket ServerSocket)))
 
 (defn handle
   "Handles requests received via `transport` using `handler`.
@@ -99,5 +55,5 @@
                  (close [] (stop-server this)))]
     (send-off server accept-connection)
     (when ack-port
-      (send-ack (.getLocalPort (:ss @server)) ack-port))
+      (ack/send-ack (.getLocalPort (:ss @server)) ack-port))
     server))

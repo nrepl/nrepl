@@ -2,7 +2,8 @@
        :author "Chas Emerick"}
   clojure.tools.nrepl.cmdline
   (:require [clojure.tools.nrepl :as repl])
-  (:use [clojure.tools.nrepl.server :only (start-server send-ack)]))
+  (:use (clojure.tools.nrepl [server :only (start-server)]
+                             [ack :only (send-ack)])))
 
 (defn- ensure-newline
   [s]

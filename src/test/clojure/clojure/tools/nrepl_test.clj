@@ -1,14 +1,16 @@
 (ns clojure.tools.nrepl-test
   (:use clojure.test
-        clojure.tools.nrepl
-        [clojure.tools.nrepl.server :only (start-server)])
-  (:require [clojure.tools.nrepl.transport :as transport]))
+        clojure.tools.nrepl)
+  (:require (clojure.tools.nrepl [transport :as transport]
+                                 [handlers :as handlers]
+                                 [server :as server]
+                                 [ack :as ack])))
 
 (def ^{:dynamic true} *server-port* nil)
 
 (defn repl-server-fixture
   [f]
-  (with-open [server (start-server)]
+  (with-open [server (server/start-server)]
     (binding [*server-port* (.getLocalPort (:ss @server))]
       (f))))
 
@@ -204,3 +206,9 @@
   (with-open [conn (url-connect (str "nrepl://localhost:" *server-port*))]
     (transport/send conn {:op :eval :code "(+ 1 1)"})
     (is (= [2] (response-values (response-seq conn 100))))))
+
+(deftest test-ack
+  (with-open [s (server/start-server :handler (ack/handle-ack (handlers/default-handler)))]
+    (ack/reset-ack-port!)
+    (with-open [s2 (server/start-server :ack-port (.getLocalPort (:ss @s)))]
+      (is (= (.getLocalPort (:ss @s2)) (ack/wait-for-ack 10000))))))
