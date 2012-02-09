@@ -19,40 +19,24 @@
      ms or if the underlying channel has been closed.")
   (send [this msg] "Sends msg."))
 
-(defprotocol CloseableTransport
-  (close [this])
-  (closed? [this]))
-
-(defn- closeable?
-  [fn]
-  (when-not fn (throw (UnsupportedOperationException. "Transport is not closeable"))))
-
-(deftype FnTransport [recv-fn send-fn close closed?]
+(deftype FnTransport [recv-fn send-fn close]
   Transport
   (send [this msg] (-> msg clojure.walk/stringify-keys send-fn) this)
   (recv [this] (.recv this Long/MAX_VALUE))
   (recv [this timeout] (clojure.walk/keywordize-keys (recv-fn timeout)))
   java.io.Closeable
-  (close [this] (closeable? close) (close)))
-
-(extend-type FnTransport
-  CloseableTransport
-  (close [this] (.close this))
-  (closed? [this]
-    (closeable? (.closed? this))
-    ((.closed? this))))
+  (close [this] (close)))
 
 (defn fn-transport
   ([read write] (fn-transport read write nil nil))
-  ([read write close closed?]
+  ([read write close]
     (let [read-queue (SynchronousQueue.)]
       (future (while true
                 (.put read-queue (read))))
       (FnTransport.
         #(.poll read-queue % TimeUnit/MILLISECONDS)
         write
-        close
-        closed?))))
+        close))))
 
 (defn bencode
   ([^Socket s] (bencode s s s))
@@ -65,8 +49,7 @@
            (doto out
              (be/write-bencode %)
              .flush))
-        (when s #(.close s))
-        (when s #(.isClosed s))))))
+        (when s #(.close s))))))
 
 (defn tty
   ([^Socket s] (tty s s s))
@@ -85,9 +68,9 @@
           write (fn [{:strs [out err value status ns new-session id] :as msg}]
                   (when new-session (reset! session-id new-session))
                   (when ns (reset! cns ns))
-                  (doseq [x [out err value] :when x]
+                  (doseq [^String x [out err value] :when x]
                     (.write w x))
-                  (when (and (= status #{:done}) id (.startsWith id "eval"))
+                  (when (and (= status #{:done}) id (.startsWith ^String id "eval"))
                     (prompt true))
                   (.flush w))
           read #(let [head (promise)]
@@ -98,8 +81,7 @@
       (fn-transport read write            
         (when s
           (swap! read-seq (partial cons {:session @session-id :op "close"}))
-          #(.close s))
-        (when s #(.isClosed s))))))
+          #(.close s))))))
 
 (defn tty-greeting
   [transport]

@@ -30,7 +30,7 @@
 (defn stop-server
   "Stops a server started via `start-server`."
   [server]
-  (send-off server #(returning % (.close (:ss %)))))
+  (send-off server #(returning % (.close ^ServerSocket (:ss %)))))
 
 (defn start-server
   "Starts a socket-based nREPL server.  Configuration includes:
@@ -48,7 +48,8 @@
    Returns a handle to the server that is started, which may be stopped
    either via `stop-server`, (.close server), or automatically via `with-open`."
   [& {:keys [port transport-fn handler ack-port greeting-fn] :or {port 0}}]
-  (let [smap {:ss (ServerSocket. port)
+  (let [ss (ServerSocket. port)
+        smap {:ss ss
               :transport (or transport-fn transport/bencode)
               :greeting greeting-fn
               :handler (or handler
@@ -57,5 +58,5 @@
                  (close [] (stop-server this)))]
     (send-off server accept-connection)
     (when ack-port
-      (ack/send-ack (.getLocalPort (:ss @server)) ack-port))
+      (ack/send-ack (.getLocalPort ss) ack-port))
     server))

@@ -149,7 +149,7 @@
     ;;
     ;; So we have to do some translation here. Luckily `.byteValue`
     ;; does that for us.
-    (Byte/valueOf (.byteValue c))))
+    (Byte/valueOf (.byteValue (int c)))))
 
 (defn #^{:private true :tag "[B"} read-bytes
   [#^InputStream input n]
@@ -411,7 +411,7 @@
     (loop [i 0]
       (if (== i len)
         (- alen blen)
-        (let [x (- (aget a i) (aget b i))]
+        (let [x (- (int (aget a i)) (int (aget b i)))]
           (if (zero? x)
             (recur (inc i))
             x))))))

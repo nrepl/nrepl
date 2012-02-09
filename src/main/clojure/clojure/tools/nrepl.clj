@@ -181,7 +181,8 @@
          responses."
   [& {:keys [port host]}]
   {:pre [port]}
-  (transport/bencode (java.net.Socket. (or host "localhost") port)))
+  (let [^String host (or host "localhost")]
+    (transport/bencode (java.net.Socket. host (int port)))))
 
 (def connect-defaults
   {"nrepl" {:transport-fn transport/bencode
