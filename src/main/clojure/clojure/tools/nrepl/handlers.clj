@@ -70,19 +70,19 @@
 
 (defn- session-out
   [channel-type session-id transport]
-  (let [sb (StringBuilder.)]
+  (let [buf (clojure.tools.nrepl.StdOutBuffer.)]
     (PrintWriter. (proxy [Writer] []
                     (close [] (.flush ^Writer this))
                     (write [& [x off len]]
-                      (locking sb
+                      (locking buf
                         (cond
-                          (number? x) (.append sb (char x))
-                          (not off) #(.append sb x)
-                          (instance? CharSequence x) (.append sb ^CharSequence x (int off) (int len))
-                          :else (.append sb ^chars x (int off) (int len)))))
+                          (number? x) (.append buf (char x))
+                          (not off) #(.append buf x)
+                          (instance? CharSequence x) (.append buf ^CharSequence x off len)
+                          :else (.append buf ^chars x off len))))
                     (flush []
-                      (let [text (locking sb (let [text (str sb)]
-                                               (.setLength sb 0)
+                      (let [text (locking buf (let [text (str buf)]
+                                               (.setLength buf 0)
                                                text))]
                         (when (pos? (count text))
                           (transport/send transport
