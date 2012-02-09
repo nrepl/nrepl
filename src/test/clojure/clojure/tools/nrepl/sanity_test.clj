@@ -14,15 +14,18 @@
     (let [[local remote] (piped-transports)
           out (java.io.StringWriter.)
           err (java.io.StringWriter.)
-          expr (if (string? expr) expr (pr-str expr))
+          expr (if (string? expr)
+                 expr
+                 (binding [*print-meta* true]
+                   (pr-str expr)))
           msg (merge {:code expr :transport remote}
                      (when ns {:ns ns}))
           resp-fn (if ns
                     (juxt :ns :value)
                     :value)]
       (handlers/evaluate {#'*out* (java.io.PrintWriter. out)
-                      #'*err* (java.io.PrintWriter. err)}
-                     msg)
+                          #'*err* (java.io.PrintWriter. err)}
+                         msg)
       (->> (repl/response-seq local 0)
         (map resp-fn)
         (cons (str out))
@@ -70,9 +73,9 @@
        ["5 6 7 \n 8 9 10\n" nil] '(println 5 6 7 \newline 8 9 10)
        ["user/foo\n" "" nil] '(binding [*out* *err*]
                                      (prn 'user/foo)))
-  (is (re-seq #"java.lang.Exception: No such var: user/foo \(.*\)\n" (-> '(prn user/foo)
-                                                                       internal-eval
-                                                                       first))))
+  (is (re-seq #"Exception: No such var: user/foo" (-> '(prn user/foo)
+                                                    internal-eval
+                                                    first))))
 
 (deftest repl-out-writer
   (let [[local remote] (piped-transports)

@@ -112,7 +112,7 @@
 
 (def-repl-test exceptions
   (let [{:keys [status err value]} (combine-responses (repl-eval session "(throw (Exception. \"bad, bad code\"))"))]
-    (is (= #{"error" "done"} status))
+    (is (= #{"eval-error" "done"} status))
     (is (nil? value))
     (is (.contains err "bad, bad code"))
     (is (= [true] (repl-values session "(.contains (str *e) \"bad, bad code\")")))))
@@ -123,7 +123,7 @@
 (def-repl-test return-on-incomplete-expr
   (let [{:keys [out status value]} (combine-responses (repl-eval session "(missing paren"))]
     (is (nil? value))
-    (is (= #{"done" "error"} status))
+    (is (= #{"done" "eval-error"} status))
     (is (re-seq #"EOF while reading" (first (repl-values session "(.getMessage *e)"))))))
 
 (def-repl-test switch-ns
