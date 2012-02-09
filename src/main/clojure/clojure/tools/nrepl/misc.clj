@@ -4,7 +4,7 @@
   (require 'clojure.tools.logging)
   (defmacro log [& args] `(clojure.tools.logging/error ~@args))
   (catch Throwable t
-    (println "clojure.tools.logging not available, falling back to stdout/err")
+    ;(println "clojure.tools.logging not available, falling back to stdout/err")
     (defn log
       [ex & msgs]
       (let [ex (when (instance? Throwable ex) ex)

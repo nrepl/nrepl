@@ -184,25 +184,29 @@
           (fn [bindings]
             (alter-meta! session assoc
                          :thread (Thread/currentThread)
-                         :msg-id id)
+                         :eval-msg msg)
             (binding [*msg* msg]
               (returning (dissoc (evaluate bindings msg) #'*msg*)
-                         (transport/send transport (response-for msg {:status :done})))))))
+                         (transport/send transport (response-for msg {:status :done}))
+                         (alter-meta! session dissoc :thread :eval-msg))))))
       
       "interrupt"
-      ; interrupts are inherently racy; we'll check the agent's :msg-id and
+      ; interrupts are inherently racy; we'll check the agent's :eval-msg's :id and
       ; bail if it's different than the one provided, but it's possible for
       ; that message's eval to finish and another to start before we send
       ; the interrupt / .stop.
-      (if (or (not interrupt-id)
-              (= interrupt-id (-> session meta :msg-id)))
-        (do
-          (-> session meta ^Thread (:thread) .stop)
-          (transport/send transport {:status #{:interrupted}
-                                     :id (-> session meta :msg-id)
-                                     :session (-> session meta :id)})
-          (transport/send transport (response-for msg {:status #{:done}})))
-        (transport/send transport (response-for msg {:status #{:error :interrupt-id-mismatch :done}})))
+      (let [{:keys [id eval-msg ^Thread thread]} (meta session)]
+        (if (or (not interrupt-id)
+                (= interrupt-id (:id eval-msg)))
+          (if-not thread
+            (transport/send transport (response-for msg {:status #{:done :session-idle}}))
+            (do
+              (.stop thread)
+              (transport/send transport {:status #{:interrupted}
+                                         :id (:id eval-msg)
+                                         :session id})
+              (transport/send transport (response-for msg {:status #{:done}}))))
+          (transport/send transport (response-for msg {:status #{:error :interrupt-id-mismatch :done}}))))
       
       (h msg))))
 

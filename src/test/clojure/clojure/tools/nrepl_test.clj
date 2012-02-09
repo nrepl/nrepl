@@ -158,7 +158,7 @@
   (is (= [[nil "100\n"] ; printed number
           ["nil" nil] ; return val from println
           ["42" nil]  ; return val from `42`
-          [nil nil]]    ; :done message
+          [nil nil]]  ; :done
          (map (juxt :value :out) (repl-eval client "(println 100) 42")))))
 
 (def-repl-test interrupt
@@ -174,8 +174,7 @@
                                                        (Thread/sleep 30000)
                                                        (def halted? false)))})]
     (Thread/sleep 100)
-    (is (= #{"done"} (-> (message session {:op :interrupt})
-                      first :status set)))
+    (is (= #{"done"} (-> session (message {:op :interrupt}) first :status set)))
     (is (= #{"done" "interrupted"} (-> resp combine-responses :status)))
     (is (= [true] (repl-values session "halted?")))))
 
