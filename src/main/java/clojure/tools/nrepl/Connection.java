@@ -76,19 +76,22 @@ public class Connection implements Closeable {
 
     @SuppressWarnings("unchecked")
     public static class Response {
-        private final Delay combinedResponse;
+        // would prefer to use a Delay here, but the change in IFn.invoke signatures between
+        // Clojure 1.2 and 1.3 makes it impossible to be compatible with both from Java
+        private ISeq responses;
+        private Map<String, Object> response;
         
         private Response (final ISeq responses) {
-            combinedResponse = new Delay(new AFn () {
-               public Object invoke () throws Exception {
-                   return stringifyKeys.invoke(combineResponses.invoke(responses));
-               }
-            });
+            this.responses = responses;
         }
-
-        public Map<String, Object> combinedResponse () {
+        
+        public synchronized Map<String, Object> combinedResponse () {
             try {
-                return (Map)combinedResponse.deref();
+                if (response == null) {
+                    response = (Map<String, Object>)stringifyKeys.invoke(combineResponses.invoke(responses));
+                    responses = null;
+                }
+                return response;
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
