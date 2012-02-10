@@ -201,10 +201,10 @@
           (if-not thread
             (transport/send transport (response-for msg {:status #{:done :session-idle}}))
             (do
-              (.stop thread)
               (transport/send transport {:status #{:interrupted}
                                          :id (:id eval-msg)
                                          :session id})
+              (.stop thread)
               (transport/send transport (response-for msg {:status #{:done}}))))
           (transport/send transport (response-for msg {:status #{:error :interrupt-id-mismatch :done}}))))
       
