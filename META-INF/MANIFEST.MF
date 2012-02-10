@@ -12,3 +12,5 @@ Export-Package: clojure.tools,
  clojure.tools.nrepl
 Import-Package: clojure;version="1.3.0",
  clojure.lang
+Bundle-ClassPath: .,
+ target/classes/
