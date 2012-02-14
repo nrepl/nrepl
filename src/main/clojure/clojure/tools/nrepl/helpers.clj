@@ -1,5 +1,4 @@
-(ns #^{:doc ""
-       :author "Chas Emerick"}
+(ns ^{:author "Chas Emerick"}
   clojure.tools.nrepl.helpers
   (:import (java.io File StringReader)))
 

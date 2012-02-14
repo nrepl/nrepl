@@ -1,4 +1,4 @@
-(ns #^{:doc ""
+(ns #^{:doc "A proof-of-concept command-line client for nREPL."
        :author "Chas Emerick"}
   clojure.tools.nrepl.cmdline
   (:require [clojure.tools.nrepl :as repl])

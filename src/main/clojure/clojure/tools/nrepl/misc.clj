@@ -1,4 +1,7 @@
-(ns clojure.tools.nrepl.misc)
+(ns ^{:doc "Misc utilities used in nREPL's implementation (potentially also useful
+            for anyone extending it)."
+      :author "Chas Emerick"}
+     clojure.tools.nrepl.misc)
 
 (try
   (require 'clojure.tools.logging)
@@ -18,28 +21,35 @@
   [x & body]
   `(let [x# ~x] ~@body x#))
 
-(defn uuid [] (str (java.util.UUID/randomUUID)))
+(defn uuid
+  "Returns a new UUID string."
+  []
+  (str (java.util.UUID/randomUUID)))
 
 (defn response-for
-  "Returns a map containing the :session and :id from the 'request' `msg`
+  "Returns a map containing the :session and :id from the \"request\" `msg`
    as well as all entries specified in `response-data`, which can be one
    or more maps (which will be merged), *or* key-value pairs.
 
    (response-for msg :status :done :value \"5\")
-   (response-for msg {:status :interrupted})"
+   (response-for msg {:status :interrupted})
+
+   The :session value in `msg` may be any Clojure reference type (to accommodate
+   likely implementations of sessions) that has an :id slot in its metadata,
+   or a string."
   [msg & response-data]
   {:pre [(seq response-data)]}
   (let [{:keys [status] :as response} (if (map? (first response-data))
-                                    (reduce merge response-data)
-                                    (apply hash-map response-data))
+                                        (reduce merge response-data)
+                                        (apply hash-map response-data))
         response (if (not status)
                    response
                    (assoc response :status (if (coll? status)
                                              status
                                              #{status})))]
     (-> (select-keys msg [:session :id])
-      ; TODO ugh, this is horrible
-      (update-in [:session] #(if (instance? clojure.lang.Agent %)
+      ; AReference should make this suitable for any session implementation
+      (update-in [:session] #(if (instance? clojure.lang.AReference %)
                                (-> % meta :id)
                                %))
       (merge response))))

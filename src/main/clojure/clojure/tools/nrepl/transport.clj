@@ -1,14 +1,16 @@
-(ns clojure.tools.nrepl.transport
+
+(ns ^{:author "Chas Emerick"}
+     clojure.tools.nrepl.transport
   (:require [clojure.tools.nrepl.bencode :as be]
             [clojure.java.io :as io]
             (clojure walk set))
   (:use [clojure.tools.nrepl.misc :only (returning uuid)])
   (:refer-clojure :exclude (send))
   (:import (java.io InputStream OutputStream PushbackInputStream
-                    PushbackReader Reader Writer)
+                    PushbackReader)
            java.net.Socket
-           (java.util.concurrent BlockingQueue LinkedBlockingQueue
-                                 SynchronousQueue TimeUnit)))
+           (java.util.concurrent SynchronousQueue LinkedBlockingQueue
+                                 BlockingQueue TimeUnit)))
 
 (defprotocol Transport
   "Defines the interface for a wire protocol implementation for use
@@ -17,7 +19,7 @@
     "Reads and returns the next message received.  Will block.
      Should return nil the a message is not available after `timeout`
      ms or if the underlying channel has been closed.")
-  (send [this msg] "Sends msg."))
+  (send [this msg] "Sends msg. Implementations should return the transport."))
 
 (deftype FnTransport [recv-fn send-fn close]
   Transport
@@ -28,7 +30,9 @@
   (close [this] (close)))
 
 (defn fn-transport
-  ([read write] (fn-transport read write nil nil))
+  "Returns a Transport implementation that delegates its functionality
+   to the 2 or 3 functions provided."
+  ([read write] (fn-transport read write nil))
   ([read write close]
     (let [read-queue (SynchronousQueue.)]
       (future (while true
@@ -39,6 +43,8 @@
         close))))
 
 (defn bencode
+  "Returns a Transport implementation that serializes messages
+   over the given Socket or InputStream/OutputStream using bencode."
   ([^Socket s] (bencode s s s))
   ([in out & [^Socket s]]
     (let [in (PushbackInputStream. (io/input-stream in))
@@ -49,9 +55,14 @@
            (doto out
              (be/write-bencode %)
              .flush))
-        (when s #(.close s))))))
+        (fn []
+          (.close in)
+          (.close out)
+          (when s (.close s)))))))
 
 (defn tty
+  "Returns a Transport implementation suitable for serving an nREPL backend
+   via simple in/out readers, as with a tty or telnet connection."
   ([^Socket s] (tty s s s))
   ([in out & [^Socket s]]
     (let [r (PushbackReader. (io/reader in))
@@ -84,13 +95,19 @@
           #(.close s))))))
 
 (defn tty-greeting
+  "A greeting fn usable with clojure.tools.nrepl.server/start-server,
+   meant to be used in conjunction with Transports returned by the
+   `tty` function.
+
+   Usually, Clojure-aware client-side tooling would provide this upon connecting
+   to the server, but telnet et al. isn't that."
   [transport]
   (send transport {:out (str ";; Clojure " (clojure-version)
                              \newline "user=> ")}))
 
 (deftype QueueTransport [^BlockingQueue in ^BlockingQueue out]
-  Transport
-  (send [this msg] (.put out msg))
+  clojure.tools.nrepl.transport.Transport
+  (send [this msg] (.put out msg) this)
   (recv [this] (.take in))
   (recv [this timeout] (.poll in timeout TimeUnit/MILLISECONDS)))
 

@@ -1,5 +1,5 @@
-(ns #^{:doc ""
-       :author "Chas Emerick"}
+(ns ^{:doc "High level nREPL client support."
+      :author "Chas Emerick"}
   clojure.tools.nrepl
   (:require [clojure.tools.nrepl.transport :as transport]
             clojure.set
@@ -21,7 +21,10 @@
 (defn client
   "Returns a fn of zero and one argument, both of which return the current head of a single
    response-seq being read off of the given client-side transport.  The one-arg arity will
-   send a given message on the transport before returning the seq."
+   send a given message on the transport before returning the seq.
+
+   Most REPL interactions are best performed via `message` and `client-session` on top of
+   a client fn returned from this fn."
   [transport response-timeout]
   (let [latest-head (atom nil)
         update #(swap! latest-head
@@ -69,10 +72,10 @@
 
 (defn message
   "Returns a function of one argument.  Accepts a message that is sent via the
-   transport-seq fn provided with a fixed :session id added to it.  Returns the
-   head of the client's response-seq, filtered to include only
-   messages related to the :session id that will terminate when the session is
-   closed."
+   client provided with a fixed message :id added to it.  Returns the
+   head of the client's response seq, filtered to include only
+   messages related to the message :id that will terminate upon receipt of a
+   \"done\" :status."
   [client {:keys [id] :as msg :or {id (uuid)}}]
   (let [f (delimited-transport-seq client #{"done"} {:id id})]
     (f (assoc msg :id id))))
@@ -89,8 +92,8 @@
 
 (defn client-session
   "Returns a function of one argument.  Accepts a message that is sent via the
-   transport-seq fn provided with a fixed :session id added to it.  Returns the
-   head of the client's response-seq, filtered to include only
+   client provided with a fixed :session id added to it.  Returns the
+   head of the client's response seq, filtered to include only
    messages related to the :session id that will terminate when the session is
    closed."
   [client & {:keys [session clone]}]
@@ -98,10 +101,7 @@
     (delimited-transport-seq client #{"session-closed"} {:session session})))
 
 (defn combine-responses
-  "Combines the provided response messages into a single response map.
-   Typical usage being:
-
-       (combine-responses (repl-response-seq (eval session \"(some-expression)\")))
+  "Combines the provided seq of response messages into a single response map.
 
    Certain message slots are combined in special ways:
 
@@ -143,42 +143,24 @@
         (throw (IllegalStateException. (str "Could not read response value: " value) e))))))
 
 (defn response-values
+  "Given a seq of responses (as from response-seq or returned from any function returned
+   by client or client-session), returns a seq of values read from :value slots found
+   therein."
   [responses]
   (->> responses
     (map read-response-value)
     combine-responses
     :value))
 
-;; TODO session expiration
-;; Ideas:
-;; - tools
-;;   - support syntax-quoting of vals in eval-msg
-;; - protocols and transport
-;;   - console
-;;   - JMX
-;;   - STOMP?
-;;   - HTTP
-;;   - websockets (although, is this interesting at all given an HTTP option?)
-;; - cmdline
-;;   - support for connecting to a server
-;;   - optionally running other clojure script(s)/java mains prior to starting/connecting to a server
-
 (defn connect
   "Connects to a hosted REPL at the given host (defaults to localhost) and port,
-   returning a Session.
+   returning a Transport for that connection.
 
-   Note that the Session also implements java.io.Closeable, and is therefore usable with
-   with-open.
+   The default implementation of Transport also implements java.io.Closeable, and is therefore
+   usable with `with-open`.
 
-   Response functions, returned from invocations of (send ...), accept zero or
-   one argument. The one-arg arity accepts either:
-       - a number of milliseconds, which is the maximum time that the invocation will block
-         before returning the next response message.  If the timeout is exceeded, nil
-         is returned.  Multiple response messages are expected for each sent request; a
-         response message with a :status of \"done\" indicates that the associated request
-         has been fully processed, and that no further response messages should be expected.
-         See response-seq and combine-responses for some utilities for consuming message
-         responses."
+   From the client side, Transports are most easily used with `client`, `client-session`, and
+   `message`."
   [& {:keys [port host]}]
   {:pre [port]}
   (let [^String host (or host "localhost")]
@@ -204,10 +186,25 @@
              :port port
              :transport-fn transport-fn)))
 
-(def version
+(def ^{:doc "Current version of nREPL, map of :major, :minor, :incremental, and :qualifier."}
+      version
   (when-let [in (.getResourceAsStream (class connect) "/clojure/tools/nrepl/version.txt")]
     (with-open [^java.io.BufferedReader reader (io/reader in)]
       (->> (.readLine reader)
         (re-find #"(\d+)\.(\d+)\.(\d+)-?(.*)")
         rest
         (zipmap [:major :minor :incremental :qualifier])))))
+
+
+;; TODO session expiration
+;; Ideas:
+;; - tools
+;;   - support syntax-quoting of vals in eval-msg
+;; - transports
+;;   - JMX
+;;   - STOMP?
+;;   - HTTP
+;;   - websockets (although, is this interesting at all given an HTTP option?)
+;; - cmdline
+;;   - support for connecting to a server
+;;   - optionally running other clojure script(s)/java mains prior to starting/connecting to a server

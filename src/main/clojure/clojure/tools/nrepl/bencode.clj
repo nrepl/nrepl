@@ -149,7 +149,7 @@
     ;;
     ;; So we have to do some translation here. Luckily `.byteValue`
     ;; does that for us.
-    (Byte/valueOf (.byteValue (int c)))))
+    (Byte/valueOf (.byteValue c))))
 
 (defn #^{:private true :tag "[B"} read-bytes
   [#^InputStream input n]
@@ -321,8 +321,6 @@
       (symbol? thing)  :named
       (keyword? thing) :named
       (map? thing)     :map
-      ;; Check for various sequency things. Yes. This is tedious. But as long
-      ;; as we don't have a Seqable protocol, we can't do much about it.
       (or (coll? thing)
           (.isArray (class thing)))
       :list)))
