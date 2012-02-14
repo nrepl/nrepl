@@ -97,10 +97,13 @@
           (if-not thread
             (t/send transport (response-for msg :status #{:done :session-idle}))
             (do
-              (.stop thread)
+              ; notify of the interrupted status before we .stop the thread so
+              ; it is received before the standard :done status (thereby ensuring
+              ; that is stays within the scope of a clojure.tools.nrepl/message seq
               (t/send transport {:status #{:interrupted}
                                  :id (:id eval-msg)
                                  :session id})
+              (.stop thread)
               (t/send transport (response-for msg :status #{:done}))))
           (t/send transport (response-for msg :status #{:error :interrupt-id-mismatch :done}))))
       
