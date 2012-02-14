@@ -37,7 +37,7 @@
    The :session value in `msg` may be any Clojure reference type (to accommodate
    likely implementations of sessions) that has an :id slot in its metadata,
    or a string."
-  [msg & response-data]
+  [{:keys [session id]} & response-data]
   {:pre [(seq response-data)]}
   (let [{:keys [status] :as response} (if (map? (first response-data))
                                         (reduce merge response-data)
@@ -46,10 +46,10 @@
                    response
                    (assoc response :status (if (coll? status)
                                              status
-                                             #{status})))]
-    (-> (select-keys msg [:session :id])
-      ; AReference should make this suitable for any session implementation
-      (update-in [:session] #(if (instance? clojure.lang.AReference %)
-                               (-> % meta :id)
-                               %))
-      (merge response))))
+                                             #{status})))
+        basis (merge (when id {:id id})
+                     ; AReference should make this suitable for any session implementation?
+                     (when session {:session (if (instance? clojure.lang.AReference session)
+                                               (-> session meta :id)
+                                               session)}))]
+    (merge basis response)))

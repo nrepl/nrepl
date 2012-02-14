@@ -247,11 +247,11 @@ value.  For example, nREPL's default handler is constructed like so in the
 
 ```clojure
 (defn default-handler
-  "A default handler supporting interruptable evaluation, stdin, sessions, and
+  "A default handler supporting interruptible evaluation, stdin, sessions, and
    readable representations of evaluated expressions via `pr`."
   []
   (-> (constantly false)
-    clojure.tools.nrepl.middleware.interruptable-eval/interruptible-eval
+    clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval
     clojure.tools.nrepl.middleware.pr-values/pr-values
     clojure.tools.nrepl.middleware.session/add-stdin
     clojure.tools.nrepl.middleware.session/session))

@@ -2,7 +2,6 @@
   (:use clojure.test
         clojure.tools.nrepl)
   (:require (clojure.tools.nrepl [transport :as transport]
-                                 [handlers :as handlers]
                                  [server :as server]
                                  [ack :as ack])))
 
@@ -204,7 +203,7 @@
     (is (= [2] (response-values (response-seq conn 100))))))
 
 (deftest test-ack
-  (with-open [s (server/start-server :handler (ack/handle-ack (handlers/default-handler)))]
+  (with-open [s (server/start-server :handler (ack/handle-ack (server/default-handler)))]
     (ack/reset-ack-port!)
     (with-open [s2 (server/start-server :ack-port (.getLocalPort (:ss @s)))]
       (is (= (.getLocalPort (:ss @s2)) (ack/wait-for-ack 10000))))))

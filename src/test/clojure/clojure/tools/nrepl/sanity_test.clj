@@ -1,7 +1,8 @@
 (ns clojure.tools.nrepl.sanity-test
   (:use clojure.test
         [clojure.tools.nrepl.transport :only (piped-transports)])
-  (:require [clojure.tools.nrepl.handlers :as handlers]
+  (:require (clojure.tools.nrepl.middleware [interruptible-eval :as eval]
+                                            [session :as session])
             [clojure.tools.nrepl :as repl]
             [clojure.set :as set])
   (:import (java.util.concurrent BlockingQueue LinkedBlockingQueue TimeUnit)))
@@ -23,9 +24,9 @@
           resp-fn (if ns
                     (juxt :ns :value)
                     :value)]
-      (handlers/evaluate {#'*out* (java.io.PrintWriter. out)
-                          #'*err* (java.io.PrintWriter. err)}
-                         msg)
+      (eval/evaluate {#'*out* (java.io.PrintWriter. out)
+                      #'*err* (java.io.PrintWriter. err)}
+                     msg)
       (->> (repl/response-seq local 0)
         (map resp-fn)
         (cons (str out))
@@ -79,7 +80,7 @@
 
 (deftest repl-out-writer
   (let [[local remote] (piped-transports)
-        w (#'handlers/session-out :out :dummy-session-id remote)]
+        w (#'session/session-out :out :dummy-session-id remote)]
     (doto w
       .flush
       (.write "abcd")
