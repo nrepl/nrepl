@@ -31,7 +31,7 @@
                err print
                out print
                value print}}]
-    (let [connection (repl/connect "localhost" port)
+    (let [connection (repl/connect :host "localhost" :port port)
           {:keys [major minor incremental qualifier]} *clojure-version*]
       (println "network-repl")
       (println (str "Clojure " (clojure-version)))
@@ -63,7 +63,8 @@
 (defn -main
   [& args]
   (let [[options args] (split-args args)
-        [ssocket _] (start-server (Integer/parseInt (or (options "--port") "0")))]
+        server (start-server :port (Integer/parseInt (or (options "--port") "0")))
+        ssocket (:ss @server)]
     (when-let [ack-port (options "--ack")]
       (binding [*out* *err*]
         (println (format "ack'ing my port %d to other server running on port %s"
