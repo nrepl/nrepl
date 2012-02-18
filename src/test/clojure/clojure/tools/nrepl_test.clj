@@ -46,7 +46,7 @@
     "[1 2 3]"
     "{1 2 3 4}"
     "#{1 2 3 4}")
-  
+
   (is (= (->> "#\"regex\"" read-string eval list (map str))
          (->> "#\"regex\"" (repl-values client) (map str)))))
 
@@ -100,7 +100,7 @@
   (let [history [[15 "12c" :hello]]]
     (is (= history (repl-values session "[*3 *2 *1]")))
     (is (= history (repl-values session "*1"))))
-  
+
   (is (= [nil] (repl-values client "*1"))))
 
 (def-repl-test session-set!
@@ -166,7 +166,7 @@
            first
            :status
            set)))
-  
+
   (let [resp (message session {:op :eval :code (code (do
                                                        (def halted? true)
                                                        halted?
@@ -192,10 +192,29 @@
                                          (when (-> resp :status set (contains? "need-input"))
                                            (session {:op :stdin :stdin "(1 2 3)"}))
                                          resp)))))
-  
+
   (session {:op :stdin :stdin "a\nb\nc\n"})
   (doseq [x "abc"]
     (is (= [(str x)] (repl-values session "(read-line)")))))
+
+(def-repl-test request-multiple-read-newline-*in*
+  (is (= '(:ohai) (response-values (for [resp (repl-eval session "(read)")]
+                                       (do
+                                         (when (-> resp :status set (contains? "need-input"))
+                                           (session {:op :stdin :stdin ":ohai\n"}))
+                                         resp)))))
+
+  (session {:op :stdin :stdin "a\n"})
+  (is (= ["a"] (repl-values session "(read-line)"))))
+
+(def-repl-test request-multiple-read-objects-*in*
+  (is (= '(:ohai) (response-values (for [resp (repl-eval session "(read)")]
+                                       (do
+                                         (when (-> resp :status set (contains? "need-input"))
+                                           (session {:op :stdin :stdin ":ohai :kthxbai\n"}))
+                                         resp)))))
+
+  (is (= [" :kthxbai"] (repl-values session "(read-line)"))))
 
 (def-repl-test test-url-connect
   (with-open [conn (url-connect (str "nrepl://localhost:" *server-port*))]

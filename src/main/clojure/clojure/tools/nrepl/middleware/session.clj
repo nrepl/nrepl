@@ -6,13 +6,13 @@
         [clojure.tools.nrepl.middleware.interruptible-eval :only (*msg*)])
   (:require (clojure main test)
             [clojure.tools.nrepl.transport :as t])
-  (:import clojure.tools.nrepl.transport.Transport 
+  (:import clojure.tools.nrepl.transport.Transport
            (java.io PipedReader PipedWriter Reader Writer PrintWriter StringReader)
            clojure.lang.LineNumberingPushbackReader))
 
 (def ^{:private true} sessions (atom {}))
 
-;; TODO the way this is currently, :out and :err will continue to be 
+;; TODO the way this is currently, :out and :err will continue to be
 ;; associated with a particular *msg* (and session) even when produced from a future,
 ;; agent, etc. due to binding conveyance.  This may or may not be desirable
 ;; depending upon the expectations of the client/user.  I'm not sure at the moment
@@ -20,7 +20,7 @@
 
 (defn- session-out
   "Returns a PrintWriter suitable for binding as *out* or *err*.  All of
-   the content written to that PrintWriter will (when .flush-ed) be sent on the 
+   the content written to that PrintWriter will (when .flush-ed) be sent on the
    given transport in messages specifying the given session-id.
    `channel-type` should be :out or :err, as appropriate."
   [channel-type session-id transport]
@@ -102,6 +102,7 @@
                   clojure.test/*test-out* out]
           (agent (merge baseline-bindings (get-thread-bindings))
             :meta {:id id
+                   :stdin-reader in
                    :stdin-writer in-writer}
             :error-mode :continue
             :error-handler #'session-error-handler))))))
@@ -155,7 +156,7 @@
             "clone" (register-session msg)
             "close" (close-session msg)
             "ls-sessions" (t/send transport (response-for msg :status :done
-                                                              :sessions (keys @sessions))) 
+                                                              :sessions (keys @sessions)))
             (h msg)))))))
 
 (defn add-stdin
@@ -166,8 +167,16 @@
    Requires the session middleware."
   [h]
   (fn [{:keys [op stdin session transport] :as msg}]
-    (if (= op "stdin")
-      (do
-        (-> session meta ^Writer (:stdin-writer) (.write stdin))
-        (t/send transport (response-for msg :status :done)))
-      (h msg))))
+    (cond
+      (= op "eval")
+        (let [result (h msg)
+              s (-> session meta ^LineNumberingPushbackReader (:stdin-reader))]
+          (when (.ready s)
+            (clojure.main/skip-if-eol s))
+          result)
+      (= op "stdin")
+        (do
+          (-> session meta ^Writer (:stdin-writer) (.write stdin))
+          (t/send transport (response-for msg :status :done)))
+      :else
+        (h msg))))
