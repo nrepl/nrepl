@@ -92,6 +92,11 @@
           (map :out)
           (remove nil?)))))
 
+(def-repl-test ensure-whitespace-prints
+  (is (= " \t \n \f \n" (->> (repl-eval client "(println \" \t \n \f \")")
+                          combine-responses
+                          :out))))
+
 (def-repl-test session-return-recall
   (repl-eval session (code
                        (apply + (range 6))

@@ -36,8 +36,8 @@
                           :else (.append buf ^chars x off len))))
                     (flush []
                       (let [text (locking buf (let [text (str buf)]
-                                               (.setLength buf 0)
-                                               text))]
+                                                (.setLength buf 0)
+                                                text))]
                         (when (pos? (count text))
                           (t/send transport
                             (response-for *msg* :session session-id
