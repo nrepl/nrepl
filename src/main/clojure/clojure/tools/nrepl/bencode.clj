@@ -325,7 +325,8 @@
       (symbol? thing)  :named
       (keyword? thing) :named
       (map? thing)     :map
-      (or (nil? thing) (coll? thing) (.isArray (class thing))) :list)))
+      (or (nil? thing) (coll? thing) (.isArray (class thing))) :list
+      :else (type thing))))
 
 (defmethod write-bencode :default
   [output x]
