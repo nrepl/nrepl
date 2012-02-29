@@ -145,6 +145,7 @@
 
 (deftest test-list-writing
   (are [x y] (= (>output x :writer write-bencode) y)
+    nil                     "le"
     []                      "le"
     ["cheese"]              "l6:cheesee"
     ["cheese" "ham" "eggs"] "l6:cheese3:ham4:eggse"))
