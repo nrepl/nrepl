@@ -243,7 +243,7 @@
       e nil
       (do
         (.unread input (int ch))
-        (string<payload (read-netstring* input))))))
+        (read-netstring* input)))))
 
 ;; To read the bencode encoded data we walk a long the sequence of tokens
 ;; and act according to the found tags.
@@ -284,11 +284,15 @@
   [input]
   (vec (token-seq input)))
 
-;; Maps are sequences of key/value pairs.
+;; Maps are sequences of key/value pairs. The keys are always
+;; decoded into strings. The values are kept as is.
 
 (defn #^{:private true} read-map
   [input]
-  (apply hash-map (token-seq input)))
+  (->> (token-seq input)
+    (partition 2)
+    (map (fn [[k v]] [(string<payload k) v]))
+    (into {})))
 
 ;; The final missing piece is `token-seq`. This a just a simple
 ;; sequence which reads tokens until the next `\e`.
@@ -417,32 +421,3 @@
           (if (zero? x)
             (recur (inc i))
             x))))))
-
-;; ## Special cases
-;;
-;; Sometimes one really wants to read the byte array coming from the wire.
-;; Without converting it to a UTF-8 string. A use case would be enhanced
-;; REPL interaction transferring not only strings, but also eg. picture
-;; information as opaque byte information.
-;;
-;; To accomodate for theses uses we expose here some special cases.
-;;
-;; `read-bencode-netstring` is really only a public façade for
-;; `read-netstring*`. However, the latter is only an implementation detail
-;; while the former is a promise.
-
-(defn read-bencode-netstring
-  "Read a netstring in bencode format. That means without trailing comma.
-  Returns the byte array of read bytes."
-  [input]
-  (read-netstring* input))
-
-;; Of course this is complemented by `write-bencode-netstring` for writing
-;; binary data in bencode netstring format. And similar this is only a
-;; façade.
-
-(defn write-bencode-netstring
-  "Write binary content in bencode netstring format. That means without
-  trailing comma. Takes a byte array as content."
-  [output content]
-  (write-netstring* output content))

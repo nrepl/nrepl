@@ -12,7 +12,8 @@
   (:import
     java.io.ByteArrayInputStream
     java.io.ByteArrayOutputStream
-    java.io.PushbackInputStream)
+    java.io.PushbackInputStream
+    clojure.lang.RT)
   (:use
     [clojure.test :only [deftest is are]]
     clojure.tools.nrepl.bencode))
@@ -21,9 +22,25 @@
   [#^String input]
   (.getBytes input "UTF-8"))
 
-(defn #^{:private true} <bytes
+(defmulti #^{:private true} <bytes class)
+
+(defmethod <bytes :default
+  [input]
+  input)
+
+(defmethod <bytes (RT/classForName "[B")
   [#^"[B" input]
   (String. input "UTF-8"))
+
+(defmethod <bytes clojure.lang.IPersistentVector
+  [input]
+  (vec (map <bytes input)))
+
+(defmethod <bytes clojure.lang.IPersistentMap
+  [input]
+  (->> input
+    (map (fn [[k v]] [k (<bytes v)]))
+    (into {})))
 
 (defn #^{:private true} >input
   [^String input & {:keys [reader]}]
@@ -31,10 +48,11 @@
     (.getBytes "UTF-8")
     ByteArrayInputStream.
     PushbackInputStream.
-    reader))
+    reader
+    <bytes))
 
 (deftest test-netstring-reading
-  (are [x y] (= (<bytes (>input x :reader read-netstring)) y)
+  (are [x y] (= (>input x :reader read-netstring) y)
     "0:,"                ""
     "13:Hello, World!,"  "Hello, World!"
     "16:Hällö, Würld!,"  "Hällö, Würld!"
@@ -68,13 +86,6 @@
   (are [x y] (= (>input x :reader read-bencode) y)
     "l6:cheesei42ed3:ham4:eggsee" ["cheese" 42 {"ham" "eggs"}]
     "d6:cheesei42e3:haml4:eggsee" {"cheese" 42 "ham" ["eggs"]}))
-
-(deftest test-bencode-netstring-reading
-  (are [x y] (= (<bytes (>input x :reader read-bencode-netstring)) y)
-    "0:"                ""
-    "13:Hello, World!"  "Hello, World!"
-    "16:Hällö, Würld!"  "Hällö, Würld!"
-    "25:Здравей, Свят!" "Здравей, Свят!"))
 
 (defn #^{:private true} >output
   [thing & {:keys [writer]}]
@@ -147,13 +158,6 @@
   (are [x y] (= (>output x :writer write-bencode) y)
     ["cheese" 42 {"ham" "eggs"}] "l6:cheesei42ed3:ham4:eggsee"
     {"cheese" 42 "ham" ["eggs"]} "d6:cheesei42e3:haml4:eggsee"))
-
-(deftest test-bencode-netstring-writing
-  (are [x y] (= (>output (>bytes x) :writer write-bencode-netstring) y)
-    ""               "0:"
-    "Hello, World!"  "13:Hello, World!"
-    "Hällö, Würld!"  "16:Hällö, Würld!"
-    "Здравей, Свят!" "25:Здравей, Свят!"))
 
 (deftest test-lexicographic-sorting
   (let [source   ["ham" "eggs" "hamburg" "hamburger" "cheese"]
