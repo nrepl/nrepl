@@ -60,6 +60,76 @@
 ;; sized message buffer. The trailing comma serves as a hint to detect
 ;; incorrect netstrings.
 ;;
+;; ## Low-level reading
+;;
+;; We will need some low-level reading helpers to read the bytes from
+;; the input stream. These are `read-byte` as well as `read-bytes`. They
+;; are split out, because doing such a simple task as reading a byte is
+;; mild catastrophe in Java. So it would add some clutter to the algorithm
+;; `read-netstring`.
+;;
+;; On the other hand they might be also useful elsewhere.
+;;
+;; To remove some magic numbers from the code below.
+
+(def #^{:const true} i     105)
+(def #^{:const true} l     108)
+(def #^{:const true} d     100)
+(def #^{:const true} comma 44)
+(def #^{:const true} minus 45)
+
+;; These two are only used boxed. So we keep them extra here.
+
+(def e     101)
+(def colon 58)
+
+(defn #^{:private true} read-byte
+  #^long [#^InputStream input]
+  (let [c (.read input)]
+    (when (neg? c)
+      (throw
+        (Exception. "Invalid netstring. Unexpected end of input.")))
+    ;; Here we have a quirk for example. `.read` returns -1 on end of
+    ;; input. However the Java `Byte` has only a range from -128 to 127.
+    ;; How does the fit together?
+    ;;
+    ;; The whole thing is shifted. `.read` actually returns an int
+    ;; between zero and 255. Everything below the value 128 stands
+    ;; for itself. But larger values are actually negative byte values.
+    ;;
+    ;; So we have to do some translation here. `Byte/byteValue` would
+    ;; do that for us, but we want to avoid boxing here.
+    (if (< 127 c) (- c 256) c)))
+
+(defn #^{:private true :tag "[B"} read-bytes
+  #^Object [#^InputStream input n]
+  (let [content (byte-array n)]
+    (loop [offset (int 0)
+           len    (int n)]
+      (let [result (.read input content offset len)]
+        (when (neg? result)
+          (throw
+            (Exception.
+              "Invalid netstring. Less data available than expected.")))
+        (when (not= result len)
+          (recur (+ offset result) (- len result)))))
+    content))
+
+;; `read-long` is used for reading integers from the stream as well
+;; as the byte count prefixes of byte strings. The delimiter is \:
+;; for byte count prefixes and \e for integers.
+
+(defn #^{:private true} read-long
+  #^long [#^InputStream input delim]
+  (loop [n (long 0)]
+    ;; We read repeatedly a byte from the input…
+    (let [b (read-byte input)]
+      ;; …and stop at the delimiter.
+      (cond
+        (= b minus) (- (read-long input delim))
+        (= b delim) n
+        :else       (recur (+ (* n (long 10)) (- (long b) (long  48))))))))
+
 ;; ## Reading a netstring
 ;;
 ;; Let's dive straight into reading a netstring from an `InputStream`.
@@ -80,39 +150,12 @@
 ;;
 ;; With this in mind we define the inner helper function first.
 
-(declare read-byte
-         read-bytes
-         #^"[B" string>payload
+(declare #^"[B" string>payload
          #^String string<payload)
-
-(def i (Byte/valueOf (byte 105)))
-(def l (Byte/valueOf (byte 108)))
-(def d (Byte/valueOf (byte 100)))
-(def e (Byte/valueOf (byte 101)))
-(def colon (Byte/valueOf (byte 58)))
-(def comma (Byte/valueOf (byte 44)))
 
 (defn #^{:private true} read-netstring*
   [input]
-  (let [reader  #(read-byte input)
-        ;; We read repeatedly a byte from the input…
-        prefix  (->> reader
-                  repeatedly
-                  ;; …and stop at the colon following the prefix of
-                  ;; the byte count.
-                  (take-while (complement #{colon}))
-                  (into-array Byte/TYPE))
-        ;; The byte count is now obtained by interpreting the bytes
-        ;; of the prefix as a number encoded in decimal format in
-        ;; an UTF-8 string.
-        ;;
-        ;; *Note:* We **always** encode strings into unicode by virtue
-        ;; of UTF-8 when sending things over the wire. In this case
-        ;; it wouldn't make a difference, because the digits are the
-        ;; same in UTF-8 and ASCII, but for the general case it is
-        ;; important to keep it in mind.
-        cnt     (-> prefix string<payload Integer/valueOf)]
-    (read-bytes input cnt)))
+  (read-bytes input (read-long input colon)))
 
 ;; And the public facing API: `read-netstring`.
 
@@ -123,46 +166,6 @@
   (let [content (read-netstring* input)]
     (when (not= (read-byte input) comma)
       (throw (Exception. "Invalid netstring. ',' expected.")))
-    content))
-
-;; The astute reader might have noticed that there are several helpers
-;; which are mentioned, but not defined, yet. These are `read-byte`
-;; as well as `read-bytes`. They are split out, because doing such
-;; a simple task as reading a byte is mild catastrophe in Java. So
-;; it would add some clutter to the algorithm `read-netstring`.
-;;
-;; On the other hand they might be also useful elsewhere.
-
-(defn #^{:private true :tag Byte} read-byte
-  [#^InputStream input]
-  (let [c (.read input)]
-    (when (neg? c)
-      (throw
-        (Exception. "Invalid netstring. Unexpected end of input.")))
-    ;; Here we have a quirk for example. `.read` returns -1 on end of
-    ;; input. However the Java `Byte` has only a range from -128 to 127.
-    ;; How does the fit together?
-    ;;
-    ;; The whole thing is shifted. `.read` actually returns an int
-    ;; between zero and 255. Everything below the value 128 stands
-    ;; for itself. But larger values are actually negative byte values.
-    ;;
-    ;; So we have to do some translation here. Luckily `.byteValue`
-    ;; does that for us.
-    (Byte/valueOf (.byteValue c))))
-
-(defn #^{:private true :tag "[B"} read-bytes
-  [#^InputStream input n]
-  (let [content (byte-array n)]
-    (loop [offset 0
-           len    n]
-      (let [result (.read input content offset len)]
-        (when (neg? result)
-          (throw
-            (Exception.
-              "Invalid netstring. Less data available than expected.")))
-        (when (not= result len)
-          (recur (+ offset result) (- len result)))))
     content))
 
 ;; Similarly the `string>payload` and `string<payload` functions
@@ -236,14 +239,14 @@
 (defn #^{:private true} read-token
   [#^PushbackInputStream input]
   (let [ch (read-byte input)]
-    (condp = ch
-      i :integer
-      l :list
-      d :map
-      e nil
-      (do
-        (.unread input (int ch))
-        (read-netstring* input)))))
+    (cond
+      (= (long e) ch) nil
+      (= i ch) :integer
+      (= l ch) :list
+      (= d ch) :map
+      :else    (do
+                 (.unread input (int ch))
+                 (read-netstring* input)))))
 
 ;; To read the bencode encoded data we walk a long the sequence of tokens
 ;; and act according to the found tags.
@@ -266,12 +269,7 @@
 
 (defn #^{:private true} read-integer
   [input]
-  (->> #(read-byte input)
-    repeatedly
-    (take-while (complement #{e}))
-    (into-array Byte/TYPE)
-    string<payload
-    Integer/valueOf))
+  (read-long input e))
 
 ;; *Note:* integers are an ugly special case, which cannot be
 ;; handled with `read-token` or `read-netstring*`.
