@@ -71,7 +71,10 @@
     (let [in (PushbackInputStream. (io/input-stream in))
           out (io/output-stream out)]
       (fn-transport
-        #(<bytes (be/read-bencode in))
+        #(let [payload   (be/read-bencode in)
+               unencoded (<bytes (payload "-unencoded"))
+               to-decode (apply dissoc "-unencoded" unencoded)]
+           (merge payload {"-unencoded" unencoded} (<bytes to-decode)))
         #(locking out
            (doto out
              (be/write-bencode %)
@@ -110,7 +113,7 @@
                                      (deliver head (first s))
                                      (rest s)))
                   @head)]
-      (fn-transport read write            
+      (fn-transport read write
         (when s
           (swap! read-seq (partial cons {:session @session-id :op "close"}))
           #(.close s))))))
