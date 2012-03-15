@@ -8,7 +8,7 @@
                                             pr-values
                                             session))
   (:use [clojure.tools.nrepl.misc :only (returning response-for log)])
-  (:import (java.net Socket ServerSocket)))
+  (:import (java.net Socket ServerSocket InetSocketAddress)))
 
 (defn unknown-op
   "Sends an :unknown-op :error for the given message."
@@ -66,6 +66,7 @@
   "Starts a socket-based nREPL server.  Configuration options include:
  
    * :port — defaults to 0, which autoselects an open port on localhost
+   * :bind — bind address, by default any (0.0.0.0)
    * :handler — the nREPL message handler to use for each incoming connection;
        defaults to the result of (default-handler)
    * :transport-fn — a function that, given a java.net.Socket corresponding
@@ -77,8 +78,9 @@
 
    Returns a handle to the server that is started, which may be stopped
    either via `stop-server`, (.close server), or automatically via `with-open`."
-  [& {:keys [port transport-fn handler ack-port greeting-fn] :or {port 0}}]
-  (let [ss (ServerSocket. port)
+  [& {:keys [port bind transport-fn handler ack-port greeting-fn] :or {port 0}}]
+  (let [bind-addr (if (nil? bind) (InetSocketAddress. port) (InetSocketAddress. bind port))
+	ss (ServerSocket. port 0 (.getAddress bind-addr))
         smap {:ss ss
               :transport (or transport-fn t/bencode)
               :greeting greeting-fn
