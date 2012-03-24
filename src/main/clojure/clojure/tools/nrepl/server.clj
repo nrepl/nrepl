@@ -79,8 +79,8 @@
    Returns a handle to the server that is started, which may be stopped
    either via `stop-server`, (.close server), or automatically via `with-open`."
   [& {:keys [port bind transport-fn handler ack-port greeting-fn] :or {port 0}}]
-  (let [bind-addr (if (nil? bind) (InetSocketAddress. port) (InetSocketAddress. bind port))
-	ss (ServerSocket. port 0 (.getAddress bind-addr))
+  (let [bind-addr (if bind (InetSocketAddress. bind port) (InetSocketAddress. port))
+        ss (ServerSocket. port 0 (.getAddress bind-addr))
         smap {:ss ss
               :transport (or transport-fn t/bencode)
               :greeting greeting-fn
