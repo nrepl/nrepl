@@ -15,16 +15,20 @@
   [transport {:keys [op] :as msg}]
   (t/send transport (response-for msg :status #{:error :unknown-op} :op op)))
 
+(defn handle*
+  [msg handler transport]
+  (try
+    (or (handler (assoc msg :transport transport))
+        (unknown-op transport msg))
+    (catch Throwable t
+      (log t "Unhandled REPL handler exception processing message" msg))))
+
 (defn handle
   "Handles requests received via `transport` using `handler`.
    Returns nil when `recv` returns nil for the given transport."
   [handler transport]
   (when-let [msg (t/recv transport)]
-    (try
-      (or (handler (assoc msg :transport transport))
-          (unknown-op transport msg))
-      (catch Throwable t
-        (log t "Unhandled REPL handler exception processing message" msg)))
+    (handle* msg handler transport)
     (recur handler transport)))
 
 (defn- accept-connection
