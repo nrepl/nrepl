@@ -112,8 +112,7 @@
   (recv [this timeout] (.poll in timeout TimeUnit/MILLISECONDS)))
 
 (defn piped-transports
-  "Returns a pair of Transports that read from and write to each
-   other.  Probably only useful in testing."
+  "Returns a pair of Transports that read from and write to each other."
   []
   (let [a (LinkedBlockingQueue.)
         b (LinkedBlockingQueue.)]
