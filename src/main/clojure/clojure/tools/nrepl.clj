@@ -153,38 +153,67 @@
     :value))
 
 (defn connect
-  "Connects to a hosted REPL at the given host (defaults to localhost) and port,
-   returning a Transport for that connection.
+  "Connects to a socket-based REPL at the given host (defaults to localhost) and port,
+   returning the Transport (by default clojure.tools.nrepl.transport/bencode)
+   for that connection.
 
-   The default implementation of Transport also implements java.io.Closeable, and is therefore
-   usable with `with-open`.
+   Transports are most easily used with `client`, `client-session`, and
+   `message`, depending on the semantics desired."
+  [& {:keys [port host transport-fn] :or {transport-fn transport/bencode
+                                          host "localhost"}}]
+  {:pre [transport-fn port]}
+  (transport-fn (java.net.Socket. ^String host (int port))))
 
-   From the client side, Transports are most easily used with `client`, `client-session`, and
-   `message`."
-  [& {:keys [port host]}]
-  {:pre [port]}
-  (let [^String host (or host "localhost")]
-    (transport/bencode (java.net.Socket. host (int port)))))
+(defn- to-uri
+  [x]
+  {:post [(instance? java.net.URI %)]}
+  (if (string? x)
+    (java.net.URI. x)
+    x))
 
-(def connect-defaults
-  {"nrepl" {:transport-fn transport/bencode
-            :port 7888}
-   "telnet" {:transport-fn transport/tty}})
+(defn- socket-info
+  [x]
+  (let [uri (to-uri x)
+        port (.getPort uri)]
+    (merge {:host (.getHost uri)}
+           (when (pos? port)
+             {:port port}))))
 
-(defn url-connect
-  [url]
-  (let [u (if (string? url)
-            (java.net.URI. url)
-            url)
-        {:keys [transport-fn port]} (connect-defaults (.getScheme u))
-        port (or (.getPort u) port)]
-    (when-not port (throw (IllegalArgumentException.
-                            (str "No port specified in " u))))
-    (when-not transport-fn (throw (IllegalArgumentException.
-                                    (str "No transport known for specified scheme " u))))
-    (connect :host (.getHost u)
-             :port port
-             :transport-fn transport-fn)))
+(def ^{:private false} uri-scheme #(-> (to-uri %) .getScheme .toLowerCase))
+
+(defmulti url-connect
+  "Connects to an nREPL endpoint identified by the given URL/URI.  Valid
+   examples include:
+
+      nrepl://192.168.0.12:7889
+      telnet://localhost:5000
+      http://your-app-name.heroku.com/repl
+
+   This is a multimethod that dispatches on the scheme of the URI provided
+   (which can be a string or java.net.URI).  By default, implementations for
+   nrepl (corresponding to using the default bencode transport) and
+   telnet (using the clojure.tools.nrepl.transport/tty transport) are
+   registered.  Alternative implementations may add support for other schemes,
+   such as HTTP, HTTPS, JMX, existing message queues, etc."
+  uri-scheme)
+
+;; TODO oh so ugly
+(defn- add-socket-connect-method!
+  [protocol connect-defaults]
+  (defmethod url-connect protocol
+    [uri]
+    (apply connect (mapcat identity
+                           (merge connect-defaults
+                                  (socket-info uri))))))
+
+(add-socket-connect-method! "nrepl" {:transport-fn transport/bencode
+                                     :port 7888})
+(add-socket-connect-method! "telnet" {:transport-fn transport/tty})
+
+(defmethod url-connect :default
+  [uri]
+  (throw (IllegalArgumentException.
+           (format "No nREPL support known for scheme %s, url %s" (uri-scheme uri) uri))))
 
 (def ^{:doc "Current version of nREPL, map of :major, :minor, :incremental, and :qualifier."}
       version
@@ -203,7 +232,6 @@
 ;; - transports
 ;;   - JMX
 ;;   - STOMP?
-;;   - HTTP
 ;;   - websockets (although, is this interesting at all given an HTTP option?)
 ;; - cmdline
 ;;   - support for connecting to a server
