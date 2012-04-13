@@ -98,8 +98,7 @@
   "Evaluates the function on the given session's queue/executor.
    The session's value will be reset to the return value of the function."
   [session f]
-  (.submit (-> session prep-session meta :executor)
-    (comp (partial reset! session) f)))
+  (.submit (-> session prep-session meta :executor) f))
 
 (defn interruptible-eval
   "Evaluation middleware that supports interrupts.  Returns a handler that supports
