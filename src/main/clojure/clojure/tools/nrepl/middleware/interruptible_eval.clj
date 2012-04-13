@@ -119,7 +119,7 @@
                            :thread (Thread/currentThread)
                            :eval-msg msg)
               (binding [*msg* msg]
-                (returning (dissoc (evaluate @session msg) #'*msg* #'*agent*)
+                (returning (dissoc (evaluate @session msg) #'*msg*)
                   (t/send transport (response-for msg :status :done))
                   (alter-meta! session dissoc :thread :eval-msg)))))))
       
