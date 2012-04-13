@@ -1,4 +1,3 @@
-
 (ns ^{:author "Chas Emerick"}
      clojure.tools.nrepl.middleware.interruptible-eval
   (:require [clojure.tools.nrepl.transport :as t]
@@ -6,7 +5,10 @@
   (:use [clojure.tools.nrepl.misc :only (response-for returning)])
   (:import clojure.lang.LineNumberingPushbackReader
            (java.io StringReader Writer)
-           (java.util.concurrent ArrayBlockingQueue TimeUnit)))
+           java.util.concurrent.atomic.AtomicLong
+           (java.util.concurrent ArrayBlockingQueue LinkedBlockingQueue
+                                 TimeUnit ThreadPoolExecutor
+                                 ThreadFactory)))
 
 (def ^{:dynamic true
        :doc "The message currently being evaluated."}
@@ -36,7 +38,7 @@
                 (let [reader (LineNumberingPushbackReader. (StringReader. code))]
                   #(read reader false %2))
                 (let [q (java.util.concurrent.ArrayBlockingQueue. (count code) false code)]
-                  #(or (.poll q 0 java.util.concurrent.TimeUnit/MILLISECONDS) %2)))
+                  #(or (.poll q 0 TimeUnit/MILLISECONDS) %2)))
         :prompt (fn [])
         :need-prompt (constantly false)
         ; TODO pretty-print?
@@ -63,28 +65,63 @@
         (.flush ^Writer (@bindings #'*out*))
         (.flush ^Writer (@bindings #'*err*))))))
 
-#_(defn- pool-size [] (.getPoolSize clojure.lang.Agent/soloExecutor))
+(defn- configure-thread-factory
+  "Returns a new ThreadFactory for the given session.  This implementation
+   generates daemon threads, with names that include the session id."
+  [session]
+  (let [session-thread-counter (AtomicLong. 0)
+        session-id (-> session meta :id)]
+    (reify ThreadFactory
+      (newThread [_ runnable]
+        (doto (Thread. runnable
+                (format "nREPL-session-%s-worker-%s"
+                        session-id (.getAndIncrement session-thread-counter)))
+          (.setDaemon true))))))
 
+(defn- session-executor
+  "Returns a single-threaded Executor for the given session, configured to
+   use an unbounded queue and allow unused threads to expire after 30s."
+  [session & {:keys [keep-alive queue thread-factory]
+              :or {keep-alive 30000
+                   queue (LinkedBlockingQueue.)}}]
+  (ThreadPoolExecutor. 0 1 (long 30000) TimeUnit/MILLISECONDS queue
+                       (or thread-factory (configure-thread-factory session))))
+
+(defn- prep-session
+  [session]
+  (locking session
+    (returning session
+      (when-not (-> session meta :executor)
+        (alter-meta! session assoc :executor (session-executor session))))))
+
+(defn- queue-eval
+  "Evaluates the function on the given session's queue/executor.
+   The session's value will be reset to the return value of the function."
+  [session f]
+  (.submit (-> session prep-session meta :executor)
+    (comp (partial reset! session) f)))
 
 (defn interruptible-eval
   "Evaluation middleware that supports interrupts.  Returns a handler that supports
    \"eval\" and \"interrupt\" :op-erations that delegates to the given handler
    otherwise."
   [h]
-  (fn [{:keys [op session interrupt-id id transport] :as msg}]
+  (fn [{:keys [op session interrupt-id id transport]  :as msg}]
     (case op
       "eval"
       (if-not (:code msg)
         (t/send transport (response-for msg :status #{:error :no-code}))
-        (send-off session
-          (fn [bindings]
-            (alter-meta! session assoc
-                         :thread (Thread/currentThread)
-                         :eval-msg msg)
-            (binding [*msg* msg]
-              (returning (dissoc (evaluate bindings msg) #'*msg* #'*agent*)
-                         (t/send transport (response-for msg :status :done))
-                         (alter-meta! session dissoc :thread :eval-msg))))))
+        (queue-eval session
+          (comp
+            (partial reset! session)
+            (fn []
+              (alter-meta! session assoc
+                           :thread (Thread/currentThread)
+                           :eval-msg msg)
+              (binding [*msg* msg]
+                (returning (dissoc (evaluate @session msg) #'*msg* #'*agent*)
+                  (t/send transport (response-for msg :status :done))
+                  (alter-meta! session dissoc :thread :eval-msg)))))))
       
       "interrupt"
       ; interrupts are inherently racy; we'll check the agent's :eval-msg's :id and

@@ -72,15 +72,8 @@
                          (proxy-super read buf off len))))))]
     [reader writer]))
 
-(defn- session-error-handler
-  [session-agent ex]
-  #_(when-not (or (instance? InterruptedException ex)
-                (instance? ThreadDeath ex))
-    )
-  (log ex "Session error, id " (-> session-agent meta :id)))
-
 (defn- create-session
-  "Returns a new agent containing a map of bindings as per
+  "Returns a new atom containing a map of bindings as per
    `clojure.core/get-thread-bindings`.  Values for *out*, *err*, and *in*
    are obtained using `session-in` and `session-out`, *ns* defaults to 'user,
    and other bindings as optionally provided in `baseline-bindings` are
@@ -100,12 +93,10 @@
                   ; TODO is this something we need to consider in general, or is this
                   ; specific hack reasonable?
                   clojure.test/*test-out* out]
-          (agent (merge baseline-bindings (get-thread-bindings))
+          (atom (merge baseline-bindings (get-thread-bindings))
             :meta {:id id
                    :stdin-reader in
-                   :stdin-writer in-writer}
-            :error-mode :continue
-            :error-handler #'session-error-handler))))))
+                   :stdin-writer in-writer}))))))
 
 (defn- register-session
   "Registers a new session containing the baseline bindings contained in the
@@ -156,7 +147,7 @@
             "clone" (register-session msg)
             "close" (close-session msg)
             "ls-sessions" (t/send transport (response-for msg :status :done
-                                                              :sessions (keys @sessions)))
+                                                              :sessions (or (keys @sessions) [])))
             (h msg)))))))
 
 (defn add-stdin
