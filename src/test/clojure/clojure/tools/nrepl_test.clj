@@ -231,3 +231,9 @@
     (ack/reset-ack-port!)
     (with-open [s2 (server/start-server :ack-port (.getLocalPort (:ss @s)))]
       (is (= (.getLocalPort (:ss @s2)) (ack/wait-for-ack 10000))))))
+
+(def-repl-test agent-await
+  (is (= [42] (repl-values session (code (let [a (agent nil)]
+                                           (send a (fn [_] (Thread/sleep 1000) 42))
+                                           (await a)
+                                           @a))))))

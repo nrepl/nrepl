@@ -93,7 +93,9 @@
                   ; TODO is this something we need to consider in general, or is this
                   ; specific hack reasonable?
                   clojure.test/*test-out* out]
-          (atom (merge baseline-bindings (get-thread-bindings))
+          ; nrepl.server happens to use agents for connection dispatch
+          ; don't capture that *agent* binding for userland REPL sessions
+          (atom (merge baseline-bindings (dissoc (get-thread-bindings) #'*agent*))
             :meta {:id id
                    :stdin-reader in
                    :stdin-writer in-writer}))))))
