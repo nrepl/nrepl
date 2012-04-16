@@ -10,16 +10,10 @@
   (:use [clojure.tools.nrepl.misc :only (returning response-for log)])
   (:import (java.net Socket ServerSocket InetSocketAddress)))
 
-(defn unknown-op
-  "Sends an :unknown-op :error for the given message."
-  [transport {:keys [op] :as msg}]
-  (t/send transport (response-for msg :status #{:error :unknown-op} :op op)))
-
 (defn handle*
   [msg handler transport]
   (try
-    (or (handler (assoc msg :transport transport))
-        (unknown-op transport msg))
+    (handler (assoc msg :transport transport))
     (catch Throwable t
       (log t "Unhandled REPL handler exception processing message" msg))))
 
@@ -46,11 +40,16 @@
   [server]
   (send-off server #(returning % (.close ^ServerSocket (:ss %)))))
 
+(defn unknown-op
+  "Sends an :unknown-op :error for the given message."
+  [{:keys [op transport] :as msg}]
+  (t/send transport (response-for msg :status #{:error :unknown-op} :op op)))
+
 (defn default-handler
   "A default handler supporting interruptible evaluation, stdin, sessions, and
    readable representations of evaluated expressions via `pr`."
   []
-  (-> (constantly false)
+  (-> unknown-op
     clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval
     clojure.tools.nrepl.middleware.pr-values/pr-values
     clojure.tools.nrepl.middleware.session/add-stdin
