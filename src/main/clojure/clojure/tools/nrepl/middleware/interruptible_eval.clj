@@ -95,6 +95,8 @@
                        queue
                        (or thread-factory (configure-thread-factory))))
 
+; A little mini-agent implementation. Needed because agents cannot be used to host REPL
+; evaluation: http://dev.clojure.org/jira/browse/NREPL-17
 (defn- prep-session
   [session]
   (locking session
