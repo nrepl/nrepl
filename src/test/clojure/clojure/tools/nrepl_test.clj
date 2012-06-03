@@ -20,8 +20,10 @@
   `(deftest ~(with-meta name {:private true})
      (with-open [transport# (connect :port *server-port*)]
        (let [~'transport transport#
-             ~'client (client transport# 10000)
+             ~'client (client transport# Long/MAX_VALUE)
              ~'session (client-session ~'client)
+             ~'timeout-client (client transport# 1000)
+             ~'timeout-session (client-session ~'timeout-client)
              ~'repl-eval #(message % {:op :eval :code %2})
              ~'repl-values (comp response-values ~'repl-eval)]
          ~@body))))
@@ -61,20 +63,20 @@
 
 (def-repl-test unknown-op
   (is (= {:op "abc" :status #{"error" "unknown-op"}}
-         (-> (message client {:op :abc}) combine-responses (select-keys [:op :status])))))
+         (-> (message timeout-client {:op :abc}) combine-responses (select-keys [:op :status])))))
 
 (def-repl-test session-lifecycle
   (is (= #{"error" "unknown-session"}
-         (-> (message client {:session "abc"}) combine-responses :status)))
-  (let [session-id (new-session client)
-        session-alive? #(contains? (-> (message client {:op :ls-sessions})
+         (-> (message timeout-client {:session "abc"}) combine-responses :status)))
+  (let [session-id (new-session timeout-client)
+        session-alive? #(contains? (-> (message timeout-client {:op :ls-sessions})
                                      combine-responses
                                      :sessions
                                      set)
                                    session-id)]
     (is session-id)
     (is (session-alive?))
-    (is (= #{"done" "session-closed"} (-> (message client {:op :close :session session-id})
+    (is (= #{"done" "session-closed"} (-> (message timeout-client {:op :close :session session-id})
                                         combine-responses
                                         :status)))
     (is (not (session-alive?)))))
@@ -183,7 +185,7 @@
     (is (= [true] (repl-values session "halted?")))))
 
 (def-repl-test read-timeout
-  (is (nil? (repl-values session "(Thread/sleep 11000)"))))
+  (is (nil? (repl-values timeout-session "(Thread/sleep 1100)"))))
 
 (def-repl-test ensure-closeable
   (is (= [5] (repl-values session "5")))

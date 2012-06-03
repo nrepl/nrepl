@@ -162,11 +162,10 @@
   (fn [{:keys [op stdin session transport] :as msg}]
     (cond
       (= op "eval")
-        (let [result (h msg)
-              s (-> session meta ^LineNumberingPushbackReader (:stdin-reader))]
+        (let [s (-> session meta ^LineNumberingPushbackReader (:stdin-reader))]
           (when (.ready s)
             (clojure.main/skip-if-eol s))
-          result)
+          (h msg))
       (= op "stdin")
         (do
           (-> session meta ^Writer (:stdin-writer) (.write stdin))
