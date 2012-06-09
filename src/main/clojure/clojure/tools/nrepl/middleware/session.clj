@@ -31,7 +31,7 @@
                       (locking buf
                         (cond
                           (number? x) (.append buf (char x))
-                          (not off) #(.append buf x)
+                          (not off) (.append buf x)
                           (instance? CharSequence x) (.append buf ^CharSequence x off len)
                           :else (.append buf ^chars x off len))))
                     (flush []
