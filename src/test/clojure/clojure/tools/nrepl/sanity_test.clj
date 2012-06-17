@@ -73,7 +73,9 @@
   (are [result expr] (= result (internal-eval expr))
        ["5 6 7 \n 8 9 10\n" nil] '(println 5 6 7 \newline 8 9 10)
        ["user/foo\n" "" nil] '(binding [*out* *err*]
-                                     (prn 'user/foo)))
+                                (prn 'user/foo))
+       ["problem" "" :value] '(do (.write *err* "problem")
+                                  :value))
   (is (re-seq #"Exception: No such var: user/foo" (-> '(prn user/foo)
                                                     internal-eval
                                                     first))))

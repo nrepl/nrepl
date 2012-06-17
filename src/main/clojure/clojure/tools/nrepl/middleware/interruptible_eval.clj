@@ -55,6 +55,8 @@
                                            #'*3 *2
                                            #'*2 *1
                                            #'*1 v))
+                   (.flush ^Writer err)
+                   (.flush ^Writer out)
                    (t/send transport (response-for msg
                                                    {:value v
                                                     :ns (-> *ns* ns-name str)})))

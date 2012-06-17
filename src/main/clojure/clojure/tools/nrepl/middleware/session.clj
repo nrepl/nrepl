@@ -41,7 +41,8 @@
                         (when (pos? (count text))
                           (t/send transport
                             (response-for *msg* :session session-id
-                                                 channel-type text)))))))))
+                                                 channel-type text))))))
+                  true)))
 
 (defn- session-in
   "Returns a LineNumberingPushbackReader suitable for binding to *in*.
