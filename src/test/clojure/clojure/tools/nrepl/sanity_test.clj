@@ -91,9 +91,6 @@
       (.write "gh" 0 2)
       (.write (.toCharArray "ij"))
       (.write 32)
-      .flush
-      .flush
-      (.write "no writes\nkeyed on linebreaks")
       .flush)
     (with-open [out (java.io.PrintWriter. w)]
       (binding [*out* out]
@@ -101,9 +98,7 @@
         (prn #{})
         (flush)))
     
-    (is (= ["println\nabcdefghij "
-            "no writes\nkeyed on linebreaks"
-            "\n#{}\n"]
+    (is (= ["println\n" "abcdefghij " "\n#{}\n"]
           (->> (repl/response-seq local 0)
             (map :out))))))
 
