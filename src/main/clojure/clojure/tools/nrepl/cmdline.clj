@@ -1,7 +1,10 @@
-(ns #^{:doc "A proof-of-concept command-line client for nREPL."
+(ns #^{:doc "A proof-of-concept command-line client for nREPL.  Please see
+e.g. reply for a proper command-line nREPL client @
+https://github.com/trptcolin/reply/"
        :author "Chas Emerick"}
   clojure.tools.nrepl.cmdline
-  (:require [clojure.tools.nrepl :as repl])
+  (:require [clojure.tools.nrepl :as repl]
+            [clojure.tools.nrepl.transport :as transport])
   (:use (clojure.tools.nrepl [server :only (start-server)]
                              [ack :only (send-ack)])))
 
@@ -28,23 +31,24 @@
   ([port] (run-repl port nil))
   ([port {:keys [prompt err out value]
           :or {prompt #(print (str % "=> "))
-               err print
-               out print
-               value print}}]
-    (let [connection (repl/connect :host "localhost" :port port)
+               err println
+               out println
+               value println}}]
+    (let [transport (repl/connect :host "localhost" :port port)
+          client (repl/client-session (repl/client transport Long/MAX_VALUE))
+          ns (atom "user")
           {:keys [major minor incremental qualifier]} *clojure-version*]
       (println "network-repl")
       (println (str "Clojure " (clojure-version)))
-      (loop [ns "user"]
-        (prompt ns)
+      (loop []
+        (prompt @ns)
         (flush)
-        (recur (last
-                 (for [{:keys [ns] :as res} (repl/response-seq ((:send connection) (pr-str (read))))]
-                   (do
-                     (when (:value res) (value (:value res)))
-                     (when (:out res) (out (:out res)))
-                     (when (:err res) (err (:err res)))
-                     ns))))))))
+        (doseq [res (repl/message client {:op "eval" :code (pr-str (read))})]
+          (when (:value res) (value (:value res)))
+          (when (:out res) (out (:out res)))
+          (when (:err res) (err (:err res)))
+          (when (:ns res) (reset! ns (:ns res))))
+        (recur)))))
 
 (def #^{:private true} unary-options #{"--interactive" "--color"})
 
