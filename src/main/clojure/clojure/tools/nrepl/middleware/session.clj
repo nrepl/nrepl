@@ -18,6 +18,8 @@
 ;; depending upon the expectations of the client/user.  I'm not sure at the moment
 ;; how best to make it configurable though...
 
+(def ^{:dynamic true} *out-limit* 1024)
+
 (defn- session-out
   "Returns a PrintWriter suitable for binding as *out* or *err*.  All of
    the content written to that PrintWriter will (when .flush-ed) be sent on the
@@ -33,7 +35,9 @@
                           (number? x) (.append buf (char x))
                           (not off) (.append buf x)
                           (instance? CharSequence x) (.append buf ^CharSequence x off len)
-                          :else (.append buf ^chars x off len))))
+                          :else (.append buf ^chars x off len))
+                        (when (<= *out-limit* (.length buf))
+                          (.flush ^Writer this))))
                     (flush []
                       (let [text (locking buf (let [text (str buf)]
                                                 (.setLength buf 0)
@@ -89,6 +93,7 @@
                   *err* (session-out :err id transport)
                   *in* in
                   *ns* (create-ns 'user)
+                  *out-limit* (or (baseline-bindings #'*out-limit*) 1024)
                   ; clojure.test captures *out* at load-time, so we need to make sure
                   ; runtime output of test status/results is redirected properly
                   ; TODO is this something we need to consider in general, or is this
@@ -139,13 +144,14 @@
    *msg* to the currently-evaluated message so that session-specific *out*
    and *err* content can be associated with the originating message)."
   [h]
-  (fn [{:keys [op session transport] :as msg}]
+  (fn [{:keys [op session transport out-limit] :as msg}]
     (let [the-session (if session
                         (@sessions session)
                         (create-session transport))]
       (if-not the-session
         (t/send transport (response-for msg :status #{:error :unknown-session}))
         (let [msg (assoc msg :session the-session)]
+          (when out-limit (swap! the-session assoc #'*out-limit* out-limit))
           (case op
             "clone" (register-session msg)
             "close" (close-session msg)

@@ -94,6 +94,21 @@
           (map :out)
           (remove nil?)))))
 
+(def-repl-test streaming-out-without-explicit-flushing
+  (is (= ["(0 1 "
+          "2 3 4"
+          " 5 6 "
+          "7 8 9"
+          " 10)"]
+         ; new session
+         (->> (message client {:op :eval :out-limit 5 :code "(print (range 11))"})
+              (map :out)
+              (remove nil?))
+         ; existing session
+         (->> (message session {:op :eval :out-limit 5 :code "(print (range 11))"})
+              (map :out)
+              (remove nil?)))))
+
 (def-repl-test ensure-whitespace-prints
   (is (= " \t \n \f \n" (->> (repl-eval client "(println \" \t \n \f \")")
                           combine-responses
