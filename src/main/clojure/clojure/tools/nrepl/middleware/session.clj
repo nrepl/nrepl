@@ -18,7 +18,7 @@
 ;; depending upon the expectations of the client/user.  I'm not sure at the moment
 ;; how best to make it configurable though...
 
-(def ^{:dynamic true} *out-limit* 1024)
+(def ^{:dynamic true :private true} *out-limit* 1024)
 
 (defn- session-out
   "Returns a PrintWriter suitable for binding as *out* or *err*.  All of
@@ -151,6 +151,10 @@
       (if-not the-session
         (t/send transport (response-for msg :status #{:error :unknown-session}))
         (let [msg (assoc msg :session the-session)]
+          ;; TODO yak, this is ugly; need to cleanly thread out-limit through to
+          ;; session-out without abusing a dynamic var
+          ;; (there's no reason to allow a connected client to fark around with
+          ;; a session-out's "buffer")
           (when out-limit (swap! the-session assoc #'*out-limit* out-limit))
           (case op
             "clone" (register-session msg)
