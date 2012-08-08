@@ -35,6 +35,10 @@ nREPL is compatible with Clojure 1.2.0 - 1.4.0.
 Please post general questions or discussion on either the [clojure-dev](http://groups.google.com/group/clojure-dev/) or [clojure-tools](http://groups.google.com/group/clojure-tools) mailing lists.  Bug reports and such may be filed into [nREPL's JIRA](http://dev.clojure.org/jira/browse/NREPL).
 
 nREPL's generated API documentation is available [here](http://clojure.github.com/tools.nrepl/).
+A [history of nREPL builds](http://build.clojure.org/job/tools.nrepl/) is available, as well as
+[a compatibility test matrix](http://build.clojure.org/job/tools.nrepl-test-matrix/), verifying
+nREPL's functionality against multiple versions of Clojure (v1.2.0+ supported) and multiple
+JVMs.
 
 ### Connecting to an nREPL server
 
