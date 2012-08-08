@@ -26,9 +26,15 @@ Or, add this to your Maven project's `pom.xml`:
 </dependency>
 ```
 
+A list of all prior releases are available [here](http://search.maven.org/#search|gav|1|g%3A%22org.clojure%22%20AND%20a%3A%22tools.nrepl%22).
+
 Please note the changelog below.
 
 nREPL is compatible with Clojure 1.2.0 - 1.4.0.
+
+Please post general questions or discussion on either the [clojure-dev](http://groups.google.com/group/clojure-dev/) or [clojure-tools](http://groups.google.com/group/clojure-tools) mailing lists.  Bug reports and such may be filed into [nREPL's JIRA](http://dev.clojure.org/jira/browse/NREPL).
+
+nREPL's generated API documentation is available [here](http://clojure.github.com/tools.nrepl/).
 
 ### Connecting to an nREPL server
 
