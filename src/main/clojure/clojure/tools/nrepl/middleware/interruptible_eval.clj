@@ -6,7 +6,7 @@
   (:import clojure.lang.LineNumberingPushbackReader
            (java.io StringReader Writer)
            java.util.concurrent.atomic.AtomicLong
-           (java.util.concurrent ArrayBlockingQueue LinkedBlockingQueue
+           (java.util.concurrent LinkedBlockingQueue
                                  TimeUnit ThreadPoolExecutor
                                  ThreadFactory)))
 
@@ -45,8 +45,8 @@
           :read (if (string? code)
                   (let [reader (LineNumberingPushbackReader. (StringReader. code))]
                     #(read reader false %2))
-                  (let [q (java.util.concurrent.ArrayBlockingQueue. (count code) false code)]
-                    #(or (.poll q 0 TimeUnit/MILLISECONDS) %2)))
+                  (let [code (.iterator code)]
+                    #(or (and (.hasNext code) (.next code)) %2)))
           :prompt (fn [])
           :need-prompt (constantly false)
           ; TODO pretty-print?
@@ -148,7 +148,7 @@
    \"eval\" and \"interrupt\" :op-erations that delegates to the given handler
    otherwise."
   [h & {:keys [executor] :or {executor (configure-executor)}}]
-  (fn [{:keys [op session interrupt-id id transport]  :as msg}]
+  (fn [{:keys [op session interrupt-id id transport] :as msg}]
     (case op
       "eval"
       (if-not (:code msg)
