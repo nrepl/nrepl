@@ -6,7 +6,8 @@
                                  [transport :as t])
             (clojure.tools.nrepl.middleware interruptible-eval
                                             pr-values
-                                            session))
+                                            session
+                                            load-file))
   (:use [clojure.tools.nrepl.misc :only (returning response-for log)])
   (:import (java.net Socket ServerSocket InetSocketAddress)))
 
@@ -51,6 +52,7 @@
   []
   (-> unknown-op
     clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval
+    clojure.tools.nrepl.middleware.load-file/wrap-load-file
     clojure.tools.nrepl.middleware.pr-values/pr-values
     clojure.tools.nrepl.middleware.session/add-stdin
     ; output-subscriptions TODO
