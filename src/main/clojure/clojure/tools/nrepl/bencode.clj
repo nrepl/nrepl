@@ -325,6 +325,10 @@
           (.isArray (class thing)))
       :list)))
 
+(defmethod write-bencode :default
+  [output x]
+  (throw (IllegalArgumentException. (str "Cannot write value of type " (class x)))))
+
 ;; The following methods should be pretty straight-forward.
 ;;
 ;; The easiest case is of course when we already have a byte array.
