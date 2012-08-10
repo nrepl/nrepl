@@ -10,7 +10,7 @@
         <dependency>
             <groupId>org.clojure</groupId>
             <artifactId>clojure</artifactId>
-            <version>1.5.0-SNAPSHOT</version>
+            <version>1.5.0-master-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>@project.groupId@</groupId>
@@ -18,6 +18,20 @@
             <version>@project.version@</version>
         </dependency>
     </dependencies>
+
+    <repositories>
+        <repository>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <id>sonatype-nexus-snapshots</id>
+            <name>Sonatype Nexus Snapshots</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
+    </repositories>
 
     <build>
         <plugins>
