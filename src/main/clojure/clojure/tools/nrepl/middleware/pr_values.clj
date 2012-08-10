@@ -13,13 +13,11 @@
    :value slot."
   [h]
   (fn [{:keys [op ^Transport transport] :as msg}]
-    (if (not= op "eval")
-      (h msg)
-      (h (assoc msg :transport (reify Transport
-                                 (recv [this] (.recv transport))
-                                 (recv [this timeout] (.recv transport timeout))
-                                 (send [this resp]
-                                   (.send transport
-                                     (if-let [[_ v] (find resp :value)]
-                                       (assoc resp :value (with-out-str (pr v)))
-                                       resp)))))))))
+    (h (assoc msg :transport (reify Transport
+                               (recv [this] (.recv transport))
+                               (recv [this timeout] (.recv transport timeout))
+                               (send [this resp]
+                                 (.send transport
+                                   (if-let [[_ v] (find resp :value)]
+                                     (assoc resp :value (with-out-str (pr v)))
+                                     resp))))))))
