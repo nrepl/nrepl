@@ -3,7 +3,8 @@
       :author "Chas Emerick"}
      clojure.tools.nrepl.middleware.session
   (:use [clojure.tools.nrepl.misc :only (uuid response-for returning log)]
-        [clojure.tools.nrepl.middleware.interruptible-eval :only (*msg*)])
+        [clojure.tools.nrepl.middleware.interruptible-eval :only (*msg*)]
+        [clojure.tools.nrepl.middleware :only (set-descriptor!)])
   (:require (clojure main test)
             [clojure.tools.nrepl.transport :as t])
   (:import clojure.tools.nrepl.transport.Transport
@@ -163,6 +164,23 @@
                                                               :sessions (or (keys @sessions) [])))
             (h msg)))))))
 
+(set-descriptor! #'session
+  {:handles {"close"
+             {:doc "Closes the specified session."
+              :requires {"session" "The ID of the session to be closed."}
+              :optional {}
+              :returns {}}
+             "ls-sessions"
+             {:doc "Lists the IDs of all active sessions."
+              :requires {}
+              :optional {}
+              :returns {"sessions" "A list of all available session IDs."}}
+             "clone"
+             {:doc "Clones the current session, returning the ID of the newly-created session."
+              :requires {}
+              :optional {"session" "The ID of the session to be cloned; if not provided, a new session with default bindings is created, and mapped to the returned session ID."}
+              :returns {"new-session" "The ID of the new session."}}}})
+
 (defn add-stdin
   "stdin middleware.  Returns a handler that supports a \"stdin\" :op-eration, which
    adds content provided in a :stdin slot to the session's *in* Reader.  Delegates to
@@ -183,3 +201,10 @@
           (t/send transport (response-for msg :status :done)))
       :else
         (h msg))))
+
+(set-descriptor! #'add-stdin
+  {:handles {"stdin"
+             {:doc "Add content from the value of \"stdin\" to *in* in the current session."
+              :requires {"stdin" "Content to add to *in*."}
+              :optional {}
+              :returns {"status" "A status of \"need-input\" will be sent if a session's *in* requires content in order to satisfy an attempted read operation."}}}})

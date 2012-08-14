@@ -2,7 +2,8 @@
      clojure.tools.nrepl.middleware.interruptible-eval
   (:require [clojure.tools.nrepl.transport :as t]
             clojure.main)
-  (:use [clojure.tools.nrepl.misc :only (response-for returning)])
+  (:use [clojure.tools.nrepl.misc :only (response-for returning)]
+        [clojure.tools.nrepl.middleware :only (set-descriptor!)])
   (:import clojure.lang.LineNumberingPushbackReader
            (java.io StringReader Writer)
            java.util.concurrent.atomic.AtomicLong
@@ -188,3 +189,17 @@
       
       (h msg))))
 
+(set-descriptor! #'interruptible-eval
+  {:handles {"eval"
+             {:doc "Evaluates code."
+              :requires {"code" "The code to be evaluated."
+                         "session" "The ID of the session within which to evaluate the code."}
+              :optional {"id" "An opaque message ID that will be included in responses related to the evaluation, and which may be used to restrict the scope of a later \"interrupt\" operation."}
+              :returns {}}
+             "interrupt"
+             {:doc "Attempts to interrupt some code evaluation."
+              :requires {"session" "The ID of the session used to start the evaluation to be interrupted."}
+              :optional {"interrupt-id" "The opaque message ID sent with the original \"eval\" request."}
+              :returns {"status" "'interrupted' if an evaluation was identified and interruption will be attempted
+'session-idle' if the session is not currently evaluating any code
+'interrupt-id-mismatch' if the session is currently evaluating code sent using a different ID than specified by the \"interrupt-id\" value "}}}})

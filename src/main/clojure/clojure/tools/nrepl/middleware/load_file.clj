@@ -1,5 +1,7 @@
 (ns ^{:author "Chas Emerick"}
-     clojure.tools.nrepl.middleware.load-file)
+     clojure.tools.nrepl.middleware.load-file
+  (:require [clojure.tools.nrepl.middleware.interruptible-eval :as eval])
+  (:use [clojure.tools.nrepl.middleware :as middleware :only (set-descriptor!)]))
 
 (defn load-file-code
   "Given the contents of a file, its _source-path-relative_ path,
@@ -25,3 +27,15 @@
       (h (assoc msg
            :op "eval"
            :code (load-file-code file file-path file-name))))))
+
+(set-descriptor! #'wrap-load-file
+  {:handles {"load-file"
+             {:doc "Loads a body of code, using supplied path and filename info to set source file and line number metadata. Delegates to underlying \"eval\" middleware/handler."
+              :requires {"file" "Full contents of a file of code."}
+              :optional {"file-path" "Source-path-relative path of the source file, e.g. clojure/java/io.clj"
+                         "file-name" "Name of source file, e.g. io.clj"}
+              :returns (-> (meta #'eval/interruptible-eval)
+                         ::middleware/descriptor
+                         :handles
+                         (get "eval")
+                         :returns)}}})

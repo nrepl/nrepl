@@ -51,6 +51,7 @@
    readable representations of evaluated expressions via `pr`."
   []
   (-> unknown-op
+    clojure.tools.nrepl.middleware/wrap-describe
     clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval
     clojure.tools.nrepl.middleware.load-file/wrap-load-file
     clojure.tools.nrepl.middleware.pr-values/pr-values

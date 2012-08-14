@@ -2,7 +2,7 @@
   clojure.tools.nrepl.load-file-test
   (:import (java.io File))
   (:use [clojure.tools.nrepl-test :only (def-repl-test repl-server-fixture)]
-    clojure.test)
+        clojure.test)
   (:require [clojure.tools.nrepl :as nrepl]))
 
 (def project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
