@@ -38,6 +38,7 @@ public class Connection implements Closeable {
         urlConnect = find("clojure.tools.nrepl", "url-connect"),
         createClient = find("clojure.tools.nrepl", "client"),
         session = find("clojure.tools.nrepl", "session"),
+        newSession = find("clojure.tools.nrepl", "new-session"),
         message = find("clojure.tools.nrepl", "message"),
         combineResponses = find("clojure.tools.nrepl", "combine-responses"),
         map = find("clojure.core", "map"),
@@ -69,6 +70,18 @@ public class Connection implements Closeable {
         try {
             return new Response((ISeq)message.invoke(
                     Connection.this.session.invoke(client, Keyword.intern("session"), session), PersistentHashMap.createWithCheck(kvs)));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    public String newSession (String cloneSessionId) {
+        try {
+            if (cloneSessionId == null) {
+                return (String)newSession.invoke(client);
+            } else {
+                return (String)newSession.invoke(client, Keyword.intern("clone"), cloneSessionId);
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
