@@ -3,7 +3,7 @@
   (:require [clojure.tools.nrepl.middleware.interruptible-eval :as eval])
   (:use [clojure.tools.nrepl.middleware :as middleware :only (set-descriptor!)]))
 
-(defn load-file-code
+(defn ^{:dynamic true} load-file-code
   "Given the contents of a file, its _source-path-relative_ path,
    and its filename, returns an expression that, when evaluated,
    will load those contents with appropriate filename references
