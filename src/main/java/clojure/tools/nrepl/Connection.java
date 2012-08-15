@@ -14,6 +14,7 @@ import clojure.lang.ISeq;
 import clojure.lang.Keyword;
 import clojure.lang.PersistentHashMap;
 import clojure.lang.RT;
+import clojure.lang.Seqable;
 import clojure.lang.Symbol;
 import clojure.lang.Var;
 
@@ -37,7 +38,7 @@ public class Connection implements Closeable {
     private static Var connect = find("clojure.tools.nrepl", "connect"),
         urlConnect = find("clojure.tools.nrepl", "url-connect"),
         createClient = find("clojure.tools.nrepl", "client"),
-        session = find("clojure.tools.nrepl", "session"),
+        clientSession = find("clojure.tools.nrepl", "client-session"),
         newSession = find("clojure.tools.nrepl", "new-session"),
         message = find("clojure.tools.nrepl", "message"),
         combineResponses = find("clojure.tools.nrepl", "combine-responses"),
@@ -50,8 +51,12 @@ public class Connection implements Closeable {
     public final String url;
     
     public Connection (String url) throws Exception {
+        this(url, Long.MAX_VALUE);
+    }
+    
+    public Connection (String url, long readTimeout) throws Exception {
         transport = (Closeable)urlConnect.invoke(this.url = url);
-        client = (IFn)createClient.invoke(transport, Long.MAX_VALUE);
+        client = (IFn)createClient.invoke(transport, readTimeout);
     }
     
     public void close () throws IOException {
@@ -60,7 +65,8 @@ public class Connection implements Closeable {
     
     public Response send (String... kvs) {
         try {
-            return new Response((ISeq)message.invoke(client, PersistentHashMap.createWithCheck(kvs)));
+            Map msg = PersistentHashMap.createWithCheck(kvs);
+            return new Response((ISeq)message.invoke(client, msg));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -68,8 +74,9 @@ public class Connection implements Closeable {
     
     public Response sendSession (String session, String... kvs) {
         try {
+            Map msg = PersistentHashMap.createWithCheck(kvs);
             return new Response((ISeq)message.invoke(
-                    Connection.this.session.invoke(client, Keyword.intern("session"), session), PersistentHashMap.createWithCheck(kvs)));
+                    clientSession.invoke(client, Keyword.intern("session"), session), msg));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -88,7 +95,7 @@ public class Connection implements Closeable {
     }
 
     @SuppressWarnings("unchecked")
-    public static class Response {
+    public static class Response implements Seqable {
         // would prefer to use a Delay here, but the change in IFn.invoke signatures between
         // Clojure 1.2 and 1.3 makes it impossible to be compatible with both from Java
         private ISeq responses;
@@ -124,6 +131,10 @@ public class Connection implements Closeable {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        public ISeq seq() {
+            return responses;
         }
     }
     
