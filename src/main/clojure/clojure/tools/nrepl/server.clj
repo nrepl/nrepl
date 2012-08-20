@@ -44,7 +44,7 @@
 (defn unknown-op
   "Sends an :unknown-op :error for the given message."
   [{:keys [op transport] :as msg}]
-  (t/send transport (response-for msg :status #{:error :unknown-op} :op op)))
+  (t/send transport (response-for msg :status #{:error :unknown-op :done} :op op)))
 
 (defn default-handler
   "A default handler supporting interruptible evaluation, stdin, sessions, and

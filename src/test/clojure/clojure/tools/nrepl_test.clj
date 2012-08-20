@@ -62,7 +62,7 @@
   (is (= [6] (repl-values client "(x)"))))
 
 (def-repl-test unknown-op
-  (is (= {:op "abc" :status #{"error" "unknown-op"}}
+  (is (= {:op "abc" :status #{"error" "unknown-op" "done"}}
          (-> (message timeout-client {:op :abc}) combine-responses (select-keys [:op :status])))))
 
 (def-repl-test session-lifecycle
