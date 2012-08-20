@@ -205,7 +205,7 @@
         (h msg))))
 
 (set-descriptor! #'add-stdin
-  {:requires #{"session"}
+  {:requires #{#'session}
    :expects #{"eval"}
    :handles {"stdin"
              {:doc "Add content from the value of \"stdin\" to *in* in the current session."
