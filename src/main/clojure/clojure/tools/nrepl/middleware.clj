@@ -113,7 +113,8 @@
                       (remove (comp zero? second)))
         lower (ffirst (filter (comp neg? second) comparisons))
         upper (ffirst (reverse (filter (comp pos? second) comparisons)))
-        [before after] (split-at (or lower (and upper (inc upper)) (count stack)) stack)]
+        ; default conj'ing at the end, a good default for descriptor-less middlewares
+        [before after] (split-at (or (and upper (inc upper)) lower (count stack)) stack)]
     (into [] (concat before [x] after))))
 
 ;; TODO throw exception when the stack doesn't satisfy the requirements of the descriptors involved
@@ -122,6 +123,7 @@
   (->> middlewares
     extend-deps
     (sort-by (comp count (partial apply concat) (juxt :expects :requires)))
+    reverse
     (reduce #(conj-sorted % comparator %2) [])
     (map :implemented-by)))
 

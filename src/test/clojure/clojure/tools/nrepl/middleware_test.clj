@@ -46,8 +46,9 @@
             {:expects #{"eval"} :requires #{n #'clojure.tools.nrepl.middleware.pr-values/pr-values}}}
            {:dummy :middleware}
         q ^{::middleware/descriptor
-            {:expects #{} :requires #{"describe"}}} {:dummy :middleware3}
+            {:expects #{} :requires #{"describe" "eval"}}} {:dummy :middleware3}
         stack (indexed-stack (concat default-middlewares [m q n]))]
+    ;(->> stack clojure.set/map-invert (into (sorted-map)) vals println)
     (are [before after] (< (stack before) (stack after))
          'interruptible-eval m
          m 'pr-values
@@ -59,6 +60,13 @@
          'interruptible-eval 'session
          'wrap-describe 'pr-values
          'interruptible-eval 'pr-values)))
+
+(deftest append-dependency-free-middleware
+  (let [m ^{::middleware/descriptor
+            {:expects #{} :requires #{}}} {:dummy :middleware}
+        n {:dummy "This not-middleware is supposed to be sans-descriptor, don't panic!"}
+        stack (indexed-stack (concat default-middlewares [m n]))]
+    (is (<= (stack n) (stack m) (count stack)))))
 
 (deftest no-descriptor-warning
   (is (.contains
