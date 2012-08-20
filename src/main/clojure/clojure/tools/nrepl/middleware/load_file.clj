@@ -29,7 +29,9 @@
            :code (load-file-code file file-path file-name))))))
 
 (set-descriptor! #'wrap-load-file
-  {:handles {"load-file"
+  {:requires #{}
+   :expects #{"eval"}
+   :handles {"load-file"
              {:doc "Loads a body of code, using supplied path and filename info to set source file and line number metadata. Delegates to underlying \"eval\" middleware/handler."
               :requires {"file" "Full contents of a file of code."}
               :optional {"file-path" "Source-path-relative path of the source file, e.g. clojure/java/io.clj"

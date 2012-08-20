@@ -165,7 +165,9 @@
             (h msg)))))))
 
 (set-descriptor! #'session
-  {:handles {"close"
+  {:requires #{}
+   :expects #{}
+   :handles {"close"
              {:doc "Closes the specified session."
               :requires {"session" "The ID of the session to be closed."}
               :optional {}
@@ -203,7 +205,9 @@
         (h msg))))
 
 (set-descriptor! #'add-stdin
-  {:handles {"stdin"
+  {:requires #{"session"}
+   :expects #{"eval"}
+   :handles {"stdin"
              {:doc "Add content from the value of \"stdin\" to *in* in the current session."
               :requires {"stdin" "Content to add to *in*."}
               :optional {}

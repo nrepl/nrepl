@@ -3,7 +3,8 @@
      clojure.tools.nrepl.server
   (:require [clojure.tools.nrepl :as repl]
             (clojure.tools.nrepl [ack :as ack]
-                                 [transport :as t])
+                                 [transport :as t]
+                                 [middleware :as middleware])
             (clojure.tools.nrepl.middleware interruptible-eval
                                             pr-values
                                             session
@@ -46,18 +47,24 @@
   [{:keys [op transport] :as msg}]
   (t/send transport (response-for msg :status #{:error :unknown-op :done} :op op)))
 
+(def default-middlewares
+  [#'clojure.tools.nrepl.middleware/wrap-describe
+   #'clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval
+   #'clojure.tools.nrepl.middleware.load-file/wrap-load-file
+   #'clojure.tools.nrepl.middleware.session/add-stdin
+   #'clojure.tools.nrepl.middleware.session/session])
+
 (defn default-handler
   "A default handler supporting interruptible evaluation, stdin, sessions, and
-   readable representations of evaluated expressions via `pr`."
-  []
-  (-> unknown-op
-    clojure.tools.nrepl.middleware/wrap-describe
-    clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval
-    clojure.tools.nrepl.middleware.load-file/wrap-load-file
-    clojure.tools.nrepl.middleware.pr-values/pr-values
-    clojure.tools.nrepl.middleware.session/add-stdin
-    ; output-subscriptions TODO
-    clojure.tools.nrepl.middleware.session/session))
+   readable representations of evaluated expressions via `pr`.
+
+   Additional middlewares to mix into the default stack may be provided; these
+   should all be values (usually vars) that have an nREPL middleware descriptor
+   in their metadata (see clojure.tools.nrepl.middleware/set-descriptor!)."
+  [& additional-middlewares]
+  (let [stack (middleware/linearize-middleware-stack (concat default-middlewares
+                                                             additional-middlewares))]
+    ((apply comp (reverse stack)) unknown-op)))
 
 ;; TODO
 #_(defn- output-subscriptions
@@ -74,7 +81,7 @@
    * :port — defaults to 0, which autoselects an open port on localhost
    * :bind — bind address, by default any (0.0.0.0)
    * :handler — the nREPL message handler to use for each incoming connection;
-       defaults to the result of (default-handler)
+       defaults to the result of `(default-handler)`
    * :transport-fn — a function that, given a java.net.Socket corresponding
        to an incoming connection, will return an value satisfying the
        clojure.tools.nrepl.Transport protocol for that Socket.

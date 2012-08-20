@@ -2,6 +2,7 @@
 (ns ^{:author "Chas Emerick"}
      clojure.tools.nrepl.middleware.pr-values
   (:require [clojure.tools.nrepl.transport :as t])
+  (:use [clojure.tools.nrepl.middleware :only (set-descriptor!)])
   (:import clojure.tools.nrepl.transport.Transport))
 
 (defn pr-values
@@ -21,3 +22,8 @@
                                    (if-let [[_ v] (find resp :value)]
                                      (assoc resp :value (with-out-str (pr v)))
                                      resp))))))))
+
+(set-descriptor! #'pr-values
+  {:requires #{}
+   :expects #{}
+   :handles {}})

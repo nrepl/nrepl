@@ -1,6 +1,7 @@
 (ns ^{:author "Chas Emerick"}
      clojure.tools.nrepl.middleware.interruptible-eval
   (:require [clojure.tools.nrepl.transport :as t]
+            clojure.tools.nrepl.middleware.pr-values
             clojure.main)
   (:use [clojure.tools.nrepl.misc :only (response-for returning)]
         [clojure.tools.nrepl.middleware :only (set-descriptor!)])
@@ -190,7 +191,9 @@
       (h msg))))
 
 (set-descriptor! #'interruptible-eval
-  {:handles {"eval"
+  {:requires #{"clone" "close" #'clojure.tools.nrepl.middleware.pr-values/pr-values}
+   :expects #{}
+   :handles {"eval"
              {:doc "Evaluates code."
               :requires {"code" "The code to be evaluated."
                          "session" "The ID of the session within which to evaluate the code."}
