@@ -32,49 +32,53 @@
    It is assumed that `bindings` already contains useful/appropriate entries
    for all vars indicated by `clojure.main/with-bindings`."
   [bindings {:keys [code ns transport] :as msg}]
-  (let [bindings (atom (merge bindings (when ns {#'*ns* (-> ns symbol find-ns)})))
+  (let [explicit-ns-binding (when-let [ns (and ns (-> ns symbol find-ns))]
+                              {#'*ns* ns})
+        bindings (atom (merge bindings explicit-ns-binding))
         out (@bindings #'*out*)
         err (@bindings #'*err*)]
-    (with-bindings @bindings
-      (try
-        (clojure.main/repl
-          ;; clojure.main/repl paves over certain vars even if they're already thread-bound
-          :init #(do (set! *compile-path* (@bindings #'*compile-path*))
-                   (set! *1 (@bindings #'*1))
-                   (set! *2 (@bindings #'*2))
-                   (set! *3 (@bindings #'*3))
-                   (set! *e (@bindings #'*e)))   
-          :read (if (string? code)
-                  (let [reader (LineNumberingPushbackReader. (StringReader. code))]
-                    #(read reader false %2))
-                  (let [code (.iterator code)]
-                    #(or (and (.hasNext code) (.next code)) %2)))
-          :prompt (fn [])
-          :need-prompt (constantly false)
-          ; TODO pretty-print?
-          :print (fn [v]
-                   (reset! bindings (assoc (get-thread-bindings)
-                                           #'*3 *2
-                                           #'*2 *1
-                                           #'*1 v))
-                   (.flush ^Writer err)
-                   (.flush ^Writer out)
-                   (t/send transport (response-for msg
-                                                   {:value v
-                                                    :ns (-> *ns* ns-name str)})))
-          ; TODO customizable exception prints
-          :caught (fn [e]
-                    (let [root-ex (#'clojure.main/root-cause e)]
-                      (when-not (instance? ThreadDeath root-ex)
-                        (reset! bindings (assoc (get-thread-bindings) #'*e e))
-                        (t/send transport (response-for msg {:status :eval-error
-                                                             :ex (-> e class str)
-                                                             :root-ex (-> root-ex class str)}))
-                        (clojure.main/repl-caught e)))))
-        @bindings
-        (finally
-          (.flush ^Writer out)
-          (.flush ^Writer err))))))
+    (if (and ns (not explicit-ns-binding))
+      (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}}))
+      (with-bindings @bindings
+        (try
+          (clojure.main/repl
+            ;; clojure.main/repl paves over certain vars even if they're already thread-bound
+            :init #(do (set! *compile-path* (@bindings #'*compile-path*))
+                     (set! *1 (@bindings #'*1))
+                     (set! *2 (@bindings #'*2))
+                     (set! *3 (@bindings #'*3))
+                     (set! *e (@bindings #'*e)))   
+            :read (if (string? code)
+                    (let [reader (LineNumberingPushbackReader. (StringReader. code))]
+                      #(read reader false %2))
+                    (let [code (.iterator code)]
+                      #(or (and (.hasNext code) (.next code)) %2)))
+            :prompt (fn [])
+            :need-prompt (constantly false)
+            ; TODO pretty-print?
+            :print (fn [v]
+                     (reset! bindings (assoc (get-thread-bindings)
+                                             #'*3 *2
+                                             #'*2 *1
+                                             #'*1 v))
+                     (.flush ^Writer err)
+                     (.flush ^Writer out)
+                     (t/send transport (response-for msg
+                                                     {:value v
+                                                      :ns (-> *ns* ns-name str)})))
+            ; TODO customizable exception prints
+            :caught (fn [e]
+                      (let [root-ex (#'clojure.main/root-cause e)]
+                        (when-not (instance? ThreadDeath root-ex)
+                          (reset! bindings (assoc (get-thread-bindings) #'*e e))
+                          (t/send transport (response-for msg {:status :eval-error
+                                                               :ex (-> e class str)
+                                                               :root-ex (-> root-ex class str)}))
+                          (clojure.main/repl-caught e)))))
+          (finally
+            (.flush ^Writer out)
+            (.flush ^Writer err)))))
+    @bindings))
 
 (defn- configure-thread-factory
   "Returns a new ThreadFactory for the given session.  This implementation

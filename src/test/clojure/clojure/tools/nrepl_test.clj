@@ -175,6 +175,12 @@
                  :ns)))
   (is (= [5] (response-values (message session {:op :eval :code "bar" :ns "user"})))))
 
+(def-repl-test error-on-nonexistent-ns
+  (is (= #{"error" "namespace-not-found" "done"}
+         (-> (message timeout-client {:op :eval :code "(+ 1 1)" :ns (name (gensym))})
+           combine-responses
+           :status))))
+
 (def-repl-test proper-response-ordering
   (is (= [[nil "100\n"] ; printed number
           ["nil" nil] ; return val from println
