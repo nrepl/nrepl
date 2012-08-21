@@ -74,7 +74,9 @@
         #(let [payload   (be/read-bencode in)
                unencoded (<bytes (payload "-unencoded"))
                to-decode (apply dissoc payload "-unencoded" unencoded)]
-           (merge payload {"-unencoded" unencoded} (<bytes to-decode)))
+           (merge (dissoc payload "-unencoded")
+                  (when unencoded {"-unencoded" unencoded})
+                  (<bytes to-decode)))
         #(locking out
            (doto out
              (be/write-bencode %)
