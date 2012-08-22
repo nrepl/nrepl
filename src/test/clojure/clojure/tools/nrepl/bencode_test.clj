@@ -14,9 +14,10 @@
     java.io.ByteArrayOutputStream
     java.io.PushbackInputStream
     clojure.lang.RT)
+  (:require [clojure.java.io :as io])
   (:use
     [clojure.test :only [deftest is are]]
-    clojure.tools.nrepl.bencode))
+    [clojure.tools.nrepl.bencode :as bencode]))
 
 (defn #^{:private true} >bytes
   [#^String input]
@@ -42,13 +43,18 @@
     (map (fn [[k v]] [k (<bytes v)]))
     (into {})))
 
-(defn #^{:private true} >input
-  [^String input & {:keys [reader]}]
-  (-> input
-    (.getBytes "UTF-8")
+(defn- decode
+  [bytes & {:keys [reader]}]
+  (-> bytes
     ByteArrayInputStream.
     PushbackInputStream.
-    reader
+    reader))
+
+(defn- >input
+  [^String input & args]
+  (-> input
+    (.getBytes "UTF-8")
+    (#(apply decode % args))
     <bytes))
 
 (deftest test-netstring-reading
@@ -87,11 +93,14 @@
     "l6:cheesei42ed3:ham4:eggsee" ["cheese" 42 {"ham" "eggs"}]
     "d6:cheesei42e3:haml4:eggsee" {"cheese" 42 "ham" ["eggs"]}))
 
-(defn #^{:private true} >output
+(defn- >stream
   [thing & {:keys [writer]}]
-  (let [stream (ByteArrayOutputStream.)]
-    (writer stream thing)
-    (.toString stream "UTF-8")))
+  (doto (ByteArrayOutputStream.)
+    (writer thing)))
+
+(defn- >output
+  [& args]
+  (.toString (apply >stream args) "UTF-8"))
 
 (deftest test-netstring-writing
   (are [x y] (= (>output (>bytes x) :writer write-netstring) y)
@@ -168,3 +177,22 @@
                    (sort @#'clojure.tools.nrepl.bencode/lexicographically)
                    (map <bytes))]
     (is (= to-test expected))))
+
+(deftest unencoded-values
+  ; just some PNG data that won't round-trip cleanly through UTF-8 encoding, so
+  ; any default encoding in the bencode implementation will be caught immediately
+  (let [binary-data (->> [-119 80 78 71 13 10 26 10 0 0 0 13 73 72 68 82 0 0 0
+                          100 0 0 0 100 8 6 0 0 0 112 -30 -107 84 0 0 3 -16 105
+                          67 67 80 73 67 67 32 80 114 111 102 105 108 101 0 0 40
+                          -111 -115 85 -35 111 -37 84 20 63 -119 111 92 -92 22 63
+                          -96 -79 -114 14 21 -117 -81 85 83 91 -71 27 26 -83 -58 6
+                          73 -109 -91 -23 66 26 -71 -51 -40 42 -92 -55 117 110]
+                      (map byte)
+                      (into-array Byte/TYPE))]
+    (is (= (seq binary-data)
+           (-> {"data" binary-data}
+             (>stream :writer write-bencode)
+             .toByteArray
+             (decode :reader read-bencode)
+             (get "data")
+             seq)))))
