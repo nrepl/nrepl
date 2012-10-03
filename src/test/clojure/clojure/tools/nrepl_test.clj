@@ -215,11 +215,9 @@
   (.close transport)
   (is (thrown? java.net.SocketException (repl-values session "5"))))
 
-(deftest ensure-server-closeable
-  (let [server (server/start-server)]
-    (connect :port (:port server))
-    (.close server)
-    (is (thrown? java.net.ConnectException (connect :port (:port server))))))
+(def-repl-test ensure-server-closeable
+  (.close *server*)
+  (is (thrown? java.net.ConnectException (connect :port (:port *server*)))))
 
 ; wasn't added until Clojure 1.3.0
 (defn- root-cause
