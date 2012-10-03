@@ -217,6 +217,7 @@
 
 (def-repl-test ensure-server-closeable
   (.close *server*)
+  ;(println "wha?" (connect :port (:port *server*)))
   (is (thrown? java.net.ConnectException (connect :port (:port *server*)))))
 
 ; wasn't added until Clojure 1.3.0

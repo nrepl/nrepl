@@ -53,6 +53,7 @@
   "Stops a server started via `start-server`."
   [{:keys [open-transports ^ServerSocket server-socket] :as server}]
   (returning server
+    (.close server-socket)
     (swap! open-transports #(reduce
                               (fn [s t]
                                 ; should always be true for the socket server...
@@ -61,8 +62,7 @@
                                     (safe-close t)
                                     (disj s t))
                                   s))
-                              % %))
-    (.close server-socket)))
+                              % %))))
 
 (defn unknown-op
   "Sends an :unknown-op :error for the given message."
