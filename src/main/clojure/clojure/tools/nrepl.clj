@@ -223,16 +223,3 @@
         (re-find #"(\d+)\.(\d+)\.(\d+)-?(.*)")
         rest
         (zipmap [:major :minor :incremental :qualifier])))))
-
-
-;; TODO session expiration
-;; Ideas:
-;; - tools
-;;   - support syntax-quoting of vals in eval-msg
-;; - transports
-;;   - JMX
-;;   - STOMP?
-;;   - websockets (although, is this interesting at all given an HTTP option?)
-;; - cmdline
-;;   - support for connecting to a server
-;;   - optionally running other clojure script(s)/java mains prior to starting/connecting to a server
