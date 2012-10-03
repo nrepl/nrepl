@@ -24,6 +24,7 @@
 
 (deftype FnTransport [recv-fn send-fn close]
   Transport
+  ;; TODO this keywordization/stringification has no business being in FnTransport
   (send [this msg] (-> msg clojure.walk/stringify-keys send-fn) this)
   (recv [this] (.recv this Long/MAX_VALUE))
   (recv [this timeout] (clojure.walk/keywordize-keys (recv-fn timeout)))
@@ -36,10 +37,19 @@
   ([read write] (fn-transport read write nil))
   ([read write close]
     (let [read-queue (SynchronousQueue.)]
-      (future (while true
-                (.put read-queue (read))))
+      (future (try
+                (while true
+                  (.put read-queue (read)))
+                (catch Throwable t
+                  (.put read-queue t))))
       (FnTransport.
-        #(.poll read-queue % TimeUnit/MILLISECONDS)
+        (let [failure (atom nil)]
+          #(if @failure
+             (throw @failure)
+             (let [msg (.poll read-queue % TimeUnit/MILLISECONDS)]
+               (if (instance? Throwable msg)
+                 (do (reset! failure msg) (throw msg))
+                 msg))))
         write
         close))))
 

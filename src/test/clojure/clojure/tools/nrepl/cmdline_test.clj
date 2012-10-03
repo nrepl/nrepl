@@ -1,7 +1,7 @@
 (ns #^{:doc ""
        :author "Chas Emerick"}
   clojure.tools.nrepl.cmdline-test
-  (:use [clojure.tools.nrepl-test :only (def-repl-test repl-server-fixture *server-port*)]
+  (:use [clojure.tools.nrepl-test :only (def-repl-test repl-server-fixture *server*)]
     clojure.test)
   (:require
     [clojure.tools.nrepl :as repl]))
@@ -13,7 +13,7 @@
   (repl/reset-ack-port!)
   (let [server-process (.exec (Runtime/getRuntime)
                          (into-array ["java" "-Dnreplacktest=y" "-cp" (System/getProperty "java.class.path")
-                                      "clojure.tools.nrepl.main" "--ack" (str *server-port*)]))
+                                      "clojure.tools.nrepl.main" "--ack" (str (:port *server*))]))
         acked-port (repl/wait-for-ack 20000)]
     (try
       (is acked-port "Timed out waiting for ack")
@@ -31,7 +31,7 @@
                     (.getLocalPort ss))
         server-process (.exec (Runtime/getRuntime)
                          (into-array ["java" "-Dnreplacktest=y" "-cp" (System/getProperty "java.class.path")
-                                      "clojure.tools.nrepl.main" "--port" (str free-port) "--ack" (str *server-port*)]))
+                                      "clojure.tools.nrepl.main" "--port" (str free-port) "--ack" (str (:port *server*))]))
         acked-port (repl/wait-for-ack 20000)]
     (try
       (is acked-port "Timed out waiting for ack")
