@@ -10,7 +10,7 @@
 (defn repl-server-fixture
   [f]
   (with-open [server (server/start-server)]
-    (binding [*server-port* (.getLocalPort (:ss @server))]
+    (binding [*server-port* (:port server)]
       (f))))
 
 (use-fixtures :once repl-server-fixture)
@@ -208,11 +208,17 @@
 (def-repl-test read-timeout
   (is (nil? (repl-values timeout-session "(Thread/sleep 1100)"))))
 
-(def-repl-test ensure-closeable
+(def-repl-test ensure-transport-closeable
   (is (= [5] (repl-values session "5")))
   (is (instance? java.io.Closeable transport))
   (.close transport)
   (is (thrown? java.net.SocketException (repl-values session "5"))))
+
+(deftest ensure-server-closeable
+  (let [server (server/start-server)]
+    (connect :port (:port server))
+    (.close server)
+    (is (thrown? java.net.ConnectException (connect :port (:port server))))))
 
 (def-repl-test request-*in*
   (is (= '((1 2 3)) (response-values (for [resp (repl-eval session "(read)")]
@@ -252,8 +258,8 @@
 (deftest test-ack
   (with-open [s (server/start-server :handler (ack/handle-ack (server/default-handler)))]
     (ack/reset-ack-port!)
-    (with-open [s2 (server/start-server :ack-port (.getLocalPort (:ss @s)))]
-      (is (= (.getLocalPort (:ss @s2)) (ack/wait-for-ack 10000))))))
+    (with-open [s2 (server/start-server :ack-port (:port s))]
+      (is (= (:port s2) (ack/wait-for-ack 10000))))))
 
 (def-repl-test agent-await
   (is (= [42] (repl-values session (code (let [a (agent nil)]

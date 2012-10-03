@@ -28,19 +28,41 @@
     (recur handler transport)))
 
 (defn- accept-connection
-  [{:keys [^ServerSocket ss transport greeting handler] :as server-state}]
-  (returning server-state
-    (when-not (.isClosed ss)
-      (let [sock (.accept ss)]
-        (future (with-open [transport (transport sock)]
+  [{:keys [^ServerSocket server-socket open-transports transport greeting handler]
+    :as server}]
+  (when-not (.isClosed server-socket)
+    (let [sock (.accept server-socket)]
+      (future (let [transport (transport sock)]
+                (try
+                  (swap! open-transports conj transport)
                   (when greeting (greeting transport))
-                  (handle handler transport)))
-        (send-off *agent* accept-connection)))))
+                  (handle handler transport)
+                  (finally
+                    (swap! open-transports disj transport)
+                    (.close transport)))))
+      (future (accept-connection server)))))
+
+(defn- safe-close
+  [^java.io.Closeable x]
+  (try
+    (.close x)
+    (catch java.io.IOException e
+      (log e "Failed to close " x))))
 
 (defn stop-server
   "Stops a server started via `start-server`."
-  [server]
-  (send-off server #(returning % (.close ^ServerSocket (:ss %)))))
+  [{:keys [open-transports ^ServerSocket server-socket] :as server}]
+  (returning server
+    (swap! open-transports #(reduce
+                              (fn [s t]
+                                ; should always be true for the socket server...
+                                (if (instance? java.io.Closeable t)
+                                  (do
+                                    (safe-close t)
+                                    (disj s t))
+                                  s))
+                              % %))
+    (.close server-socket)))
 
 (defn unknown-op
   "Sends an :unknown-op :error for the given message."
@@ -75,6 +97,13 @@
       "unsub"
       (h msg))))
 
+(defrecord Server [server-socket port open-transports transport greeting handler]
+  java.io.Closeable
+  (close [this] (stop-server this))
+  ;; TODO here for backward compat with 0.2.x; drop eventually
+  clojure.lang.IDeref
+  (deref [this] this))
+
 (defn start-server
   "Starts a socket-based nREPL server.  Configuration options include:
  
@@ -89,18 +118,23 @@
        that will be connected to to inform of the new server's port.
        Useful only by Clojure tooling implementations.
 
-   Returns a handle to the server that is started, which may be stopped
-   either via `stop-server`, (.close server), or automatically via `with-open`."
+   Returns a (map) handle to the server that is started, which may be stopped
+   either via `stop-server`, (.close server), or automatically via `with-open`.
+   The port that the server is open on is available in the :port slot of the
+   server map (useful if the :port option is 0 or was left unspecified."
   [& {:keys [port bind transport-fn handler ack-port greeting-fn] :or {port 0}}]
   (let [bind-addr (if bind (InetSocketAddress. bind port) (InetSocketAddress. port))
         ss (ServerSocket. port 0 (.getAddress bind-addr))
-        smap {:ss ss
-              :transport (or transport-fn t/bencode)
-              :greeting greeting-fn
-              :handler (or handler (default-handler))}
-        server (proxy [clojure.lang.Agent java.io.Closeable] [smap]
-                 (close [] (stop-server this)))]
-    (send-off server accept-connection)
+        server (assoc
+                 (Server. ss
+                          (.getLocalPort ss)
+                          (atom #{})
+                          (or transport-fn t/bencode)
+                          greeting-fn
+                          (or handler (default-handler)))
+                 ;; TODO here for backward compat with 0.2.x; drop eventually
+                 :ss ss)]
+    (future (accept-connection server))
     (when ack-port
-      (ack/send-ack (.getLocalPort ss) ack-port))
+      (ack/send-ack (:port server) ack-port))
     server))
