@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-Name: nREPL
-Bundle-Version: 0.2.0.BETA009
+Bundle-Version: 0.2.0.BETA010
 Bundle-SymbolicName: org.clojure.tools.nrepl
 Bundle-ManifestVersion: 2
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
