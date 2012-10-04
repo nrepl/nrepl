@@ -11,7 +11,7 @@
        :doc "A netstring and bencode implementation for Clojure."}
   clojure.tools.nrepl.bencode
   (:require [clojure.java.io :as io])
-  (:import (java.io IOException ByteArrayOutputStream
+  (:import (java.io IOException EOFException ByteArrayOutputStream
                     InputStream OutputStream PushbackInputStream) 
            clojure.lang.RT))
 
@@ -83,7 +83,7 @@
   #^long [#^InputStream input]
   (let [c (.read input)]
     (when (neg? c)
-      (throw (IOException. "Invalid netstring. Unexpected end of input.")))
+      (throw (EOFException. "Invalid netstring. Unexpected end of input.")))
     ;; Here we have a quirk for example. `.read` returns -1 on end of
     ;; input. However the Java `Byte` has only a range from -128 to 127.
     ;; How does the fit together?
@@ -104,7 +104,7 @@
       (let [result (.read input content offset len)]
         (when (neg? result)
           (throw
-            (IOException.
+            (EOFException.
               "Invalid netstring. Less data available than expected.")))
         (when (not= result len)
           (recur (+ offset result) (- len result)))))

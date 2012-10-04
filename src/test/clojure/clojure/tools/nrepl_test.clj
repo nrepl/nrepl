@@ -1,5 +1,5 @@
 (ns clojure.tools.nrepl-test
-  (:import java.io.IOException)
+  (:import java.net.SocketException)
   (:use clojure.test
         clojure.tools.nrepl)
   (:require (clojure.tools.nrepl [transport :as transport]
@@ -247,8 +247,8 @@
 (defn- disconnection-exception?
   [e]
   ; thrown? should check for the root cause!
-  (and (instance? IOException (root-cause e))
-       (re-matches #".*Unexpected end of input.*" (.getMessage (root-cause e)))))
+  (and (instance? SocketException (root-cause e))
+       (re-matches #".*lost.*connection.*" (.getMessage (root-cause e)))))
 
 (deftest transports-fail-on-disconnects
   (testing "Ensure that transports fail ASAP when the server they're connected to goes down."
@@ -267,14 +267,12 @@
           (catch Throwable e
             (is (disconnection-exception? e)))))
       
-      (is (thrown? IOException
-                   (transport/recv transport)))
+      (is (thrown? SocketException (transport/recv transport)))
       ;; TODO no idea yet why two sends are *sometimes* required to get a failure
       (try
         (transport/send transport {"op" "eval" "code" "(+ 5 1)"})
         (catch Throwable t))
-      (is (thrown? IOException
-                   (transport/send transport {"op" "eval" "code" "(+ 5 1)"}))))))
+      (is (thrown? SocketException (transport/send transport {"op" "eval" "code" "(+ 5 1)"}))))))
 
 (def-repl-test clients-fail-on-disconnects
   (testing "Ensure that clients fail ASAP when the server they're connected to goes down."
@@ -294,7 +292,7 @@
     ;; TODO as noted in transports-fail-on-disconnects, *sometimes* two sends are needed
     ;; to trigger an exception on send to an unavailable server
     (try (repl-eval session "(+ 1 1)") (catch Throwable t))
-    (is (thrown? IOException (repl-eval session "(+ 1 1)")))))
+    (is (thrown? SocketException (repl-eval session "(+ 1 1)")))))
 
 (def-repl-test request-*in*
   (is (= '((1 2 3)) (response-values (for [resp (repl-eval session "(read)")]
