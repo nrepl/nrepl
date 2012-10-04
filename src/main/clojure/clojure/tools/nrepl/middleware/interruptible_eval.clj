@@ -9,6 +9,7 @@
            (java.io StringReader Writer)
            java.util.concurrent.atomic.AtomicLong
            (java.util.concurrent LinkedBlockingQueue
+                                 SynchronousQueue
                                  TimeUnit ThreadPoolExecutor
                                  ThreadFactory)))
 
@@ -96,13 +97,15 @@
                               true
                               (catch ClassNotFoundException e false)))
 
+; this is essentially the same as Executors.newCachedThreadPool, except
+; for the JDK 5/6 fix described below
 (defn- configure-executor
   "Returns a ThreadPoolExecutor, configured (by default) to
    have no core threads, use an unbounded queue, create only daemon threads,
    and allow unused threads to expire after 30s."
   [& {:keys [keep-alive queue thread-factory]
       :or {keep-alive 30000
-           queue (LinkedBlockingQueue.)}}]
+           queue (SynchronousQueue.)}}]
   ; ThreadPoolExecutor in JDK5 *will not run* submitted jobs if the core pool size is zero and
   ; the queue has not yet rejected a job (see http://kirkwylie.blogspot.com/2008/10/java5-vs-java6-threadpoolexecutor.html)
   (ThreadPoolExecutor. (if jdk6? 0 1) Integer/MAX_VALUE

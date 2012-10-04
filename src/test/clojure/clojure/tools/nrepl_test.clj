@@ -209,6 +209,20 @@
 (def-repl-test read-timeout
   (is (nil? (repl-values timeout-session "(Thread/sleep 1100)"))))
 
+(def-repl-test concurrent-message-handling
+  (testing "multiple messages can be handled on the same connection concurrently"
+    (let [sessions (doall (repeatedly 3 #(client-session client)))
+          start-time (System/currentTimeMillis)
+          elapsed-times (map (fn [session eval-duration]
+                               (let [expr (pr-str `(Thread/sleep ~eval-duration))
+                                     responses (message session {:op :eval :code expr})]
+                                 (future
+                                   (is (= [nil] (response-values responses)))
+                                   (- (System/currentTimeMillis) start-time))))
+                             sessions
+                             [2000 1000 0])]
+      (is (apply > (map deref (doall elapsed-times)))))))
+
 (def-repl-test ensure-transport-closeable
   (is (= [5] (repl-values session "5")))
   (is (instance? java.io.Closeable transport))

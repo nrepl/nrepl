@@ -24,7 +24,7 @@
    Returns nil when `recv` returns nil for the given transport."
   [handler transport]
   (when-let [msg (t/recv transport)]
-    (handle* msg handler transport)
+    (future (handle* msg handler transport))
     (recur handler transport)))
 
 (defn- accept-connection
