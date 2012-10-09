@@ -46,4 +46,7 @@
   [my-port ack-port]
   (with-open [transport (repl/connect :port ack-port)]
     (let [client (repl/client transport 1000)]
-      (repl/message client {:op :ack :port my-port}))))
+      ; consume response from the server, solely to let that side
+      ; finish cleanly without (by default) spewing a SocketException when
+      ; the ack client goes away suddenly
+      (dorun (repl/message client {:op :ack :port my-port})))))
