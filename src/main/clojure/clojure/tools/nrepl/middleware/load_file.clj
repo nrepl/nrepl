@@ -3,15 +3,31 @@
   (:require [clojure.tools.nrepl.middleware.interruptible-eval :as eval])
   (:use [clojure.tools.nrepl.middleware :as middleware :only (set-descriptor!)]))
 
+; need to hold file contents "out of band" so as to avoid JVM method
+; size limitations (cannot eval an expression larger than some size
+; [64k?]), so the naive approach of just interpolating file contents
+; into an expression to be evaluated doesn't work
+; see http://code.google.com/p/counterclockwise/issues/detail?id=429
+; and http://groups.google.com/group/clojure/browse_thread/thread/f54044da06b9939f
+(def ^{:private true
+       :doc "An atom that temporarily holds the contents of files to
+be loaded."} file-contents (atom {}))
+
 (defn ^{:dynamic true} load-file-code
   "Given the contents of a file, its _source-path-relative_ path,
    and its filename, returns a string of code (or seq of expressions)
    that, when evaluated, will load those contents with appropriate
    filename references and line numbers in metadata, etc."
   [file file-path file-name]
-  (apply format
-    "(clojure.lang.Compiler/load (java.io.StringReader. %s) %s %s)"
-    (map pr-str [file file-path file-name])))
+  (let [file-key [file-path (gensym)]]
+    (swap! file-contents assoc file-key file)
+    (pr-str `(try
+               (clojure.lang.Compiler/load
+                 (java.io.StringReader. (@@(var file-contents) '~file-key))
+                 ~file-path
+                 ~file-name)
+               (finally
+                 (swap! @(var file-contents) dissoc '~file-key))))))
 
 (defn wrap-load-file
   "Middleware that evaluates a file's contents, as per load-file,
