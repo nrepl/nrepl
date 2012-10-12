@@ -207,7 +207,12 @@
     (is (= [true] (repl-values session "halted?")))))
 
 (def-repl-test read-timeout
-  (is (nil? (repl-values timeout-session "(Thread/sleep 1100)"))))
+  (is (nil? (repl-values timeout-session "(Thread/sleep 1100) :ok")))
+  ; just getting the values off of the wire so the server side doesn't
+  ; toss a spurious stack trace when the client disconnects
+  (is (= [nil :ok] (->> (repeatedly #(transport/recv transport 500))
+                     (take-while (complement nil?))
+                     response-values))))
 
 (def-repl-test concurrent-message-handling
   (testing "multiple messages can be handled on the same connection concurrently"
