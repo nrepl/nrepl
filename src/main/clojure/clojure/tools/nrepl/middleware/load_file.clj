@@ -9,8 +9,8 @@
 ; into an expression to be evaluated doesn't work
 ; see http://code.google.com/p/counterclockwise/issues/detail?id=429
 ; and http://groups.google.com/group/clojure/browse_thread/thread/f54044da06b9939f
-(def ^{:private true
-       :doc "An atom that temporarily holds the contents of files to
+(defonce ^{:private true
+           :doc "An atom that temporarily holds the contents of files to
 be loaded."} file-contents (atom {}))
 
 (defn ^{:dynamic true} load-file-code
@@ -19,8 +19,21 @@ be loaded."} file-contents (atom {}))
    that, when evaluated, will load those contents with appropriate
    filename references and line numbers in metadata, etc."
   [file file-path file-name]
-  (let [file-key [file-path (gensym)]]
-    (swap! file-contents assoc file-key file)
+  ; mini TTL impl so that any code orphaned by errors that occur
+  ; between here and the evaluation of the Compiler/load expression
+  ; below are cleaned up on subsequent loads  
+  (let [t (System/currentTimeMillis)
+        file-key ^{:t t} [file-path (gensym)]]
+    (swap! file-contents
+      (fn [file-contents]
+        (let [expired-keys
+              (filter
+                (comp #(and %
+                            (< 10000 (- (System/currentTimeMillis) %)))
+                      :t meta)
+                (keys file-contents))]
+          (assoc (apply dissoc file-contents expired-keys)
+                 file-key file))))
     (pr-str `(try
                (clojure.lang.Compiler/load
                  (java.io.StringReader. (@@(var file-contents) '~file-key))
