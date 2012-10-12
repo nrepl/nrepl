@@ -13,11 +13,13 @@
            :doc "An atom that temporarily holds the contents of files to
 be loaded."} file-contents (atom {}))
 
-(defn ^{:dynamic true} load-file-code
-  "Given the contents of a file, its _source-path-relative_ path,
-   and its filename, returns a string of code (or seq of expressions)
-   that, when evaluated, will load those contents with appropriate
-   filename references and line numbers in metadata, etc."
+(defn- load-large-file-code
+  "A variant of `load-file-code` that returns an
+   expression that will only work if evaluated within the same process
+   where it was called.  Here to work around the JVM method size limit
+   so that (by default, for those tools using the load-file middleware)
+   loading files of any size will work when the nREPL server is running
+   remotely or locally."
   [file file-path file-name]
   ; mini TTL impl so that any code orphaned by errors that occur
   ; between here and the evaluation of the Compiler/load expression
@@ -42,6 +44,20 @@ be loaded."} file-contents (atom {}))
                (finally
                  (swap! @(var file-contents) dissoc '~file-key))))))
 
+(defn ^{:dynamic true} load-file-code
+  "Given the contents of a file, its _source-path-relative_ path,
+   and its filename, returns a string of code containing a single
+   expression that, when evaluated, will load those contents with
+   appropriate filename references and line numbers in metadata, etc.
+
+   Note that because a single expression is produced, very large
+   file loads will fail due to the JVM method size limitation.
+   In such cases, see `load-file-code'`."
+  [file file-path file-name]
+  (apply format
+    "(clojure.lang.Compiler/load (java.io.StringReader. %s) %s %s)"
+    (map pr-str [file file-path file-name])))
+
 (defn wrap-load-file
   "Middleware that evaluates a file's contents, as per load-file,
    but with all data supplied in the sent message (i.e. safe for use
@@ -55,7 +71,10 @@ be loaded."} file-contents (atom {}))
       (h msg)
       (h (assoc msg
            :op "eval"
-           :code (load-file-code file file-path file-name))))))
+           :code ((if (thread-bound? #'load-file-code)
+                    load-file-code
+                    load-large-file-code)
+                   file file-path file-name))))))
 
 (set-descriptor! #'wrap-load-file
   {:requires #{}
