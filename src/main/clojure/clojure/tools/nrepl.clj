@@ -164,7 +164,7 @@
   {:pre [transport-fn port]}
   (transport-fn (java.net.Socket. ^String host (int port))))
 
-(defn- to-uri
+(defn- ^java.net.URI to-uri
   [x]
   {:post [(instance? java.net.URI %)]}
   (if (string? x)

@@ -30,7 +30,7 @@
   (let [buf (clojure.tools.nrepl.StdOutBuffer.)]
     (PrintWriter. (proxy [Writer] []
                     (close [] (.flush ^Writer this))
-                    (write [& [x off len]]
+                    (write [& [x ^Integer off ^Integer len]]
                       (locking buf
                         (cond
                           (number? x) (.append buf (char x))
@@ -199,7 +199,7 @@
           (h msg))
       (= op "stdin")
         (do
-          (-> session meta ^Writer (:stdin-writer) (.write stdin))
+          (-> session meta ^Writer (:stdin-writer) (.write ^String stdin))
           (t/send transport (response-for msg :status :done)))
       :else
         (h msg))))

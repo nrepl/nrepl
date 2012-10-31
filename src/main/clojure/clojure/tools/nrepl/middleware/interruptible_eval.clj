@@ -8,10 +8,8 @@
   (:import clojure.lang.LineNumberingPushbackReader
            (java.io StringReader Writer)
            java.util.concurrent.atomic.AtomicLong
-           (java.util.concurrent LinkedBlockingQueue
-                                 SynchronousQueue
-                                 TimeUnit ThreadPoolExecutor
-                                 ThreadFactory)))
+           (java.util.concurrent Executor LinkedBlockingQueue ThreadFactory
+                                 SynchronousQueue TimeUnit ThreadPoolExecutor)))
 
 (def ^{:dynamic true
        :doc "The message currently being evaluated."}
@@ -52,7 +50,7 @@
             :read (if (string? code)
                     (let [reader (LineNumberingPushbackReader. (StringReader. code))]
                       #(read reader false %2))
-                    (let [code (.iterator code)]
+                    (let [^java.util.Iterator code (.iterator code)]
                       #(or (and (.hasNext code) (.next code)) %2)))
             :prompt (fn [])
             :need-prompt (constantly false)
@@ -124,7 +122,7 @@
 
 (declare run-next)
 (defn- run-next*
-  [session executor]
+  [session ^Executor executor]
   (let [qa (-> session meta :queue)]
     (loop []
       (let [q @qa
@@ -143,7 +141,7 @@
 
 (defn- queue-eval
   "Queues the function for the given session."
-  [session executor f]
+  [session ^Executor executor f]
   (let [qa (-> session prep-session meta :queue)]
     (loop []
       (let [q @qa]

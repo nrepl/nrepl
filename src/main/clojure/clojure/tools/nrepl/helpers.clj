@@ -25,11 +25,11 @@
      (load-file-command \"…code here…\" \"some/ns/name/file.clj\" \"file.clj\")"
   ([f] (load-file-command f nil))
   ([f source-root]
-    (let [abspath (if (string? f) f (.getAbsolutePath f))
+    (let [^String abspath (if (string? f) f (.getAbsolutePath ^File f))
           source-root (cond
                           (nil? source-root) ""
                           (string? source-root) source-root
-                          (instance? File source-root) (.getAbsolutePath source-root))]
+                          (instance? File source-root) (.getAbsolutePath ^File source-root))]
       (load-file-command (slurp abspath :encoding "UTF-8")
         (if (and (seq source-root)
               (.startsWith abspath source-root))

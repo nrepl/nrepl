@@ -14,7 +14,7 @@
             msgs (if ex msgs (cons ex msgs))]
         (binding [*out* *err*]
           (apply println "ERROR:" msgs)
-          (when ex (.printStackTrace ex)))))))
+          (when ex (.printStackTrace ^Throwable ex)))))))
 
 (defmacro returning
   "Executes `body`, returning `x`."
