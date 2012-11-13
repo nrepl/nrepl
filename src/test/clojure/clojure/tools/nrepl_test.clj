@@ -1,10 +1,12 @@
 (ns clojure.tools.nrepl-test
-  (:import java.net.SocketException)
+  (:import java.net.SocketException java.io.File)
   (:use clojure.test
         clojure.tools.nrepl)
   (:require (clojure.tools.nrepl [transport :as transport]
                                  [server :as server]
                                  [ack :as ack])))
+
+(def project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
 
 (def ^{:dynamic true} *server* nil)
 

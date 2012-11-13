@@ -1,11 +1,10 @@
 (ns ^{:author "Chas Emerick"}
   clojure.tools.nrepl.load-file-test
   (:import (java.io File))
-  (:use [clojure.tools.nrepl-test :only (def-repl-test repl-server-fixture)]
+  (:use [clojure.tools.nrepl-test :only (def-repl-test repl-server-fixture
+                                          project-base-dir)]
         clojure.test)
   (:require [clojure.tools.nrepl :as nrepl]))
-
-(def project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
 
 (use-fixtures :once repl-server-fixture)
 
