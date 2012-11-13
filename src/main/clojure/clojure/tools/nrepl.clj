@@ -219,7 +219,9 @@
       version
   (when-let [in (.getResourceAsStream (class connect) "/clojure/tools/nrepl/version.txt")]
     (with-open [^java.io.BufferedReader reader (io/reader in)]
-      (->> (.readLine reader)
-        (re-find #"(\d+)\.(\d+)\.(\d+)-?(.*)")
-        rest
-        (zipmap [:major :minor :incremental :qualifier])))))
+      (let [version-string (-> reader .readLine .trim)]
+        (assoc (->> version-string 
+                 (re-find #"(\d+)\.(\d+)\.(\d+)-?(.*)")
+                 rest
+                 (zipmap [:major :minor :incremental :qualifier]))
+               :version-string version-string)))))
