@@ -87,8 +87,12 @@ nil
   :id "3124d886-7a5d-4c1e-9fc3-2946b1b3cfaa"})
 ```
 
-The different message types and their schemas are detailed
-[here](#defaultschema). 
+Each message must contain at least an `:op` (or `"op"`) slot, which specifies
+the "type" of the operation to be performed.  The operations supported by an
+nREPL endpoint are determined by the handlers and middleware stack used when
+starting that endpoint; the default middleware stack (described below) supports
+a particular set of operations, [detailed
+here](https://github.com/clojure/tools.nrepl/blob/master/doc/ops.md). 
 
 ### Embedding nREPL, starting a server
 

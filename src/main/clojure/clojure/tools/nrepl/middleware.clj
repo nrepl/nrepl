@@ -127,3 +127,34 @@
     (reduce #(conj-sorted % comparator %2) [])
     (map :implemented-by)))
 
+;;; documentation utilities ;;;
+
+; oh, kill me now
+(defn- markdown-escape
+  [s]
+  (.replaceAll s "([*_])" "\\\\$1"))
+
+(defn- message-slot-markdown
+  [msg-slot-docs]
+  (apply str (for [[k v] msg-slot-docs]
+               (format "* `%s` %s\n" (pr-str k) (markdown-escape v)))))
+
+(defn describe-markdown
+  "Given a message containing the response to a verbose :describe message,
+generates a markdown string conveying the information therein, suitable for
+use in e.g. wiki pages, github, etc."
+  [{:keys [ops versions]}]
+  (apply str "# Supported nREPL operations
+
+<small>generated from a verbose 'describe' response (nREPL v"
+         (:version-string clojure.tools.nrepl/version)
+         ")</small>\n\n## Operations"
+         (for [[op {:keys [doc optional requires returns]}] ops]
+           (str "\n\n### `" (pr-str op) "`\n\n"
+                (markdown-escape doc) "\n\n"
+                "###### Required parameters\n\n"
+                (message-slot-markdown requires)
+                "\n\n###### Optional parameters\n\n"
+                (message-slot-markdown optional)
+                "\n\n###### Returns\n\n"
+                (message-slot-markdown returns)))))
