@@ -139,10 +139,13 @@
   (apply str (for [[k v] msg-slot-docs]
                (format "* `%s` %s\n" (pr-str k) (markdown-escape v)))))
 
-(defn describe-markdown
+(defn- describe-markdown
   "Given a message containing the response to a verbose :describe message,
 generates a markdown string conveying the information therein, suitable for
-use in e.g. wiki pages, github, etc."
+use in e.g. wiki pages, github, etc.
+
+(This is currently private because markdown conversion surely shouldn't
+be part of the API here...?)"
   [{:keys [ops versions]}]
   (apply str "# Supported nREPL operations
 

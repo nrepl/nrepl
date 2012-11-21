@@ -40,4 +40,4 @@
           (str
             "<!-- This file is *generated* by " #'update-op-docs
             "\n   **Do not edit!** -->\n"
-            (middleware/describe-markdown describe-response)))))
+            (#'middleware/describe-markdown describe-response)))))
