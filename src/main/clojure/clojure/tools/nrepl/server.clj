@@ -20,8 +20,8 @@
       (log t "Unhandled REPL handler exception processing message" msg))))
 
 (defn handle
-  "Handles requests received via `transport` using `handler`.
-   Returns nil when `recv` returns nil for the given transport."
+  "Handles requests received via [transport] using [handler].
+   Returns nil when [recv] returns nil for the given transport."
   [handler transport]
   (when-let [msg (t/recv transport)]
     (future (handle* msg handler transport))

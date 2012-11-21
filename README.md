@@ -13,7 +13,7 @@ nREPL is available in Maven central. Add this `:dependency` to your Leiningen
 `project.clj`:
 
 ```clojure
-[org.clojure/tools.nrepl "0.2.0-beta10"]
+[org.clojure/tools.nrepl "0.2.0-RC1"]
 ```
 
 Or, add this to your Maven project's `pom.xml`:
@@ -22,23 +22,29 @@ Or, add this to your Maven project's `pom.xml`:
 <dependency>
   <groupId>org.clojure</groupId>
   <artifactId>tools.nrepl</artifactId>
-  <version>0.2.0-beta10</version>
+  <version>0.2.0-RC1</version>
 </dependency>
 ```
 
-A list of all prior releases are available [here](http://search.maven.org/#search|gav|1|g%3A%22org.clojure%22%20AND%20a%3A%22tools.nrepl%22).
+A list of all prior releases are available
+[here](http://search.maven.org/#search|gav|1|g%3A%22org.clojure%22%20AND%20a%3A%22tools.nrepl%22).
 
 Please note the changelog below.
 
-nREPL is compatible with Clojure 1.2.0 - 1.4.0.
+nREPL is compatible with Clojure 1.2.0 - 1.5.0.
 
-Please post general questions or discussion on either the [clojure-dev](http://groups.google.com/group/clojure-dev/) or [clojure-tools](http://groups.google.com/group/clojure-tools) mailing lists.  Bug reports and such may be filed into [nREPL's JIRA](http://dev.clojure.org/jira/browse/NREPL).
+Please post general questions or discussion on either the
+[clojure-dev](http://groups.google.com/group/clojure-dev/) or
+[clojure-tools](http://groups.google.com/group/clojure-tools) mailing lists.
+Bug reports and such may be filed into [nREPL's
+JIRA](http://dev.clojure.org/jira/browse/NREPL).
 
-nREPL's generated API documentation is available [here](http://clojure.github.com/tools.nrepl/).
-A [history of nREPL builds](http://build.clojure.org/job/tools.nrepl/) is available, as well as
-[a compatibility test matrix](http://build.clojure.org/job/tools.nrepl-test-matrix/), verifying
-nREPL's functionality against multiple versions of Clojure (v1.2.0+ supported) and multiple
-JVMs.
+nREPL's generated API documentation is available
+[here](http://clojure.github.com/tools.nrepl/).  A [history of nREPL
+builds](http://build.clojure.org/job/tools.nrepl/) is available, as well as [a
+compatibility test
+matrix](http://build.clojure.org/job/tools.nrepl-test-matrix/), verifying
+nREPL's functionality against multiple versions of Clojure and multiple JVMs.
 
 ### Connecting to an nREPL server
 
@@ -48,8 +54,14 @@ client/tool.  Tools that support nREPL include:
 * [Leiningen](https://github.com/technomancy/leiningen) (starting with v2)
 * [Counterclockwise](http://code.google.com/p/counterclockwise/) (Clojure plugin
   for Eclipse)
+* [nrepl.el](https://github.com/kingtim/nrepl.el) (nREPL mode for Emacs)
 * [Reply](https://github.com/trptcolin/reply/)
 * [Jark](http://icylisper.in/jark/)
+
+If your preferred Clojure development environment supports nREPL, you're done.
+Use it or connect to an existing nREPL endpoint, and you're done.
+
+#### Talking to an nREPL endpoint programmatically
 
 If you want to connect to an nREPL server using the default transport, something
 like this will work:
@@ -59,7 +71,7 @@ like this will work:
 nil
 => (with-open [conn (repl/connect :port 59258)]
      (-> (repl/client conn 1000)    ; message receive timeout required
-       (repl/message {:op :eval :code "(+ 2 3)"})
+       (repl/message {:op "eval" :code "(+ 2 3)"})
        repl/response-values))
 [5]
 ```
@@ -97,11 +109,13 @@ here](https://github.com/clojure/tools.nrepl/blob/master/doc/ops.md).
 ### Embedding nREPL, starting a server
 
 If your project uses Leiningen (v2 or higher), you already have access to an
-nREPL server for your project via `lein repl`.
+nREPL server for your project via `lein repl` (or, `lein repl :headless` if you
+don't need the Reply terminal-based nREPL client to connect to the resulting
+nREPL server).
 
 Otherwise, it can be extremely useful to have your application host a REPL
 server whereever it might be deployed; this can greatly simplify debugging,
-sanity-checking, and so on.
+sanity-checking, panicked code patching, and so on.
 
 nREPL provides a socket-based server that you can trivially start from your
 application.  [Add it to your project's dependencies](#installing), and add code
@@ -132,29 +146,27 @@ You can stop the server with `(stop-server server)`.
 
 #### Server options
 
-* tty
-* http
-* implementing your own transport / handler(s)
+Note that nREPL is not limited to its default messaging protocol, nor to its
+default use of sockets.  nREPL provides a _transport_ abstraction for
+implementing support for alternative protocols and connection methods.
+Alternative transport implementations are available, and implementing your own
+is not difficult; read more about transports [here](#transports).
 
 ### Building nREPL
 
-Releases are available from Maven
-Central, and SNAPSHOT builds from master's HEAD are automatically deployed to
-Sonatype's OSS repository (see [this](http://dev.clojure.org/display/doc/Maven+Settings+and+Repositories)
-for how to configure Leiningen or Maven to use OSS-snapshots), so building nREPL
-shouldn't ever be necessary.  That said:
+Releases are available from Maven Central, and SNAPSHOT builds from master's
+HEAD are automatically deployed to Sonatype's OSS repository (see
+[this](http://dev.clojure.org/display/doc/Maven+Settings+and+Repositories) for
+how to configure Leiningen or Maven to use OSS-snapshots), so building nREPL
+shouldn't ever be necessary.  But, if you insist:
 
 0. Clone the repo
 1. Make sure you have maven installed
-2. Run the maven build; run either:
+2. Run the maven build, either:
     1. `mvn package`: This will produce an nREPL jar file in the `target`
 directory, and run all tests against Clojure 1.2.0.
     2. `mvn verify`: This does the same, but also runs the tests with
-other Clojure "profiles" (currently v1.1.0 and v1.1.0 + clojure-contrib). 
-
-## Need Help?
-
-Ping `cemerick` on freenode irc or twitter.
+other Clojure "profiles" (one for each supported version of Clojure). 
 
 ## Why nREPL?
 
@@ -166,81 +178,140 @@ applications) as well as toolmakers (providing a standard way to connect to and
 introspect running environments as a way of informing user interfaces of all
 kinds, including "standard" interactive, text-based REPLs).
 
-The network protocol used is simple, depending neither
+The default network protocol used is simple, depending neither
 on JVM or Clojure specifics, thereby allowing (encouraging?) the development
 of non-Clojure REPL clients.  The REPLs operational semantics are such
-that essentially any future non-JVM Clojure implementations should be able to
+that essentially any non-JVM Clojure implementation should be able to
 implement it, with allowances for hosts that lack the concurrency primitives to
 support e.g. asynchronous evaluation, interrupts, etc.
 
 For more information about the motivation, architecture, use cases, and
-discussion related to nREPL, see the see the original design notes, available
-[here](https://docs.google.com/document/edit?id=1dnb1ONTpK9ttO5W4thxiXkU5Ki89gK62anRqKEK4YZI&authkey=CMuszuMI&hl=en#),
+discussion related to nREPL, see the see the original design notes,
+availabl[here](https://docs.google.com/document/edit?id=1dnb1ONTpK9ttO5W4thxiXkU5Ki89gK62anRqKEK4YZI&authkey=CMuszuMI&hl=en#),
 and the [notes](https://github.com/clojure/tools.nrepl/wiki/nREPL.Next) and
-[discussion](groups.google.com/group/clojure-dev/browse_frm/thread/6e366c1d0eaeec59)
+[discussion](http://groups.google.com/group/clojure-dev/browse_frm/thread/6e366c1d0eaeec59)
 around its recent redesign.
 
 ### Design
 
 nREPL largely consists of three abstractions: handlers, middleware, and
-transports.  These are largely analogous to the handlers, middleware, and
-adapters of [Ring](https://github.com/mmcgrana/ring), though there are some
-important semantic differences, especially around transports.
+transports.  These are roughly analogous to the handlers, middleware, and
+adapters of [Ring](https://github.com/ring-clojure/ring), though there are some
+important semantic differences. Finally, nREPL is fundamentally message-oriented
+and asynchronous (in contrast to most REPLs that build on top of streams
+provided by e.g.  terminals).
+
+#### Messages
+
+nREPL messages are maps.  The keys and values that may be included in messages
+depends upon the transport being used; different transports may encode messages
+differently, and therefore may or may not be able to represent certain data
+types.
+
+Each message sent to an nREPL endpoint constitutes a "request" to perform a
+particular operation, which is indicated by a `"op"` entry.  Each operation may
+further require the incoming message to contain other data.  Which data an
+operation requires or may accept varies; for example, a message to evaluate
+some code might look like this:
+
+```clojure
+{"op" "eval" "code" "(+ 1 2 3)"}
+```
+
+The result(s) of performing each operation may be sent back to the nREPL client
+in one or more response messages, the contents of which again depend upon the
+operation.
+
+#### Transports <a name="transports"/>
+
+<!-- talk about strings vs. bytestrings, the encoding thereof, etc when we
+figure that out -->
+
+_Transports_ are roughly analogous to Ring's adapters: they provide an
+implementation of a common protocol (`clojure.tools.nrepl.transport.Transport`)
+to enable nREPL clients and servers to send and receive messages without regard
+for the underlying channel or particulars of message encoding.
+
+nREPL includes two transports, both of which are socket-based: a "tty"
+transport that allows one to connect to an nREPL endpoint using e.g. `telnet`
+(which therefore supports only the most simplistic interactive evaluation of
+expressions), and one that uses
+[bencode](http://wiki.theory.org/BitTorrentSpecification#Bencoding) to encode
+nREPL messages over sockets.  It is the latter that is used by default by
+`clojure.tools.nrepl.server/start-server` and `clojure.tools.nrepl/connect`.
+
+Other nREPL transports are provided by the community, including:
+
+* [nrepl-hornetq](https://github.com/pallet/ritz/blob/develop/nrepl-hornetq),
+  which routes nREPL messages over [HornetQ](http://www.jboss.org/hornetq/).
+* [Drawbridge](http://github.com/cemerick/drawbridge), Ring middleware
+  implementing an nREPL HTTP/HTTPS endpoint and an nREPL transport to connect
+to such endpoints.
+* [concerto](https://github.com/jamii/concerto/), which "adds a broadcast mode
+  to nrepl, so that when multiple users are logged into the same nrepl server
+they can each see what the others are doing".
+
+(If you implement some new useful nREPL transport, let me know and I'll add it
+to this list.)
 
 #### Handlers
 
-nREPL is fundamentally message-oriented, where a message is a map of key/value
-pairs.  _Handlers_ are functions accept a single incoming message as an argument,
-and should return a truthy value indicating whether or not the provided message
-was processed.  An nREPL server is started with a single handler function, which
-will be used to process messages for the lifetime of the server.
+_Handlers_ are functions that accept a single incoming message as an argument.
+An nREPL server is started with a single handler function, which will be used
+to process messages for the lifetime of the server.  Note that handler return
+values are _ignored_; results of performing operations should be sent back to
+the client via the transport in use (which will be explained shortly).  This
+may seem peculiar, but is motivated by two factors:
 
-(This is because the most prevalent operation — evaluation
-of Clojure code — is fundamentally asynchronous.)
+* Many operations — including something as simple as code evaluation — is
+  fundamentally asynchronous with respect to the nREPL server
+* Many operations can produce multiple results (e.g. evaluating a snippet of
+  code like `"(+ 1 2) (def a 6)`).
 
-Messages are guaranteed to contain the following slots:
-
-* `:transport` The [transport](#transports) that should be used to send all
-responses precipitated by a given message.
-* `:op` The operation to perform; roughly, the type of message
+Thus, messages provided to nREPL handlers are guaranteed to contain a
+`:transport` entry containing the [transport](#transports) that should be used
+to send all responses precipitated by a given message.  (This slot is added by
+the nREPL server itself, thus, if a client sends any message containing a
+`"transport"` entry, it will be bashed out by the `Transport` that was the
+source of the message.)  Further, all messages provided to nREPL handlers have
+keyword keys (as per `clojure.walk/keywordize-keys`).
 
 Depending on its `:op`, a message might be required to contain other slots, and
-might optionally contain others.  Each request should contain a unique
-`:id`.
-
-Responses are also messages, maps of key/value pairs, the content of which
-depend entirely upon the type of message for which the responses are produced.
+might optionally contain others.  It is generally the case that request
+messages should contain a globally-unique `:id`.
 Every request must provoke at least one and potentially many response messages,
 each of which should contain an `:id` slot echoing that of the provoking
-request.  Once a handler has completely processed a message, a response
+request.
+
+Once a handler has completely processed a message, a response
 containing a `:status` of `:done` must be sent.  Some operations necessitate
 that additional responses related to the processing of a request are sent after
 a `:done` `:status` is reported (e.g. delivering content written to `*out*` by
 evaluated code that started a `future`).
-
 Other statuses are possible, depending upon the semantics of the `:op` being
 handled; in particular, if the message is malformed or incomplete for a
 particular `:op`, then a response with an `:error` `:status` should be sent,
 potentially with additional information about the nature of the problem. 
 
-It is possible for an nREPL server to send messages to a client that
-are not a direct response to a request (e.g. streaming content written to
-`System/out` might be started/stopped by requests, but messages containing such
-content can't be considered responses to those requests).
+It is possible for an nREPL server to send messages to a client that are not a
+direct response to a request (e.g. streaming content written to `System/out`
+might be started/stopped by requests, but messages containing such content
+can't be considered responses to those requests).
 
-If the handler being used by an nREPL server returns a logically false value
-(indicating that a message's `:op` was unrecognized), then the the server will
+If the handler being used by an nREPL server does not recognize or cannot
+perform the operation indicated by a request message's `:op`, then it should
 respond with a message containing a `:status` of `"unknown-op"`.
 
-Generally, the handler that is provided as the `:handler` to
-`clojure.tools.nrepl.server/start-server` is built up as a result of composing
-multiple pieces of middleware.
+It is currently the case that the handler provided as the `:handler` to
+`clojure.tools.nrepl.server/start-server` is generally built up as a result of
+composing multiple pieces of middleware.
 
 #### Middleware
 
-_Middleware_ are higher-order functions that compose additional functionality
-onto or around a handler.  For example, some middleware that handles a `"time?"`
-`:op` by replying with the local time on the server:
+_Middleware_ are higher-order functions that accept a handler and return a new
+handler that may compose additional functionality onto or around the original.
+For example, some middleware that handles a hypothetical `"time?"` `:op` by
+replying with the local time on the server:
 
 ```clojure
 (require '[clojure.tools.nrepl.transport :as t])
@@ -254,74 +325,138 @@ onto or around a handler.  For example, some middleware that handles a `"time?"`
       (h msg))))
 ```
 
-A little silly, perhaps, but you should get the idea.  Nearly all of the same
-patterns and expectations associated with Ring middleware should be applicable
-to nREPL middleware.
+A little silly, but this pattern should be familiar to you if you have
+implemented Ring middleware before.  Nearly all of the same patterns and
+expectations associated with Ring middleware should be applicable to nREPL
+middleware.
 
-It is recommended that `(constantly false)` always be the base handler; this
-ensures that unhandled messages will always yield a logically false return
-value.  For example, nREPL's default handler is constructed like so in the
-`clojure.tools.nrepl.server` namespace:
+Some known third-party nREPL middleware includes:
+
+* [Piggieback](https://github.com/cemerick/piggieback), which adds
+  ClojureScript support to any nREPL session
+* [nrepl-codeq](https://github.com/pallet/ritz/tree/develop/nrepl-middleware),
+  part of [ritz](https://github.com/pallet/ritz) that provides a variety of
+nREPL middleware supporting various enhanced REPL operations (including
+apropos, javadoc lookup, code completion, and an alternative eval
+implementation)
+* [nrepl-project](https://github.com/pallet/ritz/tree/develop/nrepl-project),
+  part of [ritz](https://github.com/pallet/ritz) that provides "nREPL
+middleware for controlling the classpath of a REPL"
+* [nrepl-codeq](https://github.com/pallet/ritz/tree/develop/nrepl-codeq), part
+  of [ritz](https://github.com/pallet/ritz) that provides "middleware for use
+with datomic's codeq"
+* [nrepl-cljs-middleware](https://github.com/hiredman/nrepl-cljs-middleware),
+  offering ClojureScript compilation-as-a-middleware-service
+
+(If you implement some useful nREPL middleware, let me know so I can add it to
+this list.)
+
+All of nREPL's provided default functionality is implemented in terms of
+middleware, even foundational bits like session and eval support.  This default
+middleware "stack" aims to match and exceed the functionality offered by the
+standard Clojure REPL, and is available at
+`clojure.tools.nrepl.server/default-middlewares`.  Concretely, it consists of a
+number of middleware functions' vars that are implicitly merged with any
+user-specified middleware provided to
+`clojure.tools.nrepl.server/default-handler`.  To understand how that implicit
+merge works, we'll first need to talk about middleware "descriptors".
+
+(See [this documentation
+listing](https://github.com/clojure/tools.nrepl/blob/master/doc/ops.md) for
+details as to the operations implemented by nREPL's default middleware stack,
+what each operation expects in request messages, and what they emit for
+responses.)
+
+##### Middleware descriptors and nREPL server configuration
+
+It is generally the case that most users of nREPL will expect some minimal REPL
+functionality to always be available: evaluation (and the ability to interrupt
+evaluations), sessions, file loading, and so on.  However, as with all
+middleware, the order in which nREPL middleware is applied to a base handler is
+significant; e.g., the session middleware's handler must look up a user's
+session and add it to the message map before delegating to the handler it wraps
+(so that e.g. evaluation middleware can use that session data to stand up the
+user's dynamic evaluation context).  If middleware were "just" functions, then
+any customization of an nREPL middleware stack would need to explicitly repeat
+all of the defaults, except for the edge cases where middleware is to be
+appended or prepended to the default stack.
+
+To eliminate this tedium, the vars holding nREPL middleware functions may have
+a descriptor applied to them to specify certain constraints in how that
+middleware is applied.  For example, the descriptor for the
+`clojure.tools.nrepl.middleware.session/add-stdin` middleware is set thusly:
 
 ```clojure
-(defn default-handler
-  "A default handler supporting interruptible evaluation, stdin, sessions, and
-   readable representations of evaluated expressions via `pr`."
-  []
-  (-> (constantly false)
-    clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval
-    clojure.tools.nrepl.middleware.pr-values/pr-values
-    clojure.tools.nrepl.middleware.session/add-stdin
-    clojure.tools.nrepl.middleware.session/session))
+(set-descriptor! #'add-stdin
+  {:requires #{#'session}
+   :expects #{"eval"}
+   :handles {"stdin"
+             {:doc "Add content from the value of \"stdin\" to *in* in the current session."
+              :requires {"stdin" "Content to add to *in*."}
+              :optional {}
+              :returns {"status" "A status of \"need-input\" will be sent if a session's *in* requires content in order to satisfy an attempted read operation."}}}})
 ```
 
-This combination — when paired with a suitably-capable client — aims to match
-and exceed the functionality offered by the standard Clojure REPL.  Please see
-the documentation for each of those middleware functions for details as to what
-they expect in requests, and what they emit for responses.
+Middleware descriptors are implemented as a map in var metadata under a
+`:clojure.tools.nrepl.middleware/descriptor` key.  Each descriptor can contain
+any of three entries:
 
-#### Transports <a name="transports"/>
+* `:requires`, a set containing strings or vars identifying other middleware
+  that must be applied at a higher level than the middleware being described.
+Var references indicate an implementation detail dependency; string values
+indicate a dependency on _any_ middleware that handles the specified `:op`.
+* `:expects`, the same as `:requires`, except the referenced middleware must
+  exist in the final stack at a lower level than the middleware being
+described.
+* `:handles`, a map that documents the operations implemented by the
+  middleware.  Each entry in this map must have as its key the string value of
+the handled `:op` and a value that contains any of four entries:
+  * `:doc`, a human-readable docstring for the middleware
+  * `:requires`, a map of slots that the handled operation must find in request
+    messages with the indicated `:op`
+  * `:optional`, a map of slots that the handled operation may utilize from the
+    request messages with the indicated `:op`
+  * `:returns`, a map of slots that may be found in messages sent in response
+    to handling the indicated `:op`
 
-_Transports_ are roughly analogous to Ring's adapters: they provide an
-implementation of a common protocol (`clojure.tools.nrepl.transport.Transport`)
-to enable nREPL to send and receive messages without regard for the underlying
-mode of communication.  Some transport implementations may be usable by a client
-as well as the server, but this is not expected to be common.
+The values in the `:handles` map is used to support the `"describe"` operation,
+which provides "a machine- and human-readable directory and documentation for
+the operations supported by an nREPL endpoint" (see
+`clojure.tools.nrepl.middleware/describe-markdown`, and the results of
+`"describe"` and `describe-markdown`
+[here](https://github.com/clojure/tools.nrepl/blob/master/doc/ops.md)).
 
-nREPL's default transport utilizes
-[bencode](http://wiki.theory.org/BitTorrentSpecification#Bencoding)-encoded
-messages sent over sockets; it is used by default by
-`clojure.tools.nrepl.server/start-server` and `clojure.tools.nrepl/connect`.
+The `:requires` and `:expects` entries control the order in which
+middleware is applied to a base handler.  In the `add-stdin` example above,
+that middleware will be applied after any middleware that handles the `"eval"`
+operation, but before the `clojure.tools.nrepl.middleware.session/session`
+middleware.  In the case of `add-stdin`, this ensures that incoming messages
+hit the session middleware (thus ensuring that the user's dynamic scope —
+including `*in*` — has been added to the message) before the `add-stdin`'s
+handler sees them, so that it may append the provided `stdin` content to the
+buffer underlying `*in*`.  Additionally, `add-stdin` must be "above" any `eval`
+middleware, as it takes responsibility for calling `clojure.main/skip-if-eol`
+on `*in*` prior to each evaluation (in order to ensure functional parity with
+Clojure's default stream-based REPL implementation).
 
-On the other hand, a `Transport` implementation suitable for exposing nREPL over
-plain-text sockets (`clojure.tools.nrepl.transport/tty`) is only usable by the
-server.  Its only purpose is to enable the use of simpler/less capable tools
-(e.g. `telnet` et al.) to connect to an nREPL backend, so there's little reason
-to support client usage in such a scenario.  Simiarly, an HTTP `Transport`
-(taking the form of a Ring handler) would expect clients to connect via e.g.
-`curl`, a browser, or a Javascript-powered HTTP console.
+The specific contents of a middleware's descriptor depends entirely on its
+objectives: which operations it is to implement/define, how it is to modify
+incoming request messages, and which higher- and lower-level middlewares are to
+aid in accomplishing its aims.
+
+nREPL uses the dependency information in descriptors in order to produce a
+linearization of a set of middleware; this linearization is exposed by
+`clojure.tools.nrepl.middleware/linearize-middleware-stack`, which is
+implicitly used by `clojure.tools.nrepl.server/default-handler` to combine the
+default stack of middleware with any additional provided middleware vars.  The
+primary contribution of `default-handler` is to use
+`clojure.tools.nrepl.server/unknown-op` as the base handler; this ensures that
+unhandled messages will always produce a response message with an `:unknown-op`
+`:status`.  Any handlers otherwise created (e.g. via direct usage of
+`linearize-middleware-stack` to obtain a ordered sequence of middleware vars)
+should do the same, or use a similar alternative base handler.
 
 <!--
-#### Client Requests
-
-Only one type of request message is defined, which is used for sending code
-to the server to be loaded/evaluated.  All other REPL behaviours (such as environment
-introspection, symbol completion, quit/restart, etc.) can be accomplished through
-evaluating code.
-
-Each request message consists of the following slots:
-
-- `id` *Must* be a unique string identifying the request. UUIDs are suitable, and automatic
-in the provided nREPL client.
-- `code` The code to be evaluated.
-- `in` A string containing content to be bound (via a Reader) to `*in*` for the
-  duration of `code`'s execution
-- `timeout` The maximum amount of time, in milliseconds, that the provided code
-  will be allowed to run before a `timeout` response is sent.  This is optional;
-if not provided, a default timeout will be assigned by the server (currently
-always 60s).
-
-Only `id` and `code` are required in every request.
 
 #### Server Responses
 
