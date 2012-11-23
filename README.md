@@ -334,7 +334,7 @@ Some known third-party nREPL middleware includes:
 
 * [Piggieback](https://github.com/cemerick/piggieback), which adds
   ClojureScript support to any nREPL session
-* [nrepl-codeq](https://github.com/pallet/ritz/tree/develop/nrepl-middleware),
+* [nrepl-middleware](https://github.com/pallet/ritz/tree/develop/nrepl-middleware),
   part of [ritz](https://github.com/pallet/ritz) that provides a variety of
 nREPL middleware supporting various enhanced REPL operations (including
 apropos, javadoc lookup, code completion, and an alternative eval
