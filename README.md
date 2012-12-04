@@ -240,19 +240,8 @@ expressions), and one that uses
 nREPL messages over sockets.  It is the latter that is used by default by
 `clojure.tools.nrepl.server/start-server` and `clojure.tools.nrepl/connect`.
 
-Other nREPL transports are provided by the community, including:
-
-* [nrepl-hornetq](https://github.com/pallet/ritz/blob/develop/nrepl-hornetq),
-  which routes nREPL messages over [HornetQ](http://www.jboss.org/hornetq/).
-* [Drawbridge](http://github.com/cemerick/drawbridge), Ring middleware
-  implementing an nREPL HTTP/HTTPS endpoint and an nREPL transport to connect
-to such endpoints.
-* [concerto](https://github.com/jamii/concerto/), which "adds a broadcast mode
-  to nrepl, so that when multiple users are logged into the same nrepl server
-they can each see what the others are doing".
-
-(If you implement some new useful nREPL transport, let me know and I'll add it
-to this list.)
+[Other nREPL transports are provided by the community]
+(https://github.com/clojure/tools.nrepl/wiki/Extensions).
 
 #### Handlers
 
@@ -330,27 +319,6 @@ implemented Ring middleware before.  Nearly all of the same patterns and
 expectations associated with Ring middleware should be applicable to nREPL
 middleware.
 
-Some known third-party nREPL middleware includes:
-
-* [Piggieback](https://github.com/cemerick/piggieback), which adds
-  ClojureScript support to any nREPL session
-* [nrepl-middleware](https://github.com/pallet/ritz/tree/develop/nrepl-middleware),
-  part of [ritz](https://github.com/pallet/ritz) that provides a variety of
-nREPL middleware supporting various enhanced REPL operations (including
-apropos, javadoc lookup, code completion, and an alternative eval
-implementation)
-* [nrepl-project](https://github.com/pallet/ritz/tree/develop/nrepl-project),
-  part of [ritz](https://github.com/pallet/ritz) that provides "nREPL
-middleware for controlling the classpath of a REPL"
-* [nrepl-codeq](https://github.com/pallet/ritz/tree/develop/nrepl-codeq), part
-  of [ritz](https://github.com/pallet/ritz) that provides "middleware for use
-with datomic's codeq"
-* [nrepl-cljs-middleware](https://github.com/hiredman/nrepl-cljs-middleware),
-  offering ClojureScript compilation-as-a-middleware-service
-
-(If you implement some useful nREPL middleware, let me know so I can add it to
-this list.)
-
 All of nREPL's provided default functionality is implemented in terms of
 middleware, even foundational bits like session and eval support.  This default
 middleware "stack" aims to match and exceed the functionality offered by the
@@ -360,6 +328,9 @@ number of middleware functions' vars that are implicitly merged with any
 user-specified middleware provided to
 `clojure.tools.nrepl.server/default-handler`.  To understand how that implicit
 merge works, we'll first need to talk about middleware "descriptors".
+
+[Other nREPL middlewares are provided by the community]
+(https://github.com/clojure/tools.nrepl/wiki/Extensions).
 
 (See [this documentation
 listing](https://github.com/clojure/tools.nrepl/blob/master/doc/ops.md) for
