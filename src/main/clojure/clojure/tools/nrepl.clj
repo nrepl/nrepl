@@ -71,9 +71,8 @@
         #(merge % delimited-slots)))
 
 (defn message
-  "Returns a function of one argument.  Accepts a message that is sent via the
-   client provided with a fixed message :id added to it.  Returns the
-   head of the client's response seq, filtered to include only
+  "Sends a message via [client] with a fixed message :id added to it.
+   Returns the head of the client's response seq, filtered to include only
    messages related to the message :id that will terminate upon receipt of a
    \"done\" :status."
   [client {:keys [id] :as msg :or {id (uuid)}}]
