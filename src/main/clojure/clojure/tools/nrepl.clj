@@ -105,7 +105,7 @@
    Certain message slots are combined in special ways:
 
      - only the last :ns is retained
-     - :value is accumulated into an ordered collection
+     - :value and :session are accumulated into an ordered collection
      - :status is accumulated into a set
      - string values (associated with e.g. :out and :err) are concatenated"
   [responses]
@@ -113,7 +113,7 @@
     (fn [m [k v]]
       (case k
         (:id :ns) (assoc m k v)
-        :value (update-in m [k] (fnil conj []) v)
+        (:value :session) (update-in m [k] (fnil conj []) v)
         :status (update-in m [k] (fnil into #{}) v)
         (if (string? v)
           (update-in m [k] #(str % v))
