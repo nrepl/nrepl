@@ -1,7 +1,7 @@
 (ns clojure.tools.nrepl-test
   (:import java.net.SocketException java.io.File)
   (:use clojure.test
-        clojure.tools.nrepl)
+        [clojure.tools.nrepl :as nrepl])
   (:require (clojure.tools.nrepl [transport :as transport]
                                  [server :as server]
                                  [ack :as ack])))
@@ -118,15 +118,23 @@
                           :out))))
 
 (def-repl-test session-return-recall
-  (repl-eval session (code
-                       (apply + (range 6))
-                       (str 12 \c)
-                       (keyword "hello")))
-  (let [history [[15 "12c" :hello]]]
-    (is (= history (repl-values session "[*3 *2 *1]")))
-    (is (= history (repl-values session "*1"))))
+  (testing "sessions persist across connections"
+    (repl-eval session (code
+                         (apply + (range 6))
+                         (str 12 \c)
+                         (keyword "hello")))
+    (with-open [separate-connection (connect :port (:port *server*))]
+      (let [history [[15 "12c" :hello]]
+            sid (-> session meta :clojure.tools.nrepl/taking-until :session)
+            sc-session (-> separate-connection
+                         (nrepl/client 1000)
+                         (nrepl/client-session :session sid))]
+        (is (= history (repl-values sc-session "[*3 *2 *1]")))
+        (is (= history (repl-values sc-session "*1"))))))
 
-  (is (= [nil] (repl-values client "*1"))))
+    
+  (testing "without a session id, REPL-bound vars like *1 have default values"
+    (is (= [nil] (repl-values client "*1")))))
 
 (def-repl-test session-set!
   (repl-eval session (code
