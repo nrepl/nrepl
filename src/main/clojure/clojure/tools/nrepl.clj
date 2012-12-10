@@ -46,6 +46,7 @@
                               tracking-seq)]
                    (reset! latest-head [0 head])
                    head)]
+    ^{::transport transport ::timeout response-timeout}
     (fn this
       ([] (or (second @latest-head)
               (restart)))
@@ -62,13 +63,17 @@
 
 (defn- delimited-transport-seq
   [client termination-statuses delimited-slots]
-  (comp (partial take-until (comp #(seq (clojure.set/intersection % termination-statuses))
-                                  set
-                                  :status)) 
-        (let [keys (keys delimited-slots)]
-          (partial filter #(= delimited-slots (select-keys % keys))))
-        client
-        #(merge % delimited-slots)))
+  (with-meta
+    (comp (partial take-until (comp #(seq (clojure.set/intersection % termination-statuses))
+                                    set
+                                    :status)) 
+          (let [keys (keys delimited-slots)]
+            (partial filter #(= delimited-slots (select-keys % keys))))
+          client
+          #(merge % delimited-slots))
+    (-> (meta client)
+      (update-in [::termination-statuses] (fnil into #{}) termination-statuses)
+      (update-in [::taking-until] merge delimited-slots))))
 
 (defn message
   "Sends a message via [client] with a fixed message :id added to it.
