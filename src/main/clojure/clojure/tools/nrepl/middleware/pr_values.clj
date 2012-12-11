@@ -21,7 +21,8 @@
                                  (.send transport
                                    (if-let [[_ v] (find resp :value)]
                                      (assoc resp :value (with-out-str (pr v)))
-                                     resp))))))))
+                                     resp))
+                                 this))))))
 
 (set-descriptor! #'pr-values
   {:requires #{}
