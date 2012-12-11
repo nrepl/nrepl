@@ -44,9 +44,9 @@
                                                 (.setLength buf 0)
                                                 text))]
                         (when (pos? (count text))
-                          (t/send transport
-                            (response-for *msg* :session session-id
-                                                 channel-type text))))))
+                          (t/send (or (:transport *msg*) transport)
+                                  (response-for *msg* :session session-id
+                                                channel-type text))))))
                   true)))
 
 (defn- session-in

@@ -90,6 +90,27 @@
            combine-responses
            (select-keys [:value :out])))))
 
+(def-repl-test sessionless-*out*
+  (is (= "5\n:foo\n"
+         (-> (repl-eval client "(println 5)(println :foo)")
+           combine-responses
+           :out))))
+
+(def-repl-test session-*out*
+  (is (= "5\n:foo\n"
+         (-> (repl-eval session "(println 5)(println :foo)")
+           combine-responses
+           :out))))
+
+(def-repl-test cross-transport-*out*
+  (let [sid (-> session meta ::nrepl/taking-until :session)
+        transport2 (nrepl/connect :port (:port *server*))]
+    (transport/send transport2 {"op" "eval" "code" "(println :foo)"
+                                "session" sid})
+    (is (->> (repeatedly #(transport/recv transport2 100))
+          (take-while identity)
+          (some #(= ":foo\n" (:out %)))))))
+
 (def-repl-test streaming-out
   (is (= (for [x (range 10)]
            (str x \newline))
