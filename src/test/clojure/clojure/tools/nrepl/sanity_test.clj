@@ -90,6 +90,7 @@
       (.write (.toCharArray "ef") 0 2)
       (.write "gh" 0 2)
       (.write (.toCharArray "ij"))
+      (.write "   klm" 5 1)
       (.write 32)
       .flush)
     (with-open [out (java.io.PrintWriter. w)]
@@ -98,7 +99,7 @@
         (prn #{})
         (flush)))
     
-    (is (= ["println\n" "abcdefghij " "\n#{}\n"]
+    (is (= ["println\n" "abcdefghijm " "\n#{}\n"]
           (->> (repl/response-seq local 0)
             (map :out))))))
 

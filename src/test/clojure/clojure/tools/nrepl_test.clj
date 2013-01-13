@@ -118,6 +118,16 @@
           (map :out)
           (remove nil?)))))
 
+(def-repl-test session-*out*-writer-length-translation
+  (when (<= 4 (:minor *clojure-version*))
+    (is (= "#inst \"2013-02-11T12:13:44.000+00:00\"\n"
+          (-> (repl-eval session
+                (code (println (doto
+                                 (java.util.GregorianCalendar. 2013 1 11 12 13 44)
+                                 (.setTimeZone (java.util.TimeZone/getTimeZone "GMT"))))))
+            combine-responses
+            :out)))))
+
 (def-repl-test streaming-out-without-explicit-flushing
   (is (= ["(0 1 "
           "2 3 4"

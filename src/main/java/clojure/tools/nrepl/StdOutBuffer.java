@@ -37,8 +37,8 @@ public class StdOutBuffer {
         sb.append(s);
     }
 
-    public void append(char[] s, int start, int end) {
-        sb.append(s, start, end);
+    public void append(char[] s, int start, int len) {
+        sb.append(s, start, len);
     }
 
     public void append(char[] s) {

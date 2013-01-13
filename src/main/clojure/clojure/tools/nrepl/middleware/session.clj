@@ -35,7 +35,8 @@
                         (cond
                           (number? x) (.append buf (char x))
                           (not off) (.append buf x)
-                          (instance? CharSequence x) (.append buf ^CharSequence x off len)
+                          ; the CharSequence overload of append takes an *end* idx, not length!
+                          (instance? CharSequence x) (.append buf ^CharSequence x off (+ len off))
                           :else (.append buf ^chars x off len))
                         (when (<= *out-limit* (.length buf))
                           (.flush ^Writer this))))
