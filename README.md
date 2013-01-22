@@ -13,7 +13,7 @@ nREPL is available in Maven central. Add this `:dependency` to your Leiningen
 `project.clj`:
 
 ```clojure
-[org.clojure/tools.nrepl "0.2.0"]
+[org.clojure/tools.nrepl "0.2.1"]
 ```
 
 Or, add this to your Maven project's `pom.xml`:
@@ -22,7 +22,7 @@ Or, add this to your Maven project's `pom.xml`:
 <dependency>
   <groupId>org.clojure</groupId>
   <artifactId>tools.nrepl</artifactId>
-  <version>0.2.0</version>
+  <version>0.2.1</version>
 </dependency>
 ```
 
@@ -500,6 +500,10 @@ and
 -->
 
 ## Change Log
+
+`0.2.1`:
+
+* fixes incorrect translation between `Writer.write()` and `StringBuilder.append()` APIs (NREPL-38)
 
 `0.2.0`:
 
