@@ -126,6 +126,12 @@
           (assoc m k v))))            
     {} (apply concat responses)))
 
+(defn code*
+  "Returns a single string containing the pr-str'd representations
+   of the given expressions."
+  [& expressions]
+  (apply str (map pr-str expressions)))
+
 (defmacro code
   "Expands into a string consisting of the macro's body's forms
    (literally, no interpolation/quasiquoting of locals or other
@@ -133,7 +139,7 @@
 
    {:op :eval, :code (code (+ 1 1) (slurp \"foo.txt\"))}"
   [& body]
-  (apply str (map pr-str body)))
+  (apply code* body))
 
 (defn read-response-value
   "Returns the provided response message, replacing its :value string with
