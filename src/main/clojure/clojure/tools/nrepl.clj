@@ -119,7 +119,8 @@
       (case k
         (:id :ns) (assoc m k v)
         :value (update-in m [k] (fnil conj []) v)
-        (:status :session) (update-in m [k] (fnil into #{}) v)
+        :status (update-in m [k] (fnil into #{}) v)
+        :session (update-in m [k] (fnil conj #{}) v)
         (if (string? v)
           (update-in m [k] #(str % v))
           (assoc m k v))))            
