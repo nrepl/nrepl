@@ -13,7 +13,7 @@ nREPL is available in Maven central. Add this `:dependency` to your Leiningen
 `project.clj`:
 
 ```clojure
-[org.clojure/tools.nrepl "0.2.1"]
+[org.clojure/tools.nrepl "0.2.2"]
 ```
 
 Or, add this to your Maven project's `pom.xml`:
@@ -22,7 +22,7 @@ Or, add this to your Maven project's `pom.xml`:
 <dependency>
   <groupId>org.clojure</groupId>
   <artifactId>tools.nrepl</artifactId>
-  <version>0.2.1</version>
+  <version>0.2.2</version>
 </dependency>
 ```
 
@@ -52,11 +52,12 @@ Most of the time, you will connect to an nREPL server using an existing
 client/tool.  Tools that support nREPL include:
 
 * [Leiningen](https://github.com/technomancy/leiningen) (starting with v2)
-* [Counterclockwise](http://code.google.com/p/counterclockwise/) (Clojure plugin
-  for Eclipse)
+* [Counterclockwise](http://code.google.com/p/counterclockwise/) (Clojure
+  plugin for Eclipse)
 * [nrepl.el](https://github.com/kingtim/nrepl.el) (nREPL mode for Emacs)
+* [foreplay.vim](https://github.com/tpope/vim-foreplay) (Clojure + nREPL
+  support for vim)
 * [Reply](https://github.com/trptcolin/reply/)
-* [Jark](http://icylisper.in/jark/)
 
 If your preferred Clojure development environment supports nREPL, you're done.
 Use it or connect to an existing nREPL endpoint, and you're done.
@@ -431,14 +432,16 @@ should do the same, or use a similar alternative base handler.
 
 #### Server Responses
 
-The server will produce multiple messages in response to each client request, each of
-which can have the following slots:
+The server will produce multiple messages in response to each client request,
+each of which can have the following slots:
 
 - `id` The ID of the request for which the response was generated.
-- `ns` The stringified value of `*ns*` at the time of the response message's generation.
-- `out` Contains content written to `*out*` while the request's code was being evaluated.
-Messages containing `*out*` content may be sent at the discretion of the server, though
-at minimum corresponding with flushes of the underlying stream/writer.
+- `ns` The stringified value of `*ns*` at the time of the response message's
+  generation.
+- `out` Contains content written to `*out*` while the request's code was being
+  evaluated.  Messages containing `*out*` content may be sent at the discretion
+of the server, though at minimum corresponding with flushes of the underlying
+stream/writer.
 - `err` Same as `out`, but for `*err*`.
 - `value` The result of printing a result of evaluating a form in the code sent
   in the corresponding request.  More than one value may be sent, if more than
@@ -446,21 +449,22 @@ one form can be read from the request's code string.  In contrast to the output
 written to `*out*` and `*err*`, this may be usefully/reliably read and utilized
 by the client, e.g. in tooling contexts, assuming the evaluated code returns a
 printable and readable value.  Interactive clients will likely want to simply
-stream `value`'s content to their UI's primary output / log.  Values are printed
-with `prn` by default; alternatively, if all of the following conditions hold at
-the time of printing, a pretty-printer will be used instead:
+stream `value`'s content to their UI's primary output / log.  Values are
+printed with `prn` by default; alternatively, if all of the following
+conditions hold at the time of printing, a pretty-printer will be used instead:
     1. One of the following is available:
         1. Clojure [1.2.0) (and therefore `clojure.pprint`)
         2. Clojure Contrib (and therefore `clojure.contrib.pprint`)
-    2. `clojure.tools.nrepl/*pretty-print*` is `set!`'ed to true (which persists
-       for the duration of the client connection)
+    2. `clojure.tools.nrepl/*pretty-print*` is `set!`'ed to true (which
+       persists for the duration of the client connection)
 - `status` One of:
     - `error` Indicates an error occurred evaluating the requested code.  The
       related exception is bound to `*e` per usual, and printed to `*err*`,
 which will be delivered via a later message.  The caught exception is printed
-using `prn` by default; if `clojure.tools.nrepl/*print-stack-trace-on-error*` is
-`set!`'ed to true (which persists for the duration of the client connection),
-then exception stack traces are automatically printed to `*err*` instead. 
+using `prn` by default; if `clojure.tools.nrepl/*print-stack-trace-on-error*`
+is `set!`'ed to true (which persists for the duration of the client
+connection), then exception stack traces are automatically printed to `*err*`
+instead. 
     - `timeout` Indicates that the timeout specified by the requesting message
       expired before the code was fully evaluated.
     - `interrupted` Indicates that the evaluation of the request's code was
@@ -470,30 +474,32 @@ then exception stack traces are automatically printed to `*err*` instead.
 system fault in the server itself. 
     - `done` Indicates that the request associated with the specified ID has
       been completely processed, and no further messages related to it will be
-sent.  This does not imply "success", only that a timeout or interrupt condition
-was not encountered.
+sent.  This does not imply "success", only that a timeout or interrupt
+condition was not encountered.
 
-Only the `id` and `ns` slots will always be defined. Other slots are only defined when new
-related data is available (e.g. `err` when new content has been written to `*err*`, etc).
+Only the `id` and `ns` slots will always be defined. Other slots are only
+defined when new related data is available (e.g. `err` when new content has
+been written to `*err*`, etc).
 
-Note that evaluations that timeout or are interrupted may nevertheless result in multiple
-response messages being sent prior to the timeout or interrupt occurring.
+Note that evaluations that timeout or are interrupted may nevertheless result
+in multiple response messages being sent prior to the timeout or interrupt
+occurring.
 
 ### Timeouts and Interrupts
 
-Each message has a timeout associated with it, which controls the maximum time that a
-message's code will be allowed to run before being interrupted and a response message
-being sent indicating a status of `timeout`.
+Each message has a timeout associated with it, which controls the maximum time
+that a message's code will be allowed to run before being interrupted and a
+response message being sent indicating a status of `timeout`.
 
-The processing of a message may be interrupted by a client by sending another message
-containing code that invokes the `clojure.tools.nrepl/interrupt` function, providing it with
-the string ID of the message to be interrupted.  The interrupt will be responded to
-separately as with any other message. (The provided client implementation provides a
-simple abstraction for handling responses that makes issuing interrupts very
-straightforward.)
+The processing of a message may be interrupted by a client by sending another
+message containing code that invokes the `clojure.tools.nrepl/interrupt`
+function, providing it with the string ID of the message to be interrupted.
+The interrupt will be responded to separately as with any other message. (The
+provided client implementation provides a simple abstraction for handling
+responses that makes issuing interrupts very straightforward.)
 
-*Note that interrupts are performed on a “best-effort” basis, and are subject to the
-limitations of Java’s threading model.  For more read
+*Note that interrupts are performed on a “best-effort” basis, and are subject
+to the limitations of Java’s threading model.  For more read
 [here](http://download.oracle.com/javase/1.5.0/docs/api/java/lang/Thread.html#interrupt%28%29)
 and
 [here](http://download.oracle.com/javase/1.5.0/docs/guide/misc/threadPrimitiveDeprecation.html).*
@@ -501,9 +507,18 @@ and
 
 ## Change Log
 
+`0.2.2`:
+
+* Added `clojure.tools.nrepl/code*` for `pr-str`'ing expressions (presumably
+  for later evaluation)
+* session IDs are now properly combined into a set by
+  `clojure.tools.nrepl/combine-responses`
+* fixes printing of server instances under Clojure 1.3.0+ (nREPL-37)
+
 `0.2.1`:
 
-* fixes incorrect translation between `Writer.write()` and `StringBuilder.append()` APIs (NREPL-38)
+* fixes incorrect translation between `Writer.write()` and
+  `StringBuilder.append()` APIs (NREPL-38)
 
 `0.2.0`:
 
@@ -520,15 +535,16 @@ helped motivate a re-examination of the underlying protocol and design.
 
 `0.0.4`:
 
-- fixed (hacked) obtaining `clojure.test` output when `clojure.test` is initially
-loaded within an nREPL session
+- fixed (hacked) obtaining `clojure.test` output when `clojure.test` is
+  initially loaded within an nREPL session
 - eliminated 1-minute default timeout on expression evaluation
-- all standard REPL var bindings are now properly established and maintained within a session
+- all standard REPL var bindings are now properly established and maintained
+  within a session
 
 ## Thanks
 
-Thanks to the following Clojure masters for their helpful feedback during the initial
-design phases of nREPL:
+Thanks to the following Clojure masters for their helpful feedback during the
+initial design phases of nREPL:
 
 * Justin Balthrop
 * Meikel Brandmeyer
@@ -544,6 +560,6 @@ design phases of nREPL:
 
 ## License
 
-Copyright © 2010 - 2012 Chas Emerick and contributors.
+Copyright © 2010 - 2013 Chas Emerick and contributors.
 
 Licensed under the EPL. (See the file epl.html.)
