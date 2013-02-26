@@ -9,8 +9,8 @@ code in remote environments.
 
 ### "Installation" <a name="installing"/>
 
-nREPL is available in Maven central. Add this `:dependency` to your Leiningen
-`project.clj`:
+nREPL is available in Maven central. Add this to your Leiningen
+`project.clj` `:dependencies`:
 
 ```clojure
 [org.clojure/tools.nrepl "0.2.2"]
