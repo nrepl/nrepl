@@ -107,7 +107,7 @@
         transport2 (nrepl/connect :port (:port *server*))]
     (transport/send transport2 {"op" "eval" "code" "(println :foo)"
                                 "session" sid})
-    (is (->> (repeatedly #(transport/recv transport2 100))
+    (is (->> (repeatedly #(transport/recv transport2 1000))
           (take-while identity)
           (some #(= ":foo\n" (:out %)))))))
 
@@ -150,10 +150,10 @@
 
 (def-repl-test session-return-recall
   (testing "sessions persist across connections"
-    (repl-eval session (code
-                         (apply + (range 6))
-                         (str 12 \c)
-                         (keyword "hello")))
+    (repl-values session (code
+                           (apply + (range 6))
+                           (str 12 \c)
+                           (keyword "hello")))
     (with-open [separate-connection (connect :port (:port *server*))]
       (let [history [[15 "12c" :hello]]
             sid (-> session meta :clojure.tools.nrepl/taking-until :session)
