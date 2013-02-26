@@ -19,11 +19,11 @@
   #_(is (= [{:file "NO_SOURCE_PATH" :line 4}]
          (repl-values session "(-> #'function meta (select-keys [:file :line]))")))
   
-  (repl-eval session
-             (helpers/load-file-command
-               "\n\n\n\n\n\n\n\n\n(defn dfunction [])"
-               "path/from/source/root.clj"
-               "root.clj"))
+  (repl-values session
+    (helpers/load-file-command
+      "\n\n\n\n\n\n\n\n\n(defn dfunction [])"
+      "path/from/source/root.clj"
+      "root.clj"))
   
   (is (= [{:file "path/from/source/root.clj" :line 10}]
         (repl-values session
@@ -33,10 +33,10 @@
               (select-keys [:file :line])))))))
 
 (def-repl-test load-file-with-debug-info
-  (repl-eval session
-             (helpers/load-file-command
-               (File. project-base-dir "load-file-test/clojure/tools/nrepl/load_file_sample.clj")
-               (File. project-base-dir "load-file-test")))
+  (repl-values session
+    (helpers/load-file-command
+      (File. project-base-dir "load-file-test/clojure/tools/nrepl/load_file_sample.clj")
+      (File. project-base-dir "load-file-test")))
   (is (= [{:file "clojure/tools/nrepl/load_file_sample.clj" :line 5}]
          (repl-values session
            (nrepl/code 
