@@ -104,6 +104,13 @@
   clojure.lang.IDeref
   (deref [this] this))
 
+(try
+  ; IRecord not available in 1.2.0
+  (eval '(defmethod print-method Server
+           [s w]
+           ((get-method print-method clojure.lang.IRecord) s w)))
+  (catch Throwable _))
+
 (defn start-server
   "Starts a socket-based nREPL server.  Configuration options include:
  
