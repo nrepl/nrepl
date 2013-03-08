@@ -9,7 +9,8 @@
             [clojure.tools.nrepl.transport :as t])
   (:import clojure.tools.nrepl.transport.Transport
            (java.io PipedReader PipedWriter Reader Writer PrintWriter StringReader)
-           clojure.lang.LineNumberingPushbackReader))
+           clojure.lang.LineNumberingPushbackReader
+           java.util.concurrent.LinkedBlockingQueue))
 
 (def ^{:private true} sessions (atom {}))
 
@@ -20,6 +21,7 @@
 ;; how best to make it configurable though...
 
 (def ^{:dynamic true :private true} *out-limit* 1024)
+(def ^{:dynamic true :private true} *skipping-eol* false)
 
 (defn- session-out
   "Returns a PrintWriter suitable for binding as *out* or *err*.  All of
@@ -56,28 +58,52 @@
    {:status :need-input} message on the provided transport so the client/user
    can provide content to be read."
   [session-id transport]
-  (let [request-input (fn [^PipedReader r]
-                        (when-not (.ready r)
-                          (t/send transport
-                            (response-for *msg* :session session-id
-                                                :status :need-input))))
-        writer (PipedWriter.)
+  (let [input-queue (LinkedBlockingQueue.)
+        request-input (fn []
+                        (cond (> (.size input-queue) 0)
+                                (.take input-queue)
+                              *skipping-eol*
+                                nil
+                              :else
+                                (do
+                                  (t/send transport
+                                          (response-for *msg* :session session-id
+                                                        :status :need-input))
+                                  (.take input-queue))))
+        do-read (fn [buf off len]
+                  (locking input-queue
+                    (loop [i off]
+                      (cond
+                        (>= i (+ off len))
+                          (+ off len)
+                        (.peek input-queue)
+                          (do (aset-char buf i (char (.take input-queue)))
+                            (recur (inc i)))
+                        :else
+                          i))))
         reader (LineNumberingPushbackReader.
-                 (proxy [PipedReader] [writer]
-                   (close [])
+                 (proxy [Reader] []
+                   (close [] (.clear input-queue))
                    (read
-                     ([] (request-input this)
-                         (let [^Reader this this] (proxy-super read)))
-                     ([x] (request-input this)
-                          (let [^Reader this this]
-                            (if (instance? java.nio.CharBuffer x)
-                              (proxy-super read ^java.nio.CharBuffer x)
-                              (proxy-super read ^chars x))))
-                     ([buf off len]
-                       (let [^Reader this this]
-                         (request-input this)
-                         (proxy-super read buf off len))))))]
-    [reader writer]))
+                     ([]
+                      (let [^Reader this this] (proxy-super read)))
+                     ([x]
+                      (let [^Reader this this]
+                        (if (instance? java.nio.CharBuffer x)
+                          (proxy-super read ^java.nio.CharBuffer x)
+                          (proxy-super read ^chars x))))
+                     ([^chars buf off len]
+                      (if (zero? len)
+                        -1
+                        (let [first-character (request-input)]
+                          (if (or (nil? first-character) (= first-character -1))
+                            -1
+                            (do
+                              (aset-char buf off (char first-character))
+                              (- (do-read buf (inc off) (dec len))
+                                 off)))))))))]
+    {:input-queue input-queue
+     :stdin-reader reader}))
 
 (defn- create-session
   "Returns a new atom containing a map of bindings as per
@@ -90,10 +116,10 @@
     (clojure.main/with-bindings
       (let [id (uuid)
             out (session-out :out id transport)
-            [in in-writer] (session-in id transport)]
+            {:keys [input-queue stdin-reader]} (session-in id transport)]
         (binding [*out* out
                   *err* (session-out :err id transport)
-                  *in* in
+                  *in* stdin-reader
                   *ns* (create-ns 'user)
                   *out-limit* (or (baseline-bindings #'*out-limit*) 1024)
                   ; clojure.test captures *out* at load-time, so we need to make sure
@@ -105,8 +131,8 @@
           ; don't capture that *agent* binding for userland REPL sessions
           (atom (merge baseline-bindings (dissoc (get-thread-bindings) #'*agent*))
             :meta {:id id
-                   :stdin-reader in
-                   :stdin-writer in-writer}))))))
+                   :stdin-reader stdin-reader
+                   :input-queue input-queue}))))))
 
 (defn- register-session
   "Registers a new session containing the baseline bindings contained in the
@@ -194,13 +220,14 @@
   (fn [{:keys [op stdin session transport] :as msg}]
     (cond
       (= op "eval")
-        (let [s (-> session meta ^LineNumberingPushbackReader (:stdin-reader))]
-          (when (.ready s)
-            (clojure.main/skip-if-eol s))
+        (let [in (-> (meta session) ^LineNumberingPushbackReader (:stdin-reader))]
+          (binding [*skipping-eol* true]
+            (clojure.main/skip-if-eol in))
           (h msg))
       (= op "stdin")
-        (do
-          (-> session meta ^Writer (:stdin-writer) (.write ^String stdin))
+        (let [q (-> (meta session) ^Writer (:input-queue))]
+          (locking q
+            (doseq [c stdin] (.put q c)))
           (t/send transport (response-for msg :status :done)))
       :else
         (h msg))))

@@ -163,7 +163,7 @@
         (is (= history (repl-values sc-session "[*3 *2 *1]")))
         (is (= history (repl-values sc-session "*1"))))))
 
-    
+
   (testing "without a session id, REPL-bound vars like *1 have default values"
     (is (= [nil] (repl-values client "*1")))))
 
@@ -301,7 +301,7 @@
     (let [server (server/start-server)
           transport (connect :port (:port server))]
       (transport/send transport {"op" "eval" "code" "(+ 1 1)"})
-      
+
       (let [reader (future (while true (transport/recv transport)))]
         (Thread/sleep 1000)
         (.close server)
@@ -312,7 +312,7 @@
           (is false "A reader started prior to the server closing should throw an error...")
           (catch Throwable e
             (is (disconnection-exception? e)))))
-      
+
       (is (thrown? SocketException (transport/recv transport)))
       ;; TODO no idea yet why two sends are *sometimes* required to get a failure
       (try
@@ -334,7 +334,7 @@
         (is false "reads after the server is closed should fail")
         (catch Throwable t
           (is (disconnection-exception? t)))))
-    
+
     ;; TODO as noted in transports-fail-on-disconnects, *sometimes* two sends are needed
     ;; to trigger an exception on send to an unavailable server
     (try (repl-eval session "(+ 1 1)") (catch Throwable t))
@@ -353,20 +353,29 @@
 
 (def-repl-test request-multiple-read-newline-*in*
   (is (= '(:ohai) (response-values (for [resp (repl-eval session "(read)")]
-                                       (do
-                                         (when (-> resp :status set (contains? "need-input"))
-                                           (session {:op :stdin :stdin ":ohai\n"}))
-                                         resp)))))
+                                     (do
+                                       (when (-> resp :status set (contains? "need-input"))
+                                         (session {:op :stdin :stdin ":ohai\n"}))
+                                       resp)))))
 
   (session {:op :stdin :stdin "a\n"})
   (is (= ["a"] (repl-values session "(read-line)"))))
 
+(def-repl-test request-multiple-read-with-buffered-newline-*in*
+  (is (= '(:ohai) (response-values (for [resp (repl-eval session "(read)")]
+                                     (do
+                                       (when (-> resp :status set (contains? "need-input"))
+                                         (session {:op :stdin :stdin ":ohai\na\n"}))
+                                       resp)))))
+
+  (is (= ["a"] (repl-values session "(read-line)"))))
+
 (def-repl-test request-multiple-read-objects-*in*
   (is (= '(:ohai) (response-values (for [resp (repl-eval session "(read)")]
-                                       (do
-                                         (when (-> resp :status set (contains? "need-input"))
-                                           (session {:op :stdin :stdin ":ohai :kthxbai\n"}))
-                                         resp)))))
+                                     (do
+                                       (when (-> resp :status set (contains? "need-input"))
+                                         (session {:op :stdin :stdin ":ohai :kthxbai\n"}))
+                                       resp)))))
 
   (is (= [" :kthxbai"] (repl-values session "(read-line)"))))
 
