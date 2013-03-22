@@ -52,7 +52,7 @@ be loaded."} file-contents (atom {}))
 
    Note that because a single expression is produced, very large
    file loads will fail due to the JVM method size limitation.
-   In such cases, see `load-file-code'`."
+   In such cases, see `load-large-file-code'`."
   [file file-path file-name]
   (apply format
     "(clojure.lang.Compiler/load (java.io.StringReader. %s) %s %s)"
@@ -64,7 +64,7 @@ be loaded."} file-contents (atom {}))
    with remote REPL environments).
 
    This middleware depends on the availability of an :op \"eval\"
-   middleware below it (such as interruptable-eval)."
+   middleware below it (such as interruptible-eval)."
   [h]
   (fn [{:keys [op file file-name file-path] :as msg}]
     (if (not= op "load-file")
