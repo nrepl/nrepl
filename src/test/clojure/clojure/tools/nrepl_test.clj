@@ -14,7 +14,9 @@
   [f]
   (with-open [server (server/start-server)]
     (binding [*server* server]
-      (f))))
+      (f)
+      (set! *print-length* nil)
+      (set! *print-level* nil))))
 
 (use-fixtures :each repl-server-fixture)
 

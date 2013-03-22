@@ -36,13 +36,15 @@ be loaded."} file-contents (atom {}))
                 (keys file-contents))]
           (assoc (apply dissoc file-contents expired-keys)
                  file-key file))))
-    (pr-str `(try
-               (clojure.lang.Compiler/load
-                 (java.io.StringReader. (@@(var file-contents) '~file-key))
-                 ~file-path
-                 ~file-name)
-               (finally
-                 (swap! @(var file-contents) dissoc '~file-key))))))
+    (binding [*print-length* nil
+              *print-level* nil]
+      (pr-str `(try
+                 (clojure.lang.Compiler/load
+                   (java.io.StringReader. (@@(var file-contents) '~file-key))
+                   ~file-path
+                   ~file-name)
+                 (finally
+                   (swap! @(var file-contents) dissoc '~file-key)))))))
 
 (defn ^{:dynamic true} load-file-code
   "Given the contents of a file, its _source-path-relative_ path,
@@ -56,7 +58,11 @@ be loaded."} file-contents (atom {}))
   [file file-path file-name]
   (apply format
     "(clojure.lang.Compiler/load (java.io.StringReader. %s) %s %s)"
-    (map pr-str [file file-path file-name])))
+    (map (fn [item]
+           (binding [*print-length* nil
+                     *print-level* nil]
+             (pr-str item)))
+         [file file-path file-name])))
 
 (defn wrap-load-file
   "Middleware that evaluates a file's contents, as per load-file,

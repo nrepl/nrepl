@@ -6,7 +6,7 @@
         clojure.test)
   (:require [clojure.tools.nrepl :as nrepl]))
 
-(use-fixtures :once repl-server-fixture)
+(use-fixtures :each repl-server-fixture)
 
 (def-repl-test load-code-with-debug-info
   (doall (nrepl/message timeout-session
@@ -45,3 +45,16 @@
              (-> #'clojure.tools.nrepl.load-file-sample/dfunction
                meta
                (select-keys [:file :line])))))))
+
+(def-repl-test load-file-with-print-vars
+  (set! *print-length* 3)
+  (set! *print-level* 3)
+  (doall
+    (nrepl/message session {:op "load-file"
+                            :file "(def a (+ 1 (+ 2 (+ 3 (+ 4 (+ 5 6))))))
+                                  (def b 2) (def c 3) (def ^{:internal true} d 4)"
+                            :file-path "path/from/source/root.clj"
+                            :file-name "root.clj"}))
+
+  (is (= [4]
+         (repl-values session (nrepl/code d)))))
