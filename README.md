@@ -13,7 +13,7 @@ nREPL is available in Maven central. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
 ```clojure
-[org.clojure/tools.nrepl "0.2.2"]
+[org.clojure/tools.nrepl "0.2.3"]
 ```
 
 Or, add this to your Maven project's `pom.xml`:
@@ -22,7 +22,7 @@ Or, add this to your Maven project's `pom.xml`:
 <dependency>
   <groupId>org.clojure</groupId>
   <artifactId>tools.nrepl</artifactId>
-  <version>0.2.2</version>
+  <version>0.2.3</version>
 </dependency>
 ```
 
@@ -506,6 +506,13 @@ and
 -->
 
 ## Change Log
+
+`0.2.3`:
+
+* Now using a queue to maintain `*in*`, to avoid intermittent failures due to
+  prior use of `PipedReader`/`Writer`. (NREPL-39)
+* When loading a file, always bind `*print-level*` and `*print-length*` when
+  generating the `clojure.lang.Compiler/load` expression (NREPL-41)
 
 `0.2.2`:
 
