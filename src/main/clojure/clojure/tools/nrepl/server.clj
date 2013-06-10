@@ -10,7 +10,7 @@
                                             session
                                             load-file))
   (:use [clojure.tools.nrepl.misc :only (returning response-for log)])
-  (:import (java.net Socket ServerSocket InetSocketAddress)))
+  (:import (java.net Socket ServerSocket InetSocketAddress InetAddress)))
 
 (defn handle*
   [msg handler transport]
@@ -27,6 +27,13 @@
     (future (handle* msg handler transport))
     (recur handler transport)))
 
+(defn- safe-close
+  [^java.io.Closeable x]
+  (try
+    (.close x)
+    (catch java.io.IOException e
+      (log e "Failed to close " x))))
+
 (defn- accept-connection
   [{:keys [^ServerSocket server-socket open-transports transport greeting handler]
     :as server}]
@@ -39,15 +46,8 @@
                   (handle handler transport)
                   (finally
                     (swap! open-transports disj transport)
-                    (.close transport)))))
+                    (safe-close transport)))))
       (future (accept-connection server)))))
-
-(defn- safe-close
-  [^java.io.Closeable x]
-  (try
-    (.close x)
-    (catch java.io.IOException e
-      (log e "Failed to close " x))))
 
 (defn stop-server
   "Stops a server started via `start-server`."

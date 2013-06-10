@@ -38,7 +38,7 @@
                           (number? x) (.append buf (char x))
                           (not off) (.append buf x)
                           ; the CharSequence overload of append takes an *end* idx, not length!
-                          (instance? CharSequence x) (.append buf ^CharSequence x off (+ len off))
+                          (instance? CharSequence x) (.append buf ^CharSequence x (int off) (int (+ len off)))
                           :else (.append buf ^chars x off len))
                         (when (<= *out-limit* (.length buf))
                           (.flush ^Writer this))))
@@ -225,7 +225,7 @@
             (clojure.main/skip-if-eol in))
           (h msg))
       (= op "stdin")
-        (let [q (-> (meta session) ^Writer (:input-queue))]
+        (let [q (-> (meta session) ^LinkedBlockingQueue (:input-queue))]
           (locking q
             (doseq [c stdin] (.put q c)))
           (t/send transport (response-for msg :status :done)))

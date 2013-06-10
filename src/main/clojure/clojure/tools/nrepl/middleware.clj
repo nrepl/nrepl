@@ -131,7 +131,7 @@
 
 ; oh, kill me now
 (defn- markdown-escape
-  [s]
+  [^String s]
   (.replaceAll s "([*_])" "\\\\$1"))
 
 (defn- message-slot-markdown
