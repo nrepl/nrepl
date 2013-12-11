@@ -54,8 +54,8 @@ client/tool.  Tools that support nREPL include:
 * [Leiningen](https://github.com/technomancy/leiningen) (starting with v2)
 * [Counterclockwise](http://code.google.com/p/counterclockwise/) (Clojure
   plugin for Eclipse)
-* [nrepl.el](https://github.com/kingtim/nrepl.el) (nREPL mode for Emacs)
-* [foreplay.vim](https://github.com/tpope/vim-foreplay) (Clojure + nREPL
+* [cider](https://github.com/clojure-emacs/cider) (nREPL mode for Emacs)
+* [fireplace.vim](https://github.com/tpope/vim-fireplace) (Clojure + nREPL
   support for vim)
 * [Reply](https://github.com/trptcolin/reply/)
 
