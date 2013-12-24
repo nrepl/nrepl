@@ -224,7 +224,7 @@
   (repl-eval session "(in-ns 'user)")
   (is (= [12] (repl-values session "(otherns/function)"))))
 
-(def-repl-test switch-ns
+(def-repl-test switch-ns-2
   (is (= "otherns" (-> (repl-eval session (code
                                             (ns otherns)
                                             (defn function [] 12)))
