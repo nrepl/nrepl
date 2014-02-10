@@ -65,8 +65,10 @@
   (let [m ^{::middleware/descriptor
             {:expects #{} :requires #{}}} {:dummy :middleware}
         n {:dummy "This not-middleware is supposed to be sans-descriptor, don't panic!"}
-        stack (indexed-stack (concat default-middlewares [m n]))]
-    (is (<= (stack n) (stack m) (count stack)))))
+        stack (->> (concat default-middlewares [m n])
+                shuffle
+                linearize-middleware-stack)]
+    (is (= #{n m} (set (take-last 2 stack))))))
 
 (deftest no-descriptor-warning
   (is (.contains

@@ -92,7 +92,8 @@
                               (filter var?)))]
     (doseq [m (remove descriptor middlewares)]
       (binding [*out* *err*]
-        (printf "[WARNING] No nREPL middleware descriptor in metadata of %s, see clojure.tools.middleware/set-descriptor!" m)))
+        (printf "[WARNING] No nREPL middleware descriptor in metadata of %s, see clojure.tools.middleware/set-descriptor!" m)
+        (println)))
     (let [middlewares (set (for [m middlewares]
                              (-> (descriptor m)
                                ; only conj'ing m here to support direct reference to
