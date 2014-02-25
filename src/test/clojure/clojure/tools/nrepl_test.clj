@@ -104,6 +104,16 @@
            combine-responses
            :out))))
 
+(def-repl-test error-on-lazy-seq-with-side-effects
+  (let [expression '(defn foo [] (map (fn [x]
+                                        (println x)
+                                        (throw (Exception. "oops")))
+                                      [1 2 3]))
+        results (-> (repl-eval session (pr-str (list 'do expression '(foo))))
+                    combine-responses)]
+    (is (= "1\n" (:out results)))
+    (is (re-seq #"oops" (:err results)))))
+
 (def-repl-test cross-transport-*out*
   (let [sid (-> session meta ::nrepl/taking-until :session)
         transport2 (nrepl/connect :port (:port *server*))]

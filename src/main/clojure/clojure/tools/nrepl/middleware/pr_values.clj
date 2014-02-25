@@ -20,7 +20,11 @@
                                (send [this resp]
                                  (.send transport
                                    (if-let [[_ v] (find resp :value)]
-                                     (assoc resp :value (with-out-str (pr v)))
+                                     (let [repr (java.io.StringWriter.)]
+                                       (assoc resp :value (do (if *print-dup*
+                                                                (print-dup v repr)
+                                                                (print-method v repr))
+                                                              (str repr))))
                                      resp))
                                  this))))))
 
