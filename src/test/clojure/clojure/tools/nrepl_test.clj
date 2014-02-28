@@ -105,11 +105,12 @@
            :out))))
 
 (def-repl-test error-on-lazy-seq-with-side-effects
-  (let [expression '(defn foo [] (map (fn [x]
-                                        (println x)
-                                        (throw (Exception. "oops")))
-                                      [1 2 3]))
-        results (-> (repl-eval session (pr-str (list 'do expression '(foo))))
+  (let [expression '(let [foo (fn [] (map (fn [x]
+                                            (println x)
+                                            (throw (Exception. "oops")))
+                                          [1 2 3]))]
+                      (foo))
+        results (-> (repl-eval session (pr-str expression))
                     combine-responses)]
     (is (= "1\n" (:out results)))
     (is (re-seq #"oops" (:err results)))))
