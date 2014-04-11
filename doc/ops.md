@@ -2,7 +2,7 @@
    **Do not edit!** -->
 # Supported nREPL operations
 
-<small>generated from a verbose 'describe' response (nREPL v0.2.2-SNAPSHOT)</small>
+<small>generated from a verbose 'describe' response (nREPL v0.2.4-SNAPSHOT)</small>
 
 ## Operations
 
@@ -73,6 +73,7 @@ Evaluates code.
 ###### Optional parameters
 
 * `:id` An opaque message ID that will be included in responses related to the evaluation, and which may be used to restrict the scope of a later "interrupt" operation.
+* `:eval` A namespace qualified symbol denoting an alternative to the `clojure.core/eval` function.
 
 
 ###### Returns

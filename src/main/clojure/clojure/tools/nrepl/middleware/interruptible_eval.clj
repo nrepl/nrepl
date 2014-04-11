@@ -15,6 +15,10 @@
        :doc "The message currently being evaluated."}
       *msg* nil)
 
+(def ^{:dynamic true
+       :doc "Function returning the evaluation of its argument."}
+       *eval* nil)
+
 (defn evaluate
   "Evaluates some code within the dynamic context defined by a map of `bindings`,
    as per `clojure.core/get-thread-bindings`.
@@ -30,7 +34,7 @@
 
    It is assumed that `bindings` already contains useful/appropriate entries
    for all vars indicated by `clojure.main/with-bindings`."
-  [bindings {:keys [code ns transport] :as msg}]
+  [bindings {:keys [code ns transport eval] :as msg}]
   (let [explicit-ns-binding (when-let [ns (and ns (-> ns symbol find-ns))]
                               {#'*ns* ns})
         bindings (atom (merge bindings explicit-ns-binding))
@@ -41,6 +45,7 @@
       (with-bindings @bindings
         (try
           (clojure.main/repl
+            :eval (if eval (find-var (symbol eval)) clojure.core/eval)
             ;; clojure.main/repl paves over certain vars even if they're already thread-bound
             :init #(do (set! *compile-path* (@bindings #'*compile-path*))
                      (set! *1 (@bindings #'*1))
