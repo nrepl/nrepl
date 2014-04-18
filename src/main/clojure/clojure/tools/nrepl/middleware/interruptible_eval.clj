@@ -208,7 +208,8 @@
              {:doc "Evaluates code."
               :requires {"code" "The code to be evaluated."
                          "session" "The ID of the session within which to evaluate the code."}
-              :optional {"id" "An opaque message ID that will be included in responses related to the evaluation, and which may be used to restrict the scope of a later \"interrupt\" operation."}
+              :optional {"id" "An opaque message ID that will be included in responses related to the evaluation, and which may be used to restrict the scope of a later \"interrupt\" operation."
+                         "eval" "A fully-qualified symbol naming a var whose function value will be used to evaluate [code], instead of `clojure.core/eval` (the default)."}
               :returns {}}
              "interrupt"
              {:doc "Attempts to interrupt some code evaluation."

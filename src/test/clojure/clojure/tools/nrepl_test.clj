@@ -66,6 +66,20 @@
   (repl-values client "(defn x [] 6)")
   (is (= [6] (repl-values client "(x)"))))
 
+(defn- dumb-alternative-eval
+  [form]
+  (let [result (eval form)]
+    (if (number? result)
+      (- result)
+      result)))
+
+(def-repl-test use-alternative-eval-fn
+  (is (= {:value ["-124750"]}
+         (-> (message timeout-client {:op :eval :eval "clojure.tools.nrepl-test/dumb-alternative-eval"
+                                      :code "(reduce + (range 500))"})
+             combine-responses
+             (select-keys [:value])))))
+
 (def-repl-test unknown-op
   (is (= {:op "abc" :status #{"error" "unknown-op" "done"}}
          (-> (message timeout-client {:op :abc}) combine-responses (select-keys [:op :status])))))
