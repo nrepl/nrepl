@@ -34,10 +34,11 @@
 
    It is assumed that `bindings` already contains useful/appropriate entries
    for all vars indicated by `clojure.main/with-bindings`."
-  [bindings {:keys [code ns transport eval] :as msg}]
+  [bindings {:keys [code ns transport session eval] :as msg}]
   (let [explicit-ns-binding (when-let [ns (and ns (-> ns symbol find-ns))]
                               {#'*ns* ns})
         bindings (atom (merge bindings explicit-ns-binding))
+        session (or session (atom nil))
         out (@bindings #'*out*)
         err (@bindings #'*err*)]
     (if (and ns (not explicit-ns-binding))
@@ -67,6 +68,7 @@
                                              #'*1 v))
                      (.flush ^Writer err)
                      (.flush ^Writer out)
+                     (reset! session @bindings)
                      (t/send transport (response-for msg
                                                      {:value v
                                                       :ns (-> *ns* ns-name str)})))
@@ -75,6 +77,7 @@
                       (let [root-ex (#'clojure.main/root-cause e)]
                         (when-not (instance? ThreadDeath root-ex)
                           (reset! bindings (assoc (get-thread-bindings) #'*e e))
+                          (reset! session @bindings)
                           (t/send transport (response-for msg {:status :eval-error
                                                                :ex (-> e class str)
                                                                :root-ex (-> root-ex class str)}))
@@ -167,16 +170,14 @@
       (if-not (:code msg)
         (t/send transport (response-for msg :status #{:error :no-code}))
         (queue-eval session executor
-          (comp
-            (partial reset! session)
-            (fn []
-              (alter-meta! session assoc
-                           :thread (Thread/currentThread)
-                           :eval-msg msg)
-              (binding [*msg* msg]
-                (returning (dissoc (evaluate @session msg) #'*msg*)
-                  (t/send transport (response-for msg :status :done))
-                  (alter-meta! session dissoc :thread :eval-msg)))))))
+          (fn []
+            (alter-meta! session assoc
+                         :thread (Thread/currentThread)
+                         :eval-msg msg)
+            (binding [*msg* msg]
+              (returning (dissoc (evaluate @session msg) #'*msg*)
+                (t/send transport (response-for msg :status :done))
+                (alter-meta! session dissoc :thread :eval-msg))))))
       
       "interrupt"
       ; interrupts are inherently racy; we'll check the agent's :eval-msg's :id and
