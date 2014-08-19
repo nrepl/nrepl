@@ -14,12 +14,13 @@
     :describe :eval :close :clone})
 
 (def-repl-test simple-describe
-  (let [{{:keys [nrepl clojure]} :versions
+  (let [{{:keys [nrepl clojure java]} :versions
          ops :ops} (nrepl/combine-responses
                      (nrepl/message timeout-client {:op "describe"}))]
     (testing "versions"
              (is (= (#'middleware/safe-version clojure.tools.nrepl/version) nrepl))
-             (is (= (#'middleware/safe-version *clojure-version*) clojure)))
+             (is (= (#'middleware/safe-version *clojure-version*) clojure))
+             (is (= (System/getProperty "java.version") (:version-string java))))
     
     (is (= op-names (set (keys ops))))
     (is (every? empty? (map val ops)))))
