@@ -321,7 +321,7 @@
   [e]
   ; thrown? should check for the root cause!
   (and (instance? SocketException (root-cause e))
-       (re-matches #".*lost.*connection.*" (.getMessage (root-cause e)))))
+    (re-matches #".*(lost.*connection|socket closed).*" (.getMessage (root-cause e)))))
 
 (deftest transports-fail-on-disconnects
   (testing "Ensure that transports fail ASAP when the server they're connected to goes down."

@@ -104,9 +104,11 @@
                (be/write-bencode %)
                .flush)))
         (fn []
-          (.close in)
-          (.close out)
-          (when s (.close s)))))))
+          (if s
+            (.close s)
+            (do 
+              (.close in)
+              (.close out))))))))
 
 (defn tty
   "Returns a Transport implementation suitable for serving an nREPL backend
