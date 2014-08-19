@@ -8,7 +8,8 @@
             (clojure.tools.nrepl.middleware interruptible-eval
                                             pr-values
                                             session
-                                            load-file))
+                                            load-file)
+            clojure.pprint)
   (:use [clojure.tools.nrepl.misc :only (returning response-for log)])
   (:import (java.net Socket ServerSocket InetSocketAddress InetAddress)))
 
@@ -105,13 +106,12 @@
   clojure.lang.IDeref
   (deref [this] this))
 
-(try
-  (require 'clojure.pprint)
-  (#'clojure.pprint/use-method
+(#'clojure.pprint/use-method
     clojure.pprint/simple-dispatch
     Server
     #'clojure.pprint/pprint-simple-default)
 
+(try
   ; IRecord not available in 1.2.0
   (eval '(defmethod print-method Server
            [s w]
