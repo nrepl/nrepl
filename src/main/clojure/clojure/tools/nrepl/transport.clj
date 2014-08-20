@@ -36,12 +36,12 @@
    to the 2 or 3 functions provided."
   ([read write] (fn-transport read write nil))
   ([read write close]
-    (let [read-queue (SynchronousQueue.)]
-      (future (try
-                (while true
-                  (.put read-queue (read)))
-                (catch Throwable t
-                  (.put read-queue t))))
+    (let [read-queue (SynchronousQueue.)
+          msg-pump (future (try
+                             (while true
+                               (.put read-queue (read)))
+                             (catch Throwable t
+                               (.put read-queue t))))]
       (FnTransport.
         (let [failure (atom nil)]
           #(if @failure
@@ -51,7 +51,7 @@
                  (do (reset! failure msg) (throw msg))
                  msg))))
         write
-        close))))
+        (fn [] (close) (future-cancel msg-pump))))))
 
 (defmulti #^{:private true} <bytes class)
 
