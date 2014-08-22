@@ -19,7 +19,7 @@
                      (nrepl/message timeout-client {:op "describe"}))]
     (testing "versions"
       (when-not (every? #(contains? java %) [:major :minor :incremental :update])
-        (println "java.version not parsed as expected:"
+        (println "Got less information out of `java.version` than we'd like:"
                  (System/getProperty "java.version") "=>" java))
       (is (= (#'middleware/safe-version clojure.tools.nrepl/version) nrepl))
       (is (= (#'middleware/safe-version *clojure-version*) clojure))
