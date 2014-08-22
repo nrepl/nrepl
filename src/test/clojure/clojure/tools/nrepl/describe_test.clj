@@ -20,8 +20,9 @@
     (testing "versions"
              (is (= (#'middleware/safe-version clojure.tools.nrepl/version) nrepl))
              (is (= (#'middleware/safe-version *clojure-version*) clojure))
-             (is (= (System/getProperty "java.version") (:version-string java))))
-    
+             (is (= (System/getProperty "java.version") (:version-string java)))
+             (is (every? #(contains? java %) [:major :minor :incremental :update])))
+
     (is (= op-names (set (keys ops))))
     (is (every? empty? (map val ops)))))
 

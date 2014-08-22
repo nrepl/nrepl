@@ -32,6 +32,16 @@
   [m]
   (into {} (filter (fn [[_ v]] (or (number? v) (string? v))) m)))
 
+(defn- java-version
+  []
+  (let [version-string (System/getProperty "java.version")
+        version-seq (re-seq #"\d+" version-string)
+        ;; add detailed version info only if we found four numbers in the version string
+        version-map (if (= 4 (count version-seq))
+                      (zipmap [:major :minor :incremental :update] version-seq)
+                      {})]
+    (assoc version-map :version-string version-string)))
+
 (defn wrap-describe
   [h]
   (fn [{:keys [op descriptors verbose? transport] :as msg}]
@@ -42,7 +52,7 @@
                                           (into {} (map #(vector (key %) {}) descriptors)))
                                    :versions {:nrepl (safe-version clojure.tools.nrepl/version)
                                               :clojure (safe-version *clojure-version*)
-                                              :java {:version-string (System/getProperty "java.version")}}
+                                              :java (safe-version (java-version))}
                                    :status :done}))
       (h msg))))
 
