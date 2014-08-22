@@ -22,7 +22,8 @@
         (println "Got less information out of `java.version` than we'd like:"
                  (System/getProperty "java.version") "=>" java))
       (is (= (#'middleware/safe-version clojure.tools.nrepl/version) nrepl))
-      (is (= (#'middleware/safe-version *clojure-version*) clojure))
+      (is (= (#'middleware/safe-version *clojure-version*) (dissoc clojure :version-string)))
+      (is (= (clojure-version) (:version-string clojure)))
       (is (= (System/getProperty "java.version") (:version-string java))))
 
     (is (= op-names (set (keys ops))))

@@ -50,7 +50,8 @@
                                           descriptors
                                           (into {} (map #(vector (key %) {}) descriptors)))
                                    :versions {:nrepl (safe-version clojure.tools.nrepl/version)
-                                              :clojure (safe-version *clojure-version*)
+                                              :clojure (safe-version
+                                                        (assoc *clojure-version* :version-string (clojure-version)))
                                               :java (safe-version (java-version))}
                                    :status :done}))
       (h msg))))
