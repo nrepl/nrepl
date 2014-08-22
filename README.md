@@ -105,7 +105,7 @@ the "type" of the operation to be performed.  The operations supported by an
 nREPL endpoint are determined by the handlers and middleware stack used when
 starting that endpoint; the default middleware stack (described below) supports
 a particular set of operations, [detailed
-here](https://github.com/clojure/tools.nrepl/blob/master/doc/ops.md). 
+here](https://github.com/clojure/tools.nrepl/blob/master/doc/ops.md).
 
 ### Embedding nREPL, starting a server
 
@@ -167,7 +167,7 @@ shouldn't ever be necessary.  But, if you insist:
     1. `mvn package`: This will produce an nREPL jar file in the `target`
 directory, and run all tests against Clojure 1.2.0.
     2. `mvn verify`: This does the same, but also runs the tests with
-other Clojure "profiles" (one for each supported version of Clojure). 
+other Clojure "profiles" (one for each supported version of Clojure).
 
 ## Why nREPL?
 
@@ -188,7 +188,7 @@ support e.g. asynchronous evaluation, interrupts, etc.
 
 For more information about the motivation, architecture, use cases, and
 discussion related to nREPL, see the see the original design notes,
-availabl[here](https://docs.google.com/document/edit?id=1dnb1ONTpK9ttO5W4thxiXkU5Ki89gK62anRqKEK4YZI&authkey=CMuszuMI&hl=en#),
+available [here](https://docs.google.com/document/edit?id=1dnb1ONTpK9ttO5W4thxiXkU5Ki89gK62anRqKEK4YZI&authkey=CMuszuMI&hl=en#),
 and the [notes](https://github.com/clojure/tools.nrepl/wiki/nREPL.Next) and
 [discussion](http://groups.google.com/group/clojure-dev/browse_frm/thread/6e366c1d0eaeec59)
 around its recent redesign.
@@ -281,7 +281,7 @@ evaluated code that started a `future`).
 Other statuses are possible, depending upon the semantics of the `:op` being
 handled; in particular, if the message is malformed or incomplete for a
 particular `:op`, then a response with an `:error` `:status` should be sent,
-potentially with additional information about the nature of the problem. 
+potentially with additional information about the nature of the problem.
 
 It is possible for an nREPL server to send messages to a client that are not a
 direct response to a request (e.g. streaming content written to `System/out`
@@ -464,14 +464,14 @@ which will be delivered via a later message.  The caught exception is printed
 using `prn` by default; if `clojure.tools.nrepl/*print-stack-trace-on-error*`
 is `set!`'ed to true (which persists for the duration of the client
 connection), then exception stack traces are automatically printed to `*err*`
-instead. 
+instead.
     - `timeout` Indicates that the timeout specified by the requesting message
       expired before the code was fully evaluated.
     - `interrupted` Indicates that the evaluation of the request's code was
       interrupted.
     - `server-failure` An unrecoverable error occurred in conjunction with the
       processing of the request's code.  This probably indicates a bug or fatal
-system fault in the server itself. 
+system fault in the server itself.
     - `done` Indicates that the request associated with the specified ID has
       been completely processed, and no further messages related to it will be
 sent.  This does not imply "success", only that a timeout or interrupt
