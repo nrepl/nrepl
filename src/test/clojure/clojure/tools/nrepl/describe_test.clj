@@ -18,10 +18,12 @@
          ops :ops} (nrepl/combine-responses
                      (nrepl/message timeout-client {:op "describe"}))]
     (testing "versions"
-             (is (= (#'middleware/safe-version clojure.tools.nrepl/version) nrepl))
-             (is (= (#'middleware/safe-version *clojure-version*) clojure))
-             (is (= (System/getProperty "java.version") (:version-string java)))
-             (is (every? #(contains? java %) [:major :minor :incremental :update])))
+      (when-not (every? #(contains? java %) [:major :minor :incremental :update])
+        (println "java.version not parsed as expected:"
+                 (System/getProperty "java.version") "=>" java))
+      (is (= (#'middleware/safe-version clojure.tools.nrepl/version) nrepl))
+      (is (= (#'middleware/safe-version *clojure-version*) clojure))
+      (is (= (System/getProperty "java.version") (:version-string java))))
 
     (is (= op-names (set (keys ops))))
     (is (every? empty? (map val ops)))))
