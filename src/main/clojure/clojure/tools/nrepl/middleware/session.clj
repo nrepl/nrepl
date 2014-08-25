@@ -226,8 +226,10 @@
           (h msg))
       (= op "stdin")
         (let [q (-> (meta session) ^LinkedBlockingQueue (:input-queue))]
-          (locking q
-            (doseq [c stdin] (.put q c)))
+          (if (empty? stdin)
+            (.put q -1)
+            (locking q
+              (doseq [c stdin] (.put q c))))
           (t/send transport (response-for msg :status :done)))
       :else
         (h msg))))

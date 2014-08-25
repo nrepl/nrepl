@@ -378,6 +378,13 @@
   (doseq [x "abc"]
     (is (= [(str x)] (repl-values session "(read-line)")))))
 
+(def-repl-test request-*in*-eof
+  (is (= nil (response-values (for [resp (repl-eval session "(read)")]
+                                (do
+                                  (when (-> resp :status set (contains? "need-input"))
+                                    (session {:op :stdin :stdin []}))
+                                  resp))))))
+
 (def-repl-test request-multiple-read-newline-*in*
   (is (= '(:ohai) (response-values (for [resp (repl-eval session "(read)")]
                                      (do
