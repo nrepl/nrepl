@@ -1,5 +1,13 @@
 ## Changelog
 
+`0.2.5`:
+
+* Clients can now signal EOF on `*in*` with an empty `:stdin` value (NREPL-65)
+* Clojure `:version-string` is now included in response to a `describe`
+  operation (NREPL-63)
+* Improve representation of `java.version` information in response to a
+  `describe` operation (NREPL-62)
+
 `0.2.4`:
 
 * Fixed the source of a reliable per-connection thread leak (NREPL-40)
@@ -10,8 +18,8 @@
 * Fix pretty-printing of reference returned by
   `clojure.tools.nrepl.server/start-server` (NREPL-51)
 * nREPL now works with JDK 1.8 (NREPL-56)
-* The value of the `java.version` system property is now included in the results
-  of a `describe` response (NREPL-57)
+* The value of the `java.version` system property is now included in the response
+  to a `describe` operation (NREPL-57)
 * Common session bindings (e.g. `*e`, `*1`, etc) are now set in time for nREPL
   middleware to access them in the case of an exception being thrown (NREPL-58)
 
