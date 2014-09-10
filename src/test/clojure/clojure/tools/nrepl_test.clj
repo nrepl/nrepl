@@ -4,7 +4,8 @@
         [clojure.tools.nrepl :as nrepl])
   (:require (clojure.tools.nrepl [transport :as transport]
                                  [server :as server]
-                                 [ack :as ack])))
+                                 [ack :as ack])
+            [clojure.set :as set]))
 
 (def project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
 
@@ -273,6 +274,15 @@
     (is (= #{"done"} (-> session (message {:op :interrupt}) first :status set)))
     (is (= #{"done" "interrupted"} (-> resp combine-responses :status)))
     (is (= [true] (repl-values session "halted?")))))
+
+; NREPL-66: ensure that bindings of implementation vars aren't captured by user sessions
+; (https://github.com/clojure-emacs/cider/issues/785)
+(def-repl-test ensure-no-*msg*-capture
+  (let [[r1 r2 :as results] (repeatedly 2 #(repl-eval session "(println :foo)"))
+        [ids ids2] (map #(set (map :id %)) results)
+        [out1 out2] (map #(-> % combine-responses :out) results)]
+    (is (empty? (clojure.set/intersection ids ids2)))
+    (is (= ":foo\n" out1 out2))))
 
 (def-repl-test read-timeout
   (is (nil? (repl-values timeout-session "(Thread/sleep 1100) :ok")))

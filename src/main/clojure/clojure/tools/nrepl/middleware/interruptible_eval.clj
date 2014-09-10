@@ -21,7 +21,8 @@
 
 (defn- capture-thread-bindings
   "Capture thread bindings, excluding nrepl implementation vars."
-  [] (dissoc (get-thread-bindings) #'*msg*))
+  []
+  (dissoc (get-thread-bindings) #'*msg* #'*eval*))
 
 (defn evaluate
   "Evaluates some code within the dynamic context defined by a map of `bindings`,
@@ -179,9 +180,9 @@
                          :thread (Thread/currentThread)
                          :eval-msg msg)
             (binding [*msg* msg]
-              (returning (dissoc (evaluate @session msg) #'*msg*)
-                (t/send transport (response-for msg :status :done))
-                (alter-meta! session dissoc :thread :eval-msg))))))
+              (evaluate @session msg)
+              (t/send transport (response-for msg :status :done))
+              (alter-meta! session dissoc :thread :eval-msg)))))
       
       "interrupt"
       ; interrupts are inherently racy; we'll check the agent's :eval-msg's :id and
