@@ -19,6 +19,10 @@
        :doc "Function returning the evaluation of its argument."}
        *eval* nil)
 
+(defn- capture-thread-bindings
+  "Capture thread bindings, excluding nrepl implementation vars."
+  [] (dissoc (get-thread-bindings) #'*msg*))
+
 (defn evaluate
   "Evaluates some code within the dynamic context defined by a map of `bindings`,
    as per `clojure.core/get-thread-bindings`.
@@ -62,7 +66,7 @@
             :need-prompt (constantly false)
             ; TODO pretty-print?
             :print (fn [v]
-                     (reset! bindings (assoc (get-thread-bindings)
+                     (reset! bindings (assoc (capture-thread-bindings)
                                              #'*3 *2
                                              #'*2 *1
                                              #'*1 v))
@@ -76,7 +80,7 @@
             :caught (fn [e]
                       (let [root-ex (#'clojure.main/root-cause e)]
                         (when-not (instance? ThreadDeath root-ex)
-                          (reset! bindings (assoc (get-thread-bindings) #'*e e))
+                          (reset! bindings (assoc (capture-thread-bindings) #'*e e))
                           (reset! session @bindings)
                           (t/send transport (response-for msg {:status :eval-error
                                                                :ex (-> e class str)
