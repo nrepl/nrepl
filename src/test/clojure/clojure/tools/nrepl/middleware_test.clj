@@ -76,3 +76,19 @@
           (binding [*err* *out*]
             (indexed-stack (conj default-middlewares {:dummy :middleware}))))
         "No nREPL middleware descriptor in metadata of {:dummy :middleware}")))
+
+(deftest NREPL-53-regression
+  (is (= [0 1 2]
+         (map :id
+              (linearize-middleware-stack
+               [^{::middleware/descriptor
+                  {:expects #{} :requires #{"1"}}}
+                {:id 0}
+
+                ^{::middleware/descriptor
+                  {:expects #{} :requires #{} :handles {"1" {}}}}
+                {:id 1}
+
+                ^{::middleware/descriptor
+                  {:expects #{"1"} :requires #{}}}
+                {:id 2}])))))
