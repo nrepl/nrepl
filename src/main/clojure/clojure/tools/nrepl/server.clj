@@ -137,7 +137,9 @@
    The port that the server is open on is available in the :port slot of the
    server map (useful if the :port option is 0 or was left unspecified."
   [& {:keys [port bind transport-fn handler ack-port greeting-fn] :or {port 0}}]
-  (let [bind-addr (if bind (InetSocketAddress. bind port) (InetSocketAddress. port))
+  (let [bind-addr (if bind
+                    (InetSocketAddress. ^String bind ^Integer port)
+                    (InetSocketAddress. port))
         ss (ServerSocket. port 0 (.getAddress bind-addr))
         server (assoc
                  (Server. ss

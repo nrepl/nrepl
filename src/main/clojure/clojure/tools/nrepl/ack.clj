@@ -44,7 +44,7 @@
 ; TODO could stand to have some better error handling around all of this
 (defn send-ack
   [my-port ack-port]
-  (with-open [transport (repl/connect :port ack-port)]
+  (with-open [^java.io.Closeable transport (repl/connect :port ack-port)]
     (let [client (repl/client transport 1000)]
       ; consume response from the server, solely to let that side
       ; finish cleanly without (by default) spewing a SocketException when

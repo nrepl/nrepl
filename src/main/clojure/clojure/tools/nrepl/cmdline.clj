@@ -68,7 +68,7 @@ https://github.com/trptcolin/reply/"
   [& args]
   (let [[options args] (split-args args)
         server (start-server :port (Integer/parseInt (or (options "--port") "0")))
-        ssocket (:ss @server)]
+        ^java.net.ServerSocket ssocket (:ss @server)]
     (when-let [ack-port (options "--ack")]
       (binding [*out* *err*]
         (println (format "ack'ing my port %d to other server running on port %s"

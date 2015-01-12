@@ -28,6 +28,7 @@
 
     <properties>
         <clojure.version>1.2.0</clojure.version>
+        <clojure.warnOnReflection>true</clojure.warnOnReflection>
     </properties>
 
     <dependencies>
