@@ -42,6 +42,11 @@
   [bindings {:keys [code ns transport session eval] :as msg}]
   (let [explicit-ns-binding (when-let [ns (and ns (-> ns symbol find-ns))]
                               {#'*ns* ns})
+        original-ns (bindings #'*ns*)
+        maybe-restore-original-ns (fn [bindings]
+                                    (if-not explicit-ns-binding
+                                      bindings
+                                      (assoc bindings #'*ns* original-ns)))
         bindings (atom (merge bindings explicit-ns-binding))
         session (or session (atom nil))
         out (@bindings #'*out*)
@@ -73,7 +78,7 @@
                                              #'*1 v))
                      (.flush ^Writer err)
                      (.flush ^Writer out)
-                     (reset! session @bindings)
+                     (reset! session (maybe-restore-original-ns @bindings))
                      (t/send transport (response-for msg
                                                      {:value v
                                                       :ns (-> *ns* ns-name str)})))
@@ -82,7 +87,7 @@
                       (let [root-ex (#'clojure.main/root-cause e)]
                         (when-not (instance? ThreadDeath root-ex)
                           (reset! bindings (assoc (capture-thread-bindings) #'*e e))
-                          (reset! session @bindings)
+                          (reset! session (maybe-restore-original-ns @bindings))
                           (t/send transport (response-for msg {:status :eval-error
                                                                :ex (-> e class str)
                                                                :root-ex (-> root-ex class str)}))
@@ -90,7 +95,7 @@
           (finally
             (.flush ^Writer out)
             (.flush ^Writer err)))))
-    @bindings))
+    (maybe-restore-original-ns @bindings)))
 
 (defn- configure-thread-factory
   "Returns a new ThreadFactory for the given session.  This implementation

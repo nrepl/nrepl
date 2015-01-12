@@ -243,7 +243,9 @@
                                         (ns baz)))
                  combine-responses
                  :ns)))
-  (is (= [5] (response-values (message session {:op :eval :code "bar" :ns "user"})))))
+  (is (= [5] (response-values (message session {:op :eval :code "bar" :ns "user"}))))
+  ; NREPL-72: :ns argument to eval shouldn't affect *ns* outside of the scope of that evaluation
+  (is (= "baz" (-> (repl-eval session "5") combine-responses :ns))))
 
 (def-repl-test error-on-nonexistent-ns
   (is (= #{"error" "namespace-not-found" "done"}
