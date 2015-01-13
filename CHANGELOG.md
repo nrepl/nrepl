@@ -1,5 +1,13 @@
 ## Changelog
 
+`0.2.7`:
+
+* The topological sort ("linearization") applied to middleware provided to start a new nREPL server has been
+  reworked to address certain edge case bugs (NREPL-53)
+* `interruptible-eval` no longer incorrectly clobbers a session's `*ns*` binding
+  when it processes an `eval` message containing an `ns` "argument"
+* Eliminated miscellaneous reflection warnings
+
 `0.2.5`:
 
 * Clients can now signal EOF on `*in*` with an empty `:stdin` value (NREPL-65)
