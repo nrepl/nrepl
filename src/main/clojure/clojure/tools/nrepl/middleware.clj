@@ -8,7 +8,7 @@
 ;; so much backport
 (def ^:private ex-info
   (or (resolve 'clojure.core/ex-info)
-      (fn [msg data]
+      (fn [^String msg data]
         (proxy [Exception clojure.lang.IDeref] [msg]
           (deref [] data)))))
 
