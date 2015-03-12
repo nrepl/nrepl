@@ -33,7 +33,7 @@
                      (update-in [:expects] (fnil conj #{}) "describe"))]
     (alter-meta! middleware-var assoc ::descriptor descriptor)
     (alter-var-root middleware-var #(comp (partial wrap-conj-descriptor
-                                                   (:handles descriptor)) %))))
+                                                   {middleware-var descriptor}) %))))
 
 (defn- safe-version
   [m]
@@ -53,14 +53,24 @@
   (fn [{:keys [op descriptors verbose? transport] :as msg}]
     (if (= op "describe")
       (transport/send transport (misc/response-for msg
-                                  {:ops (if verbose?
-                                          descriptors
-                                          (into {} (map #(vector (key %) {}) descriptors)))
-                                   :versions {:nrepl (safe-version clojure.tools.nrepl/version)
-                                              :clojure (safe-version
-                                                        (assoc *clojure-version* :version-string (clojure-version)))
-                                              :java (safe-version (java-version))}
-                                   :status :done}))
+                                  (merge
+                                    (when-let [aux (reduce
+                                                     (fn [aux {:keys [describe-fn]}]
+                                                       (if describe-fn
+                                                         (merge aux (describe-fn msg))
+                                                         aux))
+                                                     nil
+                                                     (vals descriptors))]
+                                      {:aux aux})
+                                    {:ops (let [ops (apply merge (map :handles (vals descriptors)))]
+                                            (if verbose?
+                                              ops
+                                              (zipmap (keys ops) (repeat {}))))
+                                     :versions {:nrepl (safe-version clojure.tools.nrepl/version)
+                                                :clojure (safe-version
+                                                           (assoc *clojure-version* :version-string (clojure-version)))
+                                                :java (safe-version (java-version))}
+                                     :status :done})))
       (h msg))))
 
 (set-descriptor! #'wrap-describe
@@ -69,7 +79,8 @@
               :requires {}
               :optional {"verbose?" "Include informational detail for each \"op\"eration in the return message."}
               :returns {"ops" "Map of \"op\"erations supported by this nREPL endpoint"
-                        "versions" "Map containing version maps (like *clojure-version*, e.g. major, minor, incremental, and qualifier keys) for values, component names as keys. Common keys include \"nrepl\" and \"clojure\"."}}}})
+                        "versions" "Map containing version maps (like *clojure-version*, e.g. major, minor, incremental, and qualifier keys) for values, component names as keys. Common keys include \"nrepl\" and \"clojure\"."
+                        "aux" "Map of auxilliary data contributed by all of the active nREPL middleware via :describe-fn functions in their descriptors."}}}})
 ; eliminate implicit expectation of "describe" handler; this is the only
 ; special case introduced by the conj'ing of :expects "describe" by set-descriptor!
 (alter-meta! #'wrap-describe update-in [::descriptor :expects] disj "describe")

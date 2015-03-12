@@ -194,6 +194,9 @@
 (set-descriptor! #'session
   {:requires #{}
    :expects #{}
+   :describe-fn (fn [{:keys [session] :as describe-msg}]
+                  (when (and session (instance? clojure.lang.Atom session))
+                    {:current-ns (-> @session (get #'*ns*) str)}))
    :handles {"close"
              {:doc "Closes the specified session."
               :requires {"session" "The ID of the session to be closed."}

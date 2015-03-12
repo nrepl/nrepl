@@ -30,11 +30,12 @@
     (is (every? empty? (map val ops)))))
 
 (def-repl-test verbose-describe
-  (let [{:keys [ops]} (nrepl/combine-responses
-                        (nrepl/message timeout-client
-                                       {:op "describe" :verbose? "true"}))]
+  (let [{:keys [ops aux]} (nrepl/combine-responses
+                            (nrepl/message timeout-client
+                              {:op "describe" :verbose? "true"}))]
     (is (= op-names (set (keys ops))))
-    (is (every? seq (map (comp :doc val) ops)))))
+    (is (every? seq (map (comp :doc val) ops)))
+    (is (= {:current-ns "user"} aux))))
 
 ; quite misplaced, but this'll do for now...
 (def-repl-test update-op-docs
