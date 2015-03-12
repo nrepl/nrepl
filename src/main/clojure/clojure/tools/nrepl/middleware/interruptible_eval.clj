@@ -221,7 +221,10 @@
                          "session" "The ID of the session within which to evaluate the code."}
               :optional {"id" "An opaque message ID that will be included in responses related to the evaluation, and which may be used to restrict the scope of a later \"interrupt\" operation."
                          "eval" "A fully-qualified symbol naming a var whose function value will be used to evaluate [code], instead of `clojure.core/eval` (the default)."}
-              :returns {}}
+              :returns {"ns" "*ns*, after successful evaluation of `code`."
+                        "values" "The result of evaluating `code`, often `read`able. This printing is provided by the `pr-values` middleware, and could theoretically be customized. Superseded by `ex` and `root-ex` if an exception occurs during evaluation."
+                        "ex" "The type of exception thrown, if any. If present, then `values` will be absent."
+                        "root-ex" "The type of the root exception thrown, if any. If present, then `values` will be absent."}}
              "interrupt"
              {:doc "Attempts to interrupt some code evaluation."
               :requires {"session" "The ID of the session used to start the evaluation to be interrupted."}
