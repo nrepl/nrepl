@@ -122,7 +122,7 @@
   "Starts a socket-based nREPL server.  Configuration options include:
  
    * :port — defaults to 0, which autoselects an open port on localhost
-   * :bind — bind address, by default any (0.0.0.0)
+   * :bind — bind address, by default \"localhost\")
    * :handler — the nREPL message handler to use for each incoming connection;
        defaults to the result of `(default-handler)`
    * :transport-fn — a function that, given a java.net.Socket corresponding
@@ -139,8 +139,10 @@
   [& {:keys [port bind transport-fn handler ack-port greeting-fn] :or {port 0}}]
   (let [bind-addr (if bind
                     (InetSocketAddress. ^String bind ^Integer port)
-                    (InetSocketAddress. port))
-        ss (ServerSocket. port 0 (.getAddress bind-addr))
+                    (InetSocketAddress. "localhost" port))
+        ss (doto (ServerSocket.)
+             (.setReuseAddress true)
+             (.bind bind-addr))
         server (assoc
                  (Server. ss
                           (.getLocalPort ss)
