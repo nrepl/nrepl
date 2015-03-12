@@ -1,6 +1,8 @@
 (ns ^{:author "Chas Emerick"}
      clojure.tools.nrepl.middleware.load-file
-  (:require [clojure.tools.nrepl.middleware.interruptible-eval :as eval])
+  (:import clojure.tools.nrepl.transport.Transport)
+  (:require [clojure.tools.nrepl.middleware.interruptible-eval :as eval]
+            [clojure.tools.nrepl.transport :as t])
   (:use [clojure.tools.nrepl.middleware :as middleware :only (set-descriptor!)]))
 
 ; need to hold file contents "out of band" so as to avoid JVM method
@@ -72,7 +74,7 @@ be loaded."} file-contents (atom {}))
    This middleware depends on the availability of an :op \"eval\"
    middleware below it (such as interruptible-eval)."
   [h]
-  (fn [{:keys [op file file-name file-path] :as msg}]
+  (fn [{:keys [op file file-name file-path transport] :as msg}]
     (if (not= op "load-file")
       (h msg)
       (h (assoc msg
@@ -80,7 +82,16 @@ be loaded."} file-contents (atom {}))
            :code ((if (thread-bound? #'load-file-code)
                     load-file-code
                     load-large-file-code)
-                   file file-path file-name))))))
+                  file file-path file-name)
+           :transport (reify Transport
+                        (recv [this] (.recv transport))
+                        (recv [this timeout] (.recv transport timeout))
+                        (send [this resp]
+                          ; *ns* is always 'user' after loading a file, so
+                          ; *remove it to avoid confusing tools that assume any
+                          ; *:ns always reports *ns*
+                          (.send transport (dissoc resp :ns)) 
+                          this)))))))
 
 (set-descriptor! #'wrap-load-file
   {:requires #{}

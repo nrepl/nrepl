@@ -58,3 +58,12 @@
 
   (is (= [4]
          (repl-values session (nrepl/code d)))))
+
+(def-repl-test load-file-response-no-ns
+  (is (not (contains? (nrepl/combine-responses
+                        (nrepl/message session 
+                          {:op "load-file"
+                           :file "(ns foo) (def x 5)"
+                           :file-path "/path/to/source.clj"
+                           :file-name "source.clj"}))
+             :ns))))
