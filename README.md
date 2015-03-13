@@ -13,7 +13,7 @@ nREPL is available in Maven central. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
 ```clojure
-[org.clojure/tools.nrepl "0.2.7"]
+[org.clojure/tools.nrepl "0.2.8"]
 ```
 
 Or, add this to your Maven project's `pom.xml`:
@@ -22,7 +22,7 @@ Or, add this to your Maven project's `pom.xml`:
 <dependency>
   <groupId>org.clojure</groupId>
   <artifactId>tools.nrepl</artifactId>
-  <version>0.2.7</versi7n>
+  <version>0.2.8</version>
 </dependency>
 ```
 
@@ -60,6 +60,7 @@ client/tool.  Tools that support nREPL include:
 * [fireplace.vim](https://github.com/tpope/vim-fireplace) (Clojure + nREPL
   support for vim)
 * [Reply](https://github.com/trptcolin/reply/)
+* [Atom](https://atom.io/packages/search?q=nrepl)
 
 If your preferred Clojure development environment supports nREPL, you're done.
 Use it or connect to an existing nREPL endpoint, and you're done.

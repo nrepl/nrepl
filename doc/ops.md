@@ -2,7 +2,7 @@
    **Do not edit!** -->
 # Supported nREPL operations
 
-<small>generated from a verbose 'describe' response (nREPL v0.2.4-SNAPSHOT)</small>
+<small>generated from a verbose 'describe' response (nREPL v0.2.8)</small>
 
 ## Operations
 
@@ -56,6 +56,7 @@ Produce a machine- and human-readable directory and documentation for the operat
 
 ###### Returns
 
+* `:aux` Map of auxilliary data contributed by all of the active nREPL middleware via :describe-fn functions in their descriptors.
 * `:ops` Map of "op"erations supported by this nREPL endpoint
 * `:versions` Map containing version maps (like \*clojure-version\*, e.g. major, minor, incremental, and qualifier keys) for values, component names as keys. Common keys include "nrepl" and "clojure".
 
@@ -78,6 +79,10 @@ Evaluates code.
 
 ###### Returns
 
+* `:ex` The type of exception thrown, if any. If present, then `values` will be absent.
+* `:ns` \*ns\*, after successful evaluation of `code`.
+* `:root-ex` The type of the root exception thrown, if any. If present, then `values` will be absent.
+* `:values` The result of evaluating `code`, often `read`able. This printing is provided by the `pr-values` middleware, and could theoretically be customized. Superseded by `ex` and `root-ex` if an exception occurs during evaluation.
 
 
 ### `:interrupt`
@@ -118,6 +123,10 @@ Loads a body of code, using supplied path and filename info to set source file a
 
 ###### Returns
 
+* `:ex` The type of exception thrown, if any. If present, then `values` will be absent.
+* `:ns` \*ns\*, after successful evaluation of `code`.
+* `:root-ex` The type of the root exception thrown, if any. If present, then `values` will be absent.
+* `:values` The result of evaluating `code`, often `read`able. This printing is provided by the `pr-values` middleware, and could theoretically be customized. Superseded by `ex` and `root-ex` if an exception occurs during evaluation.
 
 
 ### `:ls-sessions`
