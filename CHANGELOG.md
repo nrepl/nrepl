@@ -1,9 +1,30 @@
 ## Changelog
 
+`0.2.8`:
+
+* The default bind address used by `clojure.tools.nrepl.server/start-server` is
+  now `localhost`, not `0.0.0.0`. As always, the bind address can be set
+  explicitly via a `:bind` keyword argument to that function. This is considered
+  a security bugfix, though _technically_ it may cause breakage if anyone was
+  implicitly relying upon nREPL's socket server to listen on all network
+  interfaces.
+* The `ServerSocket` created as part of
+  `clojure.tools.nrepl.server/start-server` is now configured with
+  `SO_REUSEADDR` enabled; this should prevent spurious "address already in use"
+  when quickly bouncing apps that open an nREPL server on a fixed port, etc.
+  (NREPL-67)
+* Middlewares may now contribute to the response of the `"describe"` operation
+  via an optional `:describe-fn` function provided via their descriptors.
+  (NREPL-64)
+* The `:ns` component of the response to `"load-file"` operations is now elided,
+  as it was (usually) incorrect (as a result of reusing `interruptible-eval` for
+  handling `load-file` operations) (NREPL-68)
+
 `0.2.7`:
 
-* The topological sort ("linearization") applied to middleware provided to start a new nREPL server has been
-  reworked to address certain edge case bugs (NREPL-53)
+* The topological sort ("linearization") applied to middleware provided to start
+  a new nREPL server has been reworked to address certain edge case bugs
+  (NREPL-53)
 * `interruptible-eval` no longer incorrectly clobbers a session's `*ns*` binding
   when it processes an `eval` message containing an `ns` "argument"
 * Eliminated miscellaneous reflection warnings
