@@ -1,5 +1,14 @@
 ## Changelog
 
+`0.2.9`:
+
+* `clojure.tools.nrepl.middleware.interruptible-eval` now defines a default
+  thread executor used for all evaluations (unless a different exectuor is
+  provided to the configuration of
+  `clojure.tools.nrepl.middleware.interruptible-eval/interruptible-eval`). This
+  should aid in the development of `interrupt`-capable alternative evaluation
+  middlewares/handlers.
+
 `0.2.8`:
 
 * The default bind address used by `clojure.tools.nrepl.server/start-server` is
