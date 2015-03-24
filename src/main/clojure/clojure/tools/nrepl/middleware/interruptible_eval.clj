@@ -130,6 +130,8 @@
                          ^BlockingQueue queue
                          thread-factory)))
 
+(def ^:private default-executor (delay (configure-executor)))
+
 ; A little mini-agent implementation. Needed because agents cannot be used to host REPL
 ; evaluation: http://dev.clojure.org/jira/browse/NREPL-17
 (defn- prep-session
@@ -173,44 +175,45 @@
   "Evaluation middleware that supports interrupts.  Returns a handler that supports
    \"eval\" and \"interrupt\" :op-erations that delegates to the given handler
    otherwise."
-  [h & {:keys [executor] :or {executor (configure-executor)}}]
-  (fn [{:keys [op session interrupt-id id transport] :as msg}]
-    (case op
-      "eval"
-      (if-not (:code msg)
-        (t/send transport (response-for msg :status #{:error :no-code}))
-        (queue-eval session executor
-          (fn []
-            (alter-meta! session assoc
-                         :thread (Thread/currentThread)
-                         :eval-msg msg)
-            (binding [*msg* msg]
-              (evaluate @session msg)
-              (t/send transport (response-for msg :status :done))
-              (alter-meta! session dissoc :thread :eval-msg)))))
+  [h & configuration]
+  (let [executor (:executor configuration @default-executor)]
+    (fn [{:keys [op session interrupt-id id transport] :as msg}]
+     (case op
+       "eval"
+       (if-not (:code msg)
+         (t/send transport (response-for msg :status #{:error :no-code}))
+         (queue-eval session executor
+           (fn []
+             (alter-meta! session assoc
+               :thread (Thread/currentThread)
+               :eval-msg msg)
+             (binding [*msg* msg]
+               (evaluate @session msg)
+               (t/send transport (response-for msg :status :done))
+               (alter-meta! session dissoc :thread :eval-msg)))))
       
-      "interrupt"
-      ; interrupts are inherently racy; we'll check the agent's :eval-msg's :id and
-      ; bail if it's different than the one provided, but it's possible for
-      ; that message's eval to finish and another to start before we send
-      ; the interrupt / .stop.
-      (let [{:keys [id eval-msg ^Thread thread]} (meta session)]
-        (if (or (not interrupt-id)
-                (= interrupt-id (:id eval-msg)))
-          (if-not thread
-            (t/send transport (response-for msg :status #{:done :session-idle}))
-            (do
-              ; notify of the interrupted status before we .stop the thread so
-              ; it is received before the standard :done status (thereby ensuring
-              ; that is stays within the scope of a clojure.tools.nrepl/message seq
-              (t/send transport {:status #{:interrupted}
-                                 :id (:id eval-msg)
-                                 :session id})
-              (.stop thread)
-              (t/send transport (response-for msg :status #{:done}))))
-          (t/send transport (response-for msg :status #{:error :interrupt-id-mismatch :done}))))
+       "interrupt"
+       ; interrupts are inherently racy; we'll check the agent's :eval-msg's :id and
+       ; bail if it's different than the one provided, but it's possible for
+       ; that message's eval to finish and another to start before we send
+       ; the interrupt / .stop.
+       (let [{:keys [id eval-msg ^Thread thread]} (meta session)]
+         (if (or (not interrupt-id)
+               (= interrupt-id (:id eval-msg)))
+           (if-not thread
+             (t/send transport (response-for msg :status #{:done :session-idle}))
+             (do
+               ; notify of the interrupted status before we .stop the thread so
+               ; it is received before the standard :done status (thereby ensuring
+               ; that is stays within the scope of a clojure.tools.nrepl/message seq
+               (t/send transport {:status #{:interrupted}
+                                  :id (:id eval-msg)
+                                  :session id})
+               (.stop thread)
+               (t/send transport (response-for msg :status #{:done}))))
+           (t/send transport (response-for msg :status #{:error :interrupt-id-mismatch :done}))))
       
-      (h msg))))
+       (h msg)))))
 
 (set-descriptor! #'interruptible-eval
   {:requires #{"clone" "close" #'clojure.tools.nrepl.middleware.pr-values/pr-values}
