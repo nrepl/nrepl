@@ -1,5 +1,12 @@
 ## Changelog
 
+`0.2.10`:
+
+* `clojure.tools.nrepl.middleware.pr-values` will _not_ print the contents of
+  `:value` response messages if the message contains a `:printed-value` slot.
+* `default-executor` and `queue-eval` in
+  `clojure.tools.nrepl.middleware.interruptible-eval` are now public.
+
 `0.2.9`:
 
 * `clojure.tools.nrepl.middleware.interruptible-eval` now defines a default
