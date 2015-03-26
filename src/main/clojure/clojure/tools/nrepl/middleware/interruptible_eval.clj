@@ -130,7 +130,7 @@
                          ^BlockingQueue queue
                          thread-factory)))
 
-(def ^:private default-executor (delay (configure-executor)))
+(def default-executor (delay (configure-executor)))
 
 ; A little mini-agent implementation. Needed because agents cannot be used to host REPL
 ; evaluation: http://dev.clojure.org/jira/browse/NREPL-17
@@ -160,7 +160,7 @@
      (finally
        (run-next* session executor))))
 
-(defn- queue-eval
+(defn queue-eval
   "Queues the function for the given session."
   [session ^Executor executor f]
   (let [qa (-> session prep-session meta :queue)]
