@@ -29,7 +29,7 @@
                             (dissoc resp :printed-value)
                             (if-let [[_ v] (find resp :value)]
                               (assoc resp
-                                :value (let [repl (java.io.StringWriter.)]
+                                :value (let [repr (java.io.StringWriter.)]
                                          (if *print-dup*
                                            (print-dup v repr)
                                            (print-method v repr))
