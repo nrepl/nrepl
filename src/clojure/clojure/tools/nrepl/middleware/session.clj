@@ -176,7 +176,7 @@
                         (@sessions session)
                         (create-session transport))]
       (if-not the-session
-        (t/send transport (response-for msg :status #{:error :unknown-session}))
+        (t/send transport (response-for msg :status #{:error :unknown-session :done}))
         (let [msg (assoc msg :session the-session)]
           ;; TODO yak, this is ugly; need to cleanly thread out-limit through to
           ;; session-out without abusing a dynamic var
