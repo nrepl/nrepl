@@ -107,7 +107,7 @@
          (-> (message timeout-client {:op :abc}) combine-responses (select-keys [:op :status])))))
 
 (def-repl-test session-lifecycle
-  (is (= #{"error" "unknown-session"}
+  (is (= #{"error" "unknown-session" "done"}
          (-> (message timeout-client {:session "abc"}) combine-responses :status)))
   (let [session-id (new-session timeout-client)
         session-alive? #(contains? (-> (message timeout-client {:op :ls-sessions})

@@ -210,7 +210,7 @@
       (case op
         "eval"
         (if-not (:code msg)
-          (t/send transport (response-for msg :status #{:error :no-code}))
+          (t/send transport (response-for msg :status #{:error :no-code :done}))
           (queue-eval session executor
                       (fn []
                         (alter-meta! session assoc
