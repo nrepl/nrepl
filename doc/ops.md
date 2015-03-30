@@ -2,7 +2,7 @@
    **Do not edit!** -->
 # Supported nREPL operations
 
-<small>generated from a verbose 'describe' response (nREPL v0.2.9-SNAPSHOT)</small>
+<small>generated from a verbose 'describe' response (nREPL v0.2.11-SNAPSHOT)</small>
 
 ## Operations
 
@@ -73,8 +73,11 @@ Evaluates code.
 
 ###### Optional parameters
 
+* `:column` The column number in [file] at which [code] starts.
 * `:eval` A fully-qualified symbol naming a var whose function value will be used to evaluate [code], instead of `clojure.core/eval` (the default).
+* `:file` The path to the file containing [code]. `clojure.core/\*file\*` will be bound to this.
 * `:id` An opaque message ID that will be included in responses related to the evaluation, and which may be used to restrict the scope of a later "interrupt" operation.
+* `:line` The line number in [file] at which [code] starts.
 
 
 ###### Returns

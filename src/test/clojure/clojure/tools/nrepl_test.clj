@@ -81,6 +81,18 @@
              combine-responses
              (select-keys [:value])))))
 
+(def-repl-test source-tracking-eval
+  (let [sym (name (gensym))
+        request {:op :eval :ns "user" :code (format "(def %s 1000)" sym)
+                 :file "test.clj" :line 42 :column 10}
+        _ (doall (message timeout-client request))
+        meta (meta (resolve (symbol "user" sym)))]
+    (is (= (:file meta) "test.clj"))
+    (is (= (:line meta) 42))
+    (is (= (:column meta) (condp contains? (:minor *clojure-version*)
+                            #{2 3 4} nil
+                            #{5 6 7} 10)))))
+
 (def-repl-test unknown-op
   (is (= {:op "abc" :status #{"error" "unknown-op" "done"}}
          (-> (message timeout-client {:op :abc}) combine-responses (select-keys [:op :status])))))

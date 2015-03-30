@@ -6,7 +6,8 @@
   (:use [clojure.tools.nrepl.misc :only (response-for returning)]
         [clojure.tools.nrepl.middleware :only (set-descriptor!)])
   (:import clojure.lang.LineNumberingPushbackReader
-           (java.io StringReader Writer)
+           (java.io FilterReader LineNumberReader StringReader Writer)
+           java.lang.reflect.Field
            java.util.concurrent.atomic.AtomicLong
            (java.util.concurrent Executor BlockingQueue LinkedBlockingQueue ThreadFactory
                                  SynchronousQueue TimeUnit ThreadPoolExecutor)))
@@ -24,6 +25,31 @@
   []
   (dissoc (get-thread-bindings) #'*msg* #'*eval*))
 
+(defn- set-line!
+  [^LineNumberingPushbackReader reader line]
+  (-> FilterReader
+      ^Field (.getDeclaredField "in")
+      (doto (.setAccessible true))
+      ^LineNumberReader (.get reader)
+      (.setLineNumber line)))
+
+(defn- set-column!
+  [^LineNumberingPushbackReader reader column]
+  (when-let [field (->> LineNumberingPushbackReader
+                        (.getDeclaredFields)
+                        (filter #(= "_columnNumber" (.getName ^Field %)))
+                        first)]
+    (-> ^Field field
+        (doto (.setAccessible true))
+        (.set reader column))))
+
+(defn- source-logging-pushback-reader
+  [code line column]
+  (let [reader (LineNumberingPushbackReader. (StringReader. code))]
+    (when line (set-line! reader (int (dec line))))
+    (when column (set-column! reader (int column)))
+    reader))
+
 (defn evaluate
   "Evaluates some code within the dynamic context defined by a map of `bindings`,
    as per `clojure.core/get-thread-bindings`.
@@ -39,7 +65,7 @@
 
    It is assumed that `bindings` already contains useful/appropriate entries
    for all vars indicated by `clojure.main/with-bindings`."
-  [bindings {:keys [code ns transport session eval] :as msg}]
+  [bindings {:keys [code ns transport session eval file line column] :as msg}]
   (let [explicit-ns-binding (when-let [ns (and ns (-> ns symbol find-ns))]
                               {#'*ns* ns})
         original-ns (bindings #'*ns*)
@@ -47,7 +73,8 @@
                                     (if-not explicit-ns-binding
                                       bindings
                                       (assoc bindings #'*ns* original-ns)))
-        bindings (atom (merge bindings explicit-ns-binding))
+        file (or file (get bindings #'*file*))
+        bindings (atom (merge bindings explicit-ns-binding {#'*file* file}))
         session (or session (atom nil))
         out (@bindings #'*out*)
         err (@bindings #'*err*)]
@@ -64,7 +91,7 @@
                      (set! *3 (@bindings #'*3))
                      (set! *e (@bindings #'*e)))   
             :read (if (string? code)
-                    (let [reader (LineNumberingPushbackReader. (StringReader. code))]
+                    (let [reader (source-logging-pushback-reader code line column)]
                       #(read reader false %2))
                     (let [code (.iterator ^Iterable code)]
                       #(or (and (.hasNext code) (.next code)) %2)))
@@ -223,7 +250,10 @@
               :requires {"code" "The code to be evaluated."
                          "session" "The ID of the session within which to evaluate the code."}
               :optional {"id" "An opaque message ID that will be included in responses related to the evaluation, and which may be used to restrict the scope of a later \"interrupt\" operation."
-                         "eval" "A fully-qualified symbol naming a var whose function value will be used to evaluate [code], instead of `clojure.core/eval` (the default)."}
+                         "eval" "A fully-qualified symbol naming a var whose function value will be used to evaluate [code], instead of `clojure.core/eval` (the default)."
+                         "file" "The path to the file containing [code]. `clojure.core/*file*` will be bound to this."
+                         "line" "The line number in [file] at which [code] starts."
+                         "column" "The column number in [file] at which [code] starts."}
               :returns {"ns" "*ns*, after successful evaluation of `code`."
                         "values" "The result of evaluating `code`, often `read`able. This printing is provided by the `pr-values` middleware, and could theoretically be customized. Superseded by `ex` and `root-ex` if an exception occurs during evaluation."
                         "ex" "The type of exception thrown, if any. If present, then `values` will be absent."
