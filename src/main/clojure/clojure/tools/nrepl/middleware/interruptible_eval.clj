@@ -12,6 +12,8 @@
            (java.util.concurrent Executor BlockingQueue LinkedBlockingQueue ThreadFactory
                                  SynchronousQueue TimeUnit ThreadPoolExecutor)))
 
+(def ^:private reader-conditionals? (boolean (resolve 'clojure.core/reader-conditional)))
+
 (def ^{:dynamic true
        :doc "The message currently being evaluated."}
       *msg* nil)
@@ -92,7 +94,9 @@
                      (set! *e (@bindings #'*e)))   
             :read (if (string? code)
                     (let [reader (source-logging-pushback-reader code line column)]
-                      #(read reader false %2))
+                      (if reader-conditionals?
+                        #(read {:read-cond :allow :eof %2} reader)
+                        #(read reader false %2)))
                     (let [code (.iterator ^Iterable code)]
                       #(or (and (.hasNext code) (.next code)) %2)))
             :prompt (fn [])
