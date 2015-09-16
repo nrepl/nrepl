@@ -89,9 +89,7 @@
         meta (meta (resolve (symbol "user" sym)))]
     (is (= (:file meta) "test.clj"))
     (is (= (:line meta) 42))
-    (is (= (:column meta) (condp contains? (:minor *clojure-version*)
-                            #{2 3 4} nil
-                            #{5 6 7} 10)))))
+    (is (= (:column meta) (if (< (:minor *clojure-version*) 5) nil 10)))))
 
 (def-repl-test unknown-op
   (is (= {:op "abc" :status #{"error" "unknown-op" "done"}}
