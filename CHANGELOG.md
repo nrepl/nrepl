@@ -1,5 +1,13 @@
 ## Changelog
 
+`0.2.11`:
+
+* `clojure.tools.nrepl.middleware.interruptible-eval` now accepts optional
+  `file`, `line`, and `column` values in order to fix location metadata to
+  defined vars and functions, for more useful stack traces, navigation, etc.
+* REPL evaluations now support use of reader conditionals (loading `.cljc` files
+  containing reader conditionals has always worked transparently)
+
 `0.2.10`:
 
 * `clojure.tools.nrepl.middleware.pr-values` will _not_ print the contents of
