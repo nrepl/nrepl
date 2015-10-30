@@ -77,7 +77,7 @@ be loaded."} file-contents (atom {}))
   (fn [{:keys [op file file-name file-path transport] :as msg}]
     (if (not= op "load-file")
       (h msg)
-      (h (assoc msg
+      (h (assoc (dissoc msg :file :file-name :file-path)
            :op "eval"
            :code ((if (thread-bound? #'load-file-code)
                     load-file-code
