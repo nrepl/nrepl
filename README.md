@@ -260,7 +260,7 @@ may seem peculiar, but is motivated by two factors:
 * Many operations — including something as simple as code evaluation — is
   fundamentally asynchronous with respect to the nREPL server
 * Many operations can produce multiple results (e.g. evaluating a snippet of
-  code like `"(+ 1 2) (def a 6)`).
+  code like `"(+ 1 2) (def a 6)"`).
 
 Thus, messages provided to nREPL handlers are guaranteed to contain a
 `:transport` entry containing the [transport](#transports) that should be used
