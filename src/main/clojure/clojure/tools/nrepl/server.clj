@@ -121,8 +121,9 @@
 (defn start-server
   "Starts a socket-based nREPL server.  Configuration options include:
  
-   * :port — defaults to 0, which autoselects an open port on localhost
-   * :bind — bind address, by default \"localhost\")
+   * :port — defaults to 0, which autoselects an open port
+   * :bind — bind address, by default \"::\" (falling back to \"localhost\"
+       if \"::\" isn't resolved by the underlying network stack)
    * :handler — the nREPL message handler to use for each incoming connection;
        defaults to the result of `(default-handler)`
    * :transport-fn — a function that, given a java.net.Socket corresponding
@@ -139,7 +140,10 @@
   [& {:keys [port bind transport-fn handler ack-port greeting-fn] :or {port 0}}]
   (let [bind-addr (if bind
                     (InetSocketAddress. ^String bind ^Integer port)
-                    (InetSocketAddress. "localhost" port))
+                    (let [local (InetSocketAddress. "::" port)]
+                      (if (.isUnresolved local)
+                        (InetSocketAddress. "localhost" port)
+                        local)))
         ss (doto (ServerSocket.)
              (.setReuseAddress true)
              (.bind bind-addr))
