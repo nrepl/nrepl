@@ -1,5 +1,11 @@
 ## Changelog
 
+`0.2.13`:
+
+* `start-server` now binds to `::` by default, and falls back to `localhost`,
+  avoiding confusion when working in environments that have both IPv4 and IPv6
+  networking available. (NREPL-83)
+
 `0.2.11`:
 
 * `clojure.tools.nrepl.middleware.interruptible-eval` now accepts optional
