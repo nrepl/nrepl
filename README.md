@@ -1,3 +1,6 @@
-The nREPL project has been promoted to Clojure Contrib, and is now available [here](http://github.com/clojure/tools.nrepl).
+The nREPL project is currently being reconstituted as an independent effort,
+separate from the Clojure Contrib process that it has called home for some
+years.
 
-This repo is now defunct.
+More information is available [here](https://github.com/cemerick/nREPL/issues/1).
+
