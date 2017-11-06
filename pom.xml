@@ -1,9 +1,8 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.cemerick</groupId>
     <artifactId>nrepl</artifactId>
-    <version>0.2.13-SNAPSHOT</version>
+    <version>0.3.0-RC1</version>
     <name>nREPL</name>
 
     <parent>
@@ -25,7 +24,8 @@
         <connection>scm:git:git@github.com:cemerick/nrepl.git</connection>
         <developerConnection>scm:git:git@github.com:cemerick/nrepl.git</developerConnection>
         <url>git@github.com:cemerick/nrepl.git</url>
-    </scm>
+      <tag>nrepl-0.3.0-RC1</tag>
+  </scm>
 
     <properties>
         <clojure.version>1.2.0</clojure.version>
