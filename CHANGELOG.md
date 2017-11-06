@@ -1,5 +1,11 @@
 ## Changelog
 
+`0.3.0`:
+
+* Exactly identical to `[org.clojure/tools.nrepl "0.2.13"]`, but released under
+  `com.cemerick/nrepl` coordinates as part of the migration out of / back to
+  https://github.com/cemerick/nREPL (gh-1)
+
 `0.2.13`:
 
 * `start-server` now binds to `::` by default, and falls back to `localhost`,

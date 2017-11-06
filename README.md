@@ -1,6 +1,6 @@
 # nREPL [![Build Status](https://travis-ci.org/cemerick/nREPL.svg?branch=master)](https://travis-ci.org/cemerick/nREPL)
 
-[nREPL](http://github.com/clojure/tools.nrepl) is a Clojure *n*etwork REPL that
+[nREPL](http://github.com/cemerick/nrepl) is a Clojure *n*etwork REPL that
 provides a REPL server and client, along with some common APIs
 of use to IDEs and other tools that may need to evaluate Clojure
 code in remote environments.
@@ -13,38 +13,30 @@ nREPL is available in Maven central. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
 ```clojure
-[org.clojure/tools.nrepl "0.2.12"]
+[com.cemerick/nrepl "0.3.0"]
 ```
 
 Or, add this to your Maven project's `pom.xml`:
 
 ```xml
 <dependency>
-  <groupId>org.clojure</groupId>
-  <artifactId>tools.nrepl</artifactId>
-  <version>0.2.12</version>
+  <groupId>com.cemerick</groupId>
+  <artifactId>nrepl</artifactId>
+  <version>0.3.0</version>
 </dependency>
 ```
 
 A list of all prior releases are available
-[here](http://search.maven.org/#search|gav|1|g%3A%22org.clojure%22%20AND%20a%3A%22tools.nrepl%22).
+[here](http://search.maven.org/#search|gav|1|g%3A%22com.cemerick%22%20AND%20a%3A%22nrepl%22).
 
 Please note the changelog in `CHANGELOG.md`.
 
 nREPL is compatible with Clojure 1.2.0 and higher.
 
-Please post general questions or discussion on either the
-[clojure-dev](http://groups.google.com/group/clojure-dev/) or
-[clojure-tools](http://groups.google.com/group/clojure-tools) mailing lists.
-Bug reports and such may be filed into [nREPL's
-JIRA](http://dev.clojure.org/jira/browse/NREPL).
-
-nREPL's generated API documentation is available
-[here](http://clojure.github.com/tools.nrepl/).  A [history of nREPL
-builds](http://build.clojure.org/job/tools.nrepl/) is available, as well as [a
-compatibility test
-matrix](http://build.clojure.org/job/tools.nrepl-test-matrix/), verifying
-nREPL's functionality against multiple versions of Clojure and multiple JVMs.
+Please post general questions or discussion on either the main [Clojure mailing
+list](http://groups.google.com/group/clojure/), or [#clojure
+IRC](https://webchat.freenode.net/?url=irc%3A%2F%2Firc.freenode.net%2Fclojure).
+Bug reports and such may be filed via github issues here.
 
 ### Connecting to an nREPL server
 
@@ -109,7 +101,7 @@ the "type" of the operation to be performed.  The operations supported by an
 nREPL endpoint are determined by the handlers and middleware stack used when
 starting that endpoint; the default middleware stack (described below) supports
 a particular set of operations, [detailed
-here](https://github.com/clojure/tools.nrepl/blob/master/doc/ops.md).
+here](https://github.com/cemerick/nrepl/blob/master/doc/ops.md).
 
 ### Embedding nREPL, starting a server
 
@@ -246,7 +238,7 @@ nREPL messages over sockets.  It is the latter that is used by default by
 `clojure.tools.nrepl.server/start-server` and `clojure.tools.nrepl/connect`.
 
 [Other nREPL transports are provided by the community]
-(https://github.com/clojure/tools.nrepl/wiki/Extensions).
+(https://github.com/cemerick/nrepl/wiki/Extensions).
 
 #### Handlers
 
@@ -335,10 +327,10 @@ user-specified middleware provided to
 merge works, we'll first need to talk about middleware "descriptors".
 
 [Other nREPL middlewares are provided by the community]
-(https://github.com/clojure/tools.nrepl/wiki/Extensions).
+(https://github.com/cemerick/nrepl/wiki/Extensions).
 
 (See [this documentation
-listing](https://github.com/clojure/tools.nrepl/blob/master/doc/ops.md) for
+listing](https://github.com/cemerick/nrepl/blob/master/doc/ops.md) for
 details as to the operations implemented by nREPL's default middleware stack,
 what each operation expects in request messages, and what they emit for
 responses.)
@@ -400,7 +392,7 @@ which provides "a machine- and human-readable directory and documentation for
 the operations supported by an nREPL endpoint" (see
 `clojure.tools.nrepl.middleware/describe-markdown`, and the results of
 `"describe"` and `describe-markdown`
-[here](https://github.com/clojure/tools.nrepl/blob/master/doc/ops.md)).
+[here](https://github.com/cemerick/nrepl/blob/master/doc/ops.md)).
 
 The `:requires` and `:expects` entries control the order in which
 middleware is applied to a base handler.  In the `add-stdin` example above,
@@ -529,6 +521,6 @@ initial design phases of nREPL:
 
 ## License
 
-Copyright © 2010 - 2013 Chas Emerick and contributors.
+Copyright © 2010 - 2017 Chas Emerick and contributors.
 
 Licensed under the EPL. (See the file epl.html.)
