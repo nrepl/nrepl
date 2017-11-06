@@ -13,7 +13,7 @@ nREPL is available in Maven central. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
 ```clojure
-[com.cemerick/nrepl "0.3.0"]
+[com.cemerick/nrepl "0.3.0-RC1"]
 ```
 
 Or, add this to your Maven project's `pom.xml`:
@@ -22,7 +22,7 @@ Or, add this to your Maven project's `pom.xml`:
 <dependency>
   <groupId>com.cemerick</groupId>
   <artifactId>nrepl</artifactId>
-  <version>0.3.0</version>
+  <version>0.3.0-RC1</version>
 </dependency>
 ```
 
