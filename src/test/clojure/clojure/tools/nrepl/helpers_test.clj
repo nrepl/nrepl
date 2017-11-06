@@ -37,7 +37,8 @@
     (helpers/load-file-command
       (File. project-base-dir "load-file-test/clojure/tools/nrepl/load_file_sample.clj")
       (File. project-base-dir "load-file-test")))
-  (is (= [{:file "clojure/tools/nrepl/load_file_sample.clj" :line 5}]
+  (is (= [{:file (.replace "clojure/tools/nrepl/load_file_sample.clj" "/" File/separator)
+           :line 5}]
          (repl-values session
            (nrepl/code 
              (-> #'clojure.tools.nrepl.load-file-sample/dfunction

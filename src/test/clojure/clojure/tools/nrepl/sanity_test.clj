@@ -99,7 +99,9 @@
         (prn #{})
         (flush)))
     
-    (is (= ["println\n" "abcdefghijm " "\n#{}\n"]
+    (is (= [(str "println" (System/getProperty "line.separator"))
+            "abcdefghijm "
+            "\n#{}\n"]
           (->> (repl/response-seq local 0)
             (map :out))))))
 
