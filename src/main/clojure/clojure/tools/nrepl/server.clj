@@ -11,7 +11,7 @@
                                             load-file)
             clojure.pprint)
   (:use [clojure.tools.nrepl.misc :only (returning response-for log)])
-  (:import (java.net Socket ServerSocket InetSocketAddress InetAddress)))
+  (:import (java.net Socket ServerSocket InetSocketAddress InetAddress SocketException)))
 
 (defn handle*
   [msg handler transport]
@@ -138,15 +138,21 @@
    The port that the server is open on is available in the :port slot of the
    server map (useful if the :port option is 0 or was left unspecified."
   [& {:keys [port bind transport-fn handler ack-port greeting-fn] :or {port 0}}]
-  (let [bind-addr (if bind
-                    (InetSocketAddress. ^String bind ^Integer port)
-                    (let [local (InetSocketAddress. "::" port)]
-                      (if (.isUnresolved local)
-                        (InetSocketAddress. "localhost" port)
-                        local)))
-        ss (doto (ServerSocket.)
-             (.setReuseAddress true)
-             (.bind bind-addr))
+  (let [addr (fn [^String bind ^Integer port] (InetSocketAddress. bind port))
+        make-ss #(doto (ServerSocket.)
+                   (.setReuseAddress true)
+                   (.bind %))
+        ss (if bind
+             (make-ss (addr bind port))
+             (let [address (addr "::" port)]
+               (if (.isUnresolved address)
+                 (make-ss (addr "localhost" port))
+                 (try
+                   (make-ss address)
+                   (catch SocketException e
+                     (if (= "Protocol family unavailable" (.getMessage e))
+                       (make-ss (addr "localhost" port))
+                       (throw e)))))))
         server (assoc
                  (Server. ss
                           (.getLocalPort ss)
