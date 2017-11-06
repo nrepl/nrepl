@@ -1,4 +1,4 @@
-# nREPL
+# nREPL [![Build Status](https://travis-ci.org/cemerick/nREPL.svg?branch=master)](https://travis-ci.org/cemerick/nREPL)
 
 [nREPL](http://github.com/clojure/tools.nrepl) is a Clojure *n*etwork REPL that
 provides a REPL server and client, along with some common APIs
