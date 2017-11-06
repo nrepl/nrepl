@@ -1,6 +1,5 @@
-language: clojure
-install: mvn install
-script: mvn test
+language: java
+script: mvn install
 jdk:
   - openjdk7
   - oraclejdk8
