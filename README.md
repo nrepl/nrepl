@@ -10,6 +10,18 @@ code in remote environments.
 Check the brief history of nREPL, available
 [here](https://github.com/cemerick/nREPL/blob/master/HISTORY.md).
 
+### Status
+
+Extremely stable.
+
+* The forthcoming `0.3.0` release will be a drop-in replacement for
+  `[org.clojure/tools.nrepl "0.2.13"]`.
+* A later `1.0.0` release will include fixes for all previously-reported but
+  languishing nREPL issues.
+* Future releases will focus on supporting the needs of the essential tools of
+  the Clojure[Script] ecosystem, e.g. Leiningen, CIDER, boot, Cursive, and so
+  on.
+
 ## Usage
 
 ### "Installation" <a name="installing"/>
