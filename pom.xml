@@ -16,11 +16,11 @@
         <developer>
             <name>Chas Emerick</name>
             <url>http://cemerick.com</url>
-            <email>cemerick@snowtide.com</email>
+            <email>chas@cemerick.com</email>
             <timezone>-5</timezone>
         </developer>
     </developers>
-    
+
     <scm>
         <connection>scm:git:git@github.com:cemerick/nrepl.git</connection>
         <developerConnection>scm:git:git@github.com:cemerick/nrepl.git</developerConnection>
@@ -30,7 +30,19 @@
     <properties>
         <clojure.version>1.2.0</clojure.version>
         <clojure.warnOnReflection>true</clojure.warnOnReflection>
+        <maven.test.skip>true</maven.test.skip>
+        <invoker.skip>true</invoker.skip>
     </properties>
+
+    <profiles>
+        <profile>
+            <id>all-tests</id>
+            <properties>
+                <maven.test.skip>false</maven.test.skip>
+                <invoker.skip>false</invoker.skip>
+            </properties>
+        </profile>
+    </profiles>
 
     <dependencies>
         <dependency>
@@ -207,28 +219,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>sign</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.5</version>
-                        <executions>
-                            <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals>
-                                    <goal>sign</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>
