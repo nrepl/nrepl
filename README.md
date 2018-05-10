@@ -24,7 +24,7 @@ Extremely stable.
 
 ## Usage
 
-### "Installation" <a name="installing"/>
+### Installation
 
 nREPL is available in Maven central. Add this to your Leiningen
 `project.clj` `:dependencies`:
