@@ -64,8 +64,8 @@ client/tool.  Tools that support nREPL include:
 * [Counterclockwise](https://github.com/laurentpetit/ccw) (Clojure IDE/plugin
   for Eclipse)
 * [Cursive](https://cursiveclojure.com) (Clojure IDE/plugin for IntelliJ Idea)
-* [cider](https://github.com/clojure-emacs/cider) (Clojure IDE and REPL
-  for Emacs)
+* [CIDER](https://github.com/clojure-emacs/cider) (Clojure Interactive
+  Development Environment that Rocks for Emacs)
 * [monroe](https://github.com/sanel/monroe) (nREPL client for Emacs)
 * [fireplace.vim](https://github.com/tpope/vim-fireplace) (Clojure + nREPL
   support for vim)
