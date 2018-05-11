@@ -30,16 +30,16 @@ nREPL is available in Maven central. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
 ```clojure
-[com.cemerick/nrepl "0.3.0-RC1"]
+[cider/nrepl "0.3.0-SNAPSHOT"]
 ```
 
 Or, add this to your Maven project's `pom.xml`:
 
 ```xml
 <dependency>
-  <groupId>com.cemerick</groupId>
+  <groupId>cider</groupId>
   <artifactId>nrepl</artifactId>
-  <version>0.3.0-RC1</version>
+  <version>0.3.0-SNAPSHOT</version>
 </dependency>
 ```
 
