@@ -1,4 +1,3 @@
-
 (ns ^{:author "Chas Emerick"}
      clojure.tools.nrepl.transport
   (:require [clojure.tools.nrepl.bencode :as be]
@@ -106,7 +105,7 @@
         (fn []
           (if s
             (.close s)
-            (do 
+            (do
               (.close in)
               (.close out))))))))
 
