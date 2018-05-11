@@ -26,7 +26,7 @@ Extremely stable.
 
 ### Installation
 
-nREPL is available in Maven central. Add this to your Leiningen
+nREPL is available in Clojars central. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
 ```clojure
@@ -118,7 +118,7 @@ the "type" of the operation to be performed.  The operations supported by an
 nREPL endpoint are determined by the handlers and middleware stack used when
 starting that endpoint; the default middleware stack (described below) supports
 a particular set of operations, [detailed
-here](https://github.com/cemerick/nrepl/blob/master/doc/ops.md).
+here](https://github.com/clojure-emacs/nrepl/blob/master/doc/ops.md).
 
 ### Embedding nREPL, starting a server
 
@@ -409,7 +409,7 @@ which provides "a machine- and human-readable directory and documentation for
 the operations supported by an nREPL endpoint" (see
 `clojure.tools.nrepl.middleware/describe-markdown`, and the results of
 `"describe"` and `describe-markdown`
-[here](https://github.com/cemerick/nrepl/blob/master/doc/ops.md)).
+[here](https://github.com/clojure-emacs/nrepl/blob/master/doc/ops.md)).
 
 The `:requires` and `:expects` entries control the order in which
 middleware is applied to a base handler.  In the `add-stdin` example above,
