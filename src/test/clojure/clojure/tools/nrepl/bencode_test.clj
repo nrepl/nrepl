@@ -9,15 +9,13 @@
 
 
 (ns clojure.tools.nrepl.bencode-test
-  (:import
-    java.io.ByteArrayInputStream
-    java.io.ByteArrayOutputStream
-    java.io.PushbackInputStream
-    clojure.lang.RT)
-  (:require [clojure.java.io :as io])
-  (:use
-    [clojure.test :only [deftest is are]]
-    [clojure.tools.nrepl.bencode :as bencode]))
+  (:require [clojure.test :refer [are deftest is]]
+            [clojure.tools.nrepl.bencode :as bencode :refer [read-bencode
+                                                             read-netstring
+                                                             write-bencode
+                                                             write-netstring]])
+  (:import clojure.lang.RT
+           [java.io ByteArrayInputStream ByteArrayOutputStream PushbackInputStream]))
 
 (defn #^{:private true} >bytes
   [#^String input]
