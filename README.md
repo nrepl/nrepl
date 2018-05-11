@@ -1,6 +1,6 @@
-# nREPL [![Build Status](https://travis-ci.org/cemerick/nREPL.svg?branch=master)](https://travis-ci.org/cemerick/nREPL)
+# nREPL [![Build Status](https://travis-ci.org/clojure-emacs/nREPL.svg?branch=master)](https://travis-ci.org/cemerick/nREPL)
 
-[nREPL](http://github.com/cemerick/nrepl) is a Clojure *n*etwork REPL that
+nREPL is a Clojure *n*etwork REPL that
 provides a REPL server and client, along with some common APIs
 of use to IDEs and other tools that may need to evaluate Clojure
 code in remote environments.
@@ -8,7 +8,7 @@ code in remote environments.
 ### How is this different from the "official" [tools.nrepl](https://github.com/clojure/tools.nrepl/) project?
 
 Check the brief history of nREPL, available
-[here](https://github.com/cemerick/nREPL/blob/master/HISTORY.md).
+[here](https://github.com/clojure-emacs/nREPL/blob/master/HISTORY.md).
 
 ### Status
 
@@ -255,7 +255,7 @@ nREPL messages over sockets.  It is the latter that is used by default by
 `clojure.tools.nrepl.server/start-server` and `clojure.tools.nrepl/connect`.
 
 [Other nREPL transports are provided by the community]
-(https://github.com/cemerick/nrepl/wiki/Extensions).
+(https://github.com/clojure-emacs/nrepl/wiki/Extensions).
 
 #### Handlers
 
@@ -344,10 +344,10 @@ user-specified middleware provided to
 merge works, we'll first need to talk about middleware "descriptors".
 
 [Other nREPL middlewares are provided by the community]
-(https://github.com/cemerick/nrepl/wiki/Extensions).
+(https://github.com/clojure-emacs/nrepl/wiki/Extensions).
 
 (See [this documentation
-listing](https://github.com/cemerick/nrepl/blob/master/doc/ops.md) for
+listing](https://github.com/clojure-emacs/nrepl/blob/master/doc/ops.md) for
 details as to the operations implemented by nREPL's default middleware stack,
 what each operation expects in request messages, and what they emit for
 responses.)
