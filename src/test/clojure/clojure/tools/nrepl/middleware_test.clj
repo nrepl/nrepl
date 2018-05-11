@@ -1,11 +1,9 @@
 (ns clojure.tools.nrepl.middleware-test
-  (:require (clojure.tools.nrepl.middleware
-              interruptible-eval
-              load-file
-              pr-values
-              session))
-  (:use [clojure.tools.nrepl.middleware :as middleware]
-        clojure.test))
+  (:require [clojure.test :refer :all]
+            [clojure.tools.nrepl.middleware :as middleware :refer [linearize-middleware-stack]]
+            clojure.tools.nrepl.middleware.interruptible-eval
+            clojure.tools.nrepl.middleware.load-file
+            clojure.tools.nrepl.middleware.session))
 
 ; wanted to just use resolve to avoid the long var names, but
 ; it seems that unqualified resolves *don't work* within the context of a
