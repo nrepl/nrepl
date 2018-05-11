@@ -8,17 +8,16 @@
   (let [[local remote] (piped-transports)]
     (doseq [x (range 10)] (t/send remote x))
     (is (= (range 10) (repl/response-seq local 0)))
-    
+
     ; ensure timeouts don't capture later responses
     (repl/response-seq local 100)
     (doseq [x (range 10)] (t/send remote x))
     (is (= (range 10) (repl/response-seq local 0)))))
 
 (deftest client
-  (let [[local remote] (piped-transports)
-        client (repl/client local 100)]
+  (let [[local remote] (piped-transports)]
     (doseq [x (range 10)] (t/send remote x))
-    (is (= (range 10) (client 17)))
+    (is (= (range 10) ((repl/client local 100) 17)))
     (is (= 17 (t/recv remote)))))
 
 (deftest client-heads

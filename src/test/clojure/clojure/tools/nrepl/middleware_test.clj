@@ -8,7 +8,7 @@
         clojure.test))
 
 ; wanted to just use resolve to avoid the long var names, but
-; it seems that unqualified resolves *don't work* within the context of a 
+; it seems that unqualified resolves *don't work* within the context of a
 ; clojure-maven-plugin test execution?!?
 (def ^{:private true} default-middlewares
   [#'clojure.tools.nrepl.middleware.session/add-stdin
@@ -21,7 +21,7 @@
 
 (defn- indexed-stack
   [x]
-  (->> x 
+  (->> x
     (map wonky-resolve)
     shuffle
     linearize-middleware-stack
@@ -39,7 +39,7 @@
          'interruptible-eval 'session
          'wrap-describe 'pr-values
          'interruptible-eval 'pr-values))
-  
+
   (let [n ^{::middleware/descriptor
             {:expects #{"clone"} :requires #{}}} {:dummy :middleware2}
         m ^{::middleware/descriptor
@@ -55,7 +55,7 @@
          'session n
          q 'wrap-describe
          m n
-         
+
          'interruptible-eval 'wrap-load-file
          'interruptible-eval 'session
          'wrap-describe 'pr-values

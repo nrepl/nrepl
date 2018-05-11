@@ -91,7 +91,7 @@
                      (set! *1 (@bindings #'*1))
                      (set! *2 (@bindings #'*2))
                      (set! *3 (@bindings #'*3))
-                     (set! *e (@bindings #'*e)))   
+                     (set! *e (@bindings #'*e)))
             :read (if (string? code)
                     (let [reader (source-logging-pushback-reader code line column)]
                       (if reader-conditionals?
@@ -222,7 +222,7 @@
                (evaluate @session msg)
                (t/send transport (response-for msg :status :done))
                (alter-meta! session dissoc :thread :eval-msg)))))
-      
+
        "interrupt"
        ; interrupts are inherently racy; we'll check the agent's :eval-msg's :id and
        ; bail if it's different than the one provided, but it's possible for
@@ -243,7 +243,7 @@
                (.stop thread)
                (t/send transport (response-for msg :status #{:done}))))
            (t/send transport (response-for msg :status #{:error :interrupt-id-mismatch :done}))))
-      
+
        (h msg)))))
 
 (set-descriptor! #'interruptible-eval
