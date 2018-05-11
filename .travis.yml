@@ -1,6 +1,70 @@
-language: java
-script: mvn -Pall-tests install
+language: clojure
+lein: 2.8.1
+sudo: false
+cache:
+  directories:
+    - $HOME/.m2
+script:
+  - make $TARGET
+env:
+  matrix:
+    - VERSION=1.8 TARGET=test
+    - VERSION=1.9 TARGET=test
+  global:
+    - secure: "BhXYh0WHTAzxFTEJHepjb3iBCRUiN+vvCKm8P0G89ZeuJIZ4wfI0lFxA46KPMFe42w4hFUYdrhoV5/BcUE16o1F/OThBIEmTuF4KaKjBaBBGkZuOOMdkgbXCAeiqrY97D/Stxwq0k/udYYm3VtzWb+RBXEgM+jxbTg8We4csl1R4uDoEZKbqF25PaJNMLfxcH9e94XpZDlSfJmqKkr/s9HrH+X5lnPLx5g2/MJLk1O96UDQwSSoX94wQerMDRDFBEXD2DOlNgYi4bkWGoCBkIgzyS5haCSohi/gxhnJkZXOExkjFiLYibK0nqA6tRdK9TdETTjTPpPVojO9R76WxaSQwsWEQevGGnDmDfX/WUYHpLBGRVUl47GlQ+KA05lQtkqH5Gs87qsw7ItHq43uE3AsdoWrZCHzKeumlBExz/stx59sWX888F/AOo0fRVh+HAMCMkkl2R6NQoT8IAOszpjl0V4SDeLx7i+SvMKuMC/gsk859O1PmJN6CS7x4x0Y7iTA+eRnKYxwkJIzZMiaWfV7IZmnHWN6C8lU7al0yRmUWKJhTnl6ysuN7r1ceY4NSnZDgibjUH94b4lu2YRjXdTyQgnlfSfsPsoSRb1dcZul4XWQKdRt+pcZgW2yToRUKA4lBA2NK3yLyHVf8lZ2OTMYMGgRXUrU8AJ7r8c3n5kM="
+    - secure: "FjWsaYElco5BM3MeBxU7O00JBWjIccadpGLPzW2frx1ridDemJjOQ+J2z3UBfQkhI5q5Hc9p2lnozmbKl2Lz91krZH2akVtL/91t0XFJTmIQNjbHr8T4ErIMA78Ol1lfJAsMUenZUXORu2HUVeP5kbQdkgBfcP4cCOrsEYKurcrp9+aZhYkjIKheAc6yHGmIwd0M4C1YlGFEREwuTAGE0bMyQodp154o6LNyQmDii+vTPGGyz7YPGrXH3+UQ9+T5WQKse+ztghwIsqwy03fMvme0VLwKrgywcV2ewy+fOzAzHVx6LvDbY5W5rw9lsu+7NIlEpQ90cgXEdMQSHYjr1v97QomSfAVZUNYE6o7LQ7/wtv5Dxmhg6f+IeRnGUOFQI9smSSGbiyWaim2BJ9Xv4309n8jHhb7+klfX8cBM9PZVm3EvUh+e4xfSi/hjluA4wneXXtPsCUkztAtexo5rh3PDrqq+Aotuy4Mh7BL+dO6BKLT2sqc9daZqAnDHb0tYvJXclT95nbEtWS5dmrj17Nl12ajl1tH1zeG7cJbserPNVn5qvpsGjLMF6pZUqKp/pBanHUJOlYSbcJsTho08SedihU5NBLKcRg9vr7PcesA2WN7m2Yaqjt24QOLTHzPg8JKp0qzA1f5gjmXuzZBjFc28W5I/dZzJO45axZ+cqig="
+    - secure: "JwfmSlhQuGOxjRthnA7/qxv2cwGU1dEa9+2brJLLC4Om47CluOAJydUxEfdsr7JF8YOH9NWbSxz4jyEMCAa9qRy74b16WxPembMA1UtESScWZgSsHyuSGRqiGGUBWrbLV+GO09i2Dvj+9i0Kx+3Us/dtyrYq2mWomwXHC3O9h/HNAYsvfpLryN0JKe8uDu4s1D03RjXXlTiHvIj7bgIGu14o46wb7e+iI79rFbXd6+uB0WlYmgAr2tF40CQDdnrEw80g6ctQaxa5tj0ICQmrTm4FLpJ47W5OnXQU75iOy9VkFKIhluUP05R2NILG0gJXauE2Db+d87GNcaDIagSO30AuigCEP6dd/YqwGHtLS2FVpF6/UYpN83mujjSIVzEOepxXZ2cJRaHm5P1VUN2Qx/exc2vpQgAJAzZs4154s84z2UPr+B0irHQvWcMrEtZGfjTotKI7SqYAtstfRKKHbyVIu//Mh951ioTC0BQGmULvTU1maQ9pdAYUTGIlKOHaqbVfSqOnNHhuNh9YyPR16BRh1AjYRfMMQxdvbOSLLi56VCsdr5YyWGDJBYfR0GE1+Y3vbRlYwd8yUmNbhdLs8daGpubNjBX2/IQmj84VJWUVBWlYnfAN+DFVKDLBq69OaXmmDjzgpgrrzhQXrvgKcoSfPZ6nMnZogTkpJxy8IY4="
+    - secure: "jVAi+oFZm5Rda8xYaSP+pchkmODkvL8Kz0nNuzmQY/TYBVT/rQP5lBoeY8DRA38OCD8IO7577WySmNz5UqKwWS/gXbn+fOIqrJJ/xeDveyMNaRn79ZyF6rbncsinFvTDOzpa8D0U/HFfp/0wGuMCMcby+vnygwjovXAioPKqw+gtb8tXHpaahGzBysaClWllSkz54ANXbUwWR17v+aXbyTNlP7ObmN9CXmHWEzjUN5CI2fN72SLwB784g12jdm+Vger3FlPEkw21DfnAq9rk9Brj98Y91iY/BvuF2lNsqOUVfqVGo3M12s2TxHSLmOwkmT3fLlbhp4kq1QTFyhSA9lBYzHgjL356UyMJju6cRtBge9phwMcpOF0e9vdReTxcVu7G0oCEUjNA2E87mb/cZlZfqTzjins0p5WBjEDvzjoY6yqOBQp48vUTf1WCbdmnUd3pnOMj6p5QxpMfJYWLXfM8tnAg0ss9mP7zpOHbCEYaEaFCAmGTFA+MCrKBixUt3iFYF1JisZkWkyzYVECM+kOfBjMKyh/1JGjxqMwK54NYPy9g2pc7/dVQnZXN0aCRPrt3yFHLZRsZCWt0RAbAN26dykN00U+aCLWWwO2CV0ij6vAZSwmGwNBcXYSaQJlHkfdksSv49N98qSK7A4ye4he46X08QxYpeEDL2CqzqkE="
 jdk:
-  - openjdk7
   - oraclejdk8
   - oraclejdk9
+stages:
+  - name: check
+  - name: test
+  # Deploy only from the home repo where the credentials can be
+  # properly decrypted. Never deploy from a pull request job.
+  # In addition, ensure we're on the master branch (snapshots)
+  # or a branch with semver naming (releases).
+  - name: deploy
+    if: repo = clojure-emacs/nREPL
+        AND type != pull_request
+        AND ( branch = master OR branch =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ )
+jobs:
+  include:
+    # Test latest OpenJDK against latest Clojure stable
+    - env: VERSION=1.9 TARGET=test
+      jdk: openjdk8
+
+    # Test Clojure master against a single JDK
+    - env: VERSION=master TARGET=test
+      jdk: oraclejdk8
+
+    # Coverage analysis
+    - env: VERSION=1.9 TARGET=cloverage
+      jdk: oraclejdk8
+      after_success: bash <(curl -s https://codecov.io/bash) -f target/coverage/codecov.json
+
+    # Eastwood linter
+    - stage: check
+      env: VERSION=1.9 TARGET=eastwood
+      jdk: oraclejdk8
+
+    # Check cljfmt
+    - stage: check
+      env: VERSION=1.9 TARGET=cljfmt
+      jdk: oraclejdk8
+
+    # Deploy documentation
+    - stage: deploy
+      env: TARGET=docs
+      jdk: oraclejdk8
+
+    # Deploy artifacts
+    - stage: deploy
+      env: TARGET=deploy
+      jdk: oraclejdk8
+
+  fast_finish: true      # don't wait for allowed failures before build finish
+  allow_failures:
+    - env: VERSION=master TARGET=test
+    - env: VERSION=1.9 TARGET=cloverage
