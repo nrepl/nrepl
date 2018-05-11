@@ -22,10 +22,10 @@
 
 (deftest client-heads
   (let [[local remote] (piped-transports)
-        client (repl/client local Long/MAX_VALUE)
-        all-seq (client)]
+        client1 (repl/client local Long/MAX_VALUE)
+        all-seq (client1)]
     (doseq [x (range 10)] (t/send remote x))
     (is (= [0 1 2] (take 3 all-seq)))
-    (is (= (range 3 7) (take 4 (client :a))))
+    (is (= (range 3 7) (take 4 (client1 :a))))
     (is (= :a (t/recv remote)))
     (is (= (range 10) (take 10 all-seq)))))
