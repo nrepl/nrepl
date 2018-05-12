@@ -33,12 +33,12 @@
 (defn fn-transport
   "Returns a Transport implementation that delegates its functionality
    to the 2 or 3 functions provided."
-  ([read write] (fn-transport read write nil))
-  ([read write close]
+  ([transport-read write] (fn-transport transport-read write nil))
+  ([transport-read write close]
     (let [read-queue (SynchronousQueue.)
           msg-pump (future (try
                              (while true
-                               (.put read-queue (read)))
+                               (.put read-queue (transport-read)))
                              (catch Throwable t
                                (.put read-queue t))))]
       (FnTransport.
