@@ -140,7 +140,7 @@
   "Topologically sorts the given middlewares according to the comparator,
   with the added huristic that any middlewares that have no dependencies
   will be sorted toward the end."
-  [comparator stack]
+  [komparator stack]
   (let [stack (vec stack)
         ;; using indexes into the above vector as the vertices in the
         ;; graph algorithm, will translate back into middlewares at
@@ -148,7 +148,7 @@
         vertices (range (count stack))
         edges (for [i1 vertices
                     i2 (range i1)
-                    :let [x (comparator (stack i1) (stack i2))]
+                    :let [x (komparator (stack i1) (stack i2))]
                     :when (not= 0 x)]
                 (if (neg? x) [i1 i2] [i2 i1]))
         ;; the trivial vertices have no connections, and we pull them
