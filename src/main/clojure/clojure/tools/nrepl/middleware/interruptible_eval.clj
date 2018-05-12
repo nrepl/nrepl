@@ -140,8 +140,7 @@
           (.setDaemon true))))))
 
 (def ^{:private true} jdk6? (try
-                              (Class/forName "java.util.ServiceLoader")
-                              true
+                              (class? (Class/forName "java.util.ServiceLoader"))
                               (catch ClassNotFoundException e false)))
 
 ; this is essentially the same as Executors.newCachedThreadPool, except
