@@ -17,5 +17,4 @@ reconstituting an environment where the people most interested in and impacted
 by nREPL could participate in its development as easily as possible.
 
 Cheers,
-
-- Chas
+Chas
