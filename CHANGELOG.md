@@ -1,5 +1,9 @@
 ## Changelog
 
+* `clojure.tools.nrepl.misc/log` now logs all the arguments passed in,
+  without enforcing the conversion to Throwable even when the argument
+  is not an instance of Throwable.
+
 [`0.3.0`](https://github.com/clojure-emacs/nREPL/milestone/2?closed=1):
 
 * Materially identical to `[org.clojure/tools.nrepl "0.2.13"]`, but released under
