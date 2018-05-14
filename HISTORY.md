@@ -16,5 +16,5 @@ Eventually, I proposed migrating nREPL out of Clojure Contrib in the summer of
 reconstituting an environment where the people most interested in and impacted
 by nREPL could participate in its development as easily as possible.
 
-Cheers,
+Cheers,<br/>
 Chas
