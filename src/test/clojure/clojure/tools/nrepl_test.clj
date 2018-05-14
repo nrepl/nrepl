@@ -369,7 +369,7 @@
         ; no deref with timeout in Clojure 1.2.0 :-(
         (try
           (.get reader 10000 java.util.concurrent.TimeUnit/MILLISECONDS)
-          (is false "A reader started prior to the server closing should throw an error...")
+          (assert false "A reader started prior to the server closing should throw an error...")
           (catch Throwable e
             (is (disconnection-exception? e)))))
 
@@ -391,7 +391,7 @@
         ; these responses were on the wire before the remote transport was closed
         (is (> 20 (count resp)))
         (transport/recv transport)
-        (is false "reads after the server is closed should fail")
+        (assert false "reads after the server is closed should fail")
         (catch Throwable t
           (is (disconnection-exception? t)))))
 
