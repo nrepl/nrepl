@@ -1,3 +1,5 @@
+## There and Back Again
+
 nREPL has had an unusual history, which seems worthwhile documenting here.
 
 nREPL started as a personal project of mine @ https://github.com/cemerick/nREPL
@@ -18,3 +20,19 @@ by nREPL could participate in its development as easily as possible.
 
 Cheers,<br/>
 Chas
+
+--------------------------------------------------------------------------------
+
+## To Infinity and Beyond
+
+In the spring of 2018 Chas decided to hand over the development of
+nREPL to the team behind CIDER and the efforts to build awesome
+Clojure dev tools powered by editor-independent nREPL middleware
+(e.g. `cider-nrepl`, `refactor-nrepl`, `piggieback`), therefore the
+current "home" address of nREPL. We're really excited to advance nREPL
+forward and to build many sweet REPLs on top of it!
+
+Looking forward to seeing you around! We need all the help we can get!
+
+Cheers,<br/>
+Bozhidar (a.k.a. Bug)
