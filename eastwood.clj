@@ -11,6 +11,13 @@
   :reason "The `break` macro commonly expands to contain an `if` with a condition that is a constant."})
 
 (disable-warning
+ {:linter :constant-test
+  :for-macro 'clojure.core/while
+  :if-inside-macroexpansion-of #{'clojure.core/let}
+  :within-depth 5
+  :reason "`while` macroexpands to an `if` clause without the else part, so warning about it is redundant."})
+
+(disable-warning
  {:linter :suspicious-expression
   ;; specifically, those detected in function suspicious-macro-invocations
   :for-macro 'clojure.core/let
