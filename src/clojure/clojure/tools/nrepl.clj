@@ -226,8 +226,8 @@
   (throw (IllegalArgumentException.
           (format "No nREPL support known for scheme %s, url %s" (uri-scheme uri) uri))))
 
-(def ^{:doc "Current version of nREPL, map of :major, :minor, :incremental, and :qualifier."}
-  version
+(def version
+  "Current version of nREPL, map of :major, :minor, :incremental, and :qualifier."
   (when-let [in (.getResourceAsStream (class connect) "/clojure/tools/nrepl/version.txt")]
     (with-open [^java.io.BufferedReader reader (io/reader in)]
       (let [version-string (-> reader .readLine .trim)]
