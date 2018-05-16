@@ -1,9 +1,10 @@
 (defproject cider/nrepl "0.3.0-SNAPSHOT"
   :min-lein-version "2.6.1"
-  :resource-paths ["src/main/resources"]
-  :source-paths ["src/main/clojure"]
-  :java-source-paths ["src/main/java"]
-  :test-paths ["src/test/clojure"]
+  :source-paths ["src/clojure"]
+  :java-source-paths ["src/java"]
+  :test-paths ["test/clojure"]
+
+  :dependencies [[org.clojure/tools.logging "0.4.1"]]
 
   :aliases {"bump-version" ["change" "version" "leiningen.release/bump-version"]}
 
@@ -21,8 +22,7 @@
 
   :profiles {
              ;; Clojure versions matrix
-             :provided {:dependencies [[org.clojure/clojure "1.9.0"]
-                                       [org.clojure/tools.logging "0.4.1"]]}
+             :provided {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :master {:repositories [["snapshots"
