@@ -1,7 +1,6 @@
-
-(ns ^{:doc "Support for persistent, cross-connection REPL sessions."
-      :author "Chas Emerick"}
- clojure.tools.nrepl.middleware.session
+(ns clojure.tools.nrepl.middleware.session
+  "Support for persistent, cross-connection REPL sessions."
+  {:author "Chas Emerick"}
   (:use [clojure.tools.nrepl.misc :only (uuid response-for returning log)]
         [clojure.tools.nrepl.middleware.interruptible-eval :only (*msg*)]
         [clojure.tools.nrepl.middleware :only (set-descriptor!)])

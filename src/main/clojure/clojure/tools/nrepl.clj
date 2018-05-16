@@ -1,6 +1,6 @@
-(ns ^{:doc "High level nREPL client support."
-      :author "Chas Emerick"}
- clojure.tools.nrepl
+(ns clojure.tools.nrepl
+  "High level nREPL client support."
+  {:author "Chas Emerick"}
   (:require [clojure.tools.nrepl.transport :as transport]
             clojure.set
             [clojure.java.io :as io])

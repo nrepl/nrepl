@@ -1,10 +1,8 @@
-(ns #^{:doc ""
-       :author "Chas Emerick"}
-      clojure.tools.nrepl.cmdline-test
+(ns clojure.tools.nrepl.cmdline-test
+  {:author "Chas Emerick"}
   (:use [clojure.tools.nrepl-test :only (def-repl-test repl-server-fixture *server*)]
         clojure.test)
-  (:require
-   [clojure.tools.nrepl :as repl]))
+  (:require [clojure.tools.nrepl :as repl]))
 
 (use-fixtures :once repl-server-fixture)
 

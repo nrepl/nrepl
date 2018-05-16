@@ -1,5 +1,5 @@
-(ns ^{:author "Chas Emerick"}
- clojure.tools.nrepl.transport
+(ns clojure.tools.nrepl.transport
+  {:author "Chas Emerick"}
   (:require [clojure.tools.nrepl.bencode :as be]
             [clojure.java.io :as io]
             (clojure walk set))

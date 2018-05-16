@@ -1,8 +1,8 @@
-(ns #^{:doc "A proof-of-concept command-line client for nREPL.  Please see
-e.g. reply for a proper command-line nREPL client @
-https://github.com/trptcolin/reply/"
-       :author "Chas Emerick"}
-      clojure.tools.nrepl.cmdline
+(ns clojure.tools.nrepl.cmdline
+  "A proof-of-concept command-line client for nREPL.  Please see
+  e.g. reply for a proper command-line nREPL client @
+  https://github.com/trptcolin/reply/"
+  {:author "Chas Emerick"}
   (:require [clojure.tools.nrepl :as repl]
             [clojure.tools.nrepl.transport :as transport])
   (:use (clojure.tools.nrepl [server :only (start-server)]
