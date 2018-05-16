@@ -1,5 +1,5 @@
-(ns ^{:author "Chas Emerick"}
- clojure.tools.nrepl.describe-test
+(ns clojure.tools.nrepl.describe-test
+  {:author "Chas Emerick"}
   (:use [clojure.tools.nrepl-test :only (def-repl-test repl-server-fixture
                                           project-base-dir)]
         clojure.test)

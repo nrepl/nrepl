@@ -7,9 +7,9 @@
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
 
-(ns #^{:author "Meikel Brandmeyer"
-       :doc "A netstring and bencode implementation for Clojure."}
-      clojure.tools.nrepl.bencode
+(ns clojure.tools.nrepl.bencode
+  "A netstring and bencode implementation for Clojure."
+  {:author "Meikel Brandmeyer"}
   (:require [clojure.java.io :as io])
   (:import (java.io IOException EOFException ByteArrayOutputStream
                     InputStream OutputStream PushbackInputStream)

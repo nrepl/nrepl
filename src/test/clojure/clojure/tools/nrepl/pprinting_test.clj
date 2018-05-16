@@ -1,6 +1,5 @@
-(ns #^{:doc ""
-       :author "Chas Emerick"}
-      clojure.tools.nrepl.pprinting-test
+(ns clojure.tools.nrepl.pprinting-test
+  {:author "Chas Emerick"}
   (:use [clojure.tools.nrepl-test :only (def-repl-test repl-server-fixture)]
         clojure.test)
   (:require [clojure.tools.nrepl :as repl]))

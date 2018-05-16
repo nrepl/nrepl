@@ -1,5 +1,5 @@
-(ns ^{:author "Chas Emerick"}
- clojure.tools.nrepl.helpers
+(ns clojure.tools.nrepl.helpers
+  {:author "Chas Emerick"}
   (:require [clojure.tools.nrepl.middleware.load-file :as load-file])
   (:import (java.io File StringReader)))
 

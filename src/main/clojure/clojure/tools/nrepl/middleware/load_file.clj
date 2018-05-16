@@ -1,5 +1,5 @@
-(ns ^{:author "Chas Emerick"}
- clojure.tools.nrepl.middleware.load-file
+(ns clojure.tools.nrepl.middleware.load-file
+  {:author "Chas Emerick"}
   (:require [clojure.tools.nrepl.middleware.interruptible-eval :as eval]
             [clojure.tools.nrepl.transport :as t])
   (:import clojure.tools.nrepl.transport.Transport)
@@ -25,7 +25,7 @@ be loaded."} file-contents (atom {}))
   [file file-path file-name]
   ; mini TTL impl so that any code orphaned by errors that occur
   ; between here and the evaluation of the Compiler/load expression
-  ; below are cleaned up on subsequent loads  
+  ; below are cleaned up on subsequent loads
   (let [t (System/currentTimeMillis)
         file-key ^{:t t} [file-path (gensym)]]
     (swap! file-contents

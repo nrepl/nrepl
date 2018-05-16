@@ -1,5 +1,5 @@
-(ns ^{:author "Chas Emerick"}
- clojure.tools.nrepl.middleware.interruptible-eval
+(ns clojure.tools.nrepl.middleware.interruptible-eval
+  {:author "Chas Emerick"}
   (:require [clojure.tools.nrepl.transport :as t]
             clojure.tools.nrepl.middleware.pr-values
             clojure.main)

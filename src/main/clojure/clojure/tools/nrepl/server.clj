@@ -1,6 +1,6 @@
-(ns ^{:doc "Default server implementations"
-      :author "Chas Emerick"}
- clojure.tools.nrepl.server
+(ns clojure.tools.nrepl.server
+  "Default server implementations"
+  {:author "Chas Emerick"}
   (:require [clojure.tools.nrepl :as repl]
             (clojure.tools.nrepl [ack :as ack]
                                  [transport :as t]
@@ -120,7 +120,7 @@
 
 (defn start-server
   "Starts a socket-based nREPL server.  Configuration options include:
- 
+
    * :port — defaults to 0, which autoselects an open port
    * :bind — bind address, by default \"::\" (falling back to \"localhost\"
        if \"::\" isn't resolved by the underlying network stack)

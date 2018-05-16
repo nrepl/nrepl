@@ -1,5 +1,5 @@
-(ns ^{:author "Chas Emerick"}
- clojure.tools.nrepl.load-file-test
+(ns clojure.tools.nrepl.load-file-test
+  {:author "Chas Emerick"}
   (:import (java.io File))
   (:use [clojure.tools.nrepl-test :only (def-repl-test repl-server-fixture
                                           project-base-dir)]
