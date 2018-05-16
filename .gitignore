@@ -16,3 +16,7 @@ classes
 target
 
 .externalToolBuilders
+
+/.lein*
+/.nrepl-port
+pom.xml
