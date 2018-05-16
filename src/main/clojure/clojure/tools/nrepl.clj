@@ -1,6 +1,6 @@
 (ns ^{:doc "High level nREPL client support."
       :author "Chas Emerick"}
-  clojure.tools.nrepl
+ clojure.tools.nrepl
   (:require [clojure.tools.nrepl.transport :as transport]
             clojure.set
             [clojure.java.io :as io])
@@ -16,7 +16,7 @@
    millis to arrive."
   ([transport] (response-seq transport Long/MAX_VALUE))
   ([transport timeout]
-    (take-while identity (repeatedly #(transport/recv transport timeout)))))
+   (take-while identity (repeatedly #(transport/recv transport timeout)))))
 
 (defn client
   "Returns a fn of zero and one argument, both of which return the current head of a single
@@ -36,14 +36,14 @@
                        (System/nanoTime))
         tracking-seq (fn tracking-seq [responses]
                        (lazy-seq
-                         (if (seq responses)
-                           (let [rst (tracking-seq (rest responses))]
-                             (update rst)
-                             (cons (first responses) rst))
-                           (do (update nil) nil))))
+                        (if (seq responses)
+                          (let [rst (tracking-seq (rest responses))]
+                            (update rst)
+                            (cons (first responses) rst))
+                          (do (update nil) nil))))
         restart #(let [head (-> transport
-                              (response-seq response-timeout)
-                              tracking-seq)]
+                                (response-seq response-timeout)
+                                tracking-seq)]
                    (reset! latest-head [0 head])
                    head)]
     ^{::transport transport ::timeout response-timeout}
@@ -51,8 +51,8 @@
       ([] (or (second @latest-head)
               (restart)))
       ([msg]
-        (transport/send transport msg)
-        (this)))))
+       (transport/send transport msg)
+       (this)))))
 
 (defn- take-until
   "Like (take-while (complement f) coll), but includes the first item in coll that
@@ -66,14 +66,14 @@
   (with-meta
     (comp (partial take-until (comp #(seq (clojure.set/intersection % termination-statuses))
                                     set
-                                    :status)) 
+                                    :status))
           (let [keys (keys delimited-slots)]
             (partial filter #(= delimited-slots (select-keys % keys))))
           client
           #(merge % delimited-slots))
     (-> (meta client)
-      (update-in [::termination-statuses] (fnil into #{}) termination-statuses)
-      (update-in [::taking-until] merge delimited-slots))))
+        (update-in [::termination-statuses] (fnil into #{}) termination-statuses)
+        (update-in [::taking-until] merge delimited-slots))))
 
 (defn message
   "Sends a message via [client] with a fixed message :id added to it.
@@ -92,7 +92,7 @@
   (let [resp (first (message client (merge {:op "clone"} (when clone {:session clone}))))]
     (or (:new-session resp)
         (throw (IllegalStateException.
-                 (str "Could not open new session; :clone response: " resp))))))
+                (str "Could not open new session; :clone response: " resp))))))
 
 (defn client-session
   "Returns a function of one argument.  Accepts a message that is sent via the
@@ -115,16 +115,16 @@
      - string values (associated with e.g. :out and :err) are concatenated"
   [responses]
   (reduce
-    (fn [m [k v]]
-      (case k
-        (:id :ns) (assoc m k v)
-        :value (update-in m [k] (fnil conj []) v)
-        :status (update-in m [k] (fnil into #{}) v)
-        :session (update-in m [k] (fnil conj #{}) v)
-        (if (string? v)
-          (update-in m [k] #(str % v))
-          (assoc m k v))))            
-    {} (apply concat responses)))
+   (fn [m [k v]]
+     (case k
+       (:id :ns) (assoc m k v)
+       :value (update-in m [k] (fnil conj []) v)
+       :status (update-in m [k] (fnil into #{}) v)
+       :session (update-in m [k] (fnil conj #{}) v)
+       (if (string? v)
+         (update-in m [k] #(str % v))
+         (assoc m k v))))
+   {} (apply concat responses)))
 
 (defn code*
   "Returns a single string containing the pr-str'd representations
@@ -159,9 +159,9 @@
    therein."
   [responses]
   (->> responses
-    (map read-response-value)
-    combine-responses
-    :value))
+       (map read-response-value)
+       combine-responses
+       :value))
 
 (defn connect
   "Connects to a socket-based REPL at the given host (defaults to localhost) and port,
@@ -224,15 +224,15 @@
 (defmethod url-connect :default
   [uri]
   (throw (IllegalArgumentException.
-           (format "No nREPL support known for scheme %s, url %s" (uri-scheme uri) uri))))
+          (format "No nREPL support known for scheme %s, url %s" (uri-scheme uri) uri))))
 
 (def ^{:doc "Current version of nREPL, map of :major, :minor, :incremental, and :qualifier."}
-      version
+  version
   (when-let [in (.getResourceAsStream (class connect) "/clojure/tools/nrepl/version.txt")]
     (with-open [^java.io.BufferedReader reader (io/reader in)]
       (let [version-string (-> reader .readLine .trim)]
-        (assoc (->> version-string 
-                 (re-find #"(\d+)\.(\d+)\.(\d+)-?(.*)")
-                 rest
-                 (zipmap [:major :minor :incremental :qualifier]))
+        (assoc (->> version-string
+                    (re-find #"(\d+)\.(\d+)\.(\d+)-?(.*)")
+                    rest
+                    (zipmap [:major :minor :incremental :qualifier]))
                :version-string version-string)))))

@@ -1,7 +1,7 @@
 
 (ns ^{:doc "Support for persistent, cross-connection REPL sessions."
       :author "Chas Emerick"}
-     clojure.tools.nrepl.middleware.session
+ clojure.tools.nrepl.middleware.session
   (:use [clojure.tools.nrepl.misc :only (uuid response-for returning log)]
         [clojure.tools.nrepl.middleware.interruptible-eval :only (*msg*)]
         [clojure.tools.nrepl.middleware :only (set-descriptor!)])
@@ -61,47 +61,47 @@
   (let [input-queue (LinkedBlockingQueue.)
         request-input (fn []
                         (cond (> (.size input-queue) 0)
-                                (.take input-queue)
+                              (.take input-queue)
                               *skipping-eol*
-                                nil
+                              nil
                               :else
-                                (do
-                                  (t/send transport
-                                          (response-for *msg* :session session-id
-                                                        :status :need-input))
-                                  (.take input-queue))))
+                              (do
+                                (t/send transport
+                                        (response-for *msg* :session session-id
+                                                      :status :need-input))
+                                (.take input-queue))))
         do-read (fn [buf off len]
                   (locking input-queue
                     (loop [i off]
                       (cond
                         (>= i (+ off len))
-                          (+ off len)
+                        (+ off len)
                         (.peek input-queue)
-                          (do (aset-char buf i (char (.take input-queue)))
+                        (do (aset-char buf i (char (.take input-queue)))
                             (recur (inc i)))
                         :else
-                          i))))
+                        i))))
         reader (LineNumberingPushbackReader.
-                 (proxy [Reader] []
-                   (close [] (.clear input-queue))
-                   (read
-                     ([]
-                      (let [^Reader this this] (proxy-super read)))
-                     ([x]
-                      (let [^Reader this this]
-                        (if (instance? java.nio.CharBuffer x)
-                          (proxy-super read ^java.nio.CharBuffer x)
-                          (proxy-super read ^chars x))))
-                     ([^chars buf off len]
-                      (if (zero? len)
-                        -1
-                        (let [first-character (request-input)]
-                          (if (or (nil? first-character) (= first-character -1))
-                            -1
-                            (do
-                              (aset-char buf off (char first-character))
-                              (- (do-read buf (inc off) (dec len))
-                                 off)))))))))]
+                (proxy [Reader] []
+                  (close [] (.clear input-queue))
+                  (read
+                    ([]
+                     (let [^Reader this this] (proxy-super read)))
+                    ([x]
+                     (let [^Reader this this]
+                       (if (instance? java.nio.CharBuffer x)
+                         (proxy-super read ^java.nio.CharBuffer x)
+                         (proxy-super read ^chars x))))
+                    ([^chars buf off len]
+                     (if (zero? len)
+                       -1
+                       (let [first-character (request-input)]
+                         (if (or (nil? first-character) (= first-character -1))
+                           -1
+                           (do
+                             (aset-char buf off (char first-character))
+                             (- (do-read buf (inc off) (dec len))
+                                off)))))))))]
     {:input-queue input-queue
      :stdin-reader reader}))
 
@@ -113,26 +113,26 @@
    merged in."
   ([transport] (create-session transport {}))
   ([transport baseline-bindings]
-    (clojure.main/with-bindings
-      (let [id (uuid)
-            out (session-out :out id transport)
-            {:keys [input-queue stdin-reader]} (session-in id transport)]
-        (binding [*out* out
-                  *err* (session-out :err id transport)
-                  *in* stdin-reader
-                  *ns* (create-ns 'user)
-                  *out-limit* (or (baseline-bindings #'*out-limit*) 1024)
+   (clojure.main/with-bindings
+     (let [id (uuid)
+           out (session-out :out id transport)
+           {:keys [input-queue stdin-reader]} (session-in id transport)]
+       (binding [*out* out
+                 *err* (session-out :err id transport)
+                 *in* stdin-reader
+                 *ns* (create-ns 'user)
+                 *out-limit* (or (baseline-bindings #'*out-limit*) 1024)
                   ; clojure.test captures *out* at load-time, so we need to make sure
                   ; runtime output of test status/results is redirected properly
                   ; TODO is this something we need to consider in general, or is this
                   ; specific hack reasonable?
-                  clojure.test/*test-out* out]
+                 clojure.test/*test-out* out]
           ; nrepl.server happens to use agents for connection dispatch
           ; don't capture that *agent* binding for userland REPL sessions
-          (atom (merge baseline-bindings (dissoc (get-thread-bindings) #'*agent*))
-            :meta {:id id
-                   :stdin-reader stdin-reader
-                   :input-queue input-queue}))))))
+         (atom (merge baseline-bindings (dissoc (get-thread-bindings) #'*agent*))
+               :meta {:id id
+                      :stdin-reader stdin-reader
+                      :input-queue input-queue}))))))
 
 (defn- register-session
   "Registers a new session containing the baseline bindings contained in the
@@ -188,30 +188,30 @@
             "clone" (register-session msg)
             "close" (close-session msg)
             "ls-sessions" (t/send transport (response-for msg :status :done
-                                                              :sessions (or (keys @sessions) [])))
+                                                          :sessions (or (keys @sessions) [])))
             (h msg)))))))
 
 (set-descriptor! #'session
-  {:requires #{}
-   :expects #{}
-   :describe-fn (fn [{:keys [session] :as describe-msg}]
-                  (when (and session (instance? clojure.lang.Atom session))
-                    {:current-ns (-> @session (get #'*ns*) str)}))
-   :handles {"close"
-             {:doc "Closes the specified session."
-              :requires {"session" "The ID of the session to be closed."}
-              :optional {}
-              :returns {}}
-             "ls-sessions"
-             {:doc "Lists the IDs of all active sessions."
-              :requires {}
-              :optional {}
-              :returns {"sessions" "A list of all available session IDs."}}
-             "clone"
-             {:doc "Clones the current session, returning the ID of the newly-created session."
-              :requires {}
-              :optional {"session" "The ID of the session to be cloned; if not provided, a new session with default bindings is created, and mapped to the returned session ID."}
-              :returns {"new-session" "The ID of the new session."}}}})
+                 {:requires #{}
+                  :expects #{}
+                  :describe-fn (fn [{:keys [session] :as describe-msg}]
+                                 (when (and session (instance? clojure.lang.Atom session))
+                                   {:current-ns (-> @session (get #'*ns*) str)}))
+                  :handles {"close"
+                            {:doc "Closes the specified session."
+                             :requires {"session" "The ID of the session to be closed."}
+                             :optional {}
+                             :returns {}}
+                            "ls-sessions"
+                            {:doc "Lists the IDs of all active sessions."
+                             :requires {}
+                             :optional {}
+                             :returns {"sessions" "A list of all available session IDs."}}
+                            "clone"
+                            {:doc "Clones the current session, returning the ID of the newly-created session."
+                             :requires {}
+                             :optional {"session" "The ID of the session to be cloned; if not provided, a new session with default bindings is created, and mapped to the returned session ID."}
+                             :returns {"new-session" "The ID of the new session."}}}})
 
 (defn add-stdin
   "stdin middleware.  Returns a handler that supports a \"stdin\" :op-eration, which
@@ -223,25 +223,25 @@
   (fn [{:keys [op stdin session transport] :as msg}]
     (cond
       (= op "eval")
-        (let [in (-> (meta session) ^LineNumberingPushbackReader (:stdin-reader))]
-          (binding [*skipping-eol* true]
-            (clojure.main/skip-if-eol in))
-          (h msg))
+      (let [in (-> (meta session) ^LineNumberingPushbackReader (:stdin-reader))]
+        (binding [*skipping-eol* true]
+          (clojure.main/skip-if-eol in))
+        (h msg))
       (= op "stdin")
-        (let [q (-> (meta session) ^LinkedBlockingQueue (:input-queue))]
-          (if (empty? stdin)
-            (.put q -1)
-            (locking q
-              (doseq [c stdin] (.put q c))))
-          (t/send transport (response-for msg :status :done)))
+      (let [q (-> (meta session) ^LinkedBlockingQueue (:input-queue))]
+        (if (empty? stdin)
+          (.put q -1)
+          (locking q
+            (doseq [c stdin] (.put q c))))
+        (t/send transport (response-for msg :status :done)))
       :else
-        (h msg))))
+      (h msg))))
 
 (set-descriptor! #'add-stdin
-  {:requires #{#'session}
-   :expects #{"eval"}
-   :handles {"stdin"
-             {:doc "Add content from the value of \"stdin\" to *in* in the current session."
-              :requires {"stdin" "Content to add to *in*."}
-              :optional {}
-              :returns {"status" "A status of \"need-input\" will be sent if a session's *in* requires content in order to satisfy an attempted read operation."}}}})
+                 {:requires #{#'session}
+                  :expects #{"eval"}
+                  :handles {"stdin"
+                            {:doc "Add content from the value of \"stdin\" to *in* in the current session."
+                             :requires {"stdin" "Content to add to *in*."}
+                             :optional {}
+                             :returns {"status" "A status of \"need-input\" will be sent if a session's *in* requires content in order to satisfy an attempted read operation."}}}})

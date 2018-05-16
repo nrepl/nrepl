@@ -1,6 +1,6 @@
 (ns ^{:doc "Default server implementations"
       :author "Chas Emerick"}
-     clojure.tools.nrepl.server
+ clojure.tools.nrepl.server
   (:require [clojure.tools.nrepl :as repl]
             (clojure.tools.nrepl [ack :as ack]
                                  [transport :as t]
@@ -54,16 +54,16 @@
   "Stops a server started via `start-server`."
   [{:keys [open-transports ^ServerSocket server-socket] :as server}]
   (returning server
-    (.close server-socket)
-    (swap! open-transports #(reduce
-                              (fn [s t]
+             (.close server-socket)
+             (swap! open-transports #(reduce
+                                      (fn [s t]
                                 ; should always be true for the socket server...
-                                (if (instance? java.io.Closeable t)
-                                  (do
-                                    (safe-close t)
-                                    (disj s t))
-                                  s))
-                              % %))))
+                                        (if (instance? java.io.Closeable t)
+                                          (do
+                                            (safe-close t)
+                                            (disj s t))
+                                          s))
+                                      % %))))
 
 (defn unknown-op
   "Sends an :unknown-op :error for the given message."
@@ -91,12 +91,12 @@
 
 ;; TODO
 #_(defn- output-subscriptions
-  [h]
-  (fn [{:keys [op sub unsub] :as msg}]
-    (case op
-      "sub" ;; TODO
-      "unsub"
-      (h msg))))
+    [h]
+    (fn [{:keys [op sub unsub] :as msg}]
+      (case op
+        "sub" ;; TODO
+        "unsub"
+        (h msg))))
 
 (defrecord Server [server-socket port open-transports transport greeting handler]
   java.io.Closeable
@@ -107,9 +107,9 @@
   (deref [this] this))
 
 (#'clojure.pprint/use-method
-    clojure.pprint/simple-dispatch
-    Server
-    #'clojure.pprint/pprint-simple-default)
+ clojure.pprint/simple-dispatch
+ Server
+ #'clojure.pprint/pprint-simple-default)
 
 (try
   ; IRecord not available in 1.2.0
@@ -154,14 +154,14 @@
                        (make-ss (addr "localhost" port))
                        (throw e)))))))
         server (assoc
-                 (Server. ss
-                          (.getLocalPort ss)
-                          (atom #{})
-                          (or transport-fn t/bencode)
-                          greeting-fn
-                          (or handler (default-handler)))
+                (Server. ss
+                         (.getLocalPort ss)
+                         (atom #{})
+                         (or transport-fn t/bencode)
+                         greeting-fn
+                         (or handler (default-handler)))
                  ;; TODO here for backward compat with 0.2.x; drop eventually
-                 :ss ss)]
+                :ss ss)]
     (future (accept-connection server))
     (when ack-port
       (ack/send-ack (:port server) ack-port))

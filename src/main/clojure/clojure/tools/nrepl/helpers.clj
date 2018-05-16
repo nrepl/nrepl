@@ -1,5 +1,5 @@
 (ns ^{:author "Chas Emerick"}
-  clojure.tools.nrepl.helpers
+ clojure.tools.nrepl.helpers
   (:require [clojure.tools.nrepl.middleware.load-file :as load-file])
   (:import (java.io File StringReader)))
 
@@ -25,18 +25,18 @@
      (load-file-command \"…code here…\" \"some/ns/name/file.clj\" \"file.clj\")"
   ([f] (load-file-command f nil))
   ([f source-root]
-    (let [^String abspath (if (string? f) f (.getAbsolutePath ^File f))
-          source-root (cond
-                          (nil? source-root) ""
-                          (string? source-root) source-root
-                          (instance? File source-root) (.getAbsolutePath ^File source-root))]
-      (load-file-command (slurp abspath :encoding "UTF-8")
-        (if (and (seq source-root)
-              (.startsWith abspath source-root))
-          (-> abspath
-            (.substring (count source-root))
-            (.replaceAll "^[/\\\\]" ""))
-          abspath)
-        (-> abspath File. .getName))))
+   (let [^String abspath (if (string? f) f (.getAbsolutePath ^File f))
+         source-root (cond
+                       (nil? source-root) ""
+                       (string? source-root) source-root
+                       (instance? File source-root) (.getAbsolutePath ^File source-root))]
+     (load-file-command (slurp abspath :encoding "UTF-8")
+                        (if (and (seq source-root)
+                                 (.startsWith abspath source-root))
+                          (-> abspath
+                              (.substring (count source-root))
+                              (.replaceAll "^[/\\\\]" ""))
+                          abspath)
+                        (-> abspath File. .getName))))
   ([code file-path file-name]
-    (load-file/load-file-code code file-path file-name)))
+   (load-file/load-file-code code file-path file-name)))

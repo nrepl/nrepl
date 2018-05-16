@@ -1,11 +1,11 @@
 (ns ^{:author "Chas Emerick"}
-  clojure.tools.nrepl.helpers-test
+ clojure.tools.nrepl.helpers-test
   (:import (java.io File))
   (:use [clojure.tools.nrepl-test :only (def-repl-test repl-server-fixture)]
-    clojure.test)
+        clojure.test)
   (:require
-    [clojure.tools.nrepl :as nrepl]
-    [clojure.tools.nrepl.helpers :as helpers]))
+   [clojure.tools.nrepl :as nrepl]
+   [clojure.tools.nrepl.helpers :as helpers]))
 
 (def project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
 
@@ -17,30 +17,30 @@
   ;; passes in 1.2.0...
   #_(repl-eval session "\n\n\n(defn function [])")
   #_(is (= [{:file "NO_SOURCE_PATH" :line 4}]
-         (repl-values session "(-> #'function meta (select-keys [:file :line]))")))
-  
+           (repl-values session "(-> #'function meta (select-keys [:file :line]))")))
+
   (repl-values session
-    (helpers/load-file-command
-      "\n\n\n\n\n\n\n\n\n(defn dfunction [])"
-      "path/from/source/root.clj"
-      "root.clj"))
-  
+               (helpers/load-file-command
+                "\n\n\n\n\n\n\n\n\n(defn dfunction [])"
+                "path/from/source/root.clj"
+                "root.clj"))
+
   (is (= [{:file "path/from/source/root.clj" :line 10}]
-        (repl-values session
-          (nrepl/code
-            (-> #'dfunction
-              meta
-              (select-keys [:file :line])))))))
+         (repl-values session
+                      (nrepl/code
+                       (-> #'dfunction
+                           meta
+                           (select-keys [:file :line])))))))
 
 (def-repl-test load-file-with-debug-info
   (repl-values session
-    (helpers/load-file-command
-      (File. project-base-dir "load-file-test/clojure/tools/nrepl/load_file_sample.clj")
-      (File. project-base-dir "load-file-test")))
+               (helpers/load-file-command
+                (File. project-base-dir "load-file-test/clojure/tools/nrepl/load_file_sample.clj")
+                (File. project-base-dir "load-file-test")))
   (is (= [{:file (.replace "clojure/tools/nrepl/load_file_sample.clj" "/" File/separator)
            :line 5}]
          (repl-values session
-           (nrepl/code 
-             (-> #'clojure.tools.nrepl.load-file-sample/dfunction
-               meta
-               (select-keys [:file :line])))))))
+                      (nrepl/code
+                       (-> #'clojure.tools.nrepl.load-file-sample/dfunction
+                           meta
+                           (select-keys [:file :line])))))))

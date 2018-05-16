@@ -1,7 +1,7 @@
 (ns ^{:doc "Misc utilities used in nREPL's implementation (potentially also useful
             for anyone extending it)."
       :author "Chas Emerick"}
-     clojure.tools.nrepl.misc
+ clojure.tools.nrepl.misc
   (:require [clojure.tools.logging :as logging]))
 
 (defn log
