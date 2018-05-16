@@ -52,3 +52,9 @@
 (disable-warning
  {:linter :deprecations
   :symbol-matches #{#"public final void java.lang.Thread.stop\(\)"}})
+
+(disable-warning
+ {:linter :unused-ret-vals
+  :if-inside-macroexpansion-of #{'clojure.tools.nrepl.load-file-test/eastwood-ignore-unused-ret}
+  :within-depth 1
+  :reason "The macro wraps expressions that are used solely for side-effects in the repl session."})
