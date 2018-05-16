@@ -1,20 +1,12 @@
 (ns ^{:doc "Misc utilities used in nREPL's implementation (potentially also useful
             for anyone extending it)."
       :author "Chas Emerick"}
-     clojure.tools.nrepl.misc)
+     clojure.tools.nrepl.misc
+  (:require [clojure.tools.logging :as logging]))
 
-(try
-  (require 'clojure.tools.logging)
-  (defmacro log [& args] `(clojure.tools.logging/error ~@args))
-  (catch Throwable t
-    ;(println "clojure.tools.logging not available, falling back to stdout/err")
-    (defn log
-      [ex & msgs]
-      (let [ex (when (instance? Throwable ex) ex)
-            msgs (if ex msgs (cons ex msgs))]
-        (binding [*out* *err*]
-          (apply println "ERROR:" msgs)
-          (when ex (.printStackTrace ^Throwable ex)))))))
+(defn log
+  [& args]
+  (logging/error args))
 
 (defmacro returning
   "Executes `body`, returning `x`."

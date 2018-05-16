@@ -21,7 +21,8 @@
 
   :profiles {
              ;; Clojure versions matrix
-             :provided {:dependencies [[org.clojure/clojure "1.9.0"]]}
+             :provided {:dependencies [[org.clojure/clojure "1.9.0"]
+                                       [org.clojure/tools.logging "0.4.1"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :master {:repositories [["snapshots"
