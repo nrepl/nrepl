@@ -168,19 +168,18 @@ is not difficult; read more about transports [here](#transports).
 
 ### Building nREPL
 
-Releases are available from Maven Central, and SNAPSHOT builds from master's
-HEAD are automatically deployed to Sonatype's OSS repository (see
-[this](http://dev.clojure.org/display/doc/Maven+Settings+and+Repositories) for
-how to configure Leiningen or Maven to use OSS-snapshots), so building nREPL
-shouldn't ever be necessary.  But, if you insist:
+Releases are available from Clojars, and SNAPSHOT builds from master's
+HEAD are automatically deployed there as well, so manually building
+nREPL shouldn't ever be necessary (unless you're hacking on it).  But,
+if you insist:
 
 0. Clone the repo
-1. Make sure you have maven installed
-2. Run the maven build, either:
-    1. `mvn package`: This will produce an nREPL jar file in the `target`
-directory, and run all tests against Clojure 1.2.0.
-    2. `mvn verify`: This does the same, but also runs the tests with
-other Clojure "profiles" (one for each supported version of Clojure).
+1. Make sure you have lein installed
+2. Run the lein build:
+
+```
+lein install
+```
 
 ## Why nREPL?
 
