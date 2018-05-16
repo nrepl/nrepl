@@ -254,8 +254,7 @@ expressions), and one that uses
 nREPL messages over sockets.  It is the latter that is used by default by
 `clojure.tools.nrepl.server/start-server` and `clojure.tools.nrepl/connect`.
 
-[Other nREPL transports are provided by the community]
-(https://github.com/clojure-emacs/nrepl/wiki/Extensions).
+[Other nREPL transports are provided by the community](https://github.com/clojure-emacs/nrepl/wiki/Extensions).
 
 #### Handlers
 
