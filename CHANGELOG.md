@@ -11,6 +11,8 @@
   resolved; this change ensures that the `localhost` fallback is used in
   networking environments where `::` is resolved successfully, but cannot be
   bound. (gh-20)
+* `clojure.tools/logging` is now a normal dependency (it used to be an
+  optional dependency).
 
 `0.2.13`:
 
