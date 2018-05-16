@@ -38,22 +38,22 @@
 (defmethod <bytes clojure.lang.IPersistentMap
   [input]
   (->> input
-    (map (fn [[k v]] [k (<bytes v)]))
-    (into {})))
+       (map (fn [[k v]] [k (<bytes v)]))
+       (into {})))
 
 (defn- decode
   [bytes & {:keys [reader]}]
   (-> bytes
-    ByteArrayInputStream.
-    PushbackInputStream.
-    reader))
+      ByteArrayInputStream.
+      PushbackInputStream.
+      reader))
 
 (defn- >input
   [^String input & args]
   (-> input
-    (.getBytes "UTF-8")
-    (#(apply decode % args))
-    <bytes))
+      (.getBytes "UTF-8")
+      (#(apply decode % args))
+      <bytes))
 
 (deftest test-netstring-reading
   (are [x y] (= (>input x :reader read-netstring) y)
@@ -131,8 +131,8 @@
 
 (deftest test-integer-writing
   (are [x y] (= (>output x :writer write-bencode) y)
-      0 "i0e"
-     42 "i42e"
+    0 "i0e"
+    42 "i42e"
     -42 "i-42e"
 
     ; Works for all integral types.
@@ -171,9 +171,9 @@
   (let [source   ["ham" "eggs" "hamburg" "hamburger" "cheese"]
         expected ["cheese" "eggs" "ham" "hamburg" "hamburger"]
         to-test  (->> source
-                   (map >bytes)
-                   (sort @#'clojure.tools.nrepl.bencode/lexicographically)
-                   (map <bytes))]
+                      (map >bytes)
+                      (sort @#'clojure.tools.nrepl.bencode/lexicographically)
+                      (map <bytes))]
     (is (= to-test expected))))
 
 (deftest unencoded-values
@@ -185,12 +185,12 @@
                           -111 -115 85 -35 111 -37 84 20 63 -119 111 92 -92 22 63
                           -96 -79 -114 14 21 -117 -81 85 83 91 -71 27 26 -83 -58 6
                           73 -109 -91 -23 66 26 -71 -51 -40 42 -92 -55 117 110]
-                      (map byte)
-                      (into-array Byte/TYPE))]
+                         (map byte)
+                         (into-array Byte/TYPE))]
     (is (= (seq binary-data)
            (-> {"data" binary-data}
-             (>stream :writer write-bencode)
-             .toByteArray
-             (decode :reader read-bencode)
-             (get "data")
-             seq)))))
+               (>stream :writer write-bencode)
+               .toByteArray
+               (decode :reader read-bencode)
+               (get "data")
+               seq)))))

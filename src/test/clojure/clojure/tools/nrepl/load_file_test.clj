@@ -1,5 +1,5 @@
 (ns ^{:author "Chas Emerick"}
-  clojure.tools.nrepl.load-file-test
+ clojure.tools.nrepl.load-file-test
   (:import (java.io File))
   (:use [clojure.tools.nrepl-test :only (def-repl-test repl-server-fixture
                                           project-base-dir)]
@@ -16,7 +16,6 @@
   instead of using # in front of all the doalls."
   [body]
   body)
-
 
 (def-repl-test load-code-with-debug-info
   (eastwood-ignore-unused-ret
@@ -38,10 +37,10 @@
                                           :file-name "root.clj"})))
   (is (= [{:file "path/from/source/root.clj" :line 10}]
          (repl-values timeout-session
-           (nrepl/code
-             (-> #'afunction
-               meta
-               (select-keys [:file :line])))))))
+                      (nrepl/code
+                       (-> #'afunction
+                           meta
+                           (select-keys [:file :line])))))))
 
 (def-repl-test load-file-with-debug-info
   (eastwood-ignore-unused-ret
@@ -73,9 +72,9 @@
 
 (def-repl-test load-file-response-no-ns
   (is (not (contains? (nrepl/combine-responses
-                        (nrepl/message session
-                          {:op "load-file"
-                           :file "(ns foo) (def x 5)"
-                           :file-path "/path/to/source.clj"
-                           :file-name "source.clj"}))
-             :ns))))
+                       (nrepl/message session
+                                      {:op "load-file"
+                                       :file "(ns foo) (def x 5)"
+                                       :file-path "/path/to/source.clj"
+                                       :file-name "source.clj"}))
+                      :ns))))

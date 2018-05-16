@@ -9,10 +9,10 @@
 
 (ns #^{:author "Meikel Brandmeyer"
        :doc "A netstring and bencode implementation for Clojure."}
-  clojure.tools.nrepl.bencode
+      clojure.tools.nrepl.bencode
   (:require [clojure.java.io :as io])
   (:import (java.io IOException EOFException ByteArrayOutputStream
-                    InputStream OutputStream PushbackInputStream) 
+                    InputStream OutputStream PushbackInputStream)
            clojure.lang.RT))
 
 ;; # Motivation
@@ -104,8 +104,8 @@
       (let [result (.read input content offset len)]
         (when (neg? result)
           (throw
-            (EOFException.
-              "Invalid netstring. Less data available than expected.")))
+           (EOFException.
+            "Invalid netstring. Less data available than expected.")))
         (when (not= result len)
           (recur (+ offset result) (- len result)))))
     content))
@@ -283,9 +283,9 @@
 (defn #^{:private true} read-map
   [input]
   (->> (token-seq input)
-    (partition 2)
-    (map (fn [[k v]] [(string<payload k) v]))
-    (into {})))
+       (partition 2)
+       (map (fn [[k v]] [(string<payload k) v]))
+       (into {})))
 
 ;; The final missing piece is `token-seq`. This a just a simple
 ;; sequence which reads tokens until the next `\e`.
@@ -293,8 +293,8 @@
 (defn #^{:private true} token-seq
   [input]
   (->> #(read-bencode input)
-    repeatedly
-    (take-while identity)))
+       repeatedly
+       (take-while identity)))
 
 ;; ## Writing bencode
 ;;
@@ -370,8 +370,8 @@
   (let [nspace (namespace thing)
         name   (name thing)]
     (->> (str (when nspace (str nspace "/")) name)
-      string>payload
-      (write-netstring* output))))
+         string>payload
+         (write-netstring* output))))
 
 ;; Lists as well as maps work recursively to print their elements.
 

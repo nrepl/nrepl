@@ -111,34 +111,34 @@
          (-> (message timeout-client {:session "abc"}) combine-responses :status)))
   (let [session-id (new-session timeout-client)
         session-alive? #(contains? (-> (message timeout-client {:op :ls-sessions})
-                                     combine-responses
-                                     :sessions
-                                     set)
+                                       combine-responses
+                                       :sessions
+                                       set)
                                    session-id)]
     (is session-id)
     (is (session-alive?))
     (is (= #{"done" "session-closed"} (-> (message timeout-client {:op :close :session session-id})
-                                        combine-responses
-                                        :status)))
+                                          combine-responses
+                                          :status)))
     (is (not (session-alive?)))))
 
 (def-repl-test separate-value-from-*out*
   (is (= {:value [nil] :out "5\n"}
          (-> (map read-response-value (repl-eval client "(println 5)"))
-           combine-responses
-           (select-keys [:value :out])))))
+             combine-responses
+             (select-keys [:value :out])))))
 
 (def-repl-test sessionless-*out*
   (is (= "5\n:foo\n"
          (-> (repl-eval client "(println 5)(println :foo)")
-           combine-responses
-           :out))))
+             combine-responses
+             :out))))
 
 (def-repl-test session-*out*
   (is (= "5\n:foo\n"
          (-> (repl-eval session "(println 5)(println :foo)")
-           combine-responses
-           :out))))
+             combine-responses
+             :out))))
 
 (def-repl-test error-on-lazy-seq-with-side-effects
   (let [expression '(let [foo (fn [] (map (fn [x]
@@ -157,25 +157,25 @@
     (transport/send transport2 {"op" "eval" "code" "(println :foo)"
                                 "session" sid})
     (is (->> (repeatedly #(transport/recv transport2 1000))
-          (take-while identity)
-          (some #(= ":foo\n" (:out %)))))))
+             (take-while identity)
+             (some #(= ":foo\n" (:out %)))))))
 
 (def-repl-test streaming-out
   (is (= (for [x (range 10)]
            (str x \newline))
-        (->> (repl-eval client "(dotimes [x 10] (println x))")
-          (map :out)
-          (remove nil?)))))
+         (->> (repl-eval client "(dotimes [x 10] (println x))")
+              (map :out)
+              (remove nil?)))))
 
 (def-repl-test session-*out*-writer-length-translation
   (when (<= 4 (:minor *clojure-version*))
     (is (= "#inst \"2013-02-11T12:13:44.000+00:00\"\n"
-          (-> (repl-eval session
-                (code (println (doto
-                                 (java.util.GregorianCalendar. 2013 1 11 12 13 44)
-                                 (.setTimeZone (java.util.TimeZone/getTimeZone "GMT"))))))
-            combine-responses
-            :out)))))
+           (-> (repl-eval session
+                          (code (println (doto
+                                          (java.util.GregorianCalendar. 2013 1 11 12 13 44)
+                                           (.setTimeZone (java.util.TimeZone/getTimeZone "GMT"))))))
+               combine-responses
+               :out)))))
 
 (def-repl-test streaming-out-without-explicit-flushing
   (is (= ["(0 1 "
@@ -194,32 +194,29 @@
 
 (def-repl-test ensure-whitespace-prints
   (is (= " \t \n \f \n" (->> (repl-eval client "(println \" \t \n \f \")")
-                          combine-responses
-                          :out))))
+                             combine-responses
+                             :out))))
 
 (def-repl-test session-return-recall
   (testing "sessions persist across connections"
     (repl-values session (code
-                           (apply + (range 6))
-                           (str 12 \c)
-                           (keyword "hello")))
+                          (apply + (range 6))
+                          (str 12 \c)
+                          (keyword "hello")))
     (with-open [separate-connection (connect :port (:port *server*))]
       (let [history [[15 "12c" :hello]]
             sid (-> session meta :clojure.tools.nrepl/taking-until :session)
             sc-session (-> separate-connection
-                         (nrepl/client 1000)
-                         (nrepl/client-session :session sid))]
+                           (nrepl/client 1000)
+                           (nrepl/client-session :session sid))]
         (is (= history (repl-values sc-session "[*3 *2 *1]")))
-        (is (= history (repl-values sc-session "*1"))))))
-
-
-  (testing "without a session id, REPL-bound vars like *1 have default values"
-    (is (= [nil] (repl-values client "*1")))))
+        (is (= history (repl-values sc-session "*1")))))) (testing "without a session id, REPL-bound vars like *1 have default values"
+                                                            (is (= [nil] (repl-values client "*1")))))
 
 (def-repl-test session-set!
   (repl-eval session (code
-                       (set! *compile-path* "badpath")
-                       (set! *warn-on-reflection* true)))
+                      (set! *compile-path* "badpath")
+                      (set! *warn-on-reflection* true)))
   (is (= [["badpath" true]] (repl-values session (code [*compile-path* *warn-on-reflection*])))))
 
 (def-repl-test exceptions
@@ -240,18 +237,18 @@
 
 (def-repl-test switch-ns
   (is (= "otherns" (-> (repl-eval session "(ns otherns) (defn function [] 12)")
-                     combine-responses
-                     :ns)))
+                       combine-responses
+                       :ns)))
   (is (= [12] (repl-values session "(function)")))
   (repl-eval session "(in-ns 'user)")
   (is (= [12] (repl-values session "(otherns/function)"))))
 
 (def-repl-test switch-ns-2
   (is (= "otherns" (-> (repl-eval session (code
-                                            (ns otherns)
-                                            (defn function [] 12)))
-                     combine-responses
-                     :ns)))
+                                           (ns otherns)
+                                           (defn function [] 12)))
+                       combine-responses
+                       :ns)))
   (is (= [12] (repl-values session "(function)")))
   (repl-eval session "(in-ns 'user)")
   (is (= [12] (repl-values session "(otherns/function)")))
@@ -260,10 +257,10 @@
 (def-repl-test explicit-ns
   (is (= "user" (-> (repl-eval session "nil") combine-responses :ns)))
   (is (= "baz" (-> (repl-eval session (code
-                                        (def bar 5)
-                                        (ns baz)))
-                 combine-responses
-                 :ns)))
+                                       (def bar 5)
+                                       (ns baz)))
+                   combine-responses
+                   :ns)))
   (is (= [5] (response-values (message session {:op :eval :code "bar" :ns "user"}))))
   ; NREPL-72: :ns argument to eval shouldn't affect *ns* outside of the scope of that evaluation
   (is (= "baz" (-> (repl-eval session "5") combine-responses :ns))))
@@ -271,8 +268,8 @@
 (def-repl-test error-on-nonexistent-ns
   (is (= #{"error" "namespace-not-found" "done"}
          (-> (message timeout-client {:op :eval :code "(+ 1 1)" :ns (name (gensym))})
-           combine-responses
-           :status))))
+             combine-responses
+             :status))))
 
 (def-repl-test proper-response-ordering
   (is (= [[nil "100\n"] ; printed number
@@ -284,9 +281,9 @@
 (def-repl-test interrupt
   (is (= #{"error" "interrupt-id-mismatch" "done"}
          (-> (message client {:op :interrupt :interrupt-id "foo"})
-           first
-           :status
-           set)))
+             first
+             :status
+             set)))
 
   (let [resp (message session {:op :eval :code (code (do
                                                        (def halted? true)
@@ -312,8 +309,8 @@
   ; just getting the values off of the wire so the server side doesn't
   ; toss a spurious stack trace when the client disconnects
   (is (= [nil :ok] (->> (repeatedly #(transport/recv transport 500))
-                     (take-while (complement nil?))
-                     response-values))))
+                        (take-while (complement nil?))
+                        response-values))))
 
 (def-repl-test concurrent-message-handling
   (testing "multiple messages can be handled on the same connection concurrently"
@@ -337,8 +334,8 @@
 
 ; test is flaking on hudson, but passing locally! :-X
 #_(def-repl-test ensure-server-closeable
-  (.close *server*)
-  (is (thrown? java.net.ConnectException (connect :port (:port *server*)))))
+    (.close *server*)
+    (is (thrown? java.net.ConnectException (connect :port (:port *server*)))))
 
 ; wasn't added until Clojure 1.3.0
 (defn- root-cause
@@ -354,7 +351,7 @@
   [e]
   ; thrown? should check for the root cause!
   (and (instance? SocketException (root-cause e))
-    (re-matches #".*(lost.*connection|socket closed).*" (.getMessage (root-cause e)))))
+       (re-matches #".*(lost.*connection|socket closed).*" (.getMessage (root-cause e)))))
 
 (deftest transports-fail-on-disconnects
   (testing "Ensure that transports fail ASAP when the server they're connected to goes down."

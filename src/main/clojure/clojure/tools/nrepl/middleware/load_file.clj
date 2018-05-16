@@ -1,5 +1,5 @@
 (ns ^{:author "Chas Emerick"}
-     clojure.tools.nrepl.middleware.load-file
+ clojure.tools.nrepl.middleware.load-file
   (:require [clojure.tools.nrepl.middleware.interruptible-eval :as eval]
             [clojure.tools.nrepl.transport :as t])
   (:import clojure.tools.nrepl.transport.Transport)
@@ -29,22 +29,22 @@ be loaded."} file-contents (atom {}))
   (let [t (System/currentTimeMillis)
         file-key ^{:t t} [file-path (gensym)]]
     (swap! file-contents
-      (fn [file-contents]
-        (let [expired-keys
-              (filter
-                (comp #(and %
-                            (< 10000 (- (System/currentTimeMillis) %)))
-                      :t meta)
-                (keys file-contents))]
-          (assoc (apply dissoc file-contents expired-keys)
-                 file-key file))))
+           (fn [file-contents]
+             (let [expired-keys
+                   (filter
+                    (comp #(and %
+                                (< 10000 (- (System/currentTimeMillis) %)))
+                          :t meta)
+                    (keys file-contents))]
+               (assoc (apply dissoc file-contents expired-keys)
+                      file-key file))))
     (binding [*print-length* nil
               *print-level* nil]
       (pr-str `(try
                  (clojure.lang.Compiler/load
-                   (java.io.StringReader. (@@(var file-contents) '~file-key))
-                   ~file-path
-                   ~file-name)
+                  (java.io.StringReader. (@@(var file-contents) '~file-key))
+                  ~file-path
+                  ~file-name)
                  (finally
                    (swap! @(var file-contents) dissoc '~file-key)))))))
 
@@ -59,12 +59,12 @@ be loaded."} file-contents (atom {}))
    In such cases, see `load-large-file-code'`."
   [file file-path file-name]
   (apply format
-    "(clojure.lang.Compiler/load (java.io.StringReader. %s) %s %s)"
-    (map (fn [item]
-           (binding [*print-length* nil
-                     *print-level* nil]
-             (pr-str item)))
-         [file file-path file-name])))
+         "(clojure.lang.Compiler/load (java.io.StringReader. %s) %s %s)"
+         (map (fn [item]
+                (binding [*print-length* nil
+                          *print-level* nil]
+                  (pr-str item)))
+              [file file-path file-name])))
 
 (defn wrap-load-file
   "Middleware that evaluates a file's contents, as per load-file,
@@ -78,31 +78,31 @@ be loaded."} file-contents (atom {}))
     (if (not= op "load-file")
       (h msg)
       (h (assoc (dissoc msg :file :file-name :file-path)
-           :op "eval"
-           :code ((if (thread-bound? #'load-file-code)
-                    load-file-code
-                    load-large-file-code)
-                  file file-path file-name)
-           :transport (reify Transport
-                        (recv [this] (.recv transport))
-                        (recv [this timeout] (.recv transport timeout))
-                        (send [this resp]
+                :op "eval"
+                :code ((if (thread-bound? #'load-file-code)
+                         load-file-code
+                         load-large-file-code)
+                       file file-path file-name)
+                :transport (reify Transport
+                             (recv [this] (.recv transport))
+                             (recv [this timeout] (.recv transport timeout))
+                             (send [this resp]
                           ; *ns* is always 'user' after loading a file, so
                           ; *remove it to avoid confusing tools that assume any
                           ; *:ns always reports *ns*
-                          (.send transport (dissoc resp :ns)) 
-                          this)))))))
+                               (.send transport (dissoc resp :ns))
+                               this)))))))
 
 (set-descriptor! #'wrap-load-file
-  {:requires #{}
-   :expects #{"eval"}
-   :handles {"load-file"
-             {:doc "Loads a body of code, using supplied path and filename info to set source file and line number metadata. Delegates to underlying \"eval\" middleware/handler."
-              :requires {"file" "Full contents of a file of code."}
-              :optional {"file-path" "Source-path-relative path of the source file, e.g. clojure/java/io.clj"
-                         "file-name" "Name of source file, e.g. io.clj"}
-              :returns (-> (meta #'eval/interruptible-eval)
-                         ::middleware/descriptor
-                         :handles
-                         (get "eval")
-                         :returns)}}})
+                 {:requires #{}
+                  :expects #{"eval"}
+                  :handles {"load-file"
+                            {:doc "Loads a body of code, using supplied path and filename info to set source file and line number metadata. Delegates to underlying \"eval\" middleware/handler."
+                             :requires {"file" "Full contents of a file of code."}
+                             :optional {"file-path" "Source-path-relative path of the source file, e.g. clojure/java/io.clj"
+                                        "file-name" "Name of source file, e.g. io.clj"}
+                             :returns (-> (meta #'eval/interruptible-eval)
+                                          ::middleware/descriptor
+                                          :handles
+                                          (get "eval")
+                                          :returns)}}})

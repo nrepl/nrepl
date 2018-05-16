@@ -1,6 +1,6 @@
 
 (ns ^{:author "Chas Emerick"}
-     clojure.tools.nrepl.middleware.pr-values
+ clojure.tools.nrepl.middleware.pr-values
   (:require [clojure.tools.nrepl.transport :as t])
   (:use [clojure.tools.nrepl.middleware :only (set-descriptor!)])
   (:import clojure.tools.nrepl.transport.Transport))
@@ -20,24 +20,24 @@
   [h]
   (fn [{:keys [op ^Transport transport] :as msg}]
     (h (assoc msg
-         :transport (reify Transport
-                      (recv [this] (.recv transport))
-                      (recv [this timeout] (.recv transport timeout))
-                      (send [this {:keys [printed-value value] :as resp}]
-                        (.send transport
-                          (if (and printed-value (string? value))
-                            (dissoc resp :printed-value)
-                            (if-let [[_ v] (find resp :value)]
-                              (assoc resp
-                                :value (let [repr (java.io.StringWriter.)]
-                                         (if *print-dup*
-                                           (print-dup v repr)
-                                           (print-method v repr))
-                                         (str repr)))
-                              resp)))
-                        this))))))
+              :transport (reify Transport
+                           (recv [this] (.recv transport))
+                           (recv [this timeout] (.recv transport timeout))
+                           (send [this {:keys [printed-value value] :as resp}]
+                             (.send transport
+                                    (if (and printed-value (string? value))
+                                      (dissoc resp :printed-value)
+                                      (if-let [[_ v] (find resp :value)]
+                                        (assoc resp
+                                               :value (let [repr (java.io.StringWriter.)]
+                                                        (if *print-dup*
+                                                          (print-dup v repr)
+                                                          (print-method v repr))
+                                                        (str repr)))
+                                        resp)))
+                             this))))))
 
 (set-descriptor! #'pr-values
-  {:requires #{}
-   :expects #{}
-   :handles {}})
+                 {:requires #{}
+                  :expects #{}
+                  :handles {}})
