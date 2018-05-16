@@ -14,7 +14,7 @@ Check the brief history of nREPL, available
 
 Extremely stable.
 
-* The forthcoming `0.3.0` release will be a drop-in replacement for
+* `[cider/nrepl "0.3.0"]` is a drop-in replacement for
   `[org.clojure/tools.nrepl "0.2.13"]`.
 * A later `1.0.0` release will include fixes for all previously-reported but
   languishing nREPL issues.
@@ -30,7 +30,7 @@ nREPL is available in Clojars central. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
 ```clojure
-[cider/nrepl "0.3.0-SNAPSHOT"]
+[cider/nrepl "0.3.0"]
 ```
 
 Or, add this to your Maven project's `pom.xml`:
@@ -39,7 +39,7 @@ Or, add this to your Maven project's `pom.xml`:
 <dependency>
   <groupId>cider</groupId>
   <artifactId>nrepl</artifactId>
-  <version>0.3.0-SNAPSHOT</version>
+  <version>0.3.0</version>
 </dependency>
 ```
 
@@ -48,7 +48,7 @@ A list of all prior releases are available
 
 Please note the changelog in `CHANGELOG.md`.
 
-nREPL is compatible with Clojure 1.2.0 and higher.
+nREPL is compatible with Clojure 1.7.0 and higher.
 
 Please post general questions or discussion on either the main [Clojure mailing
 list](http://groups.google.com/group/clojure/), or [#clojure
