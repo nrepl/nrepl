@@ -26,7 +26,7 @@ Extremely stable.
 
 ### Installation
 
-nREPL is available in Clojars central. Add this to your Leiningen
+nREPL is available in Clojars. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
 ```clojure
