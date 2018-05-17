@@ -1,7 +1,6 @@
 (ns clojure.tools.nrepl.middleware.pr-values
   {:author "Chas Emerick"}
-  (:require [clojure.tools.nrepl.transport :as t])
-  (:use [clojure.tools.nrepl.middleware :only (set-descriptor!)])
+  (:require [clojure.tools.nrepl.middleware :refer [set-descriptor!]])
   (:import clojure.tools.nrepl.transport.Transport))
 
 (defn pr-values

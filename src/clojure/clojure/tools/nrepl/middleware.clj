@@ -1,9 +1,9 @@
 (ns clojure.tools.nrepl.middleware
-  (:require clojure.tools.nrepl
-            [clojure.tools.nrepl.transport :as transport]
+  (:refer-clojure :exclude [comparator ex-info])
+  (:require [clojure.set :as set]
+            clojure.tools.nrepl
             [clojure.tools.nrepl.misc :as misc]
-            [clojure.set :as set])
-  (:refer-clojure :exclude (comparator ex-info)))
+            [clojure.tools.nrepl.transport :as transport]))
 
 ;; so much backport
 (def ^:private ex-info

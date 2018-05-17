@@ -11,9 +11,13 @@
   "A netstring and bencode implementation for Clojure."
   {:author "Meikel Brandmeyer"}
   (:require [clojure.java.io :as io])
-  (:import (java.io IOException EOFException ByteArrayOutputStream
-                    InputStream OutputStream PushbackInputStream)
-           clojure.lang.RT))
+  (:import clojure.lang.RT
+           [java.io ByteArrayOutputStream
+                    EOFException
+                    InputStream
+                    IOException
+                    OutputStream
+                    PushbackInputStream]))
 
 ;; # Motivation
 ;;
