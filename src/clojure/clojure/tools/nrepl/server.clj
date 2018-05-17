@@ -1,17 +1,15 @@
 (ns clojure.tools.nrepl.server
   "Default server implementations"
   {:author "Chas Emerick"}
-  (:require [clojure.tools.nrepl :as repl]
-            (clojure.tools.nrepl [ack :as ack]
-                                 [transport :as t]
-                                 [middleware :as middleware])
-            (clojure.tools.nrepl.middleware interruptible-eval
-                                            pr-values
-                                            session
-                                            load-file)
-            clojure.pprint)
-  (:use [clojure.tools.nrepl.misc :only (returning response-for log)])
-  (:import (java.net Socket ServerSocket InetSocketAddress InetAddress SocketException)))
+  (:require clojure.pprint
+            [clojure.tools.nrepl.ack :as ack]
+            [clojure.tools.nrepl.middleware :as middleware]
+            clojure.tools.nrepl.middleware.interruptible-eval
+            clojure.tools.nrepl.middleware.load-file
+            clojure.tools.nrepl.middleware.session
+            [clojure.tools.nrepl.misc :refer [log response-for returning]]
+            [clojure.tools.nrepl.transport :as t])
+  (:import [java.net InetAddress InetSocketAddress ServerSocket Socket SocketException]))
 
 (defn handle*
   [msg handler transport]

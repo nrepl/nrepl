@@ -4,9 +4,8 @@
   https://github.com/trptcolin/reply/"
   {:author "Chas Emerick"}
   (:require [clojure.tools.nrepl :as repl]
-            [clojure.tools.nrepl.transport :as transport])
-  (:use (clojure.tools.nrepl [server :only (start-server)]
-                             [ack :only (send-ack)])))
+            [clojure.tools.nrepl.ack :refer [send-ack]]
+            [clojure.tools.nrepl.server :refer [start-server]]))
 
 (defn- ensure-newline
   [s]

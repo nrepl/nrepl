@@ -1,9 +1,8 @@
 (ns clojure.tools.nrepl.middleware.load-file
   {:author "Chas Emerick"}
-  (:require [clojure.tools.nrepl.middleware.interruptible-eval :as eval]
-            [clojure.tools.nrepl.transport :as t])
-  (:import clojure.tools.nrepl.transport.Transport)
-  (:use [clojure.tools.nrepl.middleware :as middleware :only (set-descriptor!)]))
+  (:require [clojure.tools.nrepl.middleware :as middleware :refer [set-descriptor!]]
+            [clojure.tools.nrepl.middleware.interruptible-eval :as eval])
+  (:import clojure.tools.nrepl.transport.Transport))
 
 ; need to hold file contents "out of band" so as to avoid JVM method
 ; size limitations (cannot eval an expression larger than some size
