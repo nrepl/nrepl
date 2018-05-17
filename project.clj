@@ -1,4 +1,4 @@
-(defproject cider/nrepl "0.3.0"
+(defproject nrepl/nrepl "0.3.0"
   :min-lein-version "2.6.1"
   :source-paths ["src/clojure"]
   :java-source-paths ["src/java"]

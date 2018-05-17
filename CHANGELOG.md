@@ -3,7 +3,7 @@
 [`0.3.0`](https://github.com/nrepl/nREPL/milestone/2?closed=1):
 
 * Materially identical to `[org.clojure/tools.nrepl "0.2.13"]`, but released under
-  `cider/nrepl` coordinates as part of the migration out of clojure-contrib
+  `nrepl/nrepl` coordinates as part of the migration out of clojure-contrib
   https://github.com/nrepl/nREPL (gh-1)
 * If `start-server` is not provided with a `:bind` hostname, nREPL will default
   to binding to the ipv6 `::` (as before), but will now _always_ fall back to
