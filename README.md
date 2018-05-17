@@ -1,4 +1,4 @@
-# nREPL [![Build Status](https://travis-ci.org/clojure-emacs/nREPL.svg?branch=master)](https://travis-ci.org/clojure-emacs/nREPL)
+# nREPL [![Build Status](https://travis-ci.org/nrepl/nREPL.svg?branch=master)](https://travis-ci.org/nrepl/nREPL)
 
 nREPL is a Clojure *n*etwork REPL that
 provides a REPL server and client, along with some common APIs
@@ -8,7 +8,7 @@ code in remote environments.
 ### How is this different from the "official" [tools.nrepl](https://github.com/clojure/tools.nrepl/) project?
 
 Check the brief history of nREPL, available
-[here](https://github.com/clojure-emacs/nREPL/blob/master/HISTORY.md).
+[here](https://github.com/nrepl/nREPL/blob/master/HISTORY.md).
 
 ### Status
 
@@ -118,7 +118,7 @@ the "type" of the operation to be performed.  The operations supported by an
 nREPL endpoint are determined by the handlers and middleware stack used when
 starting that endpoint; the default middleware stack (described below) supports
 a particular set of operations, [detailed
-here](https://github.com/clojure-emacs/nrepl/blob/master/doc/ops.md).
+here](https://github.com/nrepl/nrepl/blob/master/doc/ops.md).
 
 ### Embedding nREPL, starting a server
 
@@ -253,7 +253,7 @@ expressions), and one that uses
 nREPL messages over sockets.  It is the latter that is used by default by
 `clojure.tools.nrepl.server/start-server` and `clojure.tools.nrepl/connect`.
 
-[Other nREPL transports are provided by the community](https://github.com/clojure-emacs/nrepl/wiki/Extensions).
+[Other nREPL transports are provided by the community](https://github.com/nrepl/nrepl/wiki/Extensions).
 
 #### Handlers
 
@@ -342,10 +342,10 @@ user-specified middleware provided to
 merge works, we'll first need to talk about middleware "descriptors".
 
 [Other nREPL middlewares are provided by the community]
-(https://github.com/clojure-emacs/nrepl/wiki/Extensions).
+(https://github.com/nrepl/nrepl/wiki/Extensions).
 
 (See [this documentation
-listing](https://github.com/clojure-emacs/nrepl/blob/master/doc/ops.md) for
+listing](https://github.com/nrepl/nrepl/blob/master/doc/ops.md) for
 details as to the operations implemented by nREPL's default middleware stack,
 what each operation expects in request messages, and what they emit for
 responses.)
@@ -407,7 +407,7 @@ which provides "a machine- and human-readable directory and documentation for
 the operations supported by an nREPL endpoint" (see
 `clojure.tools.nrepl.middleware/describe-markdown`, and the results of
 `"describe"` and `describe-markdown`
-[here](https://github.com/clojure-emacs/nrepl/blob/master/doc/ops.md)).
+[here](https://github.com/nrepl/nrepl/blob/master/doc/ops.md)).
 
 The `:requires` and `:expects` entries control the order in which
 middleware is applied to a base handler.  In the `add-stdin` example above,

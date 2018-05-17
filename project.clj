@@ -34,7 +34,7 @@
              ;; CI tools
              :codox {:plugins [[lein-codox "0.10.3"]]
                      :codox #=(eval
-                               (let [repo   (or (System/getenv "TRAVIS_REPO_SLUG") "clojure-emacs/nREPL")
+                               (let [repo   (or (System/getenv "TRAVIS_REPO_SLUG") "nrepl/nREPL")
                                      branch (or (System/getenv "AUTODOC_SUBDIR") "master")
                                      urlfmt "https://github.com/%s/blob/%s/{filepath}#L{line}"]
                                  {;; Distinct docs for tagged releases as well as "master"
