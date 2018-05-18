@@ -102,6 +102,10 @@
     (is (= (:line meta) 42))
     (is (= (:column meta) (if (< (:minor *clojure-version*) 5) nil 10)))))
 
+(def-repl-test no-code
+  (is (= {:status #{"error" "no-code" "done"}}
+         (-> (message timeout-client {:op "eval"}) combine-responses (select-keys [:status])))))
+
 (def-repl-test unknown-op
   (is (= {:op "abc" :status #{"error" "unknown-op" "done"}}
          (-> (message timeout-client {:op :abc}) combine-responses (select-keys [:op :status])))))
