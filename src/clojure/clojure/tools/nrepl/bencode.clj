@@ -13,11 +13,11 @@
   (:require [clojure.java.io :as io])
   (:import clojure.lang.RT
            [java.io ByteArrayOutputStream
-                    EOFException
-                    InputStream
-                    IOException
-                    OutputStream
-                    PushbackInputStream]))
+            EOFException
+            InputStream
+            IOException
+            OutputStream
+            PushbackInputStream]))
 
 ;; # Motivation
 ;;
