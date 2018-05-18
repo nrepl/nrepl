@@ -1,4 +1,8 @@
-# nREPL [![Build Status](https://travis-ci.org/nrepl/nREPL.svg?branch=master)](https://travis-ci.org/nrepl/nREPL)
+[![Build Status](https://travis-ci.org/nrepl/nREPL.svg?branch=master)](https://travis-ci.org/nrepl/nREPL)
+[![Clojars Project](https://img.shields.io/clojars/v/nrepl.svg)](https://clojars.org/nrepl)
+
+# nREPL
+
 
 nREPL is a Clojure *n*etwork REPL that
 provides a REPL server and client, along with some common APIs
@@ -14,7 +18,7 @@ Check the brief history of nREPL, available
 
 Extremely stable.
 
-* `[nrepl/nrepl "0.3.0"]` is a drop-in replacement for
+* `[nrepl "0.3.0"]` is a drop-in replacement for
   `[org.clojure/tools.nrepl "0.2.13"]`.
 * A later `1.0.0` release will include fixes for all previously-reported but
   languishing nREPL issues.
@@ -30,7 +34,7 @@ nREPL is available in Clojars. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
 ```clojure
-[nrepl/nrepl "0.3.0"]
+[nrepl "0.3.0"]
 ```
 
 Or, add this to your Maven project's `pom.xml`:
