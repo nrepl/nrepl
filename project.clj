@@ -1,4 +1,4 @@
-(defproject nrepl/nrepl "0.3.0"
+(defproject nrepl/nrepl "0.4.0-SNAPSHOT"
   :description "nREPL is a Clojure *n*etwork REPL."
   :min-lein-version "2.6.1"
   :source-paths ["src/clojure"]
