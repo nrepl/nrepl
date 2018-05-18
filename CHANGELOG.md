@@ -1,5 +1,9 @@
 ## Changelog
 
+* Bugfix for `clojure.tools.nrepl.middleware.session` for `:unknown-session`
+  error and `clojure.tools.nrepl.middleware.interruptible-eval` for `:no-code`
+  error, the correct response of `:status :done` is now being returned.
+
 [`0.3.0`](https://github.com/nrepl/nREPL/milestone/2?closed=1):
 
 * Materially identical to `[org.clojure/tools.nrepl "0.2.13"]`, but released under
