@@ -540,6 +540,6 @@ initial design phases of nREPL:
 
 ## License
 
-Copyright © 2010 - 2017 Chas Emerick and contributors.
+Copyright © 2010 - 2018 Chas Emerick, Bozhidar Batsov and contributors.
 
 Licensed under the EPL. (See the file epl.html.)
