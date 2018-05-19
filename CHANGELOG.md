@@ -2,6 +2,8 @@
 
 ### master (unreleased)
 
+### 0.3.1 (2018-05-19)
+
 #### Bugs fixed
 
 * [#15](https://github.com/nrepl/nREPL/issues/15) Fix for

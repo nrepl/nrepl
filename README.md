@@ -18,7 +18,7 @@ Check the brief history of nREPL, available
 
 Extremely stable.
 
-* `[nrepl "0.3.0"]` is a drop-in replacement for
+* `[nrepl "0.3.1"]` is a drop-in replacement for
   `[org.clojure/tools.nrepl "0.2.13"]`.
 * A later `1.0.0` release will include fixes for all previously-reported but
   languishing nREPL issues.
@@ -34,7 +34,7 @@ nREPL is available in Clojars. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
 ```clojure
-[nrepl "0.3.0"]
+[nrepl "0.3.1"]
 ```
 
 Or, add this to your Maven project's `pom.xml`:
@@ -43,7 +43,7 @@ Or, add this to your Maven project's `pom.xml`:
 <dependency>
   <groupId>nrepl</groupId>
   <artifactId>nrepl</artifactId>
-  <version>0.3.0</version>
+  <version>0.3.1</version>
 </dependency>
 ```
 
