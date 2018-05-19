@@ -3,7 +3,6 @@
 
 # nREPL
 
-
 nREPL is a Clojure *n*etwork REPL that
 provides a REPL server and client, along with some common APIs
 of use to IDEs and other tools that may need to evaluate Clojure
@@ -52,7 +51,7 @@ A list of all prior releases are available
 
 Please note the changelog in `CHANGELOG.md`.
 
-nREPL is compatible with Clojure 1.7.0 and higher.
+nREPL is compatible with Clojure 1.8.0+ and Java 8+.
 
 Please post general questions or discussion on either the main [Clojure mailing
 list](http://groups.google.com/group/clojure/), or [#clojure
