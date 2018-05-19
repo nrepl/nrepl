@@ -53,15 +53,16 @@
   [{:keys [open-transports ^ServerSocket server-socket] :as server}]
   (returning server
              (.close server-socket)
-             (swap! open-transports #(reduce
-                                      (fn [s t]
-                                ; should always be true for the socket server...
-                                        (if (instance? java.io.Closeable t)
-                                          (do
-                                            (safe-close t)
-                                            (disj s t))
-                                          s))
-                                      % %))))
+             (swap! open-transports
+                    #(reduce
+                      (fn [s t]
+                        ;; should always be true for the socket server...
+                        (if (instance? java.io.Closeable t)
+                          (do
+                            (safe-close t)
+                            (disj s t))
+                          s))
+                      % %))))
 
 (defn unknown-op
   "Sends an :unknown-op :error for the given message."
@@ -110,7 +111,7 @@
  #'clojure.pprint/pprint-simple-default)
 
 (try
-  ; IRecord not available in 1.2.0
+  ;; IRecord not available in 1.2.0
   (eval '(defmethod print-method Server
            [s w]
            ((get-method print-method clojure.lang.IRecord) s w)))
