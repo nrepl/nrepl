@@ -252,7 +252,7 @@ nREPL includes two transports, both of which are socket-based: a "tty"
 transport that allows one to connect to an nREPL endpoint using e.g. `telnet`
 (which therefore supports only the most simplistic interactive evaluation of
 expressions), and one that uses
-[bencode](http://wiki.theory.org/BitTorrentSpecification#Bencoding) to encode
+[bencode](https://wiki.theory.org/index.php/BitTorrentSpecification#Bencoding) to encode
 nREPL messages over sockets.  It is the latter that is used by default by
 `clojure.tools.nrepl.server/start-server` and `clojure.tools.nrepl/connect`.
 
