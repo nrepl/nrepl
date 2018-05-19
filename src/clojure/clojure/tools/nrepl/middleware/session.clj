@@ -28,7 +28,7 @@
    given transport in messages specifying the given session-id.
    `channel-type` should be :out or :err, as appropriate."
   [channel-type session-id transport]
-  (let [buf (clojure.tools.nrepl.StdOutBuffer.)]
+  (let [buf (StringBuilder.)]
     (PrintWriter. (proxy [Writer] []
                     (close [] (.flush ^Writer this))
                     (write [& [x ^Integer off ^Integer len]]
