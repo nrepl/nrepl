@@ -9,6 +9,8 @@
   error and `clojure.tools.nrepl.middleware.interruptible-eval` for
   `:no-code` error, the correct response of `:status :done` is now
   being returned.
+* [#26](https://github.com/nrepl/nREPL/issues/26): Recompile the Java classes
+for Java 8.
 
 --------------------------------------------------------------------------------
 

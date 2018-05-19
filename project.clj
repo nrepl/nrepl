@@ -4,6 +4,7 @@
   :source-paths ["src/clojure"]
   :java-source-paths ["src/java"]
   :test-paths ["test/clojure"]
+  :javac-options ["-target" "8" "-source" "8"]
 
   :dependencies [[org.clojure/tools.logging "0.4.1"]]
 
