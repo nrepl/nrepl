@@ -105,7 +105,7 @@
            (->> (repl/response-seq local 0)
                 (map :out))))))
 
-; TODO
+;; TODO
 (comment
   (def-repl-test auto-print-stack-trace
     (is (= true (repl-value "(set! clojure.tools.nrepl/*print-detail-on-error* true)")))

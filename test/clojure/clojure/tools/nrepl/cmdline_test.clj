@@ -17,7 +17,7 @@
         (is acked-port "Timed out waiting for ack")
         (when acked-port
           (with-open [c2 (repl/connect acked-port)]
-          ; just a sanity check
+          ;; just a sanity check
             (is (= "y" (-> (((:send c2) "(System/getProperty \"nreplacktest\")")) repl/read-response-value :value)))))
         (finally
           (.destroy server-process)))))

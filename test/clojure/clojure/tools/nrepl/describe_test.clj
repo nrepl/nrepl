@@ -37,7 +37,7 @@
     (is (every? seq (map (comp :doc val) ops)))
     (is (= {:current-ns "user"} aux))))
 
-; quite misplaced, but this'll do for now...
+;; quite misplaced, but this'll do for now...
 (def-repl-test update-op-docs
   (let [describe-response (nrepl/combine-responses
                            (nrepl/message timeout-client

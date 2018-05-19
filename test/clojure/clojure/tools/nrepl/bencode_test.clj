@@ -1,11 +1,10 @@
-;-
-;   Copyright (c) Meikel Brandmeyer. All rights reserved.
-;   The use and distribution terms for this software are covered by the
-;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
-;   which can be found in the file epl-v10.html at the root of this distribution.
-;   By using this software in any fashion, you are agreeing to be bound by
-;   the terms of this license.
-;   You must not remove this notice, or any other, from this software.
+;; Copyright (c) Meikel Brandmeyer. All rights reserved.
+;; The use and distribution terms for this software are covered by the
+;; Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+;; which can be found in the file epl-v10.html at the root of this distribution.
+;; By using this software in any fashion, you are agreeing to be bound by
+;; the terms of this license.
+;; You must not remove this notice, or any other, from this software.
 
 
 (ns clojure.tools.nrepl.bencode-test
@@ -135,9 +134,9 @@
     42 "i42e"
     -42 "i-42e"
 
-    ; Works for all integral types.
-    ; Note: BigInts (42N) not tested, since they are not
-    ; supported in 1.2.
+    ;; Works for all integral types.
+    ;; Note: BigInts (42N) not tested, since they are not
+    ;; supported in 1.2.
     (Byte. "42")    "i42e"
     (Short. "42")   "i42e"
     (Integer. "42") "i42e"
@@ -177,8 +176,8 @@
     (is (= to-test expected))))
 
 (deftest unencoded-values
-  ; just some PNG data that won't round-trip cleanly through UTF-8 encoding, so
-  ; any default encoding in the bencode implementation will be caught immediately
+  ;; just some PNG data that won't round-trip cleanly through UTF-8 encoding, so
+  ;; any default encoding in the bencode implementation will be caught immediately
   (let [binary-data (->> [-119 80 78 71 13 10 26 10 0 0 0 13 73 72 68 82 0 0 0
                           100 0 0 0 100 8 6 0 0 0 112 -30 -107 84 0 0 3 -16 105
                           67 67 80 73 67 67 32 80 114 111 102 105 108 101 0 0 40
