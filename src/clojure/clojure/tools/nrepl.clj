@@ -32,7 +32,7 @@
                          (if (< timestamp now)
                            [now %]
                            head))
-                       ; nanoTime appropriate here; looking to maintain ordering, not actual timestamps
+                       ;; nanoTime appropriate here; looking to maintain ordering, not actual timestamps
                        (System/nanoTime))
         tracking-seq (fn tracking-seq [responses]
                        (lazy-seq

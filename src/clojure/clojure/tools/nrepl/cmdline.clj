@@ -75,5 +75,5 @@
                  (:status (send-ack (.getLocalPort ssocket) (Integer/parseInt ack-port))))))
     (if (options "--interactive")
       (run-repl (.getLocalPort ssocket) (when (options "--color") colored-output))
-      ; need to hold process open with a non-daemon thread -- this should end up being super-temporary
+      ;; need to hold process open with a non-daemon thread -- this should end up being super-temporary
       (Thread/sleep Long/MAX_VALUE))))

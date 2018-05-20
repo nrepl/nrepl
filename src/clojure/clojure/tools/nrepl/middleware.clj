@@ -81,8 +81,8 @@
                              :returns {"ops" "Map of \"op\"erations supported by this nREPL endpoint"
                                        "versions" "Map containing version maps (like *clojure-version*, e.g. major, minor, incremental, and qualifier keys) for values, component names as keys. Common keys include \"nrepl\" and \"clojure\"."
                                        "aux" "Map of auxilliary data contributed by all of the active nREPL middleware via :describe-fn functions in their descriptors."}}}})
-; eliminate implicit expectation of "describe" handler; this is the only
-; special case introduced by the conj'ing of :expects "describe" by set-descriptor!
+;; eliminate implicit expectation of "describe" handler; this is the only
+;; special case introduced by the conj'ing of :expects "describe" by set-descriptor!
 (alter-meta! #'wrap-describe update-in [::descriptor :expects] disj "describe")
 
 (defn- dependencies
@@ -125,10 +125,10 @@
         (println)))
     (let [middlewares (set (for [m middlewares]
                              (-> (descriptor m)
-                               ; only conj'ing m here to support direct reference to
-                               ; middleware dependencies in :expects and :requires,
-                               ; e.g. interruptable-eval's dep on
-                               ; clojure.tools.nrepl.middleware.pr-values/pr-values
+                                 ;; only conj'ing m here to support direct reference to
+                                 ;; middleware dependencies in :expects and :requires,
+                                 ;; e.g. interruptable-eval's dep on
+                                 ;; clojure.tools.nrepl.middleware.pr-values/pr-values
                                  (update-in [:handles] (comp set #(conj % m) keys))
                                  (assoc :implemented-by m))))]
       (set (for [m middlewares]
@@ -191,7 +191,7 @@
 
 ;;; documentation utilities ;;;
 
-; oh, kill me now
+;; oh, kill me now
 (defn- markdown-escape
   [^String s]
   (.replaceAll s "([*_])" "\\\\$1"))
