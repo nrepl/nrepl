@@ -1,4 +1,4 @@
-<!-- This file is *generated* by #'clojure.tools.nrepl.describe-test/update-op-docs
+<!-- This file is *generated* by #'nrepl.describe-test/update-op-docs
    **Do not edit!** -->
 # Supported nREPL operations
 
@@ -106,7 +106,7 @@ Attempts to interrupt some code evaluation.
 
 * `:status` 'interrupted' if an evaluation was identified and interruption will be attempted
 'session-idle' if the session is not currently evaluating any code
-'interrupt-id-mismatch' if the session is currently evaluating code sent using a different ID than specified by the "interrupt-id" value 
+'interrupt-id-mismatch' if the session is currently evaluating code sent using a different ID than specified by the "interrupt-id" value
 
 
 ### `:load-file`

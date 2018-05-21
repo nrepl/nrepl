@@ -1,4 +1,4 @@
-(ns clojure.tools.nrepl.load-file-sample)
+(ns nrepl.load-file-sample)
 
 
 

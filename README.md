@@ -19,6 +19,8 @@ Extremely stable.
 
 * `[nrepl "0.3.1"]` is a drop-in replacement for
   `[org.clojure/tools.nrepl "0.2.13"]`.
+* `[nrepl "0.4.0"]` changes the namespaces from `clojure.tools.nrepl.*` to
+`nrepl.*`.
 * A later `1.0.0` release will include fixes for all previously-reported but
   languishing nREPL issues.
 * Future releases will focus on supporting the needs of the essential tools of
@@ -33,7 +35,7 @@ nREPL is available in Clojars. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
 ```clojure
-[nrepl "0.3.1"]
+[nrepl "0.4.0"]
 ```
 
 Or, add this to your Maven project's `pom.xml`:
@@ -42,7 +44,7 @@ Or, add this to your Maven project's `pom.xml`:
 <dependency>
   <groupId>nrepl</groupId>
   <artifactId>nrepl</artifactId>
-  <version>0.3.1</version>
+  <version>0.4.0</version>
 </dependency>
 ```
 
@@ -84,7 +86,7 @@ If you want to connect to an nREPL server using the default transport, something
 like this will work:
 
 ```clojure
-=> (require '[clojure.tools.nrepl :as repl])
+=> (require '[nrepl.core :as repl])
 nil
 => (with-open [conn (repl/connect :port 59258)]
      (-> (repl/client conn 1000)    ; message receive timeout required
@@ -139,7 +141,7 @@ application.  [Add it to your project's dependencies](#installing), and add code
 like this to your app:
 
 ```clojure
-=> (use '[clojure.tools.nrepl.server :only (start-server stop-server)])
+=> (use '[nrepl.server :only (start-server stop-server)])
 nil
 => (defonce server (start-server :port 7888))
 #'user/server
@@ -244,7 +246,7 @@ operation.
 figure that out -->
 
 _Transports_ are roughly analogous to Ring's adapters: they provide an
-implementation of a common protocol (`clojure.tools.nrepl.transport.Transport`)
+implementation of a common protocol (`nrepl.transport.Transport`)
 to enable nREPL clients and servers to send and receive messages without regard
 for the underlying channel or particulars of message encoding.
 
@@ -254,7 +256,7 @@ transport that allows one to connect to an nREPL endpoint using e.g. `telnet`
 expressions), and one that uses
 [bencode](https://wiki.theory.org/index.php/BitTorrentSpecification#Bencoding) to encode
 nREPL messages over sockets.  It is the latter that is used by default by
-`clojure.tools.nrepl.server/start-server` and `clojure.tools.nrepl/connect`.
+`nrepl.server/start-server` and `nrepl.core/connect`.
 
 [Other nREPL transports are provided by the community](https://github.com/nrepl/nrepl/wiki/Extensions).
 
@@ -307,7 +309,7 @@ perform the operation indicated by a request message's `:op`, then it should
 respond with a message containing a `:status` of `"unknown-op"`.
 
 It is currently the case that the handler provided as the `:handler` to
-`clojure.tools.nrepl.server/start-server` is generally built up as a result of
+`nrepl.server/start-server` is generally built up as a result of
 composing multiple pieces of middleware.
 
 #### Middleware
@@ -318,8 +320,8 @@ For example, some middleware that handles a hypothetical `"time?"` `:op` by
 replying with the local time on the server:
 
 ```clojure
-(require '[clojure.tools.nrepl.transport :as t])
-(use '[clojure.tools.nrepl.misc :only (response-for)])
+(require '[nrepl.transport :as t])
+(use '[nrepl.misc :only (response-for)])
 
 (defn current-time
   [h]
@@ -338,10 +340,10 @@ All of nREPL's provided default functionality is implemented in terms of
 middleware, even foundational bits like session and eval support.  This default
 middleware "stack" aims to match and exceed the functionality offered by the
 standard Clojure REPL, and is available at
-`clojure.tools.nrepl.server/default-middlewares`.  Concretely, it consists of a
+`nrepl.server/default-middlewares`.  Concretely, it consists of a
 number of middleware functions' vars that are implicitly merged with any
 user-specified middleware provided to
-`clojure.tools.nrepl.server/default-handler`.  To understand how that implicit
+`nrepl.server/default-handler`.  To understand how that implicit
 merge works, we'll first need to talk about middleware "descriptors".
 
 [Other nREPL middlewares are provided by the community]
@@ -370,7 +372,7 @@ appended or prepended to the default stack.
 To eliminate this tedium, the vars holding nREPL middleware functions may have
 a descriptor applied to them to specify certain constraints in how that
 middleware is applied.  For example, the descriptor for the
-`clojure.tools.nrepl.middleware.session/add-stdin` middleware is set thusly:
+`nrepl.middleware.session/add-stdin` middleware is set thusly:
 
 ```clojure
 (set-descriptor! #'add-stdin
@@ -384,7 +386,7 @@ middleware is applied.  For example, the descriptor for the
 ```
 
 Middleware descriptors are implemented as a map in var metadata under a
-`:clojure.tools.nrepl.middleware/descriptor` key.  Each descriptor can contain
+`:nrepl.middleware/descriptor` key.  Each descriptor can contain
 any of three entries:
 
 * `:requires`, a set containing strings or vars identifying other middleware
@@ -408,14 +410,14 @@ the handled `:op` and a value that contains any of four entries:
 The values in the `:handles` map is used to support the `"describe"` operation,
 which provides "a machine- and human-readable directory and documentation for
 the operations supported by an nREPL endpoint" (see
-`clojure.tools.nrepl.middleware/describe-markdown`, and the results of
+`nrepl.middleware/describe-markdown`, and the results of
 `"describe"` and `describe-markdown`
 [here](https://github.com/nrepl/nrepl/blob/master/doc/ops.md)).
 
 The `:requires` and `:expects` entries control the order in which
 middleware is applied to a base handler.  In the `add-stdin` example above,
 that middleware will be applied after any middleware that handles the `"eval"`
-operation, but before the `clojure.tools.nrepl.middleware.session/session`
+operation, but before the `nrepl.middleware.session/session`
 middleware.  In the case of `add-stdin`, this ensures that incoming messages
 hit the session middleware (thus ensuring that the user's dynamic scope —
 including `*in*` — has been added to the message) before the `add-stdin`'s
@@ -432,11 +434,11 @@ aid in accomplishing its aims.
 
 nREPL uses the dependency information in descriptors in order to produce a
 linearization of a set of middleware; this linearization is exposed by
-`clojure.tools.nrepl.middleware/linearize-middleware-stack`, which is
-implicitly used by `clojure.tools.nrepl.server/default-handler` to combine the
+`nrepl.middleware/linearize-middleware-stack`, which is
+implicitly used by `nrepl.server/default-handler` to combine the
 default stack of middleware with any additional provided middleware vars.  The
 primary contribution of `default-handler` is to use
-`clojure.tools.nrepl.server/unknown-op` as the base handler; this ensures that
+`nrepl.server/unknown-op` as the base handler; this ensures that
 unhandled messages will always produce a response message with an `:unknown-op`
 `:status`.  Any handlers otherwise created (e.g. via direct usage of
 `linearize-middleware-stack` to obtain a ordered sequence of middleware vars)
@@ -469,13 +471,13 @@ conditions hold at the time of printing, a pretty-printer will be used instead:
     1. One of the following is available:
         1. Clojure [1.2.0) (and therefore `clojure.pprint`)
         2. Clojure Contrib (and therefore `clojure.contrib.pprint`)
-    2. `clojure.tools.nrepl/*pretty-print*` is `set!`'ed to true (which
+    2. `nrepl/*pretty-print*` is `set!`'ed to true (which
        persists for the duration of the client connection)
 - `status` One of:
     - `error` Indicates an error occurred evaluating the requested code.  The
       related exception is bound to `*e` per usual, and printed to `*err*`,
 which will be delivered via a later message.  The caught exception is printed
-using `prn` by default; if `clojure.tools.nrepl/*print-stack-trace-on-error*`
+using `prn` by default; if `nrepl/*print-stack-trace-on-error*`
 is `set!`'ed to true (which persists for the duration of the client
 connection), then exception stack traces are automatically printed to `*err*`
 instead.
@@ -506,7 +508,7 @@ that a message's code will be allowed to run before being interrupted and a
 response message being sent indicating a status of `timeout`.
 
 The processing of a message may be interrupted by a client by sending another
-message containing code that invokes the `clojure.tools.nrepl/interrupt`
+message containing code that invokes the `nrepl/interrupt`
 function, providing it with the string ID of the message to be interrupted.
 The interrupt will be responded to separately as with any other message. (The
 provided client implementation provides a simple abstraction for handling
