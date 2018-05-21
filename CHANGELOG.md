@@ -2,6 +2,15 @@
 
 ### master (unreleased)
 
+### 0.4.0 (2018-05-21)
+
+#### Changes
+
+* [#4](https://github.com/nrepl/nREPL/issues/4): Change the project's
+  namespaces. (**breaking**) `clojure.tools.nrepl` is now `nrepl.core`,
+  the rest of the namespaces were renamed following the pattern
+  `clojure.tools.nrepl.*` -> `nrepl.*`.
+
 ### 0.3.1 (2018-05-19)
 
 #### Bugs fixed
