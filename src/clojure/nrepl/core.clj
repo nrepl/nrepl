@@ -226,13 +226,17 @@
   (throw (IllegalArgumentException.
           (format "No nREPL support known for scheme %s, url %s" (uri-scheme uri) uri))))
 
+;; TODO: Figure out if we can extract this automatically from the project metadata
+(def version-string
+  "Current version of nREPL as a string.
+  See also `version`."
+  "0.4.1-SNAPSHOT")
+
 (def version
-  "Current version of nREPL, map of :major, :minor, :incremental, and :qualifier."
-  (when-let [in (.getResourceAsStream (class connect) "/clojure/tools/nrepl/version.txt")]
-    (with-open [^java.io.BufferedReader reader (io/reader in)]
-      (let [version-string (-> reader .readLine .trim)]
-        (assoc (->> version-string
-                    (re-find #"(\d+)\.(\d+)\.(\d+)-?(.*)")
-                    rest
-                    (zipmap [:major :minor :incremental :qualifier]))
-               :version-string version-string)))))
+  "Current version of nREPL.
+  Map of :major, :minor, :incremental, :qualifier, and :version-string."
+  (assoc (->> version-string
+              (re-find #"(\d+)\.(\d+)\.(\d+)-?(.*)")
+              rest
+              (zipmap [:major :minor :incremental :qualifier]))
+         :version-string version-string))

@@ -2,6 +2,11 @@
 
 ### master (unreleased)
 
+#### Bugs fixed
+
+* [#11](https://github.com/nrepl/nREPL/issues/11): Don't read the version string
+from a resource file (`version.txt`).
+
 ### 0.4.0 (2018-05-21)
 
 #### Changes
