@@ -92,7 +92,6 @@ nil
      (-> (repl/client conn 1000)    ; message receive timeout required
        (repl/message {:op "eval" :code "(+ 2 3)"})
        repl/response-values))
-[5]
 ```
 
 `response-values` will return only the values of evaluated expressions, read
@@ -158,7 +157,6 @@ Counterclockwise or Reply, or from another Clojure process:
      (-> (repl/client conn 1000)
        (repl/message {:op :eval :code "(+ 1 1)"})
        repl/response-values))
-[2]
 ```
 
 You can stop the server with `(stop-server server)`.
