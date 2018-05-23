@@ -2,6 +2,8 @@
 
 ### master (unreleased)
 
+### 0.4.1 (2018-05-23)
+
 #### Bugs fixed
 
 * [#11](https://github.com/nrepl/nREPL/issues/11): Don't read the version string
