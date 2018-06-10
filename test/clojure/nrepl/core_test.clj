@@ -375,7 +375,7 @@
             (is (disconnection-exception? e)))))
 
       (is (thrown? SocketException (transport/recv transport)))
-      ;; TODO no idea yet why two sends are *sometimes* required to get a failure
+      ;; TODO: no idea yet why two sends are *sometimes* required to get a failure
       (try
         (transport/send transport {"op" "eval" "code" "(+ 5 1)"})
         (catch Throwable t))
@@ -396,7 +396,7 @@
         (catch Throwable t
           (is (disconnection-exception? t)))))
 
-    ;; TODO as noted in transports-fail-on-disconnects, *sometimes* two sends are needed
+    ;; TODO: as noted in transports-fail-on-disconnects, *sometimes* two sends are needed
     ;; to trigger an exception on send to an unavailable server
     (try (repl-eval session "(+ 1 1)") (catch Throwable t))
     (is (thrown? SocketException (repl-eval session "(+ 1 1)")))))

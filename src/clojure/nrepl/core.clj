@@ -208,7 +208,7 @@
    such as HTTP, HTTPS, JMX, existing message queues, etc."
   uri-scheme)
 
-;; TODO oh so ugly
+;; TODO: oh so ugly
 (defn- add-socket-connect-method!
   [protocol connect-defaults]
   (defmethod url-connect protocol

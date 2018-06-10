@@ -13,7 +13,7 @@
 
 (def ^{:private true} sessions (atom {}))
 
-;; TODO the way this is currently, :out and :err will continue to be
+;; TODO: the way this is currently, :out and :err will continue to be
 ;; associated with a particular *msg* (and session) even when produced from a future,
 ;; agent, etc. due to binding conveyance.  This may or may not be desirable
 ;; depending upon the expectations of the client/user.  I'm not sure at the moment
@@ -123,7 +123,7 @@
                  *out-limit* (or (baseline-bindings #'*out-limit*) 1024)
                   ; clojure.test captures *out* at load-time, so we need to make sure
                   ; runtime output of test status/results is redirected properly
-                  ; TODO is this something we need to consider in general, or is this
+                  ; TODO: is this something we need to consider in general, or is this
                   ; specific hack reasonable?
                  clojure.test/*test-out* out]
           ; nrepl.server happens to use agents for connection dispatch
@@ -178,7 +178,7 @@
       (if-not the-session
         (t/send transport (response-for msg :status #{:error :unknown-session :done}))
         (let [msg (assoc msg :session the-session)]
-          ;; TODO yak, this is ugly; need to cleanly thread out-limit through to
+          ;; TODO: yak, this is ugly; need to cleanly thread out-limit through to
           ;; session-out without abusing a dynamic var
           ;; (there's no reason to allow a connected client to fark around with
           ;; a session-out's "buffer")

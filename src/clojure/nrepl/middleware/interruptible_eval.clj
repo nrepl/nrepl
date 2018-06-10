@@ -100,7 +100,7 @@
                      #(or (and (.hasNext code) (.next code)) %2)))
            :prompt (fn [])
            :need-prompt (constantly false)
-            ; TODO pretty-print?
+            ; TODO: pretty-print?
            :print (fn [v]
                     (reset! bindings (assoc (capture-thread-bindings)
                                             #'*3 *2
@@ -112,7 +112,7 @@
                     (t/send transport (response-for msg
                                                     {:value v
                                                      :ns (-> *ns* ns-name str)})))
-            ; TODO customizable exception prints
+            ; TODO: customizable exception prints
            :caught (fn [e]
                      (let [root-ex (#'clojure.main/root-cause e)]
                        (when-not (instance? ThreadDeath root-ex)

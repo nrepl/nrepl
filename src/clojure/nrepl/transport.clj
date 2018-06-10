@@ -21,7 +21,7 @@
 
 (deftype FnTransport [recv-fn send-fn close]
   Transport
-  ;; TODO this keywordization/stringification has no business being in FnTransport
+  ;; TODO: this keywordization/stringification has no business being in FnTransport
   (send [this msg] (-> msg clojure.walk/stringify-keys send-fn) this)
   (recv [this] (.recv this Long/MAX_VALUE))
   (recv [this timeout] (clojure.walk/keywordize-keys (recv-fn timeout)))
