@@ -136,8 +136,9 @@
    either via `stop-server`, (.close server), or automatically via `with-open`.
    The port that the server is open on is available in the :port slot of the
    server map (useful if the :port option is 0 or was left unspecified."
-  [& {:keys [port bind transport-fn handler ack-port greeting-fn] :or {port 0}}]
-  (let [addr (fn [^String bind ^Integer port] (InetSocketAddress. bind port))
+  [& {:keys [port bind transport-fn handler ack-port greeting-fn]}]
+  (let [port (or port 0)
+        addr (fn [^String bind ^Integer port] (InetSocketAddress. bind port))
         make-ss #(doto (ServerSocket.)
                    (.setReuseAddress true)
                    (.bind %))
