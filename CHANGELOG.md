@@ -2,6 +2,11 @@
 
 ### master (unreleased)
 
+#### Bugs fixed
+
+* [#34](https://github.com/nrepl/nREPL/pull/34): Treat `nil` port as 0
+  (which assigns a random port).
+
 ### 0.4.1 (2018-05-23)
 
 #### Bugs fixed
