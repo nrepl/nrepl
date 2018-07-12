@@ -1,0 +1,23 @@
+## Why nREPL?
+
+nREPL has been designed with the aim of ensuring that it satisfies the
+requirements of both application developers (in support of activities ranging
+from interactive remote debugging and experimentation in development
+contexts through to more advanced use cases such as updating deployed
+applications) as well as toolmakers (providing a standard way to connect to and
+introspect running environments as a way of informing user interfaces of all
+kinds, including "standard" interactive, text-based REPLs).
+
+The default network protocol used is simple, depending neither
+on JVM or Clojure specifics, thereby allowing (encouraging?) the development
+of non-Clojure REPL clients.  The REPLs operational semantics are such
+that essentially any non-JVM Clojure implementation should be able to
+implement it, with allowances for hosts that lack the concurrency primitives to
+support e.g. asynchronous evaluation, interrupts, etc.
+
+For more information about the motivation, architecture, use cases, and
+discussion related to nREPL, see the see the original design notes,
+available [here](https://docs.google.com/document/edit?id=1dnb1ONTpK9ttO5W4thxiXkU5Ki89gK62anRqKEK4YZI&authkey=CMuszuMI&hl=en#),
+and the [notes](https://github.com/clojure/tools.nrepl/wiki/nREPL.Next) and
+[discussion](http://groups.google.com/group/clojure-dev/browse_frm/thread/6e366c1d0eaeec59)
+around its recent redesign.
