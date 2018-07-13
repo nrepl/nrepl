@@ -11,6 +11,7 @@ pages:
 - FAQ: faq.md
 - Third-party Middleware: third_party_middleware.md
 - Hacking on nREPL: hacking_on_nrepl.md
+- Additional Resources: additional_resources.md
 - About:
     - History: about/history.md
     - Team: about/team.md
