@@ -62,7 +62,7 @@ the "type" of the operation to be performed.  The operations supported by an
 nREPL endpoint are determined by the handlers and middleware stack used when
 starting that endpoint; the default middleware stack (described below) supports
 a particular set of operations, [detailed
-here](https://github.com/nrepl/nrepl/blob/master/doc/ops.md).
+here](ops.md).
 
 ### Embedding nREPL, starting a server
 
@@ -76,7 +76,7 @@ server whereever it might be deployed; this can greatly simplify debugging,
 sanity-checking, panicked code patching, and so on.
 
 nREPL provides a socket-based server that you can trivially start from your
-application.  [Add it to your project's dependencies](#installing), and add code
+application.  [Add it to your project's dependencies](installation.md), and add code
 like this to your app:
 
 ```clojure
@@ -107,4 +107,4 @@ Note that nREPL is not limited to its default messaging protocol, nor to its
 default use of sockets.  nREPL provides a _transport_ abstraction for
 implementing support for alternative protocols and connection methods.
 Alternative transport implementations are available, and implementing your own
-is not difficult; read more about transports [here](#transports).
+is not difficult; read more about transports [here](design.md#transports).
