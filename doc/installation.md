@@ -23,8 +23,3 @@ A list of all prior releases are available
 Please note the changelog in `CHANGELOG.md`.
 
 nREPL is compatible with Clojure 1.8.0+ and Java 8+.
-
-Please post general questions or discussion on either the main [Clojure mailing
-list](http://groups.google.com/group/clojure/), or [#clojure
-IRC](https://webchat.freenode.net/?url=irc%3A%2F%2Firc.freenode.net%2Fclojure).
-Bug reports and such may be filed via github issues here.
