@@ -1,3 +1,9 @@
+## Overview
+
+nREPL is a Clojure network REPL that provides a REPL server and
+client, along with some common APIs of use to IDEs and other tools
+that may need to evaluate Clojure code in remote environments.
+
 ## Why nREPL?
 
 nREPL has been designed with the aim of ensuring that it satisfies the
