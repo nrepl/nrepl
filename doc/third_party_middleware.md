@@ -9,7 +9,9 @@ Here's a list of notable nREPL middleware you might encounter in the wild.
 ### Clojure Editor Support
 
 * [cider-nrepl](https://github.com/clojure-emacs/cider-nrepl): A collection of nREPL middleware designed to enhance CIDER (and Clojure editors in general).
-* [nrepl-refactor](https://github.com/clojure-emacs/refactor-nrepl)
+* [refactor-nrepl](https://github.com/clojure-emacs/refactor-nrepl): A collection of functionality designed to support editor refactoring features.
+* [sayid](http://bpiel.github.io/sayid/): A powerful tracing/debugging tool. It is a great alternative of CIDER-nREPL's
+basic tracing functionality.
 
 ###  ClojureScript support to nREPL session
 
