@@ -232,8 +232,6 @@ unhandled messages will always produce a response message with an `:unknown-op`
 `linearize-middleware-stack` to obtain a ordered sequence of middleware vars)
 should do the same, or use a similar alternative base handler.
 
-<!--
-
 #### Server Responses
 
 The server will produce multiple messages in response to each client request,
@@ -253,7 +251,14 @@ one form can be read from the request's code string.  In contrast to the output
 written to `*out*` and `*err*`, this may be usefully/reliably read and utilized
 by the client, e.g. in tooling contexts, assuming the evaluated code returns a
 printable and readable value.  Interactive clients will likely want to simply
-stream `value`'s content to their UI's primary output / log.  Values are
+stream `value`'s content to their UI's primary output / log.
+
+<!---
+
+Note: Seems that's some section from the nREPL 0.1 era, as 0.2+ doesn't have
+this timeout behaviour. (@bbatsov)
+
+Values are
 printed with `prn` by default; alternatively, if all of the following
 conditions hold at the time of printing, a pretty-printer will be used instead:
     1. One of the following is available:
@@ -261,6 +266,9 @@ conditions hold at the time of printing, a pretty-printer will be used instead:
         2. Clojure Contrib (and therefore `clojure.contrib.pprint`)
     2. `nrepl/*pretty-print*` is `set!`'ed to true (which
        persists for the duration of the client connection)
+
+-->
+
 - `status` One of:
     - `error` Indicates an error occurred evaluating the requested code.  The
       related exception is bound to `*e` per usual, and printed to `*err*`,
@@ -269,13 +277,8 @@ using `prn` by default; if `nrepl/*print-stack-trace-on-error*`
 is `set!`'ed to true (which persists for the duration of the client
 connection), then exception stack traces are automatically printed to `*err*`
 instead.
-    - `timeout` Indicates that the timeout specified by the requesting message
-      expired before the code was fully evaluated.
     - `interrupted` Indicates that the evaluation of the request's code was
       interrupted.
-    - `server-failure` An unrecoverable error occurred in conjunction with the
-      processing of the request's code.  This probably indicates a bug or fatal
-system fault in the server itself.
     - `done` Indicates that the request associated with the specified ID has
       been completely processed, and no further messages related to it will be
 sent.  This does not imply "success", only that a timeout or interrupt
@@ -288,6 +291,11 @@ been written to `*err*`, etc).
 Note that evaluations that timeout or are interrupted may nevertheless result
 in multiple response messages being sent prior to the timeout or interrupt
 occurring.
+
+<!--
+
+Note: Seems that's some section from the nREPL 0.1 era, as 0.2+ doesn't have
+this timeout behaviour. (@bbatsov)
 
 ### Timeouts and Interrupts
 
