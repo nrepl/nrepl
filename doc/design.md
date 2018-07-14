@@ -232,6 +232,32 @@ unhandled messages will always produce a response message with an `:unknown-op`
 `linearize-middleware-stack` to obtain a ordered sequence of middleware vars)
 should do the same, or use a similar alternative base handler.
 
+#### Sessions
+
+Sessions persist [dynamic vars](https://clojure.org/reference/vars)
+(collected by `get-thread-bindings`) against a unique lookup. This is
+allows you to have a different value for `*e` from different REPL
+clients (e.g. two separate REPL-y instances). An existing session can
+be cloned to create a new one, which then can be modified. This allows
+for copying of existing preferences into new environments.
+
+Sessions become even more useful when different nREPL extensions start
+taking advantage of
+them. [debug-repl](https://github.com/gfredericks/debug-repl/) uses
+sessions to store information about the current breakpoint, allowing
+debugging of two things
+separately. [piggieback](https://github.com/nrepl/piggieback) uses
+sessions to allow host a ClojureScript REPL alongside an existing
+Clojure one.
+
+An easy mistake is to confuse a `session` with an `id`. The difference
+between a session and id, is that an `id` is for tracking a single
+message, and sessions are for tracking remote state. They're
+fundamental to allowing simultaneous activities in the same nREPL.
+For instance - if you want to evaluate two expressions simultaneously
+you'll have to do this in separate session, as all requests within the
+same session are serialized.
+
 #### Server Responses
 
 The server will produce multiple messages in response to each client request,
