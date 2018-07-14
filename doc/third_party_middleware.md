@@ -18,6 +18,7 @@ basic tracing functionality.
 * [Piggieback](https://github.com/nrepl/piggieback)
 * [Weasel](https://github.com/tomjakubowski/weasel)
 * [figwheel](https://github.com/bhauman/lein-figwheel)
+* [shadow-cljs](https://github.com/thheller/shadow-cljs)
 
 ### HTTP support
 
