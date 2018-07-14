@@ -292,6 +292,14 @@ Note that evaluations that timeout or are interrupted may nevertheless result
 in multiple response messages being sent prior to the timeout or interrupt
 occurring.
 
+!!! Tip
+
+    You're favourite editor/nREPL client might have some utility to
+    monitor the exchange of messages between the client and nREPL
+    (e.g. CIDER has a `*nrepl-messages*` where you can monitor all
+    requests and responses). That's a great way to get a better understanding
+    of nREPL server responses.
+
 <!--
 
 Note: Seems that's some section from the nREPL 0.1 era, as 0.2+ doesn't have
