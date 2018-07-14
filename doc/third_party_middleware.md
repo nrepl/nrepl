@@ -16,13 +16,35 @@ basic tracing functionality.
 ###  ClojureScript support to nREPL session
 
 * [Piggieback](https://github.com/nrepl/piggieback)
+
+The following ClojureScript REPLs are leveraging piggieback internally to provide
+nREPL support.
+
 * [Weasel](https://github.com/tomjakubowski/weasel)
 * [figwheel](https://github.com/bhauman/lein-figwheel)
-* [shadow-cljs](https://github.com/thheller/shadow-cljs)
+* [shadow-cljs](https://github.com/thheller/shadow-cljs) (it actually
+only stubs the piggieback API, leverages its own nREPL middleware
+internally for ClojureScript evaluation)
 
 ### HTTP support
 
 * [drawbridge](https://github.com/nrepl/drawbridge)
+
+### Deprecated Middleware
+
+This section lists middlewares that were somewhat prominent in the
+past, but were replaced by alternatives down the road.
+
+* [nrepl-middleware](https://github.com/pallet/ritz/tree/develop/nrepl-middleware),
+  part of [ritz](https://github.com/pallet/ritz) that provides a
+  variety of nREPL middleware supporting various enhanced REPL
+  operations (including apropos, javadoc lookup, code completion, and
+  an alternative eval implementation). **(superseded by `cider-nrepl`)**
+* [Javert](https://github.com/technomancy/javert) provides a basic
+  object inspector. **(superseded by `cider-nrepl`)**
+* [nrepl-profile](https://github.com/thunknyc/nrepl-profile): profiling middleware,
+which was eventually integrated into `cider-nrepl`.
+
 
 !!! Note
 
