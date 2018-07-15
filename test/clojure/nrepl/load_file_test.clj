@@ -47,10 +47,10 @@
    (doall
     (nrepl/message timeout-session
                    {:op "load-file"
-                    :file (slurp (File. project-base-dir "load-file-test/clojure/tools/nrepl/load_file_sample.clj"))
-                    :file-path "clojure/tools/nrepl/load_file_sample.clj"
+                    :file (slurp (File. project-base-dir "load-file-test/nrepl/load_file_sample.clj"))
+                    :file-path "nrepl/load_file_sample.clj"
                     :file-name "load_file_sample.clj"})))
-  (is (= [{:file "clojure/tools/nrepl/load_file_sample.clj" :line 5}]
+  (is (= [{:file "nrepl/load_file_sample.clj" :line 5}]
          (repl-values timeout-session
                       (nrepl/code
                        (-> #'nrepl.load-file-sample/dfunction
