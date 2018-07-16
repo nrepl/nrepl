@@ -100,7 +100,7 @@
         meta (meta (resolve (symbol "user" sym)))]
     (is (= (:file meta) "test.clj"))
     (is (= (:line meta) 42))
-    (is (= (:column meta) (if (< (:minor *clojure-version*) 5) nil 10)))))
+    (is (= (:column meta) 10))))
 
 (def-repl-test no-code
   (is (= {:status #{"error" "no-code" "done"}}
@@ -172,14 +172,12 @@
               (remove nil?)))))
 
 (def-repl-test session-*out*-writer-length-translation
-  (when (<= 4 (:minor *clojure-version*))
-    (is (= "#inst \"2013-02-11T12:13:44.000+00:00\"\n"
-           (-> (repl-eval session
-                          (code (println (doto
-                                          (java.util.GregorianCalendar. 2013 1 11 12 13 44)
-                                           (.setTimeZone (java.util.TimeZone/getTimeZone "GMT"))))))
-               combine-responses
-               :out)))))
+  (is (= "#inst \"2013-02-11T12:13:44.000+00:00\"\n"
+         (-> (repl-eval session
+                        (code (println (doto (java.util.GregorianCalendar. 2013 1 11 12 13 44)
+                                         (.setTimeZone (java.util.TimeZone/getTimeZone "GMT"))))))
+             combine-responses
+             :out))))
 
 (def-repl-test streaming-out-without-explicit-flushing
   (is (= ["(0 1 "
