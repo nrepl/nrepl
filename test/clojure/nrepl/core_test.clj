@@ -365,9 +365,8 @@
         (Thread/sleep 1000)
         (.close server)
         (Thread/sleep 1000)
-        ; no deref with timeout in Clojure 1.2.0 :-(
         (try
-          (.get reader 10000 java.util.concurrent.TimeUnit/MILLISECONDS)
+          (deref reader 10000 :timeout)
           (assert false "A reader started prior to the server closing should throw an error...")
           (catch Throwable e
             (is (disconnection-exception? e)))))

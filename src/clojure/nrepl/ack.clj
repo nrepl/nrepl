@@ -1,7 +1,6 @@
 (ns nrepl.ack
   (:require [nrepl.core :as repl]
-            [nrepl.transport :as t])
-  (:import (java.util.concurrent Future TimeUnit TimeoutException)))
+            [nrepl.transport :as t]))
 
 ;; could be a lot fancier, but it'll do for now
 (def ^{:private true} ack-port-promise (atom nil))
@@ -25,11 +24,8 @@
    => (wait-for-ack)
    59872 ; the port of the server started via start-server"
   [timeout]
-  (let [^Future f (future @@ack-port-promise)]
-    (try
-      ; no deref with timeout in 1.2
-      (.get f timeout TimeUnit/MILLISECONDS)
-      (catch TimeoutException e))))
+  (let [f (future @@ack-port-promise)]
+    (deref f timeout nil)))
 
 (defn handle-ack
   [h]
