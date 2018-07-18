@@ -131,12 +131,17 @@
   "Returns a new ThreadFactory for the given session.  This implementation
    generates daemon threads, with names that include the session id."
   []
-  (let [session-thread-counter (AtomicLong. 0)]
+  (let [session-thread-counter (AtomicLong. 0)
+        ;; Create a constant dcl for use across evaluations. This allows
+        ;; modifications to the classloader to persist.
+        cl (clojure.lang.DynamicClassLoader.
+            (.getContextClassLoader (Thread/currentThread)))]
     (reify ThreadFactory
       (newThread [_ runnable]
         (doto (Thread. runnable
                        (format "nREPL-worker-%s" (.getAndIncrement session-thread-counter)))
-          (.setDaemon true))))))
+          (.setDaemon true)
+          (.setContextClassLoader cl))))))
 
 (def ^{:private true} jdk6? (try
                               (class? (Class/forName "java.util.ServiceLoader"))
