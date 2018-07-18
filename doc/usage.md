@@ -20,6 +20,23 @@ client/tool.  Tools that support nREPL include:
 If your preferred Clojure development environment supports nREPL, you're done.
 Use it or connect to an existing nREPL endpoint, and you're done.
 
+#### Using the built-in client
+
+nREPL ships with a very simple command-line client that you can use for some basic
+interactions with the server. The following command will start an nREPL server
+and connect with it using the built-in client.
+
+```
+clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.2"}}}' -m nrepl.cmdline --interactive
+network-repl
+Clojure 1.9.0
+user=> (+ 1 2)
+3
+```
+
+Most users, however, are advised to use REPL-y or their favourite
+editor instead for optimal results.
+
 #### Talking to an nREPL endpoint programmatically
 
 If you want to connect to an nREPL server using the default transport, something
@@ -108,3 +125,41 @@ default use of sockets.  nREPL provides a _transport_ abstraction for
 implementing support for alternative protocols and connection methods.
 Alternative transport implementations are available, and implementing your own
 is not difficult; read more about transports [here](design.md#transports).
+
+### Hot-loading dependencies
+
+From time to time you'd want to experiment with some library without
+adding it as a dependency of your project.  You can easily achieve
+this with `tools.deps` or `pomegranate`. Let's start with a `tools.deps` example:
+
+```
+clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.2"} org.clojure/tools.deps.alpha
+                {:git/url "https://github.com/clojure/tools.deps.alpha.git"
+                 :sha "d492e97259c013ba401c5238842cd3445839d020"}}}' -m nrepl.cmdline --interactive
+network-repl
+Clojure 1.9.0
+user=> (use 'clojure.tools.deps.alpha.repl)
+nil
+user=> (add-lib 'org.clojure/core.memoize {:mvn/version "0.7.1"})
+true
+user=> (require 'clojure.core.memoize)
+nil
+user=>
+
+```
+
+Alternatively with `pomegranate` you can do the following:
+
+```
+❯ clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.2"} com.cemerick/pomegranate {:mvn/version "1.0.0"}}}' -m nrepl.cmdline --interactive
+network-repl
+Clojure 1.9.0
+user=> (use '[cemerick.pomegranate :only (add-dependencies)])
+nil
+user=> (add-dependencies :coordinates '[[org.clojure/core.memoize "0.7.1"]]
+                         :repositories (merge cemerick.pomegranate.aether/maven-central
+                                             {"clojars" "https://clojars.org/repo"}))
+{[org.clojure/core.memoize "0.7.1"] #{[org.clojure/core.cache "0.7.1"] [org.clojure/clojure "1.6.0"]}, [org.clojure/core.cache "0.7.1"] #{[org.clojure/data.priority-map "0.0.7"]}, [org.clojure/data.priority-map "0.0.7"] nil, [org.clojure/clojure "1.6.0"] nil}
+user=> (require 'clojure.core.memoize)
+nil
+```
