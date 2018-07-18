@@ -2,6 +2,14 @@
 
 ### master (unreleased)
 
+### 0.4.2 (2018-07-18)
+
+#### Changes
+
+* [#35](https://github.com/nrepl/nREPL/pull/35): Add constant DCL
+across evaluations (which means you can now easily hot-load
+dependencies).
+
 #### Bugs fixed
 
 * [#34](https://github.com/nrepl/nREPL/pull/34): Treat `nil` port as 0
