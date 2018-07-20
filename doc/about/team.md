@@ -6,6 +6,7 @@ does a lot of the groundwork on major new features.
 
 * [Bozhidar Batsov](https://github.com/bbatsov) (maintainer)
 * [Dominic Monroe](https://github.com/SevereOverfl0w)
+* [Reid McKenzie](https://github.com/arrdem)
 
 ## CIDER Alumni
 
