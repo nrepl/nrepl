@@ -14,7 +14,7 @@ priorities eventually led to work on nREPL slowing significantly, to the
 frustration of its most active users.
 
 Eventually, I proposed migrating nREPL out of Clojure Contrib in the summer of
-2017 (https://github.com/cemerick/nREPL/issues/1), with the objective of
+2017 (https://github.com/nrepl/nREPL/issues/1), with the objective of
 reconstituting an environment where the people most interested in and impacted
 by nREPL could participate in its development as easily as possible.
 
@@ -26,10 +26,17 @@ Chas
 ## To Infinity and Beyond
 
 In the spring of 2018 Chas decided to hand over the development of
-nREPL to the team behind CIDER and the efforts to build awesome
-Clojure dev tools powered by editor-independent nREPL middleware
-(e.g. `cider-nrepl`, `refactor-nrepl`, `piggieback`), therefore the
-current "home" address of nREPL. We're really excited to advance nREPL
+nREPL (and key middleware like `piggieback` and `drawbridge`) to the
+team behind CIDER and the efforts to build awesome Clojure dev tools
+powered by editor-independent nREPL middleware (e.g. `cider-nrepl`,
+`refactor-nrepl`). Important milestones achieved afterwards were the
+release of the transitional release nREPL 0.3, which simply changed
+the deployment coordinates to `nrepl/nrepl`, but is otherwise
+identical to `tools.nrepl` 0.2.3, and the subsequent release of nREPL
+0.4 which switched the namespaces of the project to `nrepl.*` and
+started delivering on the promise to fix long-standing problems.
+
+We're really excited to advance nREPL
 forward and to build many sweet REPLs on top of it!
 
 Looking forward to seeing you around! We need all the help we can get!
