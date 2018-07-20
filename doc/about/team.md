@@ -1,7 +1,7 @@
 ## The Core Team
 
 The direction of the project is being stewarded by the nREPL core team. This
-group of long-term contributors manage releases, evaluate pull-requests, and
+group of long-term contributors manages releases, evaluates pull-requests, and
 does a lot of the groundwork on major new features.
 
 * [Bozhidar Batsov](https://github.com/bbatsov) (maintainer)
