@@ -8,7 +8,7 @@ provides a REPL server and client, along with some common APIs
 of use to IDEs and other tools that may need to evaluate Clojure
 code in remote environments.
 
-### How is this different from the "official" [tools.nrepl](https://github.com/clojure/tools.nrepl/) project?
+### How is this different from the "contrib" [tools.nrepl](https://github.com/clojure/tools.nrepl/) project?
 
 Check the brief history of nREPL, available
 [here](https://nrepl.readthedocs.io/en/latest/about/history/).
