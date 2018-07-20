@@ -5,6 +5,7 @@ group of long-term contributors manage releases, evaluate pull-requests, and
 does a lot of the groundwork on major new features.
 
 * [Bozhidar Batsov](https://github.com/bbatsov) (maintainer)
+* [Dominic Monroe](https://github.com/SevereOverfl0w)
 
 ## CIDER Alumni
 
