@@ -185,11 +185,11 @@
           " 5 6 "
           "7 8 9"
           " 10)"]
-         ; new session
+         ;; new session
          (->> (message client {:op :eval :out-limit 5 :code "(print (range 11))"})
               (map :out)
               (remove nil?))
-         ; existing session
+         ;; existing session
          (->> (message session {:op :eval :out-limit 5 :code "(print (range 11))"})
               (map :out)
               (remove nil?)))))
@@ -264,7 +264,7 @@
                    combine-responses
                    :ns)))
   (is (= [5] (response-values (message session {:op :eval :code "bar" :ns "user"}))))
-  ; NREPL-72: :ns argument to eval shouldn't affect *ns* outside of the scope of that evaluation
+  ;; NREPL-72: :ns argument to eval shouldn't affect *ns* outside of the scope of that evaluation
   (is (= "baz" (-> (repl-eval session "5") combine-responses :ns))))
 
 (def-repl-test error-on-nonexistent-ns
@@ -297,8 +297,8 @@
     (is (= #{"done" "interrupted"} (-> resp combine-responses :status)))
     (is (= [true] (repl-values session "halted?")))))
 
-; NREPL-66: ensure that bindings of implementation vars aren't captured by user sessions
-; (https://github.com/clojure-emacs/cider/issues/785)
+;; NREPL-66: ensure that bindings of implementation vars aren't captured by user sessions
+;; (https://github.com/clojure-emacs/cider/issues/785)
 (def-repl-test ensure-no-*msg*-capture
   (let [[r1 r2 :as results] (repeatedly 2 #(repl-eval session "(println :foo)"))
         [ids ids2] (map #(set (map :id %)) results)
@@ -308,8 +308,8 @@
 
 (def-repl-test read-timeout
   (is (nil? (repl-values timeout-session "(Thread/sleep 1100) :ok")))
-  ; just getting the values off of the wire so the server side doesn't
-  ; toss a spurious stack trace when the client disconnects
+  ;; just getting the values off of the wire so the server side doesn't
+  ;; toss a spurious stack trace when the client disconnects
   (is (= [nil :ok] (->> (repeatedly #(transport/recv transport 500))
                         (take-while (complement nil?))
                         response-values))))
@@ -334,12 +334,12 @@
   (.close transport)
   (is (thrown? java.net.SocketException (repl-values session "5"))))
 
-; test is flaking on hudson, but passing locally! :-X
+;; test is flaking on hudson, but passing locally! :-X
 #_(def-repl-test ensure-server-closeable
     (.close *server*)
     (is (thrown? java.net.ConnectException (connect :port (:port *server*)))))
 
-; wasn't added until Clojure 1.3.0
+;; wasn't added until Clojure 1.3.0
 (defn- root-cause
   "Returns the initial cause of an exception or error by peeling off all of
   its wrappers"
@@ -351,7 +351,7 @@
 
 (defn- disconnection-exception?
   [e]
-  ; thrown? should check for the root cause!
+  ;; thrown? should check for the root cause!
   (and (instance? SocketException (root-cause e))
        (re-matches #".*(lost.*connection|socket closed).*" (.getMessage (root-cause e)))))
 
@@ -386,7 +386,7 @@
       (.close *server*)
       (Thread/sleep 1000)
       (try
-        ; these responses were on the wire before the remote transport was closed
+        ;; these responses were on the wire before the remote transport was closed
         (is (> 20 (count resp)))
         (transport/recv transport)
         (assert false "reads after the server is closed should fail")

@@ -9,7 +9,7 @@
     (doseq [x (range 10)] (t/send remote x))
     (is (= (range 10) (repl/response-seq local 0)))
 
-    ; ensure timeouts don't capture later responses
+    ;; ensure timeouts don't capture later responses
     (repl/response-seq local 100)
     (doseq [x (range 10)] (t/send remote x))
     (is (= (range 10) (repl/response-seq local 0)))))

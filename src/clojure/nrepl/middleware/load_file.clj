@@ -22,9 +22,9 @@ be loaded."} file-contents (atom {}))
    loading files of any size will work when the nREPL server is running
    remotely or locally."
   [file file-path file-name]
-  ; mini TTL impl so that any code orphaned by errors that occur
-  ; between here and the evaluation of the Compiler/load expression
-  ; below are cleaned up on subsequent loads
+  ;; mini TTL impl so that any code orphaned by errors that occur
+  ;; between here and the evaluation of the Compiler/load expression
+  ;; below are cleaned up on subsequent loads
   (let [t (System/currentTimeMillis)
         file-key ^{:t t} [file-path (gensym)]]
     (swap! file-contents
@@ -86,9 +86,9 @@ be loaded."} file-contents (atom {}))
                              (recv [this] (.recv transport))
                              (recv [this timeout] (.recv transport timeout))
                              (send [this resp]
-                          ; *ns* is always 'user' after loading a file, so
-                          ; *remove it to avoid confusing tools that assume any
-                          ; *:ns always reports *ns*
+                               ;; *ns* is always 'user' after loading a file, so
+                               ;; *remove it to avoid confusing tools that assume any
+                               ;; *:ns always reports *ns*
                                (.send transport (dissoc resp :ns))
                                this)))))))
 

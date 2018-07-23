@@ -36,7 +36,7 @@
                         (cond
                           (number? x) (.append buf (char x))
                           (not off) (.append buf x)
-                          ; the CharSequence overload of append takes an *end* idx, not length!
+                          ;; the CharSequence overload of append takes an *end* idx, not length!
                           (instance? CharSequence x) (.append buf ^CharSequence x (int off) (int (+ len off)))
                           :else (.append buf ^chars x off len))
                         (when (<= *out-limit* (.length buf))
@@ -121,13 +121,13 @@
                  *in* stdin-reader
                  *ns* (create-ns 'user)
                  *out-limit* (or (baseline-bindings #'*out-limit*) 1024)
-                  ; clojure.test captures *out* at load-time, so we need to make sure
-                  ; runtime output of test status/results is redirected properly
-                  ; TODO: is this something we need to consider in general, or is this
-                  ; specific hack reasonable?
+                 ;; clojure.test captures *out* at load-time, so we need to make sure
+                 ;; runtime output of test status/results is redirected properly
+                 ;; TODO: is this something we need to consider in general, or is this
+                 ;; specific hack reasonable?
                  clojure.test/*test-out* out]
-          ; nrepl.server happens to use agents for connection dispatch
-          ; don't capture that *agent* binding for userland REPL sessions
+         ;; nrepl.server happens to use agents for connection dispatch
+         ;; don't capture that *agent* binding for userland REPL sessions
          (atom (merge baseline-bindings (dissoc (get-thread-bindings) #'*agent*))
                :meta {:id id
                       :stdin-reader stdin-reader

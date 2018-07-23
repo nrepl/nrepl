@@ -40,7 +40,7 @@
                                              status
                                              #{status})))
         basis (merge (when id {:id id})
-                     ; AReference should make this suitable for any session implementation?
+                     ;; AReference should make this suitable for any session implementation?
                      (when session {:session (if (instance? clojure.lang.AReference session)
                                                (-> session meta :id)
                                                session)}))]
