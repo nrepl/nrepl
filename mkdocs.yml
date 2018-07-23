@@ -1,5 +1,6 @@
 site_name: "nREPL: A Clojure network REPL"
 repo_url: https://github.com/nrepl/nREPL
+site_favicon: favicon.ico
 copyright: "Copyright &copy; 2018 Chas Emerick, Bozhidar Batsov and nREPL contributors"
 docs_dir: doc
 pages:
