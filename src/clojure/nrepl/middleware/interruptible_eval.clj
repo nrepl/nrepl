@@ -13,13 +13,13 @@
 
 (def ^:private reader-conditionals? (boolean (resolve 'clojure.core/reader-conditional)))
 
-(def ^{:dynamic true
-       :doc "The message currently being evaluated."}
-  *msg* nil)
+(def ^:dynamic *msg*
+  "The message currently being evaluated."
+  nil)
 
-(def ^{:dynamic true
-       :doc "Function returning the evaluation of its argument."}
-  *eval* nil)
+(def ^:dynamic *eval*
+  "Function returning the evaluation of its argument."
+  nil)
 
 (defn- capture-thread-bindings
   "Capture thread bindings, excluding nrepl implementation vars."
