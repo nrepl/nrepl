@@ -1,4 +1,4 @@
-### Building nREPL
+## Building nREPL
 
 Releases are available from Clojars, and SNAPSHOT builds from master's
 HEAD are automatically deployed there as well, so manually building
@@ -11,4 +11,10 @@ if you insist:
 
 ```
 lein install
+```
+
+Afterwards you can simply do something like:
+
+```
+clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.3-SNAPSHOT"}}}' -m nrepl.cmdline --interactive
 ```
