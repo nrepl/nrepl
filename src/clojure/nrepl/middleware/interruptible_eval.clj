@@ -85,7 +85,7 @@
         (try
           (clojure.main/repl
            :eval (if eval (find-var (symbol eval)) clojure.core/eval)
-            ;; clojure.main/repl paves over certain vars even if they're already thread-bound
+           ;; clojure.main/repl paves over certain vars even if they're already thread-bound
            :init #(do (set! *compile-path* (@bindings #'*compile-path*))
                       (set! *1 (@bindings #'*1))
                       (set! *2 (@bindings #'*2))
@@ -100,7 +100,7 @@
                      #(or (and (.hasNext code) (.next code)) %2)))
            :prompt (fn [])
            :need-prompt (constantly false)
-            ; TODO: pretty-print?
+           ;; TODO: pretty-print?
            :print (fn [v]
                     (reset! bindings (assoc (capture-thread-bindings)
                                             #'*3 *2
@@ -112,7 +112,7 @@
                     (t/send transport (response-for msg
                                                     {:value v
                                                      :ns (-> *ns* ns-name str)})))
-            ; TODO: customizable exception prints
+           ;; TODO: customizable exception prints
            :caught (fn [e]
                      (let [root-ex (#'clojure.main/root-cause e)]
                        (when-not (instance? ThreadDeath root-ex)
@@ -147,8 +147,8 @@
                               (class? (Class/forName "java.util.ServiceLoader"))
                               (catch ClassNotFoundException e false)))
 
-; this is essentially the same as Executors.newCachedThreadPool, except
-; for the JDK 5/6 fix described below
+;; this is essentially the same as Executors.newCachedThreadPool, except
+;; for the JDK 5/6 fix described below
 (defn- configure-executor
   "Returns a ThreadPoolExecutor, configured (by default) to
    have no core threads, use an unbounded queue, create only daemon threads,
@@ -157,8 +157,8 @@
       :or {keep-alive 30000
            queue (SynchronousQueue.)}}]
   (let [^ThreadFactory thread-factory (or thread-factory (configure-thread-factory))]
-    ; ThreadPoolExecutor in JDK5 *will not run* submitted jobs if the core pool size is zero and
-    ; the queue has not yet rejected a job (see http://kirkwylie.blogspot.com/2008/10/java5-vs-java6-threadpoolexecutor.html)
+    ;; ThreadPoolExecutor in JDK5 *will not run* submitted jobs if the core pool size is zero and
+    ;; the queue has not yet rejected a job (see http://kirkwylie.blogspot.com/2008/10/java5-vs-java6-threadpoolexecutor.html)
     (ThreadPoolExecutor. (if jdk6? 0 1) Integer/MAX_VALUE
                          (long 30000) TimeUnit/MILLISECONDS
                          ^BlockingQueue queue
@@ -166,8 +166,8 @@
 
 (def default-executor (delay (configure-executor)))
 
-; A little mini-agent implementation. Needed because agents cannot be used to host REPL
-; evaluation: http://dev.clojure.org/jira/browse/NREPL-17
+;; A little mini-agent implementation. Needed because agents cannot be used to host REPL
+;; evaluation: http://dev.clojure.org/jira/browse/NREPL-17
 (defn- prep-session
   [session]
   (locking session
@@ -227,19 +227,19 @@
                           (alter-meta! session dissoc :thread :eval-msg)))))
 
         "interrupt"
-       ; interrupts are inherently racy; we'll check the agent's :eval-msg's :id and
-       ; bail if it's different than the one provided, but it's possible for
-       ; that message's eval to finish and another to start before we send
-       ; the interrupt / .stop.
+        ;; interrupts are inherently racy; we'll check the agent's :eval-msg's :id and
+        ;; bail if it's different than the one provided, but it's possible for
+        ;; that message's eval to finish and another to start before we send
+        ;; the interrupt / .stop.
         (let [{:keys [id eval-msg ^Thread thread]} (meta session)]
           (if (or (not interrupt-id)
                   (= interrupt-id (:id eval-msg)))
             (if-not thread
               (t/send transport (response-for msg :status #{:done :session-idle}))
               (do
-               ; notify of the interrupted status before we .stop the thread so
-               ; it is received before the standard :done status (thereby ensuring
-               ; that is stays within the scope of a nrepl/message seq
+                ;; notify of the interrupted status before we .stop the thread so
+                ;; it is received before the standard :done status (thereby ensuring
+                ;; that is stays within the scope of a nrepl/message seq
                 (t/send transport {:status #{:interrupted}
                                    :id (:id eval-msg)
                                    :session id})
