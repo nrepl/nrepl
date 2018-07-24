@@ -153,15 +153,12 @@
                      (if (= "Protocol family unavailable" (.getMessage e))
                        (make-ss (addr "localhost" port))
                        (throw e)))))))
-        server (assoc
-                (Server. ss
-                         (.getLocalPort ss)
-                         (atom #{})
-                         (or transport-fn t/bencode)
-                         greeting-fn
-                         (or handler (default-handler)))
-                 ;; TODO: here for backward compat with 0.2.x; drop eventually
-                :ss ss)]
+        server (Server. ss
+                        (.getLocalPort ss)
+                        (atom #{})
+                        (or transport-fn t/bencode)
+                        greeting-fn
+                        (or handler (default-handler)))]
     (future (accept-connection server))
     (when ack-port
       (ack/send-ack (:port server) ack-port))
