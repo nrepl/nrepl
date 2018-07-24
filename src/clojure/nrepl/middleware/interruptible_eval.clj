@@ -143,23 +143,15 @@
           (.setDaemon true)
           (.setContextClassLoader cl))))))
 
-(def ^{:private true} jdk6? (try
-                              (class? (Class/forName "java.util.ServiceLoader"))
-                              (catch ClassNotFoundException e false)))
-
-;; this is essentially the same as Executors.newCachedThreadPool, except
-;; for the JDK 5/6 fix described below
 (defn- configure-executor
   "Returns a ThreadPoolExecutor, configured (by default) to
-   have no core threads, use an unbounded queue, create only daemon threads,
+   have 1 core thread, use an unbounded queue, create only daemon threads,
    and allow unused threads to expire after 30s."
   [& {:keys [keep-alive queue thread-factory]
       :or {keep-alive 30000
            queue (SynchronousQueue.)}}]
   (let [^ThreadFactory thread-factory (or thread-factory (configure-thread-factory))]
-    ;; ThreadPoolExecutor in JDK5 *will not run* submitted jobs if the core pool size is zero and
-    ;; the queue has not yet rejected a job (see http://kirkwylie.blogspot.com/2008/10/java5-vs-java6-threadpoolexecutor.html)
-    (ThreadPoolExecutor. (if jdk6? 0 1) Integer/MAX_VALUE
+    (ThreadPoolExecutor. 1 Integer/MAX_VALUE
                          (long 30000) TimeUnit/MILLISECONDS
                          ^BlockingQueue queue
                          thread-factory)))
