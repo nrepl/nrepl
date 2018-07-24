@@ -2,6 +2,19 @@
 
 ### master (unreleased)
 
+#### Bugs fixed
+
+* [#16](https://github.com/nrepl/nREPL/issues/16): Don't change the
+  thread used for form evaluation over time. See
+  [#36](https://github.com/nrepl/nREPL/pull/36) for a discussion of
+  the fix.
+
+#### Changes
+
+* The result of `nrepl.server/start-server` no longer contains the
+legacy key `:ss` from the days of nREPL 0.1.x. If someone was using it
+they should switch to `:server-socket` instead.
+
 ### 0.4.2 (2018-07-18)
 
 #### Changes
