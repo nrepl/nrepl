@@ -14,6 +14,9 @@
 * The result of `nrepl.server/start-server` no longer contains the
 legacy key `:ss` from the days of nREPL 0.1.x. If someone was using it
 they should switch to `:server-socket` instead.
+* [#28](https://github.com/nrepl/nREPL/issues/28): Echo back missing
+ns during eval (previously you'd only get an error that a ns is missing,
+but no mention of the name of that namespace).
 
 ### 0.4.2 (2018-07-18)
 

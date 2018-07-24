@@ -80,7 +80,8 @@
         out (@bindings #'*out*)
         err (@bindings #'*err*)]
     (if (and ns (not explicit-ns-binding))
-      (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}}))
+      (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}
+                                           :ns ns}))
       (with-bindings @bindings
         (try
           (clojure.main/repl
