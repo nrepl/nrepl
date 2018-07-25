@@ -2,6 +2,12 @@
 
 ### master (unreleased)
 
+#### New features
+
+* Display connection info when starting the built-in cmd client. This makes it possible
+for clients like CIDER to parse it and auto-connect to the server. Pretty handy if you're
+using `clj` to start your server.
+
 #### Bugs fixed
 
 * [#16](https://github.com/nrepl/nREPL/issues/16): Don't change the

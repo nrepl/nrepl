@@ -37,7 +37,7 @@
          client (repl/client-session (repl/client transport Long/MAX_VALUE))
          ns (atom "user")
          {:keys [major minor incremental qualifier]} *clojure-version*]
-     (println "network-repl")
+     (println (format "nREPL %s" repl/version-string))
      (println (str "Clojure " (clojure-version)))
      (loop []
        (prompt @ns)
@@ -73,6 +73,12 @@
         (println (format "ack'ing my port %d to other server running on port %s"
                          (.getLocalPort ssocket) ack-port)
                  (:status (send-ack (.getLocalPort ssocket) (Integer/parseInt ack-port))))))
+    (let [port (:port server)
+          host (.getHostName (.getInetAddress ssocket))]
+      ;; The format here is important, as some tools (e.g. CIDER) parse the string
+      ;; to extract from it the host and the port to connect to
+      (println (format "nREPL server started on port %d on host %s - nrepl://%s:%d"
+                       port host host port)))
     (if (options "--interactive")
       (run-repl (.getLocalPort ssocket) (when (options "--color") colored-output))
       ;; need to hold process open with a non-daemon thread -- this should end up being super-temporary
