@@ -99,23 +99,7 @@
 
 (defrecord Server [server-socket port open-transports transport greeting handler]
   java.io.Closeable
-  (close [this] (stop-server this))
-  ;; TODO: here for backward compat with 0.2.x; drop for 0.3.0; this is what's
-  ;; causing the print-method silliness below
-  clojure.lang.IDeref
-  (deref [this] this))
-
-(#'clojure.pprint/use-method
- clojure.pprint/simple-dispatch
- Server
- #'clojure.pprint/pprint-simple-default)
-
-(try
-  ;; IRecord not available in 1.2.0
-  (eval '(defmethod print-method Server
-           [s w]
-           ((get-method print-method clojure.lang.IRecord) s w)))
-  (catch Throwable _))
+  (close [this] (stop-server this)))
 
 (defn start-server
   "Starts a socket-based nREPL server.  Configuration options include:
