@@ -39,6 +39,7 @@
          {:keys [major minor incremental qualifier]} *clojure-version*]
      (println (format "nREPL %s" repl/version-string))
      (println (str "Clojure " (clojure-version)))
+     (println (System/getProperty "java.vm.name") (System/getProperty "java.runtime.version"))
      (loop []
        (prompt @ns)
        (flush)
