@@ -171,7 +171,7 @@
                              (cons start))
                   data {:cycle (map stack cycle)}]
               (throw (ex-info
-                      "Unable to satisfy nrepl middleware ordering requirements!"
+                      "Unable to satisfy nREPL middleware ordering requirements!"
                       data)))))
         (map stack (concat sorted-vertices trivial-vertices))))))
 
