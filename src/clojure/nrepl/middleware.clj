@@ -1,16 +1,9 @@
 (ns nrepl.middleware
-  (:refer-clojure :exclude [comparator ex-info])
+  (:refer-clojure :exclude [comparator])
   (:require [clojure.set :as set]
             nrepl.core
             [nrepl.misc :as misc]
             [nrepl.transport :as transport]))
-
-;; so much backport
-(def ^:private ex-info
-  (or (resolve 'clojure.core/ex-info)
-      (fn [^String msg data]
-        (proxy [Exception clojure.lang.IDeref] [msg]
-          (deref [] data)))))
 
 (defn- var-name
   [^clojure.lang.Var v]
