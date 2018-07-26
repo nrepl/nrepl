@@ -16,5 +16,5 @@ lein install
 Afterwards you can simply do something like:
 
 ```
-clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.3-SNAPSHOT"}}}' -m nrepl.cmdline --interactive
+clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.4-SNAPSHOT"}}}' -m nrepl.cmdline --interactive
 ```

@@ -2,6 +2,8 @@
 
 ### master (unreleased)
 
+### 0.4.3 (2018-07-26)
+
 #### New features
 
 * Display connection info when starting the built-in cmd client. This makes it possible
@@ -13,7 +15,7 @@ using `clj` to start your server.
 * [#16](https://github.com/nrepl/nREPL/issues/16): Don't change the
   thread used for form evaluation over time. See
   [#36](https://github.com/nrepl/nREPL/pull/36) for a discussion of
-  the fix.
+  the fix. **(partial fix)**
 
 #### Changes
 

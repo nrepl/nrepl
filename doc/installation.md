@@ -4,7 +4,7 @@ nREPL is available in Clojars. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
 ```clojure
-[nrepl "0.4.2"]
+[nrepl "0.4.3"]
 ```
 
 Or, add this to your Maven project's `pom.xml`:
@@ -13,7 +13,7 @@ Or, add this to your Maven project's `pom.xml`:
 <dependency>
   <groupId>nrepl</groupId>
   <artifactId>nrepl</artifactId>
-  <version>0.4.2</version>
+  <version>0.4.3</version>
 </dependency>
 ```
 

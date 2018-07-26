@@ -27,7 +27,7 @@ interactions with the server. The following command will start an nREPL server
 and connect with it using the built-in client.
 
 ```
-clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.2"}}}' -m nrepl.cmdline --interactive
+clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.3"}}}' -m nrepl.cmdline --interactive
 network-repl
 Clojure 1.9.0
 user=> (+ 1 2)
@@ -133,7 +133,7 @@ adding it as a dependency of your project.  You can easily achieve
 this with `tools.deps` or `pomegranate`. Let's start with a `tools.deps` example:
 
 ```
-clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.2"} org.clojure/tools.deps.alpha
+clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.3"} org.clojure/tools.deps.alpha
                 {:git/url "https://github.com/clojure/tools.deps.alpha.git"
                  :sha "d492e97259c013ba401c5238842cd3445839d020"}}}' -m nrepl.cmdline --interactive
 network-repl
@@ -151,7 +151,7 @@ user=>
 Alternatively with `pomegranate` you can do the following:
 
 ```
-❯ clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.2"} com.cemerick/pomegranate {:mvn/version "1.0.0"}}}' -m nrepl.cmdline --interactive
+❯ clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.3"} com.cemerick/pomegranate {:mvn/version "1.0.0"}}}' -m nrepl.cmdline --interactive
 network-repl
 Clojure 1.9.0
 user=> (use '[cemerick.pomegranate :only (add-dependencies)])
