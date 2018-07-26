@@ -138,7 +138,7 @@
 
 (defn- topologically-sort
   "Topologically sorts the given middlewares according to the comparator,
-  with the added huristic that any middlewares that have no dependencies
+  with the added heuristic that any middlewares that have no dependencies
   will be sorted toward the end."
   [komparator stack]
   (let [stack (vec stack)
