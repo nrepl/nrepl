@@ -47,6 +47,9 @@
 (def #^{:private true} unary-options #{"--interactive" "--color"})
 
 (defn- split-args
+  "Convert `args` into a map of options + a list of args.
+  Unary options are set to true during this transformation.
+  Returns a vector combining the map and the list."
   [args]
   (loop [[arg & rem-args :as args] args
          options {}]
@@ -61,7 +64,8 @@
 (defn -main
   [& args]
   (let [[options args] (split-args args)
-        server (start-server :port (Integer/parseInt (or (options "--port") "0")))
+        port (Integer/parseInt (or (options "--port") "0"))
+        server (start-server :port port)
         ^java.net.ServerSocket ssocket (:server-socket server)]
     (when-let [ack-port (options "--ack")]
       (binding [*out* *err*]
