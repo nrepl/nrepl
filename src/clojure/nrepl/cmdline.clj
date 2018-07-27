@@ -7,12 +7,6 @@
             [nrepl.ack :refer [send-ack]]
             [nrepl.server :refer [start-server]]))
 
-(defn- ensure-newline
-  [s]
-  (if (= "\n" (last s))
-    s
-    (str s \newline)))
-
 (def colored-output
   {:err #(binding [*out* *err*]
            (print "\033[31m")
