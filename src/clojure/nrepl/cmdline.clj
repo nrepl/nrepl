@@ -17,7 +17,7 @@
    :value (fn [x]
             (print "\033[34m")
             (print x)
-            (print "\033[m")
+            (println "\033[m")
             (flush))})
 
 (defn- run-repl
