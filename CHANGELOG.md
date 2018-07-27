@@ -2,6 +2,15 @@
 
 ### master (unreleased)
 
+#### New features
+
+* Added `--help` command-line option.
+* Added `--bind` command-line option.
+
+#### Bugs fixed
+
+* Add missing newline after colorized values displayed in the REPL.
+
 ### 0.4.3 (2018-07-26)
 
 #### New features
