@@ -109,14 +109,14 @@
        if \"::\" isn't resolved by the underlying network stack)
    * :handler — the nREPL message handler to use for each incoming connection;
        defaults to the result of `(default-handler)`
-   * :transport-fn — a function that, given a java.net.Socket corresponding
+   * :transport-fn — a function that, given a java.net.Socket corresponding
        to an incoming connection, will return an value satisfying the
        nrepl.Transport protocol for that Socket.
-   * :ack-port — if specified, the port of an already-running server
-       that will be connected to to inform of the new server's port.
+   * :ack-port — if specified, the port of an already-running server
+       that will be connected to inform of the new server's port.
        Useful only by Clojure tooling implementations.
 
-   Returns a (map) handle to the server that is started, which may be stopped
+   Returns a (record) handle to the server that is started, which may be stopped
    either via `stop-server`, (.close server), or automatically via `with-open`.
    The port that the server is open on is available in the :port slot of the
    server map (useful if the :port option is 0 or was left unspecified."
