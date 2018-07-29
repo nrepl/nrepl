@@ -21,13 +21,14 @@
             (flush))})
 
 (defn- run-repl
-  ([port] (run-repl port nil))
-  ([port {:keys [prompt err out value]
-          :or {prompt #(print (str % "=> "))
-               err println
-               out println
-               value println}}]
-   (let [transport (repl/connect :host "localhost" :port port)
+  ([host port]
+   (run-repl host port nil))
+  ([host port {:keys [prompt err out value]
+               :or {prompt #(print (str % "=> "))
+                    err println
+                    out println
+                    value println}}]
+   (let [transport (repl/connect :host host :port port)
          client (repl/client-session (repl/client transport Long/MAX_VALUE))
          ns (atom "user")
          {:keys [major minor incremental qualifier]} *clojure-version*]
@@ -92,8 +93,8 @@
         ;; The format here is important, as some tools (e.g. CIDER) parse the string
         ;; to extract from it the host and the port to connect to
         (println (format "nREPL server started on port %d on host %s - nrepl://%s:%d"
-                         port host host port)))
-      (if (options "--interactive")
-        (run-repl (.getLocalPort ssocket) (when (options "--color") colored-output))
+                         port host host port))
+        (if (options "--interactive")
+        (run-repl host port (when (options "--color") colored-output))
         ;; need to hold process open with a non-daemon thread -- this should end up being super-temporary
-        (Thread/sleep Long/MAX_VALUE)))))
+        (Thread/sleep Long/MAX_VALUE))))))
