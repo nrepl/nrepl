@@ -28,7 +28,7 @@ The result(s) of performing each operation may be sent back to the nREPL client
 in one or more response messages, the contents of which again depend upon the
 operation.
 
-#### Transports <a name="transports"/>
+#### Transports
 
 <!-- talk about strings vs. bytestrings, the encoding thereof, etc when we
 figure that out -->
