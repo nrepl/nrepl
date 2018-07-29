@@ -14,6 +14,8 @@ depends upon the transport being used; different transports may encode messages
 differently, and therefore may or may not be able to represent certain data
 types.
 
+##### Requests
+
 Each message sent to an nREPL endpoint constitutes a "request" to perform a
 particular operation, which is indicated by a `"op"` entry.  Each operation may
 further require the incoming message to contain other data.  Which data an
@@ -27,6 +29,74 @@ some code might look like this:
 The result(s) of performing each operation may be sent back to the nREPL client
 in one or more response messages, the contents of which again depend upon the
 operation.
+
+##### Responses
+
+The server may produce multiple messages in response to each client message (request).
+The structure of the response is unique per each message type, but there are a few
+fundamental properties that will always be around in the responses:
+
+- `id` The ID of the request for which the response was generated.
+- `session` The ID of the session for which the response was generated.
+- `status` The status of the response. Here there would either be something like "done"
+if a request has been fully processed or the reason for a failure (e.g. "namespace-not-found"). Not every
+response message would have the status key. If some request generated multiple response messages only the
+final one would have the status attached to it.
+
+As mentioned earlier each op would produce different response messages. Here's what you can expect
+to see in responses generated as a result of an `eval` op invocation.
+
+- `ns` The stringified value of `*ns*` at the time of the response message's
+  generation.
+- `out` Contains content written to `*out*` while the request's code was being
+p  evaluated.  Messages containing `*out*` content may be sent at the discretion
+of the server, though at minimum corresponding with flushes of the underlying
+stream/writer.
+- `err` Same as `out`, but for `*err*`.
+- `value` The result of printing a result of evaluating a form in the code sent
+  in the corresponding request.  More than one value may be sent, if more than
+one form can be read from the request's code string.  In contrast to the output
+written to `*out*` and `*err*`, this may be usefully/reliably read and utilized
+by the client, e.g. in tooling contexts, assuming the evaluated code returns a
+printable and readable value.  Interactive clients will likely want to simply
+stream `value`'s content to their UI's primary output / log.
+
+Note that evaluations that are interrupted may nevertheless result
+in multiple response messages being sent prior to the interrupt
+occurring.
+
+!!! Tip
+
+    You're favourite editor/nREPL client might have some utility to
+    monitor the exchange of messages between the client and nREPL
+    (e.g. CIDER has a `*nrepl-messages*` where you can monitor all
+    requests and responses). That's a great way to get a better understanding
+    of nREPL server responses.
+
+<!--
+
+Note: Seems that's some section from the nREPL 0.1 era, as 0.2+ doesn't have
+this timeout behaviour. (@bbatsov)
+
+### Timeouts and Interrupts
+
+Each message has a timeout associated with it, which controls the maximum time
+that a message's code will be allowed to run before being interrupted and a
+response message being sent indicating a status of `timeout`.
+
+The processing of a message may be interrupted by a client by sending another
+message containing code that invokes the `nrepl/interrupt`
+function, providing it with the string ID of the message to be interrupted.
+The interrupt will be responded to separately as with any other message. (The
+provided client implementation provides a simple abstraction for handling
+responses that makes issuing interrupts very straightforward.)
+
+*Note that interrupts are performed on a “best-effort” basis, and are subject
+to the limitations of Java’s threading model.  For more read
+[here](http://download.oracle.com/javase/1.5.0/docs/api/java/lang/Thread.html#interrupt%28%29)
+and
+[here](http://download.oracle.com/javase/1.5.0/docs/guide/misc/threadPrimitiveDeprecation.html).*
+-->
 
 #### Transports
 
@@ -257,96 +327,3 @@ fundamental to allowing simultaneous activities in the same nREPL.
 For instance - if you want to evaluate two expressions simultaneously
 you'll have to do this in separate session, as all requests within the
 same session are serialized.
-
-#### Server Responses
-
-The server will produce multiple messages in response to each client request,
-each of which can have the following slots:
-
-- `id` The ID of the request for which the response was generated.
-- `ns` The stringified value of `*ns*` at the time of the response message's
-  generation.
-- `out` Contains content written to `*out*` while the request's code was being
-p  evaluated.  Messages containing `*out*` content may be sent at the discretion
-of the server, though at minimum corresponding with flushes of the underlying
-stream/writer.
-- `err` Same as `out`, but for `*err*`.
-- `value` The result of printing a result of evaluating a form in the code sent
-  in the corresponding request.  More than one value may be sent, if more than
-one form can be read from the request's code string.  In contrast to the output
-written to `*out*` and `*err*`, this may be usefully/reliably read and utilized
-by the client, e.g. in tooling contexts, assuming the evaluated code returns a
-printable and readable value.  Interactive clients will likely want to simply
-stream `value`'s content to their UI's primary output / log.
-
-<!---
-
-Note: Seems that's some section from the nREPL 0.1 era, as 0.2+ doesn't have
-this timeout behaviour. (@bbatsov)
-
-Values are
-printed with `prn` by default; alternatively, if all of the following
-conditions hold at the time of printing, a pretty-printer will be used instead:
-    1. One of the following is available:
-        1. Clojure [1.2.0) (and therefore `clojure.pprint`)
-        2. Clojure Contrib (and therefore `clojure.contrib.pprint`)
-    2. `nrepl/*pretty-print*` is `set!`'ed to true (which
-       persists for the duration of the client connection)
-
--->
-
-- `status` One of:
-    - `error` Indicates an error occurred evaluating the requested code.  The
-      related exception is bound to `*e` per usual, and printed to `*err*`,
-which will be delivered via a later message.  The caught exception is printed
-using `prn` by default; if `nrepl/*print-stack-trace-on-error*`
-is `set!`'ed to true (which persists for the duration of the client
-connection), then exception stack traces are automatically printed to `*err*`
-instead.
-    - `interrupted` Indicates that the evaluation of the request's code was
-      interrupted.
-    - `done` Indicates that the request associated with the specified ID has
-      been completely processed, and no further messages related to it will be
-sent.  This does not imply "success", only that a timeout or interrupt
-condition was not encountered.
-
-Only the `id` and `ns` slots will always be defined. Other slots are only
-defined when new related data is available (e.g. `err` when new content has
-been written to `*err*`, etc).
-
-Note that evaluations that timeout or are interrupted may nevertheless result
-in multiple response messages being sent prior to the timeout or interrupt
-occurring.
-
-!!! Tip
-
-    You're favourite editor/nREPL client might have some utility to
-    monitor the exchange of messages between the client and nREPL
-    (e.g. CIDER has a `*nrepl-messages*` where you can monitor all
-    requests and responses). That's a great way to get a better understanding
-    of nREPL server responses.
-
-<!--
-
-Note: Seems that's some section from the nREPL 0.1 era, as 0.2+ doesn't have
-this timeout behaviour. (@bbatsov)
-
-### Timeouts and Interrupts
-
-Each message has a timeout associated with it, which controls the maximum time
-that a message's code will be allowed to run before being interrupted and a
-response message being sent indicating a status of `timeout`.
-
-The processing of a message may be interrupted by a client by sending another
-message containing code that invokes the `nrepl/interrupt`
-function, providing it with the string ID of the message to be interrupted.
-The interrupt will be responded to separately as with any other message. (The
-provided client implementation provides a simple abstraction for handling
-responses that makes issuing interrupts very straightforward.)
-
-*Note that interrupts are performed on a “best-effort” basis, and are subject
-to the limitations of Java’s threading model.  For more read
-[here](http://download.oracle.com/javase/1.5.0/docs/api/java/lang/Thread.html#interrupt%28%29)
-and
-[here](http://download.oracle.com/javase/1.5.0/docs/guide/misc/threadPrimitiveDeprecation.html).*
--->
