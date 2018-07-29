@@ -95,6 +95,6 @@
         (println (format "nREPL server started on port %d on host %s - nrepl://%s:%d"
                          port host host port))
         (if (options "--interactive")
-        (run-repl host port (when (options "--color") colored-output))
-        ;; need to hold process open with a non-daemon thread -- this should end up being super-temporary
-        (Thread/sleep Long/MAX_VALUE))))))
+          (run-repl host port (when (options "--color") colored-output))
+          ;; need to hold process open with a non-daemon thread -- this should end up being super-temporary
+          (Thread/sleep Long/MAX_VALUE))))))
