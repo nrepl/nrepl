@@ -50,7 +50,7 @@ Add this alias to `~/.clojure/deps.edn`:
 
 Then you can simply run the nREPL server in headless mode like this:
 
-``` shell
+```
 clj -R:nREPL -m nrepl.cmdline
 ```
 
@@ -61,15 +61,15 @@ how you can easily start a ClojureScript capable nREPL:
 ``` clojure
 {
 ;; ...
-:aliases {:nrepl
+:aliases {:nREPL
           {:extra-deps
-            {nrepl/nrepl {:mvn/version "0.4.4"}
-             cider/piggieback {:mvn/version "0.3.8"}}}}
+           {nrepl/nrepl {:mvn/version "0.4.4"}
+            cider/piggieback {:mvn/version "0.3.8"}}}}
 }
 ```
 
-``` shell
-clj -R:nrepl -m nrepl.cmdline --middleware "[cider.piggieback/wrap-cljs-repl]"
+```
+clj -R:nREPL -m nrepl.cmdline --middleware "[cider.piggieback/wrap-cljs-repl]"
 ```
 
 Here's a listing of all the options available via nREPL's command-line
