@@ -2,6 +2,8 @@
 
 ### master (unreleased)
 
+### 0.4.4 (2018-07-31)
+
 #### New features
 
 * Added `--help` command-line option.

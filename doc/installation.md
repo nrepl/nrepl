@@ -4,7 +4,7 @@ nREPL is available in Clojars. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
 ```clojure
-[nrepl "0.4.3"]
+[nrepl "0.4.4"]
 ```
 
 Or, add this to your Maven project's `pom.xml`:
@@ -13,7 +13,7 @@ Or, add this to your Maven project's `pom.xml`:
 <dependency>
   <groupId>nrepl</groupId>
   <artifactId>nrepl</artifactId>
-  <version>0.4.3</version>
+  <version>0.4.4</version>
 </dependency>
 ```
 
@@ -36,6 +36,7 @@ A few major changes happened since nREPL 0.2.x:
 * The namespace prefix changed from `clojure.tools.nrepl` to `nrepl`.
 * The namespace `clojure.tools.nrepl` was renamed to `nrepl.core`.
 * nREPL now targets Java 8+ and Clojure 1.8+ (it used to target Java 6 and Clojure 1.2)
+* All the code which existed for compatibility with nREPL 0.1.x was removed. (which probably won't affect anyone, as it was ancient)
 
 Those changes can affect you in two ways:
 

@@ -1,11 +1,98 @@
 ## Usage
 
+### Starting a server
+
+There are many ways to start an nREPL server. Most often you'd start
+it using some build tool, but you can also embed the server in your
+application and start it from it. Here we'll outline the most
+popular options available for you today.
+
+#### Using Leiningen
+
+[Leiningen](https://github.com/technomancy/leiningen) has built-in support for nREPL since
+version 2. Just do:
+
+```
+lein repl
+```
+
+And you're all set. By default Lein will also connect to the running nREPL server using the
+popular command-line nREPL client [REPL-y][]. If you don't need the terminal REPL you can
+also start nREPL in headless mode:
+
+```
+lein repl :headless
+```
+
+#### Using Boot
+
+Boot is a popular alternative to Leiningen, that also has build-in support for nREPL:
+
+```
+boot repl
+```
+
+#### Using Clojure CLI tools
+
+If you're into the `clj` command you can take advantage of nREPL's built-in command-line interface
+(`nrepl.cmdline`).
+
+Add this alias to `~/.clojure/deps.edn`:
+
+``` clojure
+{
+;; ...
+:aliases {:nREPL
+          {:extra-deps
+            {nrepl/nrepl {:mvn/version "0.4.4"}}}}
+}
+```
+
+Then you can simply run the nREPL server in headless mode like this:
+
+``` shell
+clj -R:nREPL -m nrepl.cmdline"
+```
+
+A good practice is add whatever nREPL middleware you want to use to
+the `nREPL` profile, so you can easily activate them when needed. Here's
+how you can easily start a ClojureScript capable nREPL:
+
+``` clojure
+{
+;; ...
+:aliases {:nrepl
+          {:extra-deps
+            {nrepl/nrepl {:mvn/version "0.4.4"}
+             cider/piggieback {:mvn/version "0.3.8"}}}}
+}
+```
+
+``` shell
+clj -R:nrepl -m nrepl.cmdline --middleware "[cider.piggieback/wrap-cljs-repl]"
+```
+
+Here's a listing of all the options available via nREPL's command-line
+interface (this output was simply generated with `--help`):
+
+```
+Usage:
+
+  --interactive            Start nREPL and connect to it with the built-in client.
+  --color                  Use colors to differentiate values from output in the REPL. Must be combined with --interactive.
+  --bind                   Bind address, by default "::" (falling back to "localhost" if "::" isn't resolved by the underlying network stack).
+  --port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
+  --ack ACK-PORT           Acknowledge the port of this server to another nREPL server running on ACK-PORT.
+  --handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`.
+  --middleware MIDDLEWARE  A sequence of vars, representing middleware you wish to mix in to the nREPL handler.
+  --help                   Show this help message.
+```
+
 ### Connecting to an nREPL server
 
 Most of the time, you will connect to an nREPL server using an existing
 client/tool.  Tools that support nREPL include:
 
-* [Leiningen](https://github.com/technomancy/leiningen) (starting with v2)
 * [Counterclockwise](https://github.com/laurentpetit/ccw) (Clojure IDE/plugin
   for Eclipse)
 * [Cursive](https://cursiveclojure.com) (Clojure IDE/plugin for IntelliJ Idea)
@@ -14,7 +101,7 @@ client/tool.  Tools that support nREPL include:
 * [monroe](https://github.com/sanel/monroe) (nREPL client for Emacs)
 * [fireplace.vim](https://github.com/tpope/vim-fireplace) (Clojure + nREPL
   support for vim)
-* [Reply](https://github.com/trptcolin/reply/)
+* [REPL-y][]
 * [Atom](https://atom.io/packages/search?q=nrepl)
 
 If your preferred Clojure development environment supports nREPL, you're done.
@@ -27,9 +114,11 @@ interactions with the server. The following command will start an nREPL server
 and connect with it using the built-in client.
 
 ```
-clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.3"}}}' -m nrepl.cmdline --interactive
-network-repl
+clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.4"}}}' -m nrepl.cmdline --interactive
+nREPL server started on port 59403 on host 0:0:0:0:0:0:0:0 - nrepl://0:0:0:0:0:0:0:0:59403
+nREPL 0.4.4
 Clojure 1.9.0
+Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
 user=> (+ 1 2)
 3
 ```
@@ -133,7 +222,7 @@ adding it as a dependency of your project.  You can easily achieve
 this with `tools.deps` or `pomegranate`. Let's start with a `tools.deps` example:
 
 ```
-clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.3"} org.clojure/tools.deps.alpha
+clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.4"} org.clojure/tools.deps.alpha
                 {:git/url "https://github.com/clojure/tools.deps.alpha.git"
                  :sha "d492e97259c013ba401c5238842cd3445839d020"}}}' -m nrepl.cmdline --interactive
 network-repl
@@ -151,7 +240,7 @@ user=>
 Alternatively with `pomegranate` you can do the following:
 
 ```
-❯ clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.3"} com.cemerick/pomegranate {:mvn/version "1.0.0"}}}' -m nrepl.cmdline --interactive
+❯ clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.4"} com.cemerick/pomegranate {:mvn/version "1.0.0"}}}' -m nrepl.cmdline --interactive
 network-repl
 Clojure 1.9.0
 user=> (use '[cemerick.pomegranate :only (add-dependencies)])
@@ -163,3 +252,5 @@ user=> (add-dependencies :coordinates '[[org.clojure/core.memoize "0.7.1"]]
 user=> (require 'clojure.core.memoize)
 nil
 ```
+
+[REPL-y]: https://github.com/trptcolin/reply/
