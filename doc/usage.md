@@ -9,7 +9,7 @@ popular options available for you today.
 
 #### Using Leiningen
 
-[Leiningen](https://github.com/technomancy/leiningen) has built-in support for nREPL since
+[Leiningen][] has built-in support for nREPL since
 version 2. Just do:
 
 ```
@@ -26,7 +26,7 @@ lein repl :headless
 
 #### Using Boot
 
-Boot is a popular alternative to Leiningen, that also has build-in support for nREPL:
+[Boot][] is a popular alternative to Leiningen, that also has build-in support for nREPL:
 
 ```
 boot repl
@@ -93,16 +93,19 @@ Usage:
 Most of the time, you will connect to an nREPL server using an existing
 client/tool.  Tools that support nREPL include:
 
-* [Counterclockwise](https://github.com/laurentpetit/ccw) (Clojure IDE/plugin
-  for Eclipse)
-* [Cursive](https://cursiveclojure.com) (Clojure IDE/plugin for IntelliJ Idea)
 * [CIDER](https://github.com/clojure-emacs/cider) (Clojure Interactive
   Development Environment that Rocks for Emacs)
+* [Cursive](https://cursiveclojure.com) (Clojure IDE/plugin for IntelliJ Idea)
+* [Counterclockwise](https://github.com/ccw-ide/ccw) (Clojure IDE/plugin
+  for Eclipse)
 * [monroe](https://github.com/sanel/monroe) (nREPL client for Emacs)
 * [fireplace.vim](https://github.com/tpope/vim-fireplace) (Clojure + nREPL
   support for vim)
-* [REPL-y][]
-* [Atom](https://atom.io/packages/search?q=nrepl)
+* [Proto REPL](https://github.com/jasongilman/proto-repl) (Proto REPL is a Clojure development environment and REPL for Atom)
+* [Calva](https://github.com/BetterThanTomorrow/calva) (Clojure & ClojureScript support for VS Code)
+* [REPL-y][] (command-line client for nREPL)
+
+Both Leiningen and Boot use internally REPL-y, as their command-line nREPL client.
 
 If your preferred Clojure development environment supports nREPL, you're done.
 Use it or connect to an existing nREPL endpoint, and you're done.
@@ -254,3 +257,5 @@ nil
 ```
 
 [REPL-y]: https://github.com/trptcolin/reply/
+[Boot]: https://github.com/boot-clj/boot
+[Leiningen]: https://github.com/technomancy/leiningen
