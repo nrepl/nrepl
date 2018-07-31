@@ -51,7 +51,7 @@ Add this alias to `~/.clojure/deps.edn`:
 Then you can simply run the nREPL server in headless mode like this:
 
 ``` shell
-clj -R:nREPL -m nrepl.cmdline"
+clj -R:nREPL -m nrepl.cmdline
 ```
 
 A good practice is add whatever nREPL middleware you want to use to
