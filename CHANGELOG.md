@@ -6,6 +6,9 @@
 
 * Added `--help` command-line option.
 * Added `--bind` command-line option.
+* Added `--handler` and `--middleware` command-line options. Extremely useful when starting nREPL using
+`clj` and `tools.deps`, as this allows you to inject middleware trivially without the need for
+something like `lein` or `boot`.
 
 #### Bugs fixed
 

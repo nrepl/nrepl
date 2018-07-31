@@ -71,7 +71,44 @@
   --bind                   Bind address, by default \"::\" (falling back to \"localhost\" if \"::\" isn't resolved by the underlying network stack).
   --port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
   --ack ACK-PORT           Acknowledge the port of this server to another nREPL server running on ACK-PORT.
+  --handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`.
+  --middleware MIDDLEWARE  A sequence of vars, representing middleware you wish to mix in to the nREPL handler.
   --help                   Show this help message."))
+
+(defn- require-and-resolve
+  "Require and resolve `thing`."
+  [thing]
+  (require (symbol (namespace thing)))
+  (resolve thing))
+
+(def ^:private resolve-mw-xf
+  (comp (map require-and-resolve)
+        (keep identity)))
+
+(defn- handle-seq-var
+  [var]
+  (let [x @var]
+    (if (sequential? x)
+      (into [] resolve-mw-xf x)
+      [var])))
+
+(def ^:private mw-xf
+  (comp (map symbol)
+        resolve-mw-xf
+        (mapcat handle-seq-var)))
+
+(defn- ->mw-list
+  [middleware-var-strs]
+  (into [] mw-xf middleware-var-strs))
+
+(defn- build-handler
+  "Build an nREPL handler from `middleware`.
+  `middleware` is a sequence of vars or string which can be resolved
+  to vars, representing middleware you wish to mix in to the nREPL
+  handler. Vars can resolve to a sequence of vars, in which case
+  they'll be flattened into the list of middleware."
+  [middleware]
+  (apply nrepl.server/default-handler (->mw-list middleware)))
 
 (defn -main
   [& args]
@@ -81,7 +118,12 @@
       (System/exit 0))
     (let [port (Integer/parseInt (or (options "--port") "0"))
           bind (options "--bind")
-          server (start-server :port port :bind bind)
+          ;; if some handler was explicitly passed we'll use it, otherwise we'll build one
+          ;; from whatever was passed via --middleware
+          handler (and (options "--handler") (read-string (options "--handler")))
+          middleware (and (options "--middleware") (read-string (options "--middleware")))
+          handler (if handler (handler) (build-handler middleware))
+          server (start-server :port port :bind bind :handler handler)
           ^java.net.ServerSocket ssocket (:server-socket server)]
       (when-let [ack-port (options "--ack")]
         (binding [*out* *err*]
