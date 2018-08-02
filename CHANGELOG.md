@@ -81,21 +81,27 @@ from a resource file (`version.txt`).
 * [#26](https://github.com/nrepl/nREPL/issues/26): Recompile the Java classes
 for Java 8.
 
---------------------------------------------------------------------------------
+### 0.3.0 (2018-05-18)
 
-[`0.3.0`](https://github.com/nrepl/nREPL/milestone/2?closed=1):
+#### Changes
 
-* Materially identical to `[org.clojure/tools.nrepl "0.2.13"]`, but released under
-  `nrepl/nrepl` coordinates as part of the migration out of clojure-contrib
-  https://github.com/nrepl/nREPL (gh-1)
-* If `start-server` is not provided with a `:bind` hostname, nREPL will default
+* [#1](https://github.com/nrepl/nREPL/issues/1): Materially identical
+  to `[org.clojure/tools.nrepl "0.2.13"]`, but released under
+  `nrepl/nrepl` coordinates as part of the migration out of
+  clojure-contrib https://github.com/nrepl/nREPL
+* `clojure.tools/logging` is now a normal dependency (it used to be an
+  optional dependency).
+
+#### Bugs fixed
+
+* [#20](https://github.com/nrepl/nREPL/issues/20): If `start-server` is not provided with a `:bind` hostname, nREPL will default
   to binding to the ipv6 `::` (as before), but will now _always_ fall back to
   `localhost`. Previously, the ipv4 hostname was only used if `::` could not be
   resolved; this change ensures that the `localhost` fallback is used in
   networking environments where `::` is resolved successfully, but cannot be
-  bound. (gh-20)
-* `clojure.tools/logging` is now a normal dependency (it used to be an
-  optional dependency).
+  bound.
+
+--------------------------------------------------------------------------------
 
 `0.2.13`:
 
