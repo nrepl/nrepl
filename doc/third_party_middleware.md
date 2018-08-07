@@ -4,7 +4,8 @@ Here's a list of notable nREPL middleware you might encounter in the wild.
 
 !!! Warning
 
-    Some of them might not have been updated to work with `nrepl/nrepl` yet.
+    Make sure you're using the latest versions of those middlewares, as
+    all of them added support for nREPL 0.4+ fairly recently.
 
 ### Clojure Editor Support
 
@@ -22,6 +23,7 @@ nREPL support.
 
 * [Weasel](https://github.com/tomjakubowski/weasel)
 * [figwheel](https://github.com/bhauman/lein-figwheel)
+* [figwheel-main](https://github.com/bhauman/figwheel-main)
 * [shadow-cljs](https://github.com/thheller/shadow-cljs) (it actually
 only stubs the piggieback API, leverages its own nREPL middleware
 internally for ClojureScript evaluation)
