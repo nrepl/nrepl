@@ -8,6 +8,7 @@ script:
   - make $TARGET
 env:
   matrix:
+    - VERSION=1.7 TARGET=test
     - VERSION=1.8 TARGET=test
     - VERSION=1.9 TARGET=test
   global:

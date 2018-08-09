@@ -26,7 +26,7 @@ Please note the changelog in `CHANGELOG.md`.
 
 !!! Note
 
-    nREPL is compatible with Clojure 1.8.0+ and Java 8+.
+    nREPL is compatible with Clojure 1.7.0+ and Java 8+.
 
 ## Upgrading from nREPL 0.2.x to 0.4.x
 
@@ -35,7 +35,7 @@ A few major changes happened since nREPL 0.2.x:
 * The artefact id changed from `org.clojure/clojure.tools.nrepl` to `nrepl/nrepl`.
 * The namespace prefix changed from `clojure.tools.nrepl` to `nrepl`.
 * The namespace `clojure.tools.nrepl` was renamed to `nrepl.core`.
-* nREPL now targets Java 8+ and Clojure 1.8+ (it used to target Java 6 and Clojure 1.2)
+* nREPL now targets Java 8+ and Clojure 1.7+ (it used to target Java 6 and Clojure 1.2)
 * All the code which existed for compatibility with nREPL 0.1.x was removed. (which probably won't affect anyone, as it was ancient)
 
 Those changes can affect you in two ways:
