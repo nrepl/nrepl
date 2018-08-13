@@ -48,8 +48,7 @@ to see in responses generated as a result of an `eval` op invocation.
 
 - `ns` The stringified value of `*ns*` at the time of the response message's
   generation.
-- `out` Contains content written to `*out*` while the request's code was being
-p  evaluated.  Messages containing `*out*` content may be sent at the discretion
+- `out` Contains content written to `*out*` while the request's code was being evaluated.  Messages containing `*out*` content may be sent at the discretion
 of the server, though at minimum corresponding with flushes of the underlying
 stream/writer.
 - `err` Same as `out`, but for `*err*`.
