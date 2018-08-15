@@ -1,2 +1,2 @@
-{:cljdoc.doc/tree [["Readme" {:file "README.md"}
-                    "Changelog" {:file "CHANGELOG.md"}]]}
+{:cljdoc.doc/tree [["Readme" {:file "README.md"}]
+                   ["Changelog" {:file "CHANGELOG.md"}]]}
