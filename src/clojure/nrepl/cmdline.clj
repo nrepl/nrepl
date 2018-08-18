@@ -25,8 +25,8 @@
    (run-repl host port nil))
   ([host port {:keys [prompt err out value]
                :or {prompt #(print (str % "=> "))
-                    err println
-                    out println
+                    err print
+                    out print
                     value println}}]
    (let [transport (repl/connect :host host :port port)
          client (repl/client-session (repl/client transport Long/MAX_VALUE))
