@@ -25,8 +25,7 @@ Extremely stable.
 * A later `1.0.0` release will include fixes for all previously-reported but
   languishing nREPL issues.
 * Future releases will focus on supporting the needs of the essential tools of
-  the Clojure[Script] ecosystem, e.g. Leiningen, CIDER, boot, Cursive, and so
-  on.
+  the Clojure(Script) ecosystem (e.g. Leiningen, Boot, CIDER, Cursive).
 
 ## Usage
 
@@ -34,6 +33,6 @@ See the [manual](https://nrepl.readthedocs.io).
 
 ## License
 
-Copyright © 2010 - 2018 Chas Emerick, Bozhidar Batsov and contributors.
+Copyright © 2010-2018 Chas Emerick, Bozhidar Batsov and contributors.
 
 Licensed under the EPL. (See the file epl.html.)
