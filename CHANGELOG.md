@@ -2,6 +2,10 @@
 
 ### master (unreleased)
 
+#### New features
+
+* The built-in the CLI generates an `.nrepl-port` file on server startup.
+
 #### Bugs fixed
 
 * [#38](https://github.com/nrepl/nREPL/issues/38): Remove extra newline in REPL output.

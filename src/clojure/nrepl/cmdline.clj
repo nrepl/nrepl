@@ -3,7 +3,8 @@
   e.g. reply for a proper command-line nREPL client @
   https://github.com/trptcolin/reply/"
   {:author "Chas Emerick"}
-  (:require [nrepl.core :as repl]
+  (:require [clojure.java.io :as io]
+            [nrepl.core :as repl]
             [nrepl.ack :refer [send-ack]]
             [nrepl.server :refer [start-server]]))
 
@@ -136,6 +137,9 @@
         ;; to extract from it the host and the port to connect to
         (println (format "nREPL server started on port %d on host %s - nrepl://%s:%d"
                          port host host port))
+        (let [port-file (io/file ".nrepl-port")]
+          (.deleteOnExit port-file)
+          (spit port-file port))
         (if (options "--interactive")
           (run-repl host port (when (options "--color") colored-output))
           ;; need to hold process open with a non-daemon thread -- this should end up being super-temporary
