@@ -226,11 +226,14 @@
   (throw (IllegalArgumentException.
           (format "No nREPL support known for scheme %s, url %s" (uri-scheme uri) uri))))
 
-;; TODO: Figure out if we can extract this automatically from the project metadata
 (def version-string
   "Current version of nREPL as a string.
   See also `version`."
-  "0.4.5-SNAPSHOT")
+  (-> (or (io/resource "nrepl/nrepl/project.clj")
+          "project.clj")
+      slurp
+      read-string
+      (nth 2)))
 
 (def version
   "Current version of nREPL.
