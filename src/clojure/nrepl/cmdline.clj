@@ -46,7 +46,7 @@
          (when (:ns res) (reset! ns (:ns res))))
        (recur)))))
 
-(def #^{:private true} unary-options #{"--interactive" "--color" "--help"})
+(def #^{:private true} unary-options #{"--interactive" "--connect" "--color" "--help"})
 
 (defn- split-args
   "Convert `args` into a map of options + a list of args.
@@ -68,8 +68,10 @@
   (println "Usage:
 
   --interactive            Start nREPL and connect to it with the built-in client.
+  --connect                Connect to a running nREPL with the built-in client.
   --color                  Use colors to differentiate values from output in the REPL. Must be combined with --interactive.
-  --bind                   Bind address, by default \"::\" (falling back to \"localhost\" if \"::\" isn't resolved by the underlying network stack).
+  --bind ADDR              Bind address, by default \"::\" (falling back to \"localhost\" if \"::\" isn't resolved by the underlying network stack).
+  --host ADDR              Host address to connect to when using --connect. Defaults to \"localhost\".
   --port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
   --ack ACK-PORT           Acknowledge the port of this server to another nREPL server running on ACK-PORT.
   --handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`.
@@ -114,33 +116,41 @@
 (defn -main
   [& args]
   (let [[options args] (split-args args)]
+    ;; we have to check for --help first, as it's special
     (when (options "--help")
       (display-help)
       (System/exit 0))
+    ;; then we check for --connect
     (let [port (Integer/parseInt (or (options "--port") "0"))
-          bind (options "--bind")
-          ;; if some handler was explicitly passed we'll use it, otherwise we'll build one
-          ;; from whatever was passed via --middleware
-          handler (and (options "--handler") (read-string (options "--handler")))
-          middleware (and (options "--middleware") (read-string (options "--middleware")))
-          handler (if handler (handler) (build-handler middleware))
-          server (start-server :port port :bind bind :handler handler)
-          ^java.net.ServerSocket ssocket (:server-socket server)]
-      (when-let [ack-port (options "--ack")]
-        (binding [*out* *err*]
-          (println (format "ack'ing my port %d to other server running on port %s"
-                           (.getLocalPort ssocket) ack-port)
-                   (:status (send-ack (.getLocalPort ssocket) (Integer/parseInt ack-port))))))
-      (let [port (:port server)
-            host (.getHostName (.getInetAddress ssocket))]
-        ;; The format here is important, as some tools (e.g. CIDER) parse the string
-        ;; to extract from it the host and the port to connect to
-        (println (format "nREPL server started on port %d on host %s - nrepl://%s:%d"
-                         port host host port))
-        (let [port-file (io/file ".nrepl-port")]
-          (.deleteOnExit port-file)
-          (spit port-file port))
-        (if (options "--interactive")
-          (run-repl host port (when (options "--color") colored-output))
-          ;; need to hold process open with a non-daemon thread -- this should end up being super-temporary
-          (Thread/sleep Long/MAX_VALUE))))))
+          host (options "--host")]
+      (when (options "--connect")
+        (run-repl host port)
+        (System/exit 0))
+      ;; otherwise we assume we have to start an nREPL server
+      (let [bind (options "--bind")
+            ;; if some handler was explicitly passed we'll use it, otherwise we'll build one
+            ;; from whatever was passed via --middleware
+            handler (and (options "--handler") (read-string (options "--handler")))
+            middleware (and (options "--middleware") (read-string (options "--middleware")))
+            handler (if handler (handler) (build-handler middleware))
+            server (start-server :port port :bind bind :handler handler)
+            ^java.net.ServerSocket ssocket (:server-socket server)]
+        (when-let [ack-port (options "--ack")]
+          (binding [*out* *err*]
+            (println (format "ack'ing my port %d to other server running on port %s"
+                             (.getLocalPort ssocket) ack-port)
+                     (:status (send-ack (.getLocalPort ssocket) (Integer/parseInt ack-port))))))
+        (let [port (:port server)
+              host (.getHostName (.getInetAddress ssocket))]
+          ;; The format here is important, as some tools (e.g. CIDER) parse the string
+          ;; to extract from it the host and the port to connect to
+          (println (format "nREPL server started on port %d on host %s - nrepl://%s:%d"
+                           port host host port))
+          ;; Many clients look for this file to infer the port to connect to
+          (let [port-file (io/file ".nrepl-port")]
+            (.deleteOnExit port-file)
+            (spit port-file port))
+          (if (options "--interactive")
+            (run-repl host port (when (options "--color") colored-output))
+            ;; need to hold process open with a non-daemon thread -- this should end up being super-temporary
+            (Thread/sleep Long/MAX_VALUE)))))))

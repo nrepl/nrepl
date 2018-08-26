@@ -79,8 +79,10 @@ interface (this output was simply generated with `--help`):
 Usage:
 
   --interactive            Start nREPL and connect to it with the built-in client.
+  --connect                Connect to a running nREPL with the built-in client.
   --color                  Use colors to differentiate values from output in the REPL. Must be combined with --interactive.
-  --bind                   Bind address, by default "::" (falling back to "localhost" if "::" isn't resolved by the underlying network stack).
+  --bind ADDR              Bind address, by default "::" (falling back to "localhost" if "::" isn't resolved by the underlying network stack).
+  --host ADDR              Host address to connect to when using --connect. Defaults to \"localhost\".
   --port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
   --ack ACK-PORT           Acknowledge the port of this server to another nREPL server running on ACK-PORT.
   --handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`.
@@ -119,6 +121,17 @@ and connect with it using the built-in client.
 ```
 clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.4"}}}' -m nrepl.cmdline --interactive
 nREPL server started on port 59403 on host 0:0:0:0:0:0:0:0 - nrepl://0:0:0:0:0:0:0:0:59403
+nREPL 0.4.4
+Clojure 1.9.0
+Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
+user=> (+ 1 2)
+3
+```
+
+If you want to connect to a server that's already running you can do it like this:
+
+```
+clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.5"}}}' -m nrepl.cmdline --connect --host host --port port
 nREPL 0.4.4
 Clojure 1.9.0
 Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
