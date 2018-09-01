@@ -18,3 +18,19 @@ Afterwards you can simply do something like:
 ```
 clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.4-SNAPSHOT"}}}' -m nrepl.cmdline --interactive
 ```
+
+## Running the tests
+
+The easiest way to run the tests is with the following command:
+
+```
+lein test-all
+```
+
+This will automatically run the tests for every supported Clojure
+profile (e.g. 1.7, 1.8, 1.9). You can run only the tests for a
+specific version of Clojure like this:
+
+```
+lein with-profile 1.9 test
+```
