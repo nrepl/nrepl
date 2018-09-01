@@ -1,10 +1,10 @@
 (ns nrepl.transport
   {:author "Chas Emerick"}
   (:refer-clojure :exclude (send))
-  (:require [clojure.java.io :as io]
-            [bencode.core :as be]
-            [nrepl.misc :refer [uuid]]
-            clojure.walk)
+  (:require [bencode.core :as bencode]
+            [clojure.java.io :as io]
+            clojure.walk
+            [nrepl.misc :refer [uuid]])
   (:import clojure.lang.RT
            [java.io EOFException PushbackInputStream PushbackReader]
            [java.net Socket SocketException]
@@ -89,7 +89,7 @@
    (let [in (PushbackInputStream. (io/input-stream in))
          out (io/output-stream out)]
      (fn-transport
-      #(let [payload (rethrow-on-disconnection s (be/read-bencode in))
+      #(let [payload (rethrow-on-disconnection s (bencode/read-bencode in))
              unencoded (<bytes (payload "-unencoded"))
              to-decode (apply dissoc payload "-unencoded" unencoded)]
          (merge (dissoc payload "-unencoded")
@@ -98,7 +98,7 @@
       #(rethrow-on-disconnection s
                                  (locking out
                                    (doto out
-                                     (be/write-bencode %)
+                                     (bencode/write-bencode %)
                                      .flush)))
       (fn []
         (if s
