@@ -54,9 +54,15 @@
    "-h" "--host"
    "-p" "--port"
    "-m" "--middleware"
-   "-n" "--handler"})
+   "-n" "--handler"
+   "-v" "--version"})
 
-(def #^{:private true} unary-options #{"--interactive" "--connect" "--color" "--help"})
+(def #^{:private true} unary-options
+  #{"--interactive"
+    "--connect"
+    "--color"
+    "--help"
+    "--version"})
 
 (defn- expand-shorthands
   "Expand shorthand options into their full forms."
@@ -91,7 +97,8 @@
   --ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.
   -n/--handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`.
   -m/--middleware MIDDLEWARE  A sequence of vars, representing middleware you wish to mix in to the nREPL handler.
-  --help                      Show this help message."))
+  --help                      Show this help message.
+  -v/--version                Display the nREPL version."))
 
 (defn- require-and-resolve
   "Require and resolve `thing`."
@@ -134,6 +141,9 @@
     ;; we have to check for --help first, as it's special
     (when (options "--help")
       (display-help)
+      (System/exit 0))
+    (when (options "--version")
+      (println repl/version-string)
       (System/exit 0))
     ;; then we check for --connect
     (let [port (Integer/parseInt (or (options "--port") "0"))

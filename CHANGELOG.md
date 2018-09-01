@@ -8,6 +8,7 @@
 * [#39](https://github.com/nrepl/nREPL/issues/39): Add a `--connect` command-line option allowing you to connect.
 with the built-in client to an already running nREPL server.
 * Add shorthand names for most command-line options.
+* Add a `-v/--version` command-line option.
 
 #### Changes
 
