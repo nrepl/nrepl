@@ -75,19 +75,17 @@ clj -R:nREPL -m nrepl.cmdline --middleware "[cider.piggieback/wrap-cljs-repl]"
 Here's a listing of all the options available via nREPL's command-line
 interface (this output was simply generated with `--help`):
 
-```
-Usage:
-
-  --interactive            Start nREPL and connect to it with the built-in client.
-  --connect                Connect to a running nREPL with the built-in client.
-  --color                  Use colors to differentiate values from output in the REPL. Must be combined with --interactive.
-  --bind ADDR              Bind address, by default "::" (falling back to "localhost" if "::" isn't resolved by the underlying network stack).
-  --host ADDR              Host address to connect to when using --connect. Defaults to \"localhost\".
-  --port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
-  --ack ACK-PORT           Acknowledge the port of this server to another nREPL server running on ACK-PORT.
-  --handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`.
-  --middleware MIDDLEWARE  A sequence of vars, representing middleware you wish to mix in to the nREPL handler.
-  --help                   Show this help message.
+``` clojure
+  -i/--interactive            Start nREPL and connect to it with the built-in client.
+  -c/--connect                Connect to a running nREPL with the built-in client.
+  -C/--color                  Use colors to differentiate values from output in the REPL. Must be combined with --interactive.
+  -b/--bind ADDR              Bind address, by default \"::\" (falling back to \"localhost\" if \"::\" isn't resolved by the underlying network stack).
+  -h/--host ADDR              Host address to connect to when using --connect. Defaults to \"localhost\".
+  -p/--port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
+  --ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.
+  -n/--handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`.
+  -m/--middleware MIDDLEWARE  A sequence of vars, representing middleware you wish to mix in to the nREPL handler.
+  --help                      Show this help message.
 ```
 
 ### Connecting to an nREPL server
