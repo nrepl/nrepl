@@ -2,6 +2,8 @@
 
 ### master (unreleased)
 
+### 0.4.5 (2018-09-02)
+
 #### New features
 
 * The built-in the CLI generates an `.nrepl-port` file on server startup.

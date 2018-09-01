@@ -230,7 +230,7 @@
 (def version-string
   "Current version of nREPL as a string.
   See also `version`."
-  "0.4.5-SNAPSHOT")
+  "0.4.5")
 
 (def version
   "Current version of nREPL.

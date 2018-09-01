@@ -44,7 +44,7 @@ Add this alias to `~/.clojure/deps.edn`:
 ;; ...
 :aliases {:nREPL
           {:extra-deps
-            {nrepl/nrepl {:mvn/version "0.4.4"}}}}
+            {nrepl/nrepl {:mvn/version "0.4.5"}}}}
 }
 ```
 
@@ -63,7 +63,7 @@ how you can easily start a ClojureScript capable nREPL:
 ;; ...
 :aliases {:nREPL
           {:extra-deps
-           {nrepl/nrepl {:mvn/version "0.4.4"}
+           {nrepl/nrepl {:mvn/version "0.4.5"}
             cider/piggieback {:mvn/version "0.3.8"}}}}
 }
 ```
@@ -117,9 +117,9 @@ interactions with the server. The following command will start an nREPL server
 and connect with it using the built-in client.
 
 ```
-clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.4"}}}' -m nrepl.cmdline --interactive
+clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.5"}}}' -m nrepl.cmdline --interactive
 nREPL server started on port 59403 on host 0:0:0:0:0:0:0:0 - nrepl://0:0:0:0:0:0:0:0:59403
-nREPL 0.4.4
+nREPL 0.4.5
 Clojure 1.9.0
 Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
 user=> (+ 1 2)
@@ -130,7 +130,7 @@ If you want to connect to a server that's already running you can do it like thi
 
 ```
 clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.5"}}}' -m nrepl.cmdline --connect --host host --port port
-nREPL 0.4.4
+nREPL 0.4.5
 Clojure 1.9.0
 Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
 user=> (+ 1 2)
@@ -236,7 +236,7 @@ adding it as a dependency of your project.  You can easily achieve
 this with `tools.deps` or `pomegranate`. Let's start with a `tools.deps` example:
 
 ```
-clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.4"} org.clojure/tools.deps.alpha
+clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.5"} org.clojure/tools.deps.alpha
                 {:git/url "https://github.com/clojure/tools.deps.alpha.git"
                  :sha "d492e97259c013ba401c5238842cd3445839d020"}}}' -m nrepl.cmdline --interactive
 network-repl
@@ -254,7 +254,7 @@ user=>
 Alternatively with `pomegranate` you can do the following:
 
 ```
-❯ clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.4"} com.cemerick/pomegranate {:mvn/version "1.0.0"}}}' -m nrepl.cmdline --interactive
+❯ clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.5"} com.cemerick/pomegranate {:mvn/version "1.0.0"}}}' -m nrepl.cmdline --interactive
 network-repl
 Clojure 1.9.0
 user=> (use '[cemerick.pomegranate :only (add-dependencies)])
