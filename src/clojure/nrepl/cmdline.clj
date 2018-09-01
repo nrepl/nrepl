@@ -46,7 +46,22 @@
          (when (:ns res) (reset! ns (:ns res))))
        (recur)))))
 
+(def #^{:private true} option-shorthands
+  {"-i" "--interactive"
+   "-r" "--repl"
+   "-c" "--connect"
+   "-b" "--bind"
+   "-h" "--host"
+   "-p" "--port"
+   "-m" "--middleware"
+   "-n" "--handler"})
+
 (def #^{:private true} unary-options #{"--interactive" "--connect" "--color" "--help"})
+
+(defn- expand-shorthands
+  "Expand shorthand options into their full forms."
+  [args]
+  (map (fn [arg] (or (option-shorthands arg) arg)) args))
 
 (defn- split-args
   "Convert `args` into a map of options + a list of args.
@@ -55,7 +70,7 @@
   [args]
   (loop [[arg & rem-args :as args] args
          options {}]
-    (if-not (and arg (re-matches #"--.*" arg))
+    (if-not (and arg (re-matches #"-.*" arg))
       [options args]
       (if (unary-options arg)
         (recur rem-args
@@ -67,16 +82,16 @@
   []
   (println "Usage:
 
-  --interactive            Start nREPL and connect to it with the built-in client.
-  --connect                Connect to a running nREPL with the built-in client.
-  --color                  Use colors to differentiate values from output in the REPL. Must be combined with --interactive.
-  --bind ADDR              Bind address, by default \"::\" (falling back to \"localhost\" if \"::\" isn't resolved by the underlying network stack).
-  --host ADDR              Host address to connect to when using --connect. Defaults to \"localhost\".
-  --port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
-  --ack ACK-PORT           Acknowledge the port of this server to another nREPL server running on ACK-PORT.
-  --handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`.
-  --middleware MIDDLEWARE  A sequence of vars, representing middleware you wish to mix in to the nREPL handler.
-  --help                   Show this help message."))
+  -i/--interactive            Start nREPL and connect to it with the built-in client.
+  -c/--connect                Connect to a running nREPL with the built-in client.
+  -C/--color                  Use colors to differentiate values from output in the REPL. Must be combined with --interactive.
+  -b/--bind ADDR              Bind address, by default \"::\" (falling back to \"localhost\" if \"::\" isn't resolved by the underlying network stack).
+  -h/--host ADDR              Host address to connect to when using --connect. Defaults to \"localhost\".
+  -p/--port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
+  --ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.
+  -n/--handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`.
+  -m/--middleware MIDDLEWARE  A sequence of vars, representing middleware you wish to mix in to the nREPL handler.
+  --help                      Show this help message."))
 
 (defn- require-and-resolve
   "Require and resolve `thing`."
@@ -115,7 +130,7 @@
 
 (defn -main
   [& args]
-  (let [[options args] (split-args args)]
+  (let [[options args] (split-args (expand-shorthands args))]
     ;; we have to check for --help first, as it's special
     (when (options "--help")
       (display-help)
