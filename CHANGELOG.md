@@ -5,7 +5,7 @@
 #### New features
 
 * The built-in the CLI generates an `.nrepl-port` file on server startup.
-* [#39](https://github.com/nrepl/nREPL/issues/39): Add a `--connect` command-line option allowing you to connect
+* [#39](https://github.com/nrepl/nREPL/issues/39): Add a `--connect` command-line option allowing you to connect.
 with the built-in client to an already running nREPL server.
 * Add shorthand names for most command-line options.
 
