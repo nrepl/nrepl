@@ -8,6 +8,10 @@
 * [#39](https://github.com/nrepl/nREPL/issues/39): Add a `--connect` command-line option allowing you to connect
 with the built-in client to an already running nREPL server.
 
+#### Changes
+
+* [#32](https://github.com/nrepl/nREPL/issues/32): Extract the bencode logic in a [separate library](https://github.com/nrepl/bencode).
+
 #### Bugs fixed
 
 * [#38](https://github.com/nrepl/nREPL/issues/38): Remove extra newline in REPL output.

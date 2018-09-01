@@ -10,7 +10,8 @@
   :test-paths ["test/clojure"]
   :javac-options ["-target" "8" "-source" "8"]
 
-  :dependencies [[org.clojure/tools.logging "0.4.1"]]
+  :dependencies [[org.clojure/tools.logging "0.4.1"]
+                 [nrepl/bencode "1.0.0"]]
 
   :aliases {"bump-version" ["change" "version" "leiningen.release/bump-version"]}
 
