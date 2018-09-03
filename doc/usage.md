@@ -79,7 +79,7 @@ interface (this output was simply generated with `--help`):
   -i/--interactive            Start nREPL and connect to it with the built-in client.
   -c/--connect                Connect to a running nREPL with the built-in client.
   -C/--color                  Use colors to differentiate values from output in the REPL. Must be combined with --interactive.
-  -b/--bind ADDR              Bind address, by default \"::\" (falling back to \"localhost\" if \"::\" isn't resolved by the underlying network stack).
+  -b/--bind ADDR              Bind address, by default "::" (falling back to "localhost" if "::" isn't resolved by the underlying network stack).
   -h/--host ADDR              Host address to connect to when using --connect. Defaults to \"localhost\".
   -p/--port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
   --ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.
