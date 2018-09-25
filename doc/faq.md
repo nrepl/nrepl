@@ -28,7 +28,7 @@ important tickets from our backlog.
 
 Sure! See [third party middleware](third_party_middleware.md) for details.
 
-## Where can I get help regarding CIDER?
+## Where can I get help regarding nREPL?
 
 See the [Support](about/support.md) section of the manual.
 
