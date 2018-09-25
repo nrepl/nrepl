@@ -154,6 +154,18 @@ nil
        repl/response-values))
 ```
 
+If your nREPL server is running on a different machine or listening on a specific
+address different than the default one, you can use the `:host` keyword in the
+`connect` function to specify which address to connect to. E.g., to
+connect to a nREPL server listening on address 172.18.0.5 and port 4001:
+
+```clojure
+=> (with-open [conn (repl/connect :host "172.18.0.5" :port 4001)]
+     (-> (repl/client conn 1000)    ; message receive timeout required
+       (repl/message {:op "eval" :code "(+ 2 3)"})
+       repl/response-values))
+```
+
 `response-values` will return only the values of evaluated expressions, read
 from their (by default) `pr`-encoded representations via `read`.  You can see
 the full content of message responses easily:
@@ -206,18 +218,24 @@ nil
 #'user/server
 ```
 
+If you want your nREPL server to listen on a particular address instead of the
+default one, you can use the `:bind` keyword to specify the address to
+listen on. E.g., to make the nREPL server listen on address 172.18.0.5
+and port 4001: 
+
+```clojure
+=> (use '[nrepl.server :only (start-server stop-server)])
+nil
+=> (defonce server (start-server :bind "172.18.0.5" :port 4001))
+#'user/server
+```
+
 Depending on what the lifecycle of your application is, whether you want to be
 able to easily restart the server, etc., you might want to put the value
 `start-server` returns into an atom or somesuch.  Anyway, once your app is
 running an nREPL server, you can connect to it from a tool like Leiningen or
-Counterclockwise or Reply, or from another Clojure process:
-
-```clojure
-=> (with-open [conn (repl/connect :port 7888)]
-     (-> (repl/client conn 1000)
-       (repl/message {:op :eval :code "(+ 1 1)"})
-       repl/response-values))
-```
+Counterclockwise or Reply, or from another Clojure process, as shown
+in [Connecting to an nREPL Server](#connecting-to-an-nrepl-server).
 
 You can stop the server with `(stop-server server)`.
 
