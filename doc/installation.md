@@ -47,5 +47,8 @@ Apart from those renamings it's business as usual - nREPL's API and
 protocol remain exactly the same as they were in 0.2.x, and backwards
 compatibility remains as important as always.
 
-Currently both `boot` and `lein` still ship with the legacy nREPL 0.2.x, so you'll need to start nREPL 0.4+
-manually if you want to use it.
+!!! Warning
+
+    You'll need Boot 2.8.2+ or Leiningen 2.8.2+ (still unreleased) to take advantage of nREPL
+    0.4, as their older releases bundled nREPL 0.2.x. Leiningen users can also use the
+    [lein-nrepl plugin](https://github.com/nrepl/lein-nrepl/pulls) until Leiningen 2.8.2 is officially released.
