@@ -200,7 +200,7 @@ here](ops.md).
 
 If your project uses Leiningen (v2 or higher), you already have access to an
 nREPL server for your project via `lein repl` (or, `lein repl :headless` if you
-don't need the Reply terminal-based nREPL client to connect to the resulting
+don't need the REPL-y terminal-based nREPL client to connect to the resulting
 nREPL server).
 
 Otherwise, it can be extremely useful to have your application host a REPL
@@ -221,7 +221,7 @@ nil
 If you want your nREPL server to listen on a particular address instead of the
 default one, you can use the `:bind` keyword to specify the address to
 listen on. E.g., to make the nREPL server listen on address 172.18.0.5
-and port 4001: 
+and port 4001:
 
 ```clojure
 => (use '[nrepl.server :only (start-server stop-server)])
@@ -234,7 +234,7 @@ Depending on what the lifecycle of your application is, whether you want to be
 able to easily restart the server, etc., you might want to put the value
 `start-server` returns into an atom or somesuch.  Anyway, once your app is
 running an nREPL server, you can connect to it from a tool like Leiningen or
-Counterclockwise or Reply, or from another Clojure process, as shown
+Counterclockwise or REPL-y, or from another Clojure process, as shown
 in [Connecting to an nREPL Server](#connecting-to-an-nrepl-server).
 
 You can stop the server with `(stop-server server)`.

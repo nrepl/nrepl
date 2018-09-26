@@ -1,6 +1,6 @@
 (ns nrepl.cmdline
   "A proof-of-concept command-line client for nREPL.  Please see
-  e.g. reply for a proper command-line nREPL client @
+  e.g. REPL-y for a proper command-line nREPL client @
   https://github.com/trptcolin/reply/"
   {:author "Chas Emerick"}
   (:require [clojure.java.io :as io]
