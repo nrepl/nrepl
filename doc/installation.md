@@ -1,11 +1,36 @@
 ## Installation
 
+nREPL is a library (as opposed to it being an application), so it's
+not something you'd be installing in the traditional sense. There's
+currently no nREPL binary or script that you can run to spin a server.
+
+!!! Note
+
+    While there's no binary, there is a command-line interface that
+    mostly targets `clj`. It's documented in the subsequent sections of this
+    manual.
+
+All popular Clojure build tools (Leiningen, Boot, Gradle, Maven) have
+the ability to run an nREPL server and most of the time you'll probably
+simply use nREPL through them and end up using whatever nREPL version
+they happen to ship.
+
+Still, from time to time you'll be building a tool around nREPL or you'll
+want to embed an nREPL server directly in your application. In those
+scenarios some kind of an installation will be in order - just adding
+nREPL as a dependency to your project.
+
 nREPL is available in Clojars. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
 ```clojure
 [nrepl "0.4.5"]
 ```
+
+!!! Tip
+
+    You can override the version of nREPL supplied by Leiningen and Boot by
+    adding nREPL as a dependency to your project.
 
 Or, add this to your Maven project's `pom.xml`:
 
