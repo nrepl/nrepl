@@ -1,6 +1,6 @@
 ## What's the difference between contrib's nREPL and this one?
 
-See [our history](https://nrepl.readthedocs.io/en/latest/about/history/).
+See [our history](https://docs.nrepl.xyz/en/latest/about/history/).
 Very simply put - this project is the continuation of the contrib project.
 
 ## Does nREPL support ClojureScript?
