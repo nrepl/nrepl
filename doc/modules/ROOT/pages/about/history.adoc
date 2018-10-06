@@ -1,4 +1,6 @@
-## There and Back Again
+= History
+
+== There and Back Again
 
 nREPL has had an unusual history, which seems worthwhile documenting here.
 
@@ -18,12 +20,12 @@ Eventually, I proposed migrating nREPL out of Clojure Contrib in the summer of
 reconstituting an environment where the people most interested in and impacted
 by nREPL could participate in its development as easily as possible.
 
-Cheers,<br/>
+Cheers, +
 Chas
 
---------------------------------------------------------------------------------
+'''
 
-## To Infinity and Beyond
+== To Infinity and Beyond
 
 In the spring of 2018 Chas decided to hand over the development of
 nREPL (and key middleware like `piggieback` and `drawbridge`) to the
@@ -41,5 +43,5 @@ forward and to build many sweet REPLs on top of it!
 
 Looking forward to seeing you around! We need all the help we can get!
 
-Cheers,<br/>
+Cheers, +
 Bozhidar (a.k.a. Bug)

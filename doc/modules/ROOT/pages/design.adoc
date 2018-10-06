@@ -1,20 +1,20 @@
-### Design
+= Design
 
 nREPL largely consists of three abstractions: handlers, middleware, and
 transports.  These are roughly analogous to the handlers, middleware, and
-adapters of [Ring](https://github.com/ring-clojure/ring), though there are some
+adapters of link:https://github.com/ring-clojure/ring[Ring], though there are some
 important semantic differences. Finally, nREPL is fundamentally message-oriented
 and asynchronous (in contrast to most REPLs that build on top of streams
 provided by e.g.  terminals).
 
-#### Messages
+== Messages
 
 nREPL messages are maps.  The keys and values that may be included in messages
 depends upon the transport being used; different transports may encode messages
 differently, and therefore may or may not be able to represent certain data
 types.
 
-##### Requests
+== Requests
 
 Each message sent to an nREPL endpoint constitutes a "request" to perform a
 particular operation, which is indicated by a `"op"` entry.  Each operation may
@@ -22,15 +22,16 @@ further require the incoming message to contain other data.  Which data an
 operation requires or may accept varies; for example, a message to evaluate
 some code might look like this:
 
-```clojure
+[source,clojure]
+----
 {"op" "eval" "code" "(+ 1 2 3)"}
-```
+----
 
 The result(s) of performing each operation may be sent back to the nREPL client
 in one or more response messages, the contents of which again depend upon the
 operation.
 
-##### Responses
+== Responses
 
 The server may produce multiple messages in response to each client message (request).
 The structure of the response is unique per each message type, but there are a few
@@ -64,20 +65,21 @@ Note that evaluations that are interrupted may nevertheless result
 in multiple response messages being sent prior to the interrupt
 occurring.
 
-!!! Tip
+[TIP]
+===
+You're favourite editor/nREPL client might have some utility to
+monitor the exchange of messages between the client and nREPL
+(e.g. CIDER has a `*nrepl-messages*` where you can monitor all
+requests and responses). That's a great way to get a better understanding
+of nREPL server responses.
+===
+////
 
-    You're favourite editor/nREPL client might have some utility to
-    monitor the exchange of messages between the client and nREPL
-    (e.g. CIDER has a `*nrepl-messages*` where you can monitor all
-    requests and responses). That's a great way to get a better understanding
-    of nREPL server responses.
-
-<!--
 
 Note: Seems that's some section from the nREPL 0.1 era, as 0.2+ doesn't have
 this timeout behaviour. (@bbatsov)
 
-### Timeouts and Interrupts
+== Timeouts and Interrupts
 
 Each message has a timeout associated with it, which controls the maximum time
 that a message's code will be allowed to run before being interrupted and a
@@ -92,15 +94,19 @@ responses that makes issuing interrupts very straightforward.)
 
 *Note that interrupts are performed on a “best-effort” basis, and are subject
 to the limitations of Java’s threading model.  For more read
-[here](http://download.oracle.com/javase/1.5.0/docs/api/java/lang/Thread.html#interrupt%28%29)
+link:http://download.oracle.com/javase/1.5.0/docs/api/java/lang/Thread.html#interrupt%28%29[here]
 and
-[here](http://download.oracle.com/javase/1.5.0/docs/guide/misc/threadPrimitiveDeprecation.html).*
--->
+link:http://download.oracle.com/javase/1.5.0/docs/guide/misc/threadPrimitiveDeprecation.html[here].*
 
-#### Transports
+////
 
-<!-- talk about strings vs. bytestrings, the encoding thereof, etc when we
-figure that out -->
+[[transports]]
+== Transports
+
+////
+ talk about strings vs. bytestrings, the encoding thereof, etc when we
+figure that out 
+////
 
 _Transports_ are roughly analogous to Ring's adapters: they provide an
 implementation of a common protocol (`nrepl.transport.Transport`)
@@ -111,13 +117,13 @@ nREPL includes two transports, both of which are socket-based: a "tty"
 transport that allows one to connect to an nREPL endpoint using e.g. `telnet`
 (which therefore supports only the most simplistic interactive evaluation of
 expressions), and one that uses
-[bencode](https://wiki.theory.org/index.php/BitTorrentSpecification#Bencoding) to encode
+link:https://wiki.theory.org/index.php/BitTorrentSpecification#Bencoding[bencode] to encode
 nREPL messages over sockets.  It is the latter that is used by default by
 `nrepl.server/start-server` and `nrepl.core/connect`.
 
-[Other nREPL transports are provided by the community](https://github.com/nrepl/nrepl/wiki/Extensions).
+link:https://github.com/nrepl/nrepl/wiki/Extensions[Other nREPL transports are provided by the community].
 
-#### Handlers
+== Handlers
 
 _Handlers_ are functions that accept a single incoming message as an argument.
 An nREPL server is started with a single handler function, which will be used
@@ -132,7 +138,7 @@ may seem peculiar, but is motivated by two factors:
   code like `"(+ 1 2) (def a 6)"`).
 
 Thus, messages provided to nREPL handlers are guaranteed to contain a
-`:transport` entry containing the [transport](#transports) that should be used
+`:transport` entry containing the <<transports,transports>> that should be used
 to send all responses precipitated by a given message.  (This slot is added by
 the nREPL server itself, thus, if a client sends any message containing a
 `"transport"` entry, it will be bashed out by the `Transport` that was the
@@ -169,14 +175,15 @@ It is currently the case that the handler provided as the `:handler` to
 `nrepl.server/start-server` is generally built up as a result of
 composing multiple pieces of middleware.
 
-#### Middleware
+== Middleware
 
 _Middleware_ are higher-order functions that accept a handler and return a new
 handler that may compose additional functionality onto or around the original.
 For example, some middleware that handles a hypothetical `"time?"` `:op` by
 replying with the local time on the server:
 
-```clojure
+[source,clojure]
+----
 (require '[nrepl.transport :as t])
 (use '[nrepl.misc :only (response-for)])
 
@@ -186,7 +193,7 @@ replying with the local time on the server:
     (if (= "time?" op)
       (t/send transport (response-for msg :status :done :time (System/currentTimeMillis)))
       (h msg))))
-```
+----
 
 A little silly, but this pattern should be familiar to you if you have
 implemented Ring middleware before.  Nearly all of the same patterns and
@@ -203,16 +210,14 @@ user-specified middleware provided to
 `nrepl.server/default-handler`.  To understand how that implicit
 merge works, we'll first need to talk about middleware "descriptors".
 
-[Other nREPL middlewares are provided by the community]
-(https://github.com/nrepl/nrepl/wiki/Extensions).
+link:https://github.com/nrepl/nrepl/wiki/Extensions[Other nREPL middlewares are provided by the community].
 
-(See [this documentation
-listing](https://github.com/nrepl/nrepl/blob/master/doc/ops.md) for
+(See <<ops.adoc, this documentation listing>> for
 details as to the operations implemented by nREPL's default middleware stack,
 what each operation expects in request messages, and what they emit for
 responses.)
 
-##### Middleware descriptors and nREPL server configuration
+=== Middleware descriptors and nREPL server configuration
 
 It is generally the case that most users of nREPL will expect some minimal REPL
 functionality to always be available: evaluation (and the ability to interrupt
@@ -231,7 +236,8 @@ a descriptor applied to them to specify certain constraints in how that
 middleware is applied.  For example, the descriptor for the
 `nrepl.middleware.session/add-stdin` middleware is set thusly:
 
-```clojure
+[source,clojure]
+----
 (set-descriptor! #'add-stdin
   {:requires #{#'session}
    :expects #{"eval"}
@@ -240,7 +246,7 @@ middleware is applied.  For example, the descriptor for the
               :requires {"stdin" "Content to add to *in*."}
               :optional {}
               :returns {"status" "A status of \"need-input\" will be sent if a session's *in* requires content in order to satisfy an attempted read operation."}}}})
-```
+----
 
 Middleware descriptors are implemented as a map in var metadata under a
 `:nrepl.middleware/descriptor` key.  Each descriptor can contain
@@ -268,8 +274,7 @@ The values in the `:handles` map is used to support the `"describe"` operation,
 which provides "a machine- and human-readable directory and documentation for
 the operations supported by an nREPL endpoint" (see
 `nrepl.middleware/describe-markdown`, and the results of
-`"describe"` and `describe-markdown`
-[here](https://github.com/nrepl/nrepl/blob/master/doc/ops.md)).
+`"describe"` and `describe-markdown` <<ops.adoc,here>>).
 
 The `:requires` and `:expects` entries control the order in which
 middleware is applied to a base handler.  In the `add-stdin` example above,
@@ -301,9 +306,9 @@ unhandled messages will always produce a response message with an `:unknown-op`
 `linearize-middleware-stack` to obtain a ordered sequence of middleware vars)
 should do the same, or use a similar alternative base handler.
 
-#### Sessions
+== Sessions
 
-Sessions persist [dynamic vars](https://clojure.org/reference/vars)
+Sessions persist link:https://clojure.org/reference/vars[dynamic vars]
 (collected by `get-thread-bindings`) against a unique lookup. This is
 allows you to have a different value for `*e` from different REPL
 clients (e.g. two separate REPL-y instances). An existing session can
@@ -312,10 +317,10 @@ for copying of existing preferences into new environments.
 
 Sessions become even more useful when different nREPL extensions start
 taking advantage of
-them. [debug-repl](https://github.com/gfredericks/debug-repl/) uses
+them. link:https://github.com/gfredericks/debug-repl/[debug-repl] uses
 sessions to store information about the current breakpoint, allowing
 debugging of two things
-separately. [piggieback](https://github.com/nrepl/piggieback) uses
+separately. link:https://github.com/nrepl/piggieback[piggieback] uses
 sessions to allow host a ClojureScript REPL alongside an existing
 Clojure one.
 
