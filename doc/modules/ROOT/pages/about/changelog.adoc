@@ -1,0 +1,3 @@
+= Changelog
+
+An extensive changelog is available link:https://github.com/nrepl/nREPL/blob/master/CHANGELOG.md[here].

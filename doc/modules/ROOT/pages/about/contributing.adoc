@@ -1,33 +1,34 @@
-## Issues
+= Contributing
+
+== Issues
 
 Report issues and suggest features and improvements on the
-[GitHub issue tracker](https://github.com/nrepl/nREPL/issues). Don't ask
-questions on the issue tracker - use the [support channels](support.md) instead.
+link:https://github.com/nrepl/nREPL/issues[GitHub issue tracker]. Don't ask
+questions on the issue tracker - use the <<about/support.adoc#,support channels>> instead.
 
 If you want to file a bug, please provide all the necessary info listed in
 our issue reporting template (it's loaded automatically when you create a
 new GitHub issue).
 
-## Patches
+== Patches
 
 Patches in any form are always welcome! GitHub pull requests are even better! :-)
 
 Before submitting a patch or a pull request make sure all tests are
-passing and that your patch is in line with the [contribution
-guidelines](https://github.com/nrepl/nREPL/blob/master/.github/CONTRIBUTING.md).
+passing and that your patch is in line with the link:https://github.com/nrepl/nREPL/blob/master/.github/CONTRIBUTING.md[contribution guidelines].
 
-## Documentation
+== Documentation
 
 Good documentation is just as important as good code.
 
 Consider improving and extending this manual.
 
-### Working on the Manual
+=== Working on the Manual
 
 The manual is generated from the markdown files in the
-[doc](https://github.com/nrepl/nREPL/tree/master/doc) folder of nREPL's
-GitHub repo and is published to [Read the Docs](readthedocs.org). The
-[MkDocs](http://www.mkdocs.org/) tool is used to convert the markdown sources to
+link:https://github.com/nrepl/nREPL/tree/master/doc[doc] folder of nREPL's
+GitHub repo and is published to link:readthedocs.org[Read the Docs]. The
+link:http://www.mkdocs.org/[MkDocs] tool is used to convert the markdown sources to
 HTML.
 
 To make changes to the manual you simply have to change the files under
@@ -37,15 +38,16 @@ are merged in `master` (or the latest stable branch).
 You can install `MkDocs` locally and use the command `mkdocs serve` to see the
 result of changes you make to the manual locally:
 
-```
+[source]
+----
 $ cd path/to/cider/repo
 $ mkdocs serve
-```
+----
 
 If you want to make changes to the manual's page structure you'll have to edit
-[mkdocs.yml](https://github.com/nrepl/nREPL/blob/master/mkdocs.yml).
+link:https://github.com/nrepl/nREPL/blob/master/mkdocs.yml[mkdocs.yml].
 
-## Funding
+== Funding
 
 While nREPL is free software and will always be, the project would benefit immensely from some funding.
 Raising a monthly budget of a couple of thousand dollars would make it possible to pay people to work on
@@ -54,23 +56,20 @@ Raising a monthly budget of over $5000 would open the possibility of someone wor
 which would speed up the pace of development significantly.
 
 We welcome both individual and corporate sponsors! We also offer a wide array of funding channels to account
-for your preferences (although currently [Open Collective](https://opencollective.com/cider) is our preferred funding platform).
+for your preferences (although currently link:https://opencollective.com/cider[Open Collective] is our preferred funding platform).
 
 If you're working in a company that's making significant use of nREPL we'd appreciate it if you suggest to your company
 to become a nREPL sponsor.
 
-You can support the development of nREPL, CIDER, [clojure-mode][] and [inf-clojure][] via
-[Open Collective](https://opencollective.com/cider),
-[Salt](https://salt.bountysource.com/teams/cider),
-[Patreon](https://www.patreon.com/bbatsov),
-[Liberapay](https://liberapay.com/bbatsov/donate) and PayPal.
+You can support the development of nREPL, CIDER, link:https://github.com/clojure-emacs/clojure-mode[clojure-mode] and link:https://github.com/clojure-emacs/inf-clojure[inf-clojure] via
+link:https://opencollective.com/cider[Open Collective],
+link:https://salt.bountysource.com/teams/cider[Salt],
+link:https://www.patreon.com/bbatsov[Patreon],
+link:https://liberapay.com/bbatsov/donate[Liberapay] and PayPal.
 
-[![Paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GRQKNBM6P8VRQ)
+link:https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GRQKNBM6P8VRQ[image:https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif[Paypal]]
 
-### Open Collective
+=== Open Collective
 
-* [[Become a backer](https://opencollective.com/cider#backer)] (for individuals)
-* [[Become a sponsor](https://opencollective.com/cider#sponsor)] (for companies)
-
-[clojure-mode]: https://github.com/clojure-emacs/clojure-mode
-[inf-clojure]: https://github.com/clojure-emacs/inf-clojure
+* [link:https://opencollective.com/cider#backer[Become a backer]] (for individuals)
+* [link:https://opencollective.com/cider#sponsor[Become a sponsor]] (for companies)

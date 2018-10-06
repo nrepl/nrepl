@@ -1,10 +1,10 @@
-## Overview
+= Overview
 
 nREPL is a Clojure network REPL that provides a REPL server and
 client, along with some common APIs of use to IDEs and other tools
 that may need to evaluate Clojure code in remote environments.
 
-## Why nREPL?
+== Why nREPL?
 
 nREPL has been designed with the aim of ensuring that it satisfies the
 requirements of both application developers (in support of activities ranging
@@ -23,7 +23,7 @@ support e.g. asynchronous evaluation, interrupts, etc.
 
 For more information about the motivation, architecture, use cases, and
 discussion related to nREPL, see the see the original design notes,
-available [here](https://docs.google.com/document/edit?id=1dnb1ONTpK9ttO5W4thxiXkU5Ki89gK62anRqKEK4YZI&authkey=CMuszuMI&hl=en#),
-and the [notes](https://github.com/clojure/tools.nrepl/wiki/nREPL.Next) and
-[discussion](http://groups.google.com/group/clojure-dev/browse_frm/thread/6e366c1d0eaeec59)
+available link:https://docs.google.com/document/edit?id=1dnb1ONTpK9ttO5W4thxiXkU5Ki89gK62anRqKEK4YZI&authkey=CMuszuMI&hl=en#[here],
+and the link:https://github.com/clojure/tools.nrepl/wiki/nREPL.Next[notes] and
+link:http://groups.google.com/group/clojure-dev/browse_frm/thread/6e366c1d0eaeec59[discussion]
 around its recent redesign.

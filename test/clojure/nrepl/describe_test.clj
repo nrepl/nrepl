@@ -42,8 +42,10 @@
   (let [describe-response (nrepl/combine-responses
                            (nrepl/message timeout-client
                                           {:op "describe" :verbose? "true"}))]
-    (spit (io/file project-base-dir "doc" "ops.md")
+    (spit (io/file project-base-dir "doc" "modules" "ROOT" "pages" "ops.adoc")
           (str
-           "<!-- This file is *generated* by " #'update-op-docs
-           "\n   **Do not edit!** -->\n"
-           (#'middleware/describe-markdown describe-response)))))
+           "////\n"
+           "This file is _generated_ by " #'update-op-docs
+           "\n   *Do not edit!*\n"
+           "////\n"
+           (#'middleware/describe-adoc describe-response)))))

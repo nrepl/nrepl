@@ -1,15 +1,15 @@
-## Installation
+= Installation
 
 nREPL is a library (as opposed to it being an application), so it's
 not something you'd be installing in the traditional sense. There's
 currently no nREPL binary or script that you can run to spin a server.
 
-!!! Note
-
-    While there's no binary, there is a command-line interface that
-    mostly targets `clj`. It's documented in the subsequent sections of this
-    manual.
-
+[NOTE]
+====
+While there's no binary, there is a command-line interface that
+mostly targets `clj`. It's documented in the subsequent sections of this
+manual.
+====
 All popular Clojure build tools (Leiningen, Boot, Gradle, Maven) have
 the ability to run an nREPL server and most of the time you'll probably
 simply use nREPL through them and end up using whatever nREPL version
@@ -23,37 +23,40 @@ nREPL as a dependency to your project.
 nREPL is available in Clojars. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
-```clojure
+[source,clojure]
+----
 [nrepl "0.4.5"]
-```
+----
 
-!!! Tip
-
-    You can override the version of nREPL supplied by Leiningen and Boot by
-    adding nREPL as a dependency to your project.
-
+[TIP]
+====
+You can override the version of nREPL supplied by Leiningen and Boot by
+adding nREPL as a dependency to your project.
+====
 Or, add this to your Maven project's `pom.xml`:
 
-```xml
+[source,xml]
+----
 <dependency>
   <groupId>nrepl</groupId>
   <artifactId>nrepl</artifactId>
   <version>0.4.5</version>
 </dependency>
-```
+----
 
-!!! Warning
-
-    Prior to version 0.3, nREPL used to be hosted on Maven Central and had
-    a different deployment artefact - `org.clojure/clojure.tools.nrepl`.
-
+[WARNING]
+====
+Prior to version 0.3, nREPL used to be hosted on Maven Central and had
+a different deployment artefact - `org.clojure/clojure.tools.nrepl`.
+====
 Please note the changelog in `CHANGELOG.md`.
 
-!!! Note
+[NOTE]
+====
+nREPL is compatible with Clojure 1.7.0+ and Java 8+.
+====
 
-    nREPL is compatible with Clojure 1.7.0+ and Java 8+.
-
-## Upgrading from nREPL 0.2.x to 0.4.x
+== Upgrading from nREPL 0.2.x to 0.4.x
 
 A few major changes happened since nREPL 0.2.x:
 
@@ -72,8 +75,9 @@ Apart from those renamings it's business as usual - nREPL's API and
 protocol remain exactly the same as they were in 0.2.x, and backwards
 compatibility remains as important as always.
 
-!!! Warning
-
-    You'll need Boot 2.8.2+ or Leiningen 2.8.2+ (still unreleased) to take advantage of nREPL
-    0.4, as their older releases bundled nREPL 0.2.x. Leiningen users can also use the
-    [lein-nrepl plugin](https://github.com/nrepl/lein-nrepl/pulls) until Leiningen 2.8.2 is officially released.
+[WARNING]
+====
+You'll need Boot 2.8.2+ or Leiningen 2.8.2+ (still unreleased) to take advantage of nREPL
+0.4, as their older releases bundled nREPL 0.2.x. Leiningen users can also use the
+link:https://github.com/nrepl/lein-nrepl/pulls[lein-nrepl plugin] until Leiningen 2.8.2 is officially released.
+====
