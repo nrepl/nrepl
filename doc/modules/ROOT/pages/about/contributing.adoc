@@ -25,27 +25,26 @@ Consider improving and extending this manual.
 
 === Working on the Manual
 
-The manual is generated from the markdown files in the
-link:https://github.com/nrepl/nREPL/tree/master/doc[doc] folder of nREPL's
-GitHub repo and is published to link:readthedocs.org[Read the Docs]. The
-link:http://www.mkdocs.org/[MkDocs] tool is used to convert the markdown sources to
-HTML.
+The manual is generated from the asciidoc files in the link:https://github.com/nrepl/nREPL/tree/master/doc[doc] folder of nREPL's GitHub repo and is published to https://nrepl.org.
+link:https://antora.org[Antora] is used to convert the manual into HTML.
+The filesystem layout is described at https://docs.antora.org/antora/1.1/component-structure/
 
-To make changes to the manual you simply have to change the files under
-`doc`. The manual will be regenerated automatically when changes to those files
-are merged in `master` (or the latest stable branch).
+To make changes to the manual you simply have to change the files under `doc`.
+The manual will be regenerated manually periodically.
 
-You can install `MkDocs` locally and use the command `mkdocs serve` to see the
-result of changes you make to the manual locally:
+You can build the documentation locally from the link:https://github.com/nrepl/nrepl.org[nrepl.org] repo.
 
 [source]
 ----
-$ cd path/to/cider/repo
-$ mkdocs serve
+$ cd nREPL.org
+$ npm install
+$ ./antora site.yml
 ----
 
+TIP: If `npm install` fails, see link:https://docs.antora.org/antora/1.1/install/troubleshoot-nodegit/[Antora's troubleshooting documentation].
+
 If you want to make changes to the manual's page structure you'll have to edit
-link:https://github.com/nrepl/nREPL/blob/master/mkdocs.yml[mkdocs.yml].
+link:https://github.com/nrepl/nREPL/blob/master/doc/modules/ROOT/nav.adoc[nav.adoc].
 
 == Funding
 
