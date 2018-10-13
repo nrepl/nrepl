@@ -12,7 +12,7 @@ popular options available for you today.
 link:https://github.com/technomancy/leiningen[Leiningen] has built-in support for nREPL since
 version 2. Just do:
 
-[source]
+[source,shell]
 ----
 lein repl
 ----
@@ -21,7 +21,7 @@ And you're all set. By default Lein will also connect to the running nREPL serve
 popular command-line nREPL client link:https://github.com/trptcolin/reply/[REPL-y]. If you don't need the terminal REPL you can
 also start nREPL in headless mode:
 
-[source]
+[source,shell]
 ----
 lein repl :headless
 ----
@@ -30,7 +30,7 @@ lein repl :headless
 
 link:https://github.com/boot-clj/boot[Boot] is a popular alternative to Leiningen, that also has build-in support for nREPL:
 
-[source]
+[source,shell]
 ----
 boot repl
 ----
@@ -54,7 +54,7 @@ Add this alias to `~/.clojure/deps.edn`:
 
 Then you can simply run the nREPL server in headless mode like this:
 
-[source]
+[source,shell]
 ----
 clj -R:nREPL -m nrepl.cmdline
 ----
@@ -74,7 +74,7 @@ how you can easily start a ClojureScript capable nREPL:
 }
 ----
 
-[source]
+[source,shell]
 ----
 clj -R:nREPL -m nrepl.cmdline --middleware "[cider.piggieback/wrap-cljs-repl]"
 ----
@@ -82,7 +82,7 @@ clj -R:nREPL -m nrepl.cmdline --middleware "[cider.piggieback/wrap-cljs-repl]"
 Here's a listing of all the options available via nREPL's command-line
 interface (this output was simply generated with `--help`):
 
-[source,clojure]
+[source,shell]
 ----
 -i/--interactive            Start nREPL and connect to it with the built-in client.
 -c/--connect                Connect to a running nREPL with the built-in client.
@@ -125,7 +125,7 @@ nREPL ships with a very simple command-line client that you can use for some bas
 interactions with the server. The following command will start an nREPL server
 and connect with it using the built-in client.
 
-[source]
+[source,shell]
 ----
 clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.5"}}}' -m nrepl.cmdline --interactive
 nREPL server started on port 59403 on host 0:0:0:0:0:0:0:0 - nrepl://0:0:0:0:0:0:0:0:59403
@@ -138,7 +138,7 @@ user=> (+ 1 2)
 
 If you want to connect to a server that's already running you can do it like this:
 
-[source]
+[source,shell]
 ----
 clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.5"}}}' -m nrepl.cmdline --connect --host host --port port
 nREPL 0.4.5
