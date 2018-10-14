@@ -16,7 +16,7 @@
    This allows evaluation contexts to produce printed results in :value
    if they so choose, and opt out of the printing here."
   [h]
-  (fn [{:keys [op ^Transport transport] :as msg}]
+  (fn [{:keys [op ^Transport transport renderf] :as msg}]
     (h (assoc msg
               :transport (reify Transport
                            (recv [this] (.recv transport))
@@ -27,6 +27,13 @@
                                       (dissoc resp :printed-value)
                                       (if-let [[_ v] (find resp :value)]
                                         (assoc resp
+                                               :value2 (let [repr (java.io.StringWriter.)]
+                                                         (apply
+                                                          (if renderf
+                                                            (eval (read-string renderf))
+                                                            #((if *print-dup* print-dup print-method)
+                                                              % repr))
+                                                          [v]))
                                                :value (let [repr (java.io.StringWriter.)]
                                                         (if *print-dup*
                                                           (print-dup v repr)
