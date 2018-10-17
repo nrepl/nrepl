@@ -121,6 +121,10 @@
                  *in* stdin-reader
                  *ns* (create-ns 'user)
                  *out-limit* (or (baseline-bindings #'*out-limit*) 1024)
+                 *1 (baseline-bindings #'*1)
+                 *2 (baseline-bindings #'*2)
+                 *3 (baseline-bindings #'*3)
+                 *e (baseline-bindings #'*e)
                  ;; clojure.test captures *out* at load-time, so we need to make sure
                  ;; runtime output of test status/results is redirected properly
                  ;; TODO: is this something we need to consider in general, or is this

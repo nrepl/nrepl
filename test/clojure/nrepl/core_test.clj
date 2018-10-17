@@ -460,3 +460,25 @@
                                            (send a (fn [_] (Thread/sleep 1000) 42))
                                            (await a)
                                            @a))))))
+
+(deftest cloned-session-*1-binding
+  (let [port (:port *server*)
+        conn (nrepl/connect :port port)
+        client (nrepl/client conn 1000)
+        sess (nrepl/client-session client)
+        eval (sess {:op :eval
+                    :code "(+ 1 4)"})
+        new-sess-id (->> (sess {:id 1
+                                :op :clone})
+                         (filter (fn [x] (= 1 (:id x))))
+                         first
+                         :new-session)
+        cloned-sess (nrepl.core/client-session client :session new-sess-id)
+        cloned-sess-*1 (->> (cloned-sess {:id 2
+                                          :op :eval
+                                          :code "*1"})
+                            (filter (fn [x] (and (= 2 (:id x))
+                                                 (contains? x :value))))
+                            first
+                            :value)]
+    (is (= cloned-sess-*1 "5"))))
