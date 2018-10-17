@@ -1,15 +1,17 @@
 (ns nrepl.middleware.session
   "Support for persistent, cross-connection REPL sessions."
   {:author "Chas Emerick"}
-  (:require clojure.main
-            clojure.test
-            [nrepl.middleware :refer [set-descriptor!]]
-            [nrepl.middleware.interruptible-eval :refer [*msg*]]
-            [nrepl.misc :refer [uuid response-for]]
-            [nrepl.transport :as t])
-  (:import clojure.lang.LineNumberingPushbackReader
-           [java.io PrintWriter Reader Writer]
-           java.util.concurrent.LinkedBlockingQueue))
+  (:require
+   clojure.main
+   clojure.test
+   [nrepl.middleware :refer [set-descriptor!]]
+   [nrepl.middleware.interruptible-eval :refer [*msg*]]
+   [nrepl.misc :refer [uuid response-for]]
+   [nrepl.transport :as t])
+  (:import
+   clojure.lang.LineNumberingPushbackReader
+   [java.io PrintWriter Reader Writer]
+   java.util.concurrent.LinkedBlockingQueue))
 
 (def ^{:private true} sessions (atom {}))
 

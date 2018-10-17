@@ -1,15 +1,17 @@
 (ns nrepl.middleware.interruptible-eval
   {:author "Chas Emerick"}
-  (:require clojure.main
-            [nrepl.middleware :refer [set-descriptor!]]
-            nrepl.middleware.pr-values
-            [nrepl.misc :refer [response-for returning]]
-            [nrepl.transport :as t])
-  (:import clojure.lang.LineNumberingPushbackReader
-           [java.io FilterReader LineNumberReader StringReader Writer]
-           java.lang.reflect.Field
-           [java.util.concurrent BlockingQueue Executor SynchronousQueue ThreadFactory ThreadPoolExecutor TimeUnit]
-           java.util.concurrent.atomic.AtomicLong))
+  (:require
+   clojure.main
+   [nrepl.middleware :refer [set-descriptor!]]
+   nrepl.middleware.pr-values
+   [nrepl.misc :refer [response-for returning]]
+   [nrepl.transport :as t])
+  (:import
+   clojure.lang.LineNumberingPushbackReader
+   [java.io FilterReader LineNumberReader StringReader Writer]
+   java.lang.reflect.Field
+   [java.util.concurrent BlockingQueue Executor SynchronousQueue ThreadFactory ThreadPoolExecutor TimeUnit]
+   java.util.concurrent.atomic.AtomicLong))
 
 (def ^:private reader-conditionals? (boolean (resolve 'clojure.core/reader-conditional)))
 

@@ -1,22 +1,24 @@
 (ns nrepl.core-test
-  (:require [clojure.set :as set]
-            [clojure.test :refer [are deftest is testing use-fixtures]]
-            [nrepl.core :as nrepl :refer [client
-                                          client-session
-                                          code
-                                          combine-responses
-                                          connect
-                                          message
-                                          new-session
-                                          read-response-value
-                                          response-seq
-                                          response-values
-                                          url-connect]]
-            [nrepl.ack :as ack]
-            [nrepl.server :as server]
-            [nrepl.transport :as transport])
-  (:import java.io.File
-           java.net.SocketException))
+  (:require
+   [clojure.set :as set]
+   [clojure.test :refer [are deftest is testing use-fixtures]]
+   [nrepl.core :as nrepl :refer [client
+                                 client-session
+                                 code
+                                 combine-responses
+                                 connect
+                                 message
+                                 new-session
+                                 read-response-value
+                                 response-seq
+                                 response-values
+                                 url-connect]]
+   [nrepl.ack :as ack]
+   [nrepl.server :as server]
+   [nrepl.transport :as transport])
+  (:import
+   java.io.File
+   java.net.SocketException))
 
 (def project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
 

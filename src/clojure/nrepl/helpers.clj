@@ -1,7 +1,9 @@
 (ns nrepl.helpers
   {:author "Chas Emerick"}
-  (:require [nrepl.middleware.load-file :as load-file])
-  (:import (java.io File StringReader)))
+  (:require
+   [nrepl.middleware.load-file :as load-file])
+  (:import
+   (java.io File StringReader)))
 
 (defn load-file-command
   "(If it is available, sending nrepl.middleware.load-file

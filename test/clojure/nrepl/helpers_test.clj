@@ -1,11 +1,11 @@
 (ns nrepl.helpers-test
   {:author "Chas Emerick"}
-  (:import (java.io File))
-  (:use [nrepl.core-test :only (def-repl-test repl-server-fixture)]
-        clojure.test)
   (:require
+   [clojure.test :refer :all]
    [nrepl.core :as nrepl]
-   [nrepl.helpers :as helpers]))
+   [nrepl.core-test :refer (def-repl-test repl-server-fixture)]
+   [nrepl.helpers :as helpers])
+  (:import (java.io File)))
 
 (def project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
 

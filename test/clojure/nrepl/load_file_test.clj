@@ -1,10 +1,11 @@
 (ns nrepl.load-file-test
   {:author "Chas Emerick"}
-  (:import (java.io File))
-  (:use [nrepl.core-test :only (def-repl-test repl-server-fixture
-                                 project-base-dir)]
-        clojure.test)
-  (:require [nrepl.core :as nrepl]))
+  (:require
+   [clojure.test :refer :all]
+   [nrepl.core :as nrepl]
+   [nrepl.core-test :refer (def-repl-test repl-server-fixture project-base-dir)])
+  (:import
+   (java.io File)))
 
 (use-fixtures :each repl-server-fixture)
 

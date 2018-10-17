@@ -1,7 +1,9 @@
 (ns nrepl.middleware.pr-values
   {:author "Chas Emerick"}
-  (:require [nrepl.middleware :refer [set-descriptor!]])
-  (:import nrepl.transport.Transport))
+  (:require
+   [nrepl.middleware :refer [set-descriptor!]])
+  (:import
+   nrepl.transport.Transport))
 
 (defn pr-values
   "Middleware that returns a handler which transforms any :value slots

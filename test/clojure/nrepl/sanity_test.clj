@@ -1,11 +1,12 @@
 (ns nrepl.sanity-test
-  (:use clojure.test
-        [nrepl.transport :only (piped-transports)])
-  (:require (nrepl.middleware [interruptible-eval :as eval]
-                              [session :as session])
-            [nrepl.core :as repl]
-            [clojure.set :as set])
-  (:import (java.util.concurrent BlockingQueue LinkedBlockingQueue TimeUnit)))
+  (:require
+   [clojure.test :refer :all]
+   [nrepl.core :as repl]
+   [nrepl.middleware.interruptible-eval :as eval]
+   [nrepl.middleware.session :as session]
+   [nrepl.transport :refer (piped-transports)])
+  (:import
+   (java.util.concurrent BlockingQueue LinkedBlockingQueue TimeUnit)))
 
 (println (format "Testing with Clojure v%s on %s" (clojure-version) (System/getProperty "java.version")))
 

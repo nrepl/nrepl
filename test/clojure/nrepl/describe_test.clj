@@ -1,11 +1,11 @@
 (ns nrepl.describe-test
   {:author "Chas Emerick"}
-  (:use [nrepl.core-test :only (def-repl-test repl-server-fixture
-                                 project-base-dir)]
-        clojure.test)
-  (:require [nrepl.core :as nrepl]
-            [nrepl.middleware :as middleware]
-            [clojure.java.io :as io]))
+  (:require
+   [clojure.java.io :as io]
+   [clojure.test :refer :all]
+   [nrepl.core :as nrepl]
+   [nrepl.core-test :refer (def-repl-test repl-server-fixture project-base-dir)]
+   [nrepl.middleware :as middleware]))
 
 (use-fixtures :once repl-server-fixture)
 

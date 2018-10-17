@@ -1,6 +1,7 @@
 (ns nrepl.ack
-  (:require [nrepl.core :as repl]
-            [nrepl.transport :as t]))
+  (:require
+   [nrepl.core :as repl]
+   [nrepl.transport :as t]))
 
 ;; could be a lot fancier, but it'll do for now
 (def ^{:private true} ack-port-promise (atom nil))

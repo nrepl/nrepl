@@ -1,14 +1,16 @@
 (ns nrepl.transport
   {:author "Chas Emerick"}
   (:refer-clojure :exclude (send))
-  (:require [bencode.core :as bencode]
-            [clojure.java.io :as io]
-            clojure.walk
-            [nrepl.misc :refer [uuid]])
-  (:import clojure.lang.RT
-           [java.io EOFException PushbackInputStream PushbackReader]
-           [java.net Socket SocketException]
-           [java.util.concurrent BlockingQueue LinkedBlockingQueue SynchronousQueue TimeUnit]))
+  (:require
+   [bencode.core :as bencode]
+   [clojure.java.io :as io]
+   clojure.walk
+   [nrepl.misc :refer [uuid]])
+  (:import
+   clojure.lang.RT
+   [java.io EOFException PushbackInputStream PushbackReader]
+   [java.net Socket SocketException]
+   [java.util.concurrent BlockingQueue LinkedBlockingQueue SynchronousQueue TimeUnit]))
 
 (defprotocol Transport
   "Defines the interface for a wire protocol implementation for use

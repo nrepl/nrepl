@@ -1,7 +1,8 @@
 (ns nrepl.middleware.load-file
   {:author "Chas Emerick"}
-  (:require [nrepl.middleware :as middleware :refer [set-descriptor!]]
-            [nrepl.middleware.interruptible-eval :as eval])
+  (:require
+   [nrepl.middleware :as middleware :refer [set-descriptor!]]
+   [nrepl.middleware.interruptible-eval :as eval])
   (:import nrepl.transport.Transport))
 
 ; need to hold file contents "out of band" so as to avoid JVM method

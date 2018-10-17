@@ -2,7 +2,8 @@
   "Misc utilities used in nREPL's implementation (potentially also
   useful for anyone extending it)."
   {:author "Chas Emerick"}
-  (:require [clojure.tools.logging :as logging]))
+  (:require
+   [clojure.tools.logging :as logging]))
 
 (defn log
   [& args]

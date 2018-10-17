@@ -1,8 +1,9 @@
 (ns nrepl.cmdline-test
   {:author "Chas Emerick"}
-  (:use [nrepl.core-test :only (def-repl-test repl-server-fixture *server*)]
-        clojure.test)
-  (:require [nrepl.core :as repl]))
+  (:require
+   [clojure.test :refer :all]
+   [nrepl.core :as repl]
+   [nrepl.core-test :refer [def-repl-test repl-server-fixture *server*]]))
 
 (use-fixtures :once repl-server-fixture)
 

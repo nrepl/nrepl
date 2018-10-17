@@ -3,10 +3,11 @@
   e.g. REPL-y for a proper command-line nREPL client @
   https://github.com/trptcolin/reply/"
   {:author "Chas Emerick"}
-  (:require [clojure.java.io :as io]
-            [nrepl.core :as repl]
-            [nrepl.ack :refer [send-ack]]
-            [nrepl.server :refer [start-server]]))
+  (:require
+   [clojure.java.io :as io]
+   [nrepl.core :as repl]
+   [nrepl.ack :refer [send-ack]]
+   [nrepl.server :refer [start-server]]))
 
 (def colored-output
   {:err #(binding [*out* *err*]

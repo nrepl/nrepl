@@ -1,10 +1,11 @@
 (ns nrepl.middleware
   (:refer-clojure :exclude [comparator])
-  (:require [clojure.set :as set]
-            [clojure.string :as string]
-            nrepl.core
-            [nrepl.misc :as misc]
-            [nrepl.transport :as transport]))
+  (:require
+   [clojure.set :as set]
+   [clojure.string :as string]
+   nrepl.core
+   [nrepl.misc :as misc]
+   [nrepl.transport :as transport]))
 
 (defn- var-name
   [^clojure.lang.Var v]

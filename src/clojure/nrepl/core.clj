@@ -1,12 +1,13 @@
 (ns nrepl.core
   "High level nREPL client support."
   {:author "Chas Emerick"}
-  (:require [clojure.java.io :as io]
-            clojure.set
-            [nrepl.misc :refer [uuid]]
-            [nrepl.transport :as transport])
-  (:import clojure.lang.LineNumberingPushbackReader
-           [java.io Reader StringReader Writer PrintWriter]))
+  (:require
+   clojure.set
+   [nrepl.misc :refer [uuid]]
+   [nrepl.transport :as transport])
+  (:import
+   clojure.lang.LineNumberingPushbackReader
+   [java.io Reader StringReader Writer PrintWriter]))
 
 (defn response-seq
   "Returns a lazy seq of messages received via the given Transport.
