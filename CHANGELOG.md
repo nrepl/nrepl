@@ -2,6 +2,10 @@
 
 ### master (unreleased)
 
+#### Bugs fixed
+
+* [#10](https://github.com/nrepl/nREPL/issues/10): Bind *1, *2, *3 and *e in cloned session.
+
 ### 0.4.5 (2018-09-02)
 
 #### New features
