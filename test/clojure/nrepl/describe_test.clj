@@ -4,7 +4,7 @@
    [clojure.java.io :as io]
    [clojure.test :refer :all]
    [nrepl.core :as nrepl]
-   [nrepl.core-test :refer (def-repl-test repl-server-fixture project-base-dir)]
+   [nrepl.core-test :refer [def-repl-test repl-server-fixture project-base-dir]]
    [nrepl.middleware :as middleware]))
 
 (use-fixtures :once repl-server-fixture)

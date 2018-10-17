@@ -4,7 +4,7 @@
    [nrepl.core :as repl]
    [nrepl.middleware.interruptible-eval :as eval]
    [nrepl.middleware.session :as session]
-   [nrepl.transport :refer (piped-transports)])
+   [nrepl.transport :refer [piped-transports]])
   (:import
    (java.util.concurrent BlockingQueue LinkedBlockingQueue TimeUnit)))
 

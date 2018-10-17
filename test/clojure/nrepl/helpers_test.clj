@@ -3,9 +3,10 @@
   (:require
    [clojure.test :refer :all]
    [nrepl.core :as nrepl]
-   [nrepl.core-test :refer (def-repl-test repl-server-fixture)]
+   [nrepl.core-test :refer [def-repl-test repl-server-fixture]]
    [nrepl.helpers :as helpers])
-  (:import (java.io File)))
+  (:import
+   (java.io File)))
 
 (def project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
 

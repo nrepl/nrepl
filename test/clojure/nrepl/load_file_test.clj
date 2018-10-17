@@ -3,7 +3,7 @@
   (:require
    [clojure.test :refer :all]
    [nrepl.core :as nrepl]
-   [nrepl.core-test :refer (def-repl-test repl-server-fixture project-base-dir)])
+   [nrepl.core-test :refer [def-repl-test repl-server-fixture project-base-dir]])
   (:import
    (java.io File)))
 

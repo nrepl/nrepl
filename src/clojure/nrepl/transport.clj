@@ -1,6 +1,6 @@
 (ns nrepl.transport
   {:author "Chas Emerick"}
-  (:refer-clojure :exclude (send))
+  (:refer-clojure :exclude [send])
   (:require
    [bencode.core :as bencode]
    [clojure.java.io :as io]
