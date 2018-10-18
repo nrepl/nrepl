@@ -40,7 +40,7 @@ details as to the operations implemented by nREPL's default middleware stack,
 what each operation expects in request messages, and what they emit for
 responses.)
 
-=== Middleware descriptors and nREPL server configuration
+== Middleware descriptors and nREPL server configuration
 
 It is generally the case that most users of nREPL will expect some minimal REPL
 functionality to always be available: evaluation (and the ability to interrupt
