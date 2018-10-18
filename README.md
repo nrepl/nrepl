@@ -36,7 +36,7 @@ the needs of the essential tools of the Clojure(Script) ecosystem
 
 ## Usage
 
-See the [manual](https://docs.nrepl.xyz).
+See the [manual](https://nrepl.xyz).
 
 ## License
 
