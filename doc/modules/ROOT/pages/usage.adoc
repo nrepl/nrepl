@@ -261,7 +261,7 @@ Note that nREPL is not limited to its default messaging protocol, nor to its
 default use of sockets.  nREPL provides a _transport_ abstraction for
 implementing support for alternative protocols and connection methods.
 Alternative transport implementations are available, and implementing your own
-is not difficult; read more about transports <<design.adoc#transports,here>>.
+is not difficult; read more about transports <<design/transports.adoc,here>>.
 
 == Hot-loading dependencies
 

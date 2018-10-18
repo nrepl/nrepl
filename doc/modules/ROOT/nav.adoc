@@ -1,7 +1,11 @@
 * xref:index.adoc[Home]
 * xref:installation.adoc[Installation]
 * xref:usage.adoc[Usage]
-* xref:design.adoc[Design]
+* Design
+** xref:design/overview.adoc[Overview]
+** xref:design/handlers.adoc[Handlers]
+** xref:design/transports.adoc[Transports]
+** xref:design/middleware.adoc[Middleware]
 * xref:ops.adoc[Built-in Ops]
 * xref:faq.adoc[FAQ]
 * xref:third_party_middleware.adoc[Third-party Middleware]

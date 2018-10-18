@@ -1,0 +1,156 @@
+= Middleware
+
+_Middleware_ are higher-order functions that accept a handler and return a new
+handler that may compose additional functionality onto or around the original.
+For example, some middleware that handles a hypothetical `"time?"` `:op` by
+replying with the local time on the server:
+
+[source,clojure]
+----
+(require '[nrepl.transport :as t])
+(use '[nrepl.misc :only (response-for)])
+
+(defn current-time
+  [h]
+  (fn [{:keys [op transport] :as msg}]
+    (if (= "time?" op)
+      (t/send transport (response-for msg :status :done :time (System/currentTimeMillis)))
+      (h msg))))
+----
+
+A little silly, but this pattern should be familiar to you if you have
+implemented Ring middleware before.  Nearly all of the same patterns and
+expectations associated with Ring middleware should be applicable to nREPL
+middleware.
+
+All of nREPL's provided default functionality is implemented in terms of
+middleware, even foundational bits like session and eval support.  This default
+middleware "stack" aims to match and exceed the functionality offered by the
+standard Clojure REPL, and is available at
+`nrepl.server/default-middlewares`.  Concretely, it consists of a
+number of middleware functions' vars that are implicitly merged with any
+user-specified middleware provided to
+`nrepl.server/default-handler`.  To understand how that implicit
+merge works, we'll first need to talk about middleware "descriptors".
+
+link:https://github.com/nrepl/nrepl/wiki/Extensions[Other nREPL middlewares are provided by the community].
+
+(See <<ops.adoc, this documentation listing>> for
+details as to the operations implemented by nREPL's default middleware stack,
+what each operation expects in request messages, and what they emit for
+responses.)
+
+=== Middleware descriptors and nREPL server configuration
+
+It is generally the case that most users of nREPL will expect some minimal REPL
+functionality to always be available: evaluation (and the ability to interrupt
+evaluations), sessions, file loading, and so on.  However, as with all
+middleware, the order in which nREPL middleware is applied to a base handler is
+significant; e.g., the session middleware's handler must look up a user's
+session and add it to the message map before delegating to the handler it wraps
+(so that e.g. evaluation middleware can use that session data to stand up the
+user's dynamic evaluation context).  If middleware were "just" functions, then
+any customization of an nREPL middleware stack would need to explicitly repeat
+all of the defaults, except for the edge cases where middleware is to be
+appended or prepended to the default stack.
+
+To eliminate this tedium, the vars holding nREPL middleware functions may have
+a descriptor applied to them to specify certain constraints in how that
+middleware is applied.  For example, the descriptor for the
+`nrepl.middleware.session/add-stdin` middleware is set thusly:
+
+[source,clojure]
+----
+(set-descriptor! #'add-stdin
+  {:requires #{#'session}
+   :expects #{"eval"}
+   :handles {"stdin"
+             {:doc "Add content from the value of \"stdin\" to *in* in the current session."
+              :requires {"stdin" "Content to add to *in*."}
+              :optional {}
+              :returns {"status" "A status of \"need-input\" will be sent if a session's *in* requires content in order to satisfy an attempted read operation."}}}})
+----
+
+Middleware descriptors are implemented as a map in var metadata under a
+`:nrepl.middleware/descriptor` key.  Each descriptor can contain
+any of three entries:
+
+* `:requires`, a set containing strings or vars identifying other middleware
+  that must be applied at a higher level than the middleware being described.
+Var references indicate an implementation detail dependency; string values
+indicate a dependency on _any_ middleware that handles the specified `:op`.
+* `:expects`, the same as `:requires`, except the referenced middleware must
+  exist in the final stack at a lower level than the middleware being
+described.
+* `:handles`, a map that documents the operations implemented by the
+  middleware.  Each entry in this map must have as its key the string value of
+the handled `:op` and a value that contains any of four entries:
+  * `:doc`, a human-readable docstring for the middleware
+  * `:requires`, a map of slots that the handled operation must find in request
+    messages with the indicated `:op`
+  * `:optional`, a map of slots that the handled operation may utilize from the
+    request messages with the indicated `:op`
+  * `:returns`, a map of slots that may be found in messages sent in response
+    to handling the indicated `:op`
+
+The values in the `:handles` map is used to support the `"describe"` operation,
+which provides "a machine- and human-readable directory and documentation for
+the operations supported by an nREPL endpoint" (see
+`nrepl.middleware/describe-markdown`, and the results of
+`"describe"` and `describe-markdown` <<ops.adoc,here>>).
+
+The `:requires` and `:expects` entries control the order in which
+middleware is applied to a base handler.  In the `add-stdin` example above,
+that middleware will be applied after any middleware that handles the `"eval"`
+operation, but before the `nrepl.middleware.session/session`
+middleware.  In the case of `add-stdin`, this ensures that incoming messages
+hit the session middleware (thus ensuring that the user's dynamic scope —
+including `*in*` — has been added to the message) before the `add-stdin`'s
+handler sees them, so that it may append the provided `stdin` content to the
+buffer underlying `*in*`.  Additionally, `add-stdin` must be "above" any `eval`
+middleware, as it takes responsibility for calling `clojure.main/skip-if-eol`
+on `*in*` prior to each evaluation (in order to ensure functional parity with
+Clojure's default stream-based REPL implementation).
+
+The specific contents of a middleware's descriptor depends entirely on its
+objectives: which operations it is to implement/define, how it is to modify
+incoming request messages, and which higher- and lower-level middlewares are to
+aid in accomplishing its aims.
+
+nREPL uses the dependency information in descriptors in order to produce a
+linearization of a set of middleware; this linearization is exposed by
+`nrepl.middleware/linearize-middleware-stack`, which is
+implicitly used by `nrepl.server/default-handler` to combine the
+default stack of middleware with any additional provided middleware vars.  The
+primary contribution of `default-handler` is to use
+`nrepl.server/unknown-op` as the base handler; this ensures that
+unhandled messages will always produce a response message with an `:unknown-op`
+`:status`.  Any handlers otherwise created (e.g. via direct usage of
+`linearize-middleware-stack` to obtain a ordered sequence of middleware vars)
+should do the same, or use a similar alternative base handler.
+
+== Sessions
+
+Sessions persist link:https://clojure.org/reference/vars[dynamic vars]
+(collected by `get-thread-bindings`) against a unique lookup. This is
+allows you to have a different value for `*e` from different REPL
+clients (e.g. two separate REPL-y instances). An existing session can
+be cloned to create a new one, which then can be modified. This allows
+for copying of existing preferences into new environments.
+
+Sessions become even more useful when different nREPL extensions start
+taking advantage of
+them. link:https://github.com/gfredericks/debug-repl/[debug-repl] uses
+sessions to store information about the current breakpoint, allowing
+debugging of two things
+separately. link:https://github.com/nrepl/piggieback[piggieback] uses
+sessions to allow host a ClojureScript REPL alongside an existing
+Clojure one.
+
+An easy mistake is to confuse a `session` with an `id`. The difference
+between a session and id, is that an `id` is for tracking a single
+message, and sessions are for tracking remote state. They're
+fundamental to allowing simultaneous activities in the same nREPL.
+For instance - if you want to evaluate two expressions simultaneously
+you'll have to do this in separate session, as all requests within the
+same session are serialized.

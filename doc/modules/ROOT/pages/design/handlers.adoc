@@ -1,0 +1,51 @@
+= Handlers
+
+_Handlers_ are functions that accept a single incoming message as an argument.
+An nREPL server is started with a single handler function, which will be used
+to process messages for the lifetime of the server.  Note that handler return
+values are _ignored_; results of performing operations should be sent back to
+the client via the transport in use (which will be explained shortly).  This
+may seem peculiar, but is motivated by two factors:
+
+* Many operations — including something as simple as code evaluation — is
+  fundamentally asynchronous with respect to the nREPL server
+* Many operations can produce multiple results (e.g. evaluating a snippet of
+  code like `"(+ 1 2) (def a 6)"`).
+
+Thus, messages provided to nREPL handlers are guaranteed to contain a
+`:transport` entry containing the <<transports,transports>> that should be used
+to send all responses precipitated by a given message.  (This slot is added by
+the nREPL server itself, thus, if a client sends any message containing a
+`"transport"` entry, it will be bashed out by the `Transport` that was the
+source of the message.)  Further, all messages provided to nREPL handlers have
+keyword keys (as per `clojure.walk/keywordize-keys`).
+
+Depending on its `:op`, a message might be required to contain other slots, and
+might optionally contain others.  It is generally the case that request
+messages should contain a globally-unique `:id`.
+Every request must provoke at least one and potentially many response messages,
+each of which should contain an `:id` slot echoing that of the provoking
+request.
+
+Once a handler has completely processed a message, a response
+containing a `:status` of `:done` must be sent.  Some operations necessitate
+that additional responses related to the processing of a request are sent after
+a `:done` `:status` is reported (e.g. delivering content written to `*out*` by
+evaluated code that started a `future`).
+Other statuses are possible, depending upon the semantics of the `:op` being
+handled; in particular, if the message is malformed or incomplete for a
+particular `:op`, then a response with an `:error` `:status` should be sent,
+potentially with additional information about the nature of the problem.
+
+It is possible for an nREPL server to send messages to a client that are not a
+direct response to a request (e.g. streaming content written to `System/out`
+might be started/stopped by requests, but messages containing such content
+can't be considered responses to those requests).
+
+If the handler being used by an nREPL server does not recognize or cannot
+perform the operation indicated by a request message's `:op`, then it should
+respond with a message containing a `:status` of `"unknown-op"`.
+
+It is currently the case that the handler provided as the `:handler` to
+`nrepl.server/start-server` is generally built up as a result of
+composing multiple pieces of middleware.
