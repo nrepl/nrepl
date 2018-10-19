@@ -110,6 +110,7 @@ client/tool.  Tools that support nREPL include:
 * link:https://github.com/sanel/monroe[monroe] (nREPL client for Emacs)
 * link:https://github.com/tpope/vim-fireplace[fireplace.vim] (Clojure + nREPL
   support for vim)
+* link:https://github.com/liquidz/vim-iced[vim-iced] (Clojure Interactive Development Environment for Vim8/Neovim)
 * link:https://github.com/jasongilman/proto-repl[Proto REPL] (Proto REPL is a Clojure development environment and REPL for Atom)
 * link:https://github.com/BetterThanTomorrow/calva[Calva] (Clojure & ClojureScript support for VS Code)
 * link:https://github.com/trptcolin/reply/[REPL-y] (command-line client for nREPL)
