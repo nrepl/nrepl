@@ -6,7 +6,6 @@
   (:import
    nrepl.transport.Transport))
 
-
 (defn- default-renderer
   "Uses print-dup or print-method to render a value to a string."
   [v]
@@ -14,7 +13,6 @@
         writer (java.io.StringWriter.)]
     (printer v writer)
     (str writer)))
-
 
 (defn- resolve-renderer
   "Resolve a namespaced symbol to a rendering function var. Returns the default
@@ -28,7 +26,6 @@
           default-renderer))
     default-renderer))
 
-
 (defn- rendering-transport
   "Wraps a `Transport` with code which renders the value of messages sent to
   it using the provided function."
@@ -40,13 +37,12 @@
       (.recv transport timeout))
     (send [this resp]
       (.send transport
-        (if (and (string? (:value resp)) (:printed-value resp))
-          (dissoc resp :printed-value)
-          (if-let [[_ v] (find resp :value)]
-            (assoc resp :value (str/trim-newline (render-fn v)))
-            resp)))
+             (if (and (string? (:value resp)) (:printed-value resp))
+               (dissoc resp :printed-value)
+               (if-let [[_ v] (find resp :value)]
+                 (assoc resp :value (str/trim-newline (render-fn v)))
+                 resp)))
       this)))
-
 
 (defn pr-values
   "Middleware that returns a handler which transforms any `:value` slots in
@@ -70,9 +66,8 @@
           transport (rendering-transport transport render-fn)]
       (handler (assoc msg :transport transport)))))
 
-
 (middleware/set-descriptor!
-  #'pr-values
-  {:requires #{}
-   :expects #{}
-   :handles {}})
+ #'pr-values
+ {:requires #{}
+  :expects #{}
+  :handles {}})
