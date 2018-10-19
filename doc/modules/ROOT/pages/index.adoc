@@ -27,4 +27,4 @@ available link:https://docs.google.com/document/edit?id=1dnb1ONTpK9ttO5W4thxiXkU
 and the link:https://github.com/clojure/tools.nrepl/wiki/nREPL.Next[notes] and
 link:http://groups.google.com/group/clojure-dev/browse_frm/thread/6e366c1d0eaeec59[discussion]
 around its recent redesign.footnote:[It's not that recent anymore, as the
-redesign happened in 2012. In marked the beginning of the long-lived nREPL 0.2 series.]
+redesign happened in 2012. It marked the beginning of the long-lived nREPL 0.2 series.]
