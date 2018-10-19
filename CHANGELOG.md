@@ -4,7 +4,7 @@
 
 #### New features
 
-* [#12](https://github.com/nrepl/nREPL/issues/10): Support custom rendering
+* [#12](https://github.com/nrepl/nREPL/issues/12): Support custom rendering
   function in `pr-values`, enabling pretty-printed REPL results.
 
 #### Bugs fixed

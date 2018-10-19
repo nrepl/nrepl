@@ -1,13 +1,13 @@
 (ns nrepl.middleware.pr-values
   {:author "Chas Emerick"}
   (:require
-    [clojure.string :as str]
-    [nrepl.middleware :as middleware])
+   [clojure.string :as str]
+   [nrepl.middleware :as middleware])
   (:import
-    nrepl.transport.Transport))
+   nrepl.transport.Transport))
 
 
-(defn- print-renderer
+(defn- default-renderer
   "Uses print-dup or print-method to render a value to a string."
   [v]
   (let [printer (if *print-dup* print-dup print-method)
@@ -16,7 +16,7 @@
     (str writer)))
 
 
-(defn- wrap-renderer
+(defn- rendering-transport
   "Wraps a `Transport` with code which renders the value of messages sent to
   it using the provided function."
   [^Transport transport render-fn]
@@ -55,8 +55,8 @@
   (fn [{:keys [op ^Transport transport renderer] :as msg}]
     (let [render-fn (if renderer
                       (find-var (symbol renderer))
-                      print-renderer)
-          transport (wrap-renderer transport render-fn)]
+                      default-renderer)
+          transport (rendering-transport transport render-fn)]
       (handler (assoc msg :transport transport)))))
 
 
