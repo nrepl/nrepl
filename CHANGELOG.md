@@ -2,6 +2,11 @@
 
 ### master (unreleased)
 
+#### New features
+
+* [#12](https://github.com/nrepl/nREPL/issues/10): Support custom rendering
+  function in `pr-values`, enabling pretty-printed REPL results.
+
 #### Bugs fixed
 
 * [#10](https://github.com/nrepl/nREPL/issues/10): Bind *1, *2, *3 and *e in cloned session.
