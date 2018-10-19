@@ -16,6 +16,19 @@
     (str writer)))
 
 
+(defn- resolve-renderer
+  "Resolve a namespaced symbol to a rendering function var. Returns the default
+  renderer if the argument is nil or not resolvable."
+  [renderer]
+  (if renderer
+    (let [var-sym (symbol renderer)]
+      (or (find-var var-sym)
+          (do (require (symbol (namespace var-sym)))
+              (resolve var-sym))
+          default-renderer))
+    default-renderer))
+
+
 (defn- rendering-transport
   "Wraps a `Transport` with code which renders the value of messages sent to
   it using the provided function."
@@ -53,9 +66,7 @@
   and opt out of the printing here."
   [handler]
   (fn [{:keys [op ^Transport transport renderer] :as msg}]
-    (let [render-fn (if renderer
-                      (find-var (symbol renderer))
-                      default-renderer)
+    (let [render-fn (resolve-renderer renderer)
           transport (rendering-transport transport render-fn)]
       (handler (assoc msg :transport transport)))))
 
