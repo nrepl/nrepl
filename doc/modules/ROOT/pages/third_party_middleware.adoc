@@ -1,4 +1,4 @@
-= Third party middleware
+= Third-party Middleware
 
 Here's a list of notable nREPL middleware you might encounter in the wild.
 
@@ -16,7 +16,7 @@ all of them added support for nREPL 0.4+ fairly recently.
 basic tracing functionality.
 * link:https://github.com/liquidz/iced-nrepl[iced-nrepl]: nREPL middleware to support vim-iced.
 
-==  ClojureScript support to nREPL session
+== ClojureScript Support
 
 * link:https://github.com/nrepl/piggieback[Piggieback]
 
@@ -30,7 +30,7 @@ nREPL support.
 only stubs the piggieback API, leverages its own nREPL middleware
 internally for ClojureScript evaluation)
 
-== HTTP support
+== HTTP Support
 
 * link:https://github.com/nrepl/drawbridge[drawbridge]
 
