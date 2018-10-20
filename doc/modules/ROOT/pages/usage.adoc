@@ -159,12 +159,12 @@ like this will work:
 
 [source,clojure]
 ----
-=> (require '[nrepl.core :as repl])
+=> (require '[nrepl.core :as nrepl])
 nil
-=> (with-open [conn (repl/connect :port 59258)]
-     (-> (repl/client conn 1000)    ; message receive timeout required
-       (repl/message {:op "eval" :code "(+ 2 3)"})
-       repl/response-values))
+=> (with-open [conn (nrepl/connect :port 59258)]
+     (-> (nrepl/client conn 1000)    ; message receive timeout required
+         (nrepl/message {:op "eval" :code "(+ 2 3)"})
+         nrepl/response-values))
 ----
 
 If your nREPL server is running on a different machine or listening on a specific
@@ -174,10 +174,10 @@ connect to a nREPL server listening on address 172.18.0.5 and port 4001:
 
 [source,clojure]
 ----
-=> (with-open [conn (repl/connect :host "172.18.0.5" :port 4001)]
-     (-> (repl/client conn 1000)    ; message receive timeout required
-       (repl/message {:op "eval" :code "(+ 2 3)"})
-       repl/response-values))
+=> (with-open [conn (nrepl/connect :host "172.18.0.5" :port 4001)]
+     (-> (nrepl/client conn 1000)    ; message receive timeout required
+         (nrepl/message {:op "eval" :code "(+ 2 3)"})
+         nrepl/response-values))
 ----
 
 `response-values` will return only the values of evaluated expressions, read
@@ -186,11 +186,11 @@ the full content of message responses easily:
 
 [source,clojure]
 ----
-=> (with-open [conn (repl/connect :port 59258)]
-     (-> (repl/client conn 1000)
-       (repl/message {:op :eval :code "(time (reduce + (range 1e6)))"})
-       doall      ;; `message` and `client-session` all return lazy seqs
-       pprint))
+=> (with-open [conn (nrepl/connect :port 59258)]
+     (-> (nrepl/client conn 1000)
+         (nrepl/message {:op :eval :code "(time (reduce + (range 1e6)))"})
+         doall      ;; `message` and `client-session` all return lazy seqs
+         pprint))
 nil
 ({:out "\"Elapsed time: 68.032 msecs\"\n",
   :session "2ba81681-5093-4262-81c5-edddad573201",

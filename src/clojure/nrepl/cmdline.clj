@@ -5,7 +5,7 @@
   {:author "Chas Emerick"}
   (:require
    [clojure.java.io :as io]
-   [nrepl.core :as repl]
+   [nrepl.core :as nrepl]
    [nrepl.ack :refer [send-ack]]
    [nrepl.server :refer [start-server]]))
 
@@ -30,17 +30,17 @@
                     err print
                     out print
                     value println}}]
-   (let [transport (repl/connect :host host :port port)
-         client (repl/client-session (repl/client transport Long/MAX_VALUE))
+   (let [transport (nrepl/connect :host host :port port)
+         client (nrepl/client-session (nrepl/client transport Long/MAX_VALUE))
          ns (atom "user")
          {:keys [major minor incremental qualifier]} *clojure-version*]
-     (println (format "nREPL %s" repl/version-string))
+     (println (format "nREPL %s" nrepl/version-string))
      (println (str "Clojure " (clojure-version)))
      (println (System/getProperty "java.vm.name") (System/getProperty "java.runtime.version"))
      (loop []
        (prompt @ns)
        (flush)
-       (doseq [res (repl/message client {:op "eval" :code (pr-str (read))})]
+       (doseq [res (nrepl/message client {:op "eval" :code (pr-str (read))})]
          (when (:value res) (value (:value res)))
          (when (:out res) (out (:out res)))
          (when (:err res) (err (:err res)))
@@ -144,7 +144,7 @@
       (display-help)
       (System/exit 0))
     (when (options "--version")
-      (println repl/version-string)
+      (println nrepl/version-string)
       (System/exit 0))
     ;; then we check for --connect
     (let [port (Integer/parseInt (or (options "--port") "0"))

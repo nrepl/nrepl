@@ -1,7 +1,7 @@
 (ns nrepl.sanity-test
   (:require
    [clojure.test :refer :all]
-   [nrepl.core :as repl]
+   [nrepl.core :as nrepl]
    [nrepl.middleware.interruptible-eval :as eval]
    [nrepl.middleware.session :as session]
    [nrepl.transport :refer [piped-transports]])
@@ -28,7 +28,7 @@
      (eval/evaluate {#'*out* (java.io.PrintWriter. out)
                      #'*err* (java.io.PrintWriter. err)}
                     msg)
-     (->> (repl/response-seq local 0)
+     (->> (nrepl/response-seq local 0)
           (map resp-fn)
           (cons (str out))
           (#(if (seq (str err))
@@ -103,7 +103,7 @@
     (is (= [(str "println" (System/getProperty "line.separator"))
             "abcdefghijm "
             "\n#{}\n"]
-           (->> (repl/response-seq local 0)
+           (->> (nrepl/response-seq local 0)
                 (map :out))))))
 
 ;; TODO
@@ -116,14 +116,14 @@
                    "nested exception")))
 
   (def-repl-test install-custom-error-detail-fn
-    (->> (repl/send-with connection
-                         (set! nrepl/*print-error-detail*
-                               (fn [ex] (print "custom printing!")))
-                         (set! nrepl/*print-detail-on-error* true))
-         repl/response-seq
+    (->> (nrepl/send-with connection
+                          (set! nrepl/*print-error-detail*
+                                (fn [ex] (print "custom printing!")))
+                          (set! nrepl/*print-detail-on-error* true))
+         nrepl/response-seq
          doall)
     (is (= "custom printing!"
-           (->> (repl/send-with connection
-                                (throw (Exception. "foo")))
+           (->> (nrepl/send-with connection
+                                 (throw (Exception. "foo")))
                 full-response
                 :err)))))
