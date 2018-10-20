@@ -85,12 +85,12 @@ described.
 * `:handles`, a map that documents the operations implemented by the
   middleware.  Each entry in this map must have as its key the string value of
 the handled `:op` and a value that contains any of four entries:
-  * `:doc`, a human-readable docstring for the middleware
-  * `:requires`, a map of slots that the handled operation must find in request
+** `:doc`, a human-readable docstring for the middleware
+** `:requires`, a map of slots that the handled operation must find in request
     messages with the indicated `:op`
-  * `:optional`, a map of slots that the handled operation may utilize from the
+** `:optional`, a map of slots that the handled operation may utilize from the
     request messages with the indicated `:op`
-  * `:returns`, a map of slots that may be found in messages sent in response
+** `:returns`, a map of slots that may be found in messages sent in response
     to handling the indicated `:op`
 
 The values in the `:handles` map is used to support the `"describe"` operation,
