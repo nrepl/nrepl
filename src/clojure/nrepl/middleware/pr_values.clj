@@ -2,7 +2,7 @@
   {:author "Chas Emerick"}
   (:require
    [clojure.string :as str]
-   [nrepl.middleware :as middleware])
+   [nrepl.middleware :refer [set-descriptor!]])
   (:import
    nrepl.transport.Transport))
 
@@ -66,8 +66,7 @@
           transport (rendering-transport transport render-fn)]
       (handler (assoc msg :transport transport)))))
 
-(middleware/set-descriptor!
- #'pr-values
- {:requires #{}
-  :expects #{}
-  :handles {}})
+(set-descriptor! #'pr-values
+                 {:requires #{}
+                  :expects #{}
+                  :handles {}})
