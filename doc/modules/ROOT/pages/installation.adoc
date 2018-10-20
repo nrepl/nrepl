@@ -1,5 +1,10 @@
 = Installation
 
+[NOTE]
+====
+nREPL is compatible with Clojure 1.7.0+ and Java 8+.
+====
+
 nREPL is a library (as opposed to it being an application), so it's
 not something you'd be installing in the traditional sense. There's
 currently no nREPL binary or script that you can run to spin a server.
@@ -10,6 +15,7 @@ While there's no binary, there is a command-line interface that
 mostly targets `clj`. It's documented in the subsequent sections of this
 manual.
 ====
+
 All popular Clojure build tools (Leiningen, Boot, Gradle, Maven) have
 the ability to run an nREPL server and most of the time you'll probably
 simply use nREPL through them and end up using whatever nREPL version
@@ -49,12 +55,6 @@ Or, add this to your Maven project's `pom.xml`:
 Prior to version 0.3, nREPL used to be hosted on Maven Central and had
 a different deployment artifact - `org.clojure/clojure.tools.nrepl`.
 ====
-Please note the changelog in `CHANGELOG.md`.
-
-[NOTE]
-====
-nREPL is compatible with Clojure 1.7.0+ and Java 8+.
-====
 
 [[upgrading]]
 == Upgrading from nREPL 0.2.x to 0.4.x
@@ -64,8 +64,14 @@ A few major changes happened since nREPL 0.2.x:
 * The artifact id changed from `org.clojure/clojure.tools.nrepl` to `nrepl/nrepl`.
 * The namespace prefix changed from `clojure.tools.nrepl` to `nrepl`.
 * The namespace `clojure.tools.nrepl` was renamed to `nrepl.core`.
-* nREPL now targets Java 8+ and Clojure 1.7+ (it used to target Java 6 and Clojure 1.2)
-* All the code which existed for compatibility with nREPL 0.0.x was removed. (which probably won't affect anyone, as it was ancient)
+* nREPL now targets Java 8+ and Clojure 1.7+.footnote:[nREPL 0.2 used to target Java 6 and Clojure 1.2.]
+* All the code which existed for compatibility with nREPL 0.0.x was removed.footnote:[Which probably won't affect anyone, as it was ancient.]
+
+[TIP]
+====
+Refer to the link:https://github.com/nrepl/nrepl/blob/master/CHANGELOG.md[changelog]
+for an exhaustive listing of all the changes.
+====
 
 Those changes can affect you in two ways:
 
