@@ -8,28 +8,25 @@
 
 (defn- default-renderer
   "Uses print-dup or print-method to render a value to a string."
-  [v]
+  [v opts]
   (let [printer (if *print-dup* print-dup print-method)
         writer (java.io.StringWriter.)]
     (printer v writer)
     (str writer)))
 
 (defn- resolve-renderer
-  "Resolve a namespaced symbol to a rendering function var. Returns the default
-  renderer if the argument is nil or not resolvable."
-  [renderer]
-  (if renderer
-    (let [var-sym (symbol renderer)]
-      (or (find-var var-sym)
-          (do (require (symbol (namespace var-sym)))
-              (resolve var-sym))
-          default-renderer))
-    default-renderer))
+  "Resolve a namespaced symbol to a rendering var. Returns the var or nil if
+  the argument is nil or not resolvable."
+  [var-sym]
+  (when-let [var-sym (and var-sym (symbol var-sym))]
+    (or (find-var var-sym)
+        (do (require (symbol (namespace var-sym)))
+            (resolve var-sym)))))
 
 (defn- rendering-transport
   "Wraps a `Transport` with code which renders the value of messages sent to
   it using the provided function."
-  [^Transport transport render-fn]
+  [^Transport transport render-fn opts]
   (reify Transport
     (recv [this]
       (.recv transport))
@@ -40,7 +37,7 @@
              (if (and (string? (:value resp)) (:printed-value resp))
                (dissoc resp :printed-value)
                (if-let [[_ v] (find resp :value)]
-                 (assoc resp :value (str/trim-newline (render-fn v)))
+                 (assoc resp :value (str/trim-newline (render-fn v opts)))
                  resp)))
       this)))
 
@@ -51,7 +48,8 @@
   handler.
 
   If no custom renderer is set, this falls back to using `print-dup` or
-  `print-method`.
+  `print-method`. The function will be called with the value and any resolved
+  `:render-options` from the message.
 
   Requires that results of eval operations are sent in messages in a
   `:value` slot.
@@ -61,9 +59,9 @@
   evaluation contexts to produce printed results in `:value` if they so choose,
   and opt out of the printing here."
   [handler]
-  (fn [{:keys [op ^Transport transport renderer] :as msg}]
-    (let [render-fn (resolve-renderer renderer)
-          transport (rendering-transport transport render-fn)]
+  (fn [{:keys [op ^Transport transport renderer render-options] :as msg}]
+    (let [render-fn (or (resolve-symbol renderer) default-renderer)
+          transport (rendering-transport transport render-fn render-options)]
       (handler (assoc msg :transport transport)))))
 
 (set-descriptor! #'pr-values
