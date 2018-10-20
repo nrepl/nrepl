@@ -166,3 +166,11 @@ value instead.
 
 This enables using libraries like link:https://github.com/greglook/puget[puget]
 to pretty-print the evaluation results automatically.
+
+[source,clojure]
+----
+{:op :eval
+ :code "(+ 1 1)"
+ :renderer 'my.custom/print-value
+ :render-options {:print-width 120}}
+----

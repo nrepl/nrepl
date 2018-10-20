@@ -19,6 +19,7 @@
   the argument is nil or not resolvable."
   [var-sym]
   (when-let [var-sym (and var-sym (symbol var-sym))]
+    ; TODO: log a warning if we were given a symbol but couldn't find it?
     (or (find-var var-sym)
         (do (require (symbol (namespace var-sym)))
             (resolve var-sym)))))
@@ -60,7 +61,7 @@
   and opt out of the printing here."
   [handler]
   (fn [{:keys [op ^Transport transport renderer render-options] :as msg}]
-    (let [render-fn (or (resolve-symbol renderer) default-renderer)
+    (let [render-fn (or (resolve-renderer renderer) default-renderer)
           transport (rendering-transport transport render-fn render-options)]
       (handler (assoc msg :transport transport)))))
 

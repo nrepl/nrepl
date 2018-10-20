@@ -201,6 +201,34 @@
                              combine-responses
                              :out))))
 
+(defn custom-renderer
+  [value opts]
+  (format "<foo %s %s>" value (or (:sub opts) "...")))
+
+(def-repl-test value-printing
+  (is (= ["42"]
+         (-> (message client {:op :eval
+                              :code "(+ 34 8)"
+                              :renderer 'my.missing.ns/renderer})
+             (combine-responses)
+             (:value)))
+      "bad symbol should fall back to default printer")
+  (is (= ["<foo true ...>"]
+         (-> (message client {:op :eval
+                              :code "true"
+                              :renderer `custom-renderer})
+             (combine-responses)
+             (:value)))
+      "custom rendering function symbol should be used")
+  (is (= ["<foo 3 bar>"]
+         (-> (message client {:op :eval
+                              :code "3"
+                              :renderer `custom-renderer
+                              :render-options {:sub "bar"}})
+             (combine-responses)
+             (:value)))
+      "options should be passed to renderer"))
+
 (def-repl-test session-return-recall
   (testing "sessions persist across connections"
     (repl-values session (code
