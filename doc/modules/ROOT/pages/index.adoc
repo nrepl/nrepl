@@ -34,7 +34,7 @@ redesign happened in 2012. It marked the beginning of the long-lived nREPL 0.2 s
 Despite its modest version number, nREPL is extremely stable at this
 point. Its communication protocol and API are rock-solid and battle
 tested and have been powering much of the existing Clojure tooling for
-several years now.footnote[nREPL had virtually no alternatives before
+several years now.footnote:[nREPL had virtually no alternatives before
 the introduction of the built-in Socket REPL in Clojure 1.8.]
 
 Given the massive community investment in developing all sorts of
@@ -42,6 +42,6 @@ tooling on top of nREPL, nREPL's team pledges to evolve the project only in
 a responsible manner and backwards-compatible ways.
 
 NOTE: The migration of nREPL out of Clojure Contrib is probably the
-only case where we were forced to make breaking changes.footnote[Apart
+only case where we were forced to make breaking changes.footnote:[Apart
 from removing deprecated code that is.] Those are detailed in great
 detail <<installation.adoc#upgrading,here>>.
