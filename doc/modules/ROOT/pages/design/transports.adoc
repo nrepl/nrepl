@@ -19,3 +19,38 @@ nREPL messages over sockets.  It is the latter that is used by default by
 `nrepl.server/start-server` and `nrepl.core/connect`.
 
 link:https://github.com/nrepl/nrepl/wiki/Extensions[Other nREPL transports are provided by the community].
+
+== TTY Transport
+
+Using the TTY transport is pretty simple. You just need to start an nREPL server with TTY transport and you're good to go:
+
+[source,clojure]
+----
+(require
+ '[nrepl.server :as server]
+ '[nrepl.transport :as transport])
+
+(server/start-server :port 12345 :transport-fn transport/tty :greeting-fn transport/tty-greeting)
+----
+
+NOTE: The `:greeting-fn` is responsible for printing the initial message you'll see
+upon connecting.
+
+Afterwards you can simply connect to the server with some TTY client like `telnet`, `nc` or `inf-clojure`.
+
+[soure,bash]
+----
+$ nc localhost 12345
+
+;; Clojure 1.9.0
+user=>
+----
+
+== Bencode Transport
+
+There's nothing special you have to do to use the bencode transport,
+as it's the default transport for `nrepl.server/start-server`.
+
+You'll need a bencode capable client to connect to an nREPL server that transport.
+
+nREPL's bencode implementation is available as a https://github.com/nrepl/bencode[standalone library].
