@@ -65,7 +65,7 @@ A few major changes happened since nREPL 0.2.x:
 * The namespace prefix changed from `clojure.tools.nrepl` to `nrepl`.
 * The namespace `clojure.tools.nrepl` was renamed to `nrepl.core`.
 * nREPL now targets Java 8+ and Clojure 1.7+ (it used to target Java 6 and Clojure 1.2)
-* All the code which existed for compatibility with nREPL 0.1.x was removed. (which probably won't affect anyone, as it was ancient)
+* All the code which existed for compatibility with nREPL 0.0.x was removed. (which probably won't affect anyone, as it was ancient)
 
 Those changes can affect you in two ways:
 
