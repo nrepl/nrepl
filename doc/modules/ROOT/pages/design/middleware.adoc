@@ -96,8 +96,11 @@ the handled `:op` and a value that contains any of four entries:
 The values in the `:handles` map is used to support the `"describe"` operation,
 which provides "a machine- and human-readable directory and documentation for
 the operations supported by an nREPL endpoint" (see
-`nrepl.middleware/describe-markdown`, and the results of
-`"describe"` and `describe-markdown` <<ops.adoc,here>>).
+`nrepl.middleware/describe-adoc`, and the results of
+`"describe"` and `describe-doc` <<ops.adoc,here>>).
+
+NOTE: There's also `nrepl.middleware/describe-markdown` if you'd like to
+generate an ops listing in Markdown format.
 
 The `:requires` and `:expects` entries control the order in which
 middleware is applied to a base handler.  In the `add-stdin` example above,
