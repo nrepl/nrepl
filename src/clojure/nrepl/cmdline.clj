@@ -32,8 +32,7 @@
                     value println}}]
    (let [transport (nrepl/connect :host host :port port)
          client (nrepl/client-session (nrepl/client transport Long/MAX_VALUE))
-         ns (atom "user")
-         {:keys [major minor incremental qualifier]} *clojure-version*]
+         ns (atom "user")]
      (println (format "nREPL %s" nrepl/version-string))
      (println (str "Clojure " (clojure-version)))
      (println (System/getProperty "java.vm.name") (System/getProperty "java.runtime.version"))
