@@ -228,7 +228,7 @@ like this to your app:
 
 [source,clojure]
 ----
-=> (use '[nrepl.server :only (start-server stop-server)])
+=> (require '[nrepl.server :refer [start-server stop-server]])
 nil
 => (defonce server (start-server :port 7888))
 ='user/server
@@ -241,7 +241,7 @@ and port 4001:
 
 [source,clojure]
 ----
-=> (use '[nrepl.server :only (start-server stop-server)])
+=> (require '[nrepl.server :refer [start-server stop-server]])
 nil
 => (defonce server (start-server :bind "172.18.0.5" :port 4001))
 ='user/server
@@ -277,7 +277,7 @@ $ clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.5"}
                                                     :sha "d492e97259c013ba401c5238842cd3445839d020"}}}' -m nrepl.cmdline --interactive
 network-repl
 Clojure 1.9.0
-user=> (use 'clojure.tools.deps.alpha.repl)
+user=> (require '[clojure.tools.deps.alpha.repl :refer [add-lib]])
 nil
 user=> (add-lib 'org.clojure/core.memoize {:mvn/version "0.7.1"})
 true
@@ -294,7 +294,7 @@ Alternatively with `pomegranate` you can do the following:
 $ clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.5"} com.cemerick/pomegranate {:mvn/version "1.0.0"}}}' -m nrepl.cmdline --interactive
 network-repl
 Clojure 1.9.0
-user=> (use '[cemerick.pomegranate :only (add-dependencies)])
+user=> (require '[cemerick.pomegranate :refer [add-dependencies]])
 nil
 user=> (add-dependencies :coordinates '[[org.clojure/core.memoize "0.7.1"]]
                          :repositories (merge cemerick.pomegranate.aether/maven-central
