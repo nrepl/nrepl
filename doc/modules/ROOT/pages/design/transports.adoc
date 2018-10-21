@@ -38,7 +38,7 @@ upon connecting.
 
 Afterwards you can simply connect to the server with some TTY client like `telnet`, `nc` or `inf-clojure`.
 
-[source,bash]
+[source,shell]
 ----
 $ nc localhost 12345
 

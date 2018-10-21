@@ -34,7 +34,7 @@ The manual will be regenerated manually periodically.
 
 You can build the documentation locally from the link:https://github.com/nrepl/nrepl.org[nrepl.org] repo.
 
-[source]
+[source,shell]
 ----
 $ cd nREPL.org
 $ npm install
