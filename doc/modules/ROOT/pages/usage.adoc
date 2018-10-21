@@ -97,7 +97,7 @@ interface (this output was simply generated with `--help`):
 ----
 
 [[connecting-to-an-nrepl-server]]
-=== Connecting to an nREPL server
+== Connecting to an nREPL server
 
 Most of the time, you will connect to an nREPL server using an existing
 client/tool.  Tools that support nREPL include:
