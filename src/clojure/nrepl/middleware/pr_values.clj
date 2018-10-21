@@ -19,10 +19,12 @@
   the argument is nil or not resolvable."
   [var-sym]
   (when-let [var-sym (and var-sym (symbol var-sym))]
-    ; TODO: log a warning if we were given a symbol but couldn't find it?
-    (or (find-var var-sym)
-        (do (require (symbol (namespace var-sym)))
-            (resolve var-sym)))))
+    (try
+      (require (symbol (namespace var-sym)))
+      (resolve var-sym)
+      (catch Exception ex
+        ; TODO: emit a warning here?
+        nil))))
 
 (defn- rendering-transport
   "Wraps a `Transport` with code which renders the value of messages sent to
