@@ -1,6 +1,9 @@
 * xref:index.adoc[Home]
 * xref:installation.adoc[Installation]
-* xref:usage.adoc[Usage]
+* Usage
+** xref:usage/server.adoc[Server]
+** xref:usage/clients.adoc[Clients]
+** xref:usage/misc.adoc[Misc]
 * Design
 ** xref:design/overview.adoc[Overview]
 ** xref:design/handlers.adoc[Handlers]

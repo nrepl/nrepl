@@ -1,0 +1,150 @@
+= nREPL Server
+
+== Starting a server
+
+There are many ways to start an nREPL server. Most often you'd start
+it using some build tool, but you can also embed the server in your
+application and start it from it. Here we'll outline the most
+popular options available for you today.
+
+=== Using Leiningen
+
+link:https://github.com/technomancy/leiningen[Leiningen] has built-in support for nREPL since
+version 2. Just do:
+
+[source,shell]
+----
+$ lein repl
+----
+
+And you're all set. By default Lein will also connect to the running nREPL server using the
+popular command-line nREPL client link:https://github.com/trptcolin/reply/[REPL-y]. If you don't need the terminal REPL you can
+also start nREPL in headless mode:
+
+[source,shell]
+----
+$ lein repl :headless
+----
+
+=== Using Boot
+
+link:https://github.com/boot-clj/boot[Boot] is a popular alternative to Leiningen, that also has build-in support for nREPL:
+
+[source,shell]
+----
+$ boot repl
+----
+
+=== Using Clojure CLI tools
+
+If you're into the `clj` command you can take advantage of nREPL's built-in command-line interface
+(`nrepl.cmdline`).
+
+Add this alias to `~/.clojure/deps.edn`:
+
+[source,clojure]
+----
+{
+;; ...
+:aliases {:nREPL
+          {:extra-deps
+            {nrepl/nrepl {:mvn/version "0.4.5"}}}}
+}
+----
+
+Then you can simply run the nREPL server in headless mode like this:
+
+[source,shell]
+----
+$ clj -R:nREPL -m nrepl.cmdline
+----
+
+A good practice is add whatever nREPL middleware you want to use to
+the `nREPL` profile, so you can easily activate them when needed. Here's
+how you can easily start a ClojureScript capable nREPL:
+
+[source,clojure]
+----
+{
+;; ...
+:aliases {:nREPL
+          {:extra-deps
+           {nrepl/nrepl {:mvn/version "0.4.5"}
+            cider/piggieback {:mvn/version "0.3.8"}}}}
+}
+----
+
+[source,shell]
+----
+$ clj -R:nREPL -m nrepl.cmdline --middleware "[cider.piggieback/wrap-cljs-repl]"
+----
+
+Here's a listing of all the options available via nREPL's command-line
+interface (this output was simply generated with `--help`):
+
+[source,shell]
+----
+-i/--interactive            Start nREPL and connect to it with the built-in client.
+-c/--connect                Connect to a running nREPL with the built-in client.
+-C/--color                  Use colors to differentiate values from output in the REPL. Must be combined with --interactive.
+-b/--bind ADDR              Bind address, by default "::" (falling back to "localhost" if "::" isn't resolved by the underlying network stack).
+-h/--host ADDR              Host address to connect to when using --connect. Defaults to "localhost".
+-p/--port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
+--ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.
+-n/--handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`.
+-m/--middleware MIDDLEWARE  A sequence of vars, representing middleware you wish to mix in to the nREPL handler.
+--help                      Show this help message.
+----
+
+== Embedding nREPL, starting a server
+
+If your project uses Leiningen (v2 or higher), you already have access to an
+nREPL server for your project via `lein repl` (or, `lein repl :headless` if you
+don't need the REPL-y terminal-based nREPL client to connect to the resulting
+nREPL server).
+
+Otherwise, it can be extremely useful to have your application host a REPL
+server whereever it might be deployed; this can greatly simplify debugging,
+sanity-checking, panicked code patching, and so on.
+
+nREPL provides a socket-based server that you can trivially start from your
+application.  <<installation.adoc#,Add it to your project's dependencies>>, and add code
+like this to your app:
+
+[source,clojure]
+----
+=> (require '[nrepl.server :refer [start-server stop-server]])
+nil
+=> (defonce server (start-server :port 7888))
+='user/server
+----
+
+If you want your nREPL server to listen on a particular address instead of the
+default one, you can use the `:bind` keyword to specify the address to
+listen on. E.g., to make the nREPL server listen on address 172.18.0.5
+and port 4001:
+
+[source,clojure]
+----
+=> (require '[nrepl.server :refer [start-server stop-server]])
+nil
+=> (defonce server (start-server :bind "172.18.0.5" :port 4001))
+='user/server
+----
+
+Depending on what the lifecycle of your application is, whether you want to be
+able to easily restart the server, etc., you might want to put the value
+`start-server` returns into an atom or somesuch.  Anyway, once your app is
+running an nREPL server, you can connect to it from a tool like Leiningen or
+Counterclockwise or REPL-y, or from another Clojure process, as shown
+in <<clients.adoc,connecting-to-an-nrepl-server>>.
+
+You can stop the server with `(stop-server server)`.
+
+== Server options
+
+Note that nREPL is not limited to its default messaging protocol, nor to its
+default use of sockets.  nREPL provides a _transport_ abstraction for
+implementing support for alternative protocols and connection methods.
+Alternative transport implementations are available, and implementing your own
+is not difficult; read more about transports <<design/transports.adoc,here>>.

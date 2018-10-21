@@ -1,0 +1,112 @@
+= nREPL Clients
+
+Most of the time, you will connect to an nREPL server using an existing
+client/tool.  Tools that support nREPL include:
+
+* link:https://github.com/clojure-emacs/cider[CIDER] (Clojure Interactive
+  Development Environment that Rocks for Emacs)
+* link:https://cursiveclojure.com[Cursive] (Clojure IDE/plugin for IntelliJ Idea)
+* link:https://github.com/ccw-ide/ccw[Counterclockwise] (Clojure IDE/plugin
+  for Eclipse)
+* link:https://github.com/sanel/monroe[monroe] (nREPL client for Emacs)
+* link:https://github.com/tpope/vim-fireplace[fireplace.vim] (Clojure + nREPL
+  support for vim)
+* link:https://github.com/liquidz/vim-iced[vim-iced] (Clojure Interactive Development Environment for Vim8/Neovim)
+* link:https://github.com/jasongilman/proto-repl[Proto REPL] (Proto REPL is a Clojure development environment and REPL for Atom)
+* link:https://github.com/BetterThanTomorrow/calva[Calva] (Clojure & ClojureScript support for VS Code)
+* link:https://github.com/trptcolin/reply/[REPL-y] (command-line client for nREPL)
+
+Both Leiningen and Boot use internally REPL-y, as their command-line nREPL client.
+
+If your preferred Clojure development environment supports nREPL, you're done.
+Use it or connect to an existing nREPL endpoint, and you're done.
+
+== Using the built-in client
+
+nREPL ships with a very simple command-line client that you can use for some basic
+interactions with the server. The following command will start an nREPL server
+and connect with it using the built-in client.
+
+[source,shell]
+----
+$ clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.5"}}}' -m nrepl.cmdline --interactive
+nREPL server started on port 59403 on host 0:0:0:0:0:0:0:0 - nrepl://0:0:0:0:0:0:0:0:59403
+nREPL 0.4.5
+Clojure 1.9.0
+Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
+user=> (+ 1 2)
+3
+----
+
+If you want to connect to a server that's already running you can do it like this:
+
+[source,shell]
+----
+$ clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.5"}}}' -m nrepl.cmdline --connect --host host --port port
+nREPL 0.4.5
+Clojure 1.9.0
+Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
+user=> (+ 1 2)
+3
+----
+
+Most users, however, are advised to use REPL-y or their favourite
+editor instead for optimal results.
+
+== Talking to an nREPL endpoint programmatically
+
+If you want to connect to an nREPL server using the default transport, something
+like this will work:
+
+[source,clojure]
+----
+=> (require '[nrepl.core :as nrepl])
+nil
+=> (with-open [conn (nrepl/connect :port 59258)]
+     (-> (nrepl/client conn 1000)    ; message receive timeout required
+         (nrepl/message {:op "eval" :code "(+ 2 3)"})
+         nrepl/response-values))
+----
+
+If your nREPL server is running on a different machine or listening on a specific
+address different than the default one, you can use the `:host` keyword in the
+`connect` function to specify which address to connect to. E.g., to
+connect to a nREPL server listening on address 172.18.0.5 and port 4001:
+
+[source,clojure]
+----
+=> (with-open [conn (nrepl/connect :host "172.18.0.5" :port 4001)]
+     (-> (nrepl/client conn 1000)    ; message receive timeout required
+         (nrepl/message {:op "eval" :code "(+ 2 3)"})
+         nrepl/response-values))
+----
+
+`response-values` will return only the values of evaluated expressions, read
+from their (by default) `pr`-encoded representations via `read`.  You can see
+the full content of message responses easily:
+
+[source,clojure]
+----
+=> (with-open [conn (nrepl/connect :port 59258)]
+     (-> (nrepl/client conn 1000)
+         (nrepl/message {:op :eval :code "(time (reduce + (range 1e6)))"})
+         doall      ;; `message` and `client-session` all return lazy seqs
+         pprint))
+nil
+({:out "\"Elapsed time: 68.032 msecs\"\n",
+  :session "2ba81681-5093-4262-81c5-edddad573201",
+  :id "3124d886-7a5d-4c1e-9fc3-2946b1b3cfaa"}
+ {:ns "user",
+  :value "499999500000",
+  :session "2ba81681-5093-4262-81c5-edddad573201",
+  :id "3124d886-7a5d-4c1e-9fc3-2946b1b3cfaa"}
+ {:status ["done"],
+  :session "2ba81681-5093-4262-81c5-edddad573201",
+  :id "3124d886-7a5d-4c1e-9fc3-2946b1b3cfaa"})
+----
+
+Each message must contain at least an `:op` (or `"op"`) slot, which specifies
+the "type" of the operation to be performed.  The operations supported by an
+nREPL endpoint are determined by the handlers and middleware stack used when
+starting that endpoint; the default middleware stack (described below) supports
+a particular set of operations, <<ops.adoc,detailed here>>.
