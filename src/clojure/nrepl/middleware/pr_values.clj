@@ -2,6 +2,7 @@
   {:author "Chas Emerick"}
   (:require
    [clojure.string :as str]
+   [clojure.tools.logging :as log]
    [nrepl.middleware :refer [set-descriptor!]])
   (:import
    nrepl.transport.Transport))
@@ -23,7 +24,7 @@
       (require (symbol (namespace var-sym)))
       (resolve var-sym)
       (catch Exception ex
-        ; TODO: emit a warning here?
+        (log/warn "Couldn't resolve rendering function" var-sym)
         nil))))
 
 (defn- rendering-transport
