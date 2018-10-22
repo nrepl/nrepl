@@ -7,35 +7,9 @@ it using some build tool, but you can also embed the server in your
 application and start it from it. Here we'll outline the most
 popular options available for you today.
 
-=== Using Leiningen
-
-link:https://github.com/technomancy/leiningen[Leiningen] has built-in support for nREPL since
-version 2. Just do:
-
-[source,shell]
-----
-$ lein repl
-----
-
-And you're all set. By default Lein will also connect to the running nREPL server using the
-popular command-line nREPL client link:https://github.com/trptcolin/reply/[REPL-y]. If you don't need the terminal REPL you can
-also start nREPL in headless mode:
-
-[source,shell]
-----
-$ lein repl :headless
-----
-
-=== Using Boot
-
-link:https://github.com/boot-clj/boot[Boot] is a popular alternative to Leiningen, that also has build-in support for nREPL:
-
-[source,shell]
-----
-$ boot repl
-----
-
 === Using Clojure CLI tools
+
+NOTE: This section assumes you're using Clojure 1.9+ and nREPL 0.4.4+.
 
 If you're into the `clj` command you can take advantage of nREPL's built-in command-line interface
 (`nrepl.cmdline`).
@@ -96,16 +70,43 @@ interface (this output was simply generated with `--help`):
 --help                      Show this help message.
 ----
 
-== Embedding nREPL, starting a server
+=== Using Leiningen
 
-If your project uses Leiningen (v2 or higher), you already have access to an
-nREPL server for your project via `lein repl` (or, `lein repl :headless` if you
-don't need the REPL-y terminal-based nREPL client to connect to the resulting
-nREPL server).
+link:https://github.com/technomancy/leiningen[Leiningen] has built-in support for nREPL since
+version 2. Just do:
 
-Otherwise, it can be extremely useful to have your application host a REPL
+[source,shell]
+----
+$ lein repl
+----
+
+And you're all set. By default Lein will also connect to the running nREPL server using the
+popular command-line nREPL client link:https://github.com/trptcolin/reply/[REPL-y]. If you don't need the terminal REPL you can
+also start nREPL in headless mode:
+
+[source,shell]
+----
+$ lein repl :headless
+----
+
+=== Using Boot
+
+link:https://github.com/boot-clj/boot[Boot] is a popular alternative to Leiningen, that also has build-in support for nREPL:
+
+[source,shell]
+----
+$ boot repl
+----
+
+== Embedding nREPL
+
+All the above options are typically used during the development of an application.
+It can also be extremely useful to have your application host a REPL
 server whereever it might be deployed; this can greatly simplify debugging,
 sanity-checking, panicked code patching, and so on.
+
+WARNING: You should think long and hard before hot-patching code in
+production, but that's a subject for an unrelated discussion.
 
 nREPL provides a socket-based server that you can trivially start from your
 application.  <<installation.adoc#,Add it to your project's dependencies>>, and add code
@@ -131,6 +132,11 @@ nil
 => (defonce server (start-server :bind "172.18.0.5" :port 4001))
 ='user/server
 ----
+
+WARNING: Keep in mind that running a nREPL server on a public address
+is an epic security hole! As the connections are insecure (no
+authentication, no authorization) by default anyone can connect to
+your app and modify its behaviour or run code on the remote host.
 
 Depending on what the lifecycle of your application is, whether you want to be
 able to easily restart the server, etc., you might want to put the value
