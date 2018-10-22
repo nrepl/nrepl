@@ -137,7 +137,7 @@ able to easily restart the server, etc., you might want to put the value
 `start-server` returns into an atom or somesuch.  Anyway, once your app is
 running an nREPL server, you can connect to it from a tool like Leiningen or
 Counterclockwise or REPL-y, or from another Clojure process, as shown
-in <<clients.adoc,connecting-to-an-nrepl-server>>.
+ <<usage/clients.adoc,here>>.
 
 You can stop the server with `(stop-server server)`.
 
