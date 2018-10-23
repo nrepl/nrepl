@@ -1,2 +1,26 @@
-{:cljdoc.doc/tree [["Readme" {:file "README.md"}]
-                   ["Changelog" {:file "CHANGELOG.md"}]]}
+{:cljdoc.doc/tree
+ [["Readme" {:file "README.md"}]
+  ["Changelog" {:file "CHANGELOG.md"}]
+  ["Home" {:file "doc/modules/ROOT/pages/index.adoc"}]
+  ["Installation" {:file "doc/modules/ROOT/pages/installation.adoc"}]
+  ["Usage"
+   ["Server" {:file "doc/modules/ROOT/pages/usage/server.adoc"}
+    "Client" {:file "doc/modules/ROOT/pages/usage/clients.adoc"}
+    "Misc" {:file "doc/modules/ROOT/pages/usage/misc.adoc"}]]
+  ["Design"
+   "Overview" {:file "doc/modules/ROOT/pages/design/overview.adoc"}
+   "Handlers" {:file "doc/modules/ROOT/pages/design/handlers.adoc"}
+   "Transports" {:file "doc/modules/ROOT/pages/design/transports.adoc"}
+   "Middleware" {:file "doc/modules/ROOT/pages/design/middleware.adoc"}]
+  ["Built-in Ops" {:file "doc/modules/ROOT/pages/ops.adoc"}]
+  ["FAQ" {:file "doc/modules/ROOT/pages/faq.adoc"}]
+  ["Third-party Middleware" {:file "doc/modules/ROOT/pages/third_party_middleware.adoc"}]
+  ["Hacking on nREPL" {:file "doc/modules/ROOT/pages/hacking_on_nrepl.adoc"}]
+  ["About"
+   ["History" {:file "doc/modules/ROOT/pages/about/history.adoc"}]
+   ["Team" {:file "doc/modules/ROOT/pages/about/team.adoc"}]
+   ["Support" {:file "doc/modules/ROOT/pages/about/support.adoc"}]
+   ["Contributing" {:file "doc/modules/ROOT/pages/about/contributing.adoc"}]
+   ["Release Policy" {:file "doc/modules/ROOT/pages/about/release_policy.adoc"}]
+   ["Changelog" {:file "doc/modules/ROOT/pages/about/changelog.adoc"}]
+   ["License" {:file "doc/modules/ROOT/pages/about/license.adoc"}]]]}
