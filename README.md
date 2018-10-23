@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/nrepl/nREPL.svg?branch=master)](https://travis-ci.org/nrepl/nREPL)
+[![Build Status](https://travis-ci.org/nrepl/nrepl.svg?branch=master)](https://travis-ci.org/nrepl/nrepl)
 [![Clojars Project](https://img.shields.io/clojars/v/nrepl.svg)](https://clojars.org/nrepl)
 [![cljdoc badge](https://cljdoc.xyz/badge/nrepl/nrepl)](https://cljdoc.xyz/d/nrepl/nrepl/CURRENT)
 
