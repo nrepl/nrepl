@@ -11,6 +11,10 @@
 
 * [#10](https://github.com/nrepl/nREPL/issues/10): Bind *1, *2, *3 and *e in cloned session.
 
+#### Changes
+
+* [#56](https://github.com/nrepl/nREPL/issues/56): Bind the server by default to `localhost` instead of to `::` (this turned out to be a security risk).
+
 ### 0.4.5 (2018-09-02)
 
 #### New features
