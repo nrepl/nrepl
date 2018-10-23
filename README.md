@@ -38,6 +38,10 @@ the needs of the essential tools of the Clojure(Script) ecosystem
 
 See the [manual](https://nrepl.xyz).
 
+## API Documentation
+
+You can find nREPL's API documentation on [cljdoc](https://cljdoc.org/d/nrepl/nrepl/CURRENT).
+
 ## License
 
 Copyright © 2010-2018 Chas Emerick, Bozhidar Batsov and contributors.
