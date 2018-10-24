@@ -21,6 +21,13 @@
   "Function returning the evaluation of its argument."
   nil)
 
+(defmacro ^{:private true} def-dynamic-when-not-resolved
+  [sym value]
+  (when-not (resolve sym)
+    `(def ~(vary-meta sym assoc :dynamic true) ~value)))
+
+(def-dynamic-when-not-resolved *print-namespace-maps* nil)
+
 (defn- capture-thread-bindings
   "Capture thread bindings, excluding nrepl implementation vars."
   []
@@ -91,7 +98,9 @@
                       (set! *1 (@bindings #'*1))
                       (set! *2 (@bindings #'*2))
                       (set! *3 (@bindings #'*3))
-                      (set! *e (@bindings #'*e)))
+                      (set! *e (@bindings #'*e))
+                      (when (resolve '*print-namespace-maps*)
+                        (set! *print-namespace-maps* (@bindings #'*print-namespace-maps*))))
            :read (if (string? code)
                    (let [reader (source-logging-pushback-reader code line column)]
                      #(read {:read-cond :allow :eof %2} reader))
