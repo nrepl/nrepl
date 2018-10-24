@@ -4,6 +4,7 @@
 
 * link:https://lambdaisland.com/guides/clojure-repls/clojure-repls[Clojure REPLs]: A good overview of the various Clojure REPLs. It features a nice link:https://lambdaisland.com/guides/clojure-repls/clojure-repls#org8a9b873[section on nREPL].
 * link:https://juxt.pro/blog/posts/nrepl.html[Overview of nREPL]
+* link:https://metaredux.com/posts/2018/10/21/nrepls-secret-tty-transport.html[nREPL's hidden TTY transport]
 
 == Presentations
 
