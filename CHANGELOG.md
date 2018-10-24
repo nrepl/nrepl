@@ -10,6 +10,7 @@
 #### Bugs fixed
 
 * [#10](https://github.com/nrepl/nREPL/issues/10): Bind *1, *2, *3 and *e in cloned session.
+* [#33](https://github.com/nrepl/nREPL/issues/33): Add ability to change value of `*print-namespace-maps*`.
 
 #### Changes
 
