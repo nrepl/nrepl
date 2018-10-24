@@ -10,9 +10,10 @@
 ** xref:design/transports.adoc[Transports]
 ** xref:design/middleware.adoc[Middleware]
 * xref:ops.adoc[Built-in Ops]
-* xref:faq.adoc[FAQ]
 * xref:third_party_middleware.adoc[Third-party Middleware]
 * xref:hacking_on_nrepl.adoc[Hacking on nREPL]
+* xref:faq.adoc[FAQ]
+* xref:troubleshooting.adoc[Troubleshooting]
 * About
 ** xref:about/history.adoc[History]
 ** xref:about/team.adoc[Team]
