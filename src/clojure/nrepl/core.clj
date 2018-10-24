@@ -166,7 +166,7 @@
 
 (defn connect
   "Connects to a socket-based REPL at the given host (defaults to localhost) and port,
-   returning the Transport (by default nrepl.transport/bencode)
+   returning the Transport (by default `nrepl.transport/bencode`)
    for that connection.
 
    Transports are most easily used with `client`, `client-session`, and
@@ -204,7 +204,7 @@
    This is a multimethod that dispatches on the scheme of the URI provided
    (which can be a string or java.net.URI).  By default, implementations for
    nrepl (corresponding to using the default bencode transport) and
-   telnet (using the nrepl.transport/tty transport) are
+   telnet (using the `nrepl.transport/tty` transport) are
    registered.  Alternative implementations may add support for other schemes,
    such as HTTP, HTTPS, JMX, existing message queues, etc."
   uri-scheme)
