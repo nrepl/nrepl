@@ -22,10 +22,13 @@
   nil)
 
 (defmacro ^{:private true} def-dynamic-when-not-resolved
+  "Define a dynamic var if it can't be resolved."
   [sym value]
   (when-not (resolve sym)
     `(def ~(vary-meta sym assoc :dynamic true) ~value)))
 
+;; Needed for backward compatibility with Clojure 1.7 and 1.8.
+;; See https://github.com/nrepl/nrepl/issues/33 for details.
 (def-dynamic-when-not-resolved *print-namespace-maps* nil)
 
 (defn- capture-thread-bindings
