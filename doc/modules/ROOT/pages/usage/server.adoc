@@ -154,3 +154,54 @@ default use of sockets.  nREPL provides a _transport_ abstraction for
 implementing support for alternative protocols and connection methods.
 Alternative transport implementations are available, and implementing your own
 is not difficult; read more about transports <<design/transports.adoc,here>>.
+
+=== Server Configuration
+
+Starting with version 0.5 you can configure certain aspects of the
+nREPL server's behaviour via configuration files.
+
+There are two configuration files:
+
+* Global configuration file `.nrepl/config.edn`
+* Local configuration file `nrepl-config.edn`
+
+The global configuration file is useful for setting options that you'd
+like to use for all the nREPL servers that you start (e.g. a common
+`bind-address`, `transport`, `handler`, etc).
+
+TIP: You can alter the location of the global configuration file
+via the environment variable `NREPL_CONFIG_DIR`.
+
+The local configuration file should be placed in the directory from
+which you're starting the server (normally the root directory of your
+project). Its purpose it to set project-specific settings (e.g. a common port
+you always want to use with a particular project). Any setting in `.nrepl-config.edn`
+will take precedence over a setting in `.nrepl/config.edn`.
+
+Here's an example global configuration file:
+
+.nrepl/config.edn
+[source,clojure]
+----
+{:bind         "::"
+ :transport    "nrepl.transport/tty"
+ :middleware   ["some.ns/mw1" "some.ns/mw1"]}
+----
+
+IMPORTANT: You can refer to vars either as strings or symbols.
+
+And this is an example of a local config file:
+
+.nrepl-config.edn
+[source,clojure]
+----
+{:bind         "localhost"
+ :port         12345
+ :ack          23456
+ :handler      "some.ns/awesome-handler"
+ :transport    "nrepl.transport/bencode"}
+----
+
+IMPORTANT: At the time of this writing Boot and Leiningen don't honor the new
+configuration files. They are current leveraged only by the built-in command-line
+interface.
