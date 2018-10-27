@@ -46,6 +46,14 @@ $ nc localhost 12345
 user=>
 ----
 
+Starting with nREPL 0.5 you can also start an nREPL with a TTY transport using `clj`:
+
+[source,shell]
+----
+$ clj -R:nrepl -m nrepl.cmdline -t nrepl.transport/tty
+nREPL server started on port 63266 on host localhost - telnet://localhost:63266
+----
+
 == Bencode Transport
 
 There's nothing special you have to do to use the bencode transport,

@@ -5,9 +5,11 @@
   {:author "Chas Emerick"}
   (:require
    [clojure.java.io :as io]
+   [nrepl.config :as config]
    [nrepl.core :as nrepl]
    [nrepl.ack :refer [send-ack]]
-   [nrepl.server :refer [start-server]]))
+   [nrepl.server :refer [start-server]]
+   [nrepl.transport :as transport]))
 
 (def colored-output
   {:err #(binding [*out* *err*]
@@ -54,6 +56,7 @@
    "-h" "--host"
    "-p" "--port"
    "-m" "--middleware"
+   "-t" "--transport"
    "-n" "--handler"
    "-v" "--version"})
 
@@ -97,14 +100,17 @@
   --ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.
   -n/--handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`.
   -m/--middleware MIDDLEWARE  A sequence of vars, representing middleware you wish to mix in to the nREPL handler.
+  -t/--transport TRANSPORT    The transport to use. By default that's nrepl.transport/bencode.
   --help                      Show this help message.
   -v/--version                Display the nREPL version."))
 
 (defn- require-and-resolve
-  "Require and resolve `thing`."
+  "Require and resolve `thing`
+  `thing` can be a string or a symbol."
   [thing]
-  (require (symbol (namespace thing)))
-  (resolve thing))
+  (let [thing (symbol thing)]
+    (require (symbol (namespace thing)))
+    (resolve thing)))
 
 (def ^:private resolve-mw-xf
   (comp (map require-and-resolve)
@@ -135,6 +141,11 @@
   [middleware]
   (apply nrepl.server/default-handler (->mw-list middleware)))
 
+(defn- url-scheme [transport]
+  (if (= transport #'transport/tty)
+    "telnet"
+    "nrepl"))
+
 (defn -main
   [& args]
   (let [[options args] (split-args (expand-shorthands args))]
@@ -158,7 +169,10 @@
             handler (and (options "--handler") (read-string (options "--handler")))
             middleware (and (options "--middleware") (read-string (options "--middleware")))
             handler (if handler (handler) (build-handler middleware))
-            server (start-server :port port :bind bind :handler handler)
+            transport (if (options "--transport") (require-and-resolve (options "--transport")))
+            greeting-fn (if (= transport #'transport/tty) #'transport/tty-greeting)
+            server (start-server :port port :bind bind :handler handler
+                                 :transport-fn transport :greeting-fn greeting-fn)
             ^java.net.ServerSocket ssocket (:server-socket server)]
         (when-let [ack-port (options "--ack")]
           (binding [*out* *err*]
@@ -169,8 +183,8 @@
               host (.getHostName (.getInetAddress ssocket))]
           ;; The format here is important, as some tools (e.g. CIDER) parse the string
           ;; to extract from it the host and the port to connect to
-          (println (format "nREPL server started on port %d on host %s - nrepl://%s:%d"
-                           port host host port))
+          (println (format "nREPL server started on port %d on host %s - %s://%s:%d"
+                           port host (url-scheme transport) host port))
           ;; Many clients look for this file to infer the port to connect to
           (let [port-file (io/file ".nrepl-port")]
             (.deleteOnExit port-file)
