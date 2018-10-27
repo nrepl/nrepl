@@ -5,6 +5,7 @@
   {:author "Chas Emerick"}
   (:require
    [clojure.java.io :as io]
+   [clojure.edn :as edn]
    [nrepl.config :as config]
    [nrepl.core :as nrepl]
    [nrepl.ack :refer [send-ack]]
@@ -71,6 +72,12 @@
   "Expand shorthand options into their full forms."
   [args]
   (map (fn [arg] (or (option-shorthands arg) arg)) args))
+
+(defn- keywordize-options [options]
+  (reduce-kv
+   #(assoc %1 (keyword (clojure.string/replace-first %2 "--" "")) %3)
+   {}
+   options))
 
 (defn- split-args
   "Convert `args` into a map of options + a list of args.
@@ -146,40 +153,66 @@
     "telnet"
     "nrepl"))
 
+(defn- ->int [x]
+  (cond
+    (nil? x) x
+    (number? x) x
+    :else (Integer/parseInt x)))
+
+(defn- sanitize-middleware-option
+  "Sanitize the middleware option.
+  It can be either a string or a list, depending on whether it
+  came from the command line or a config file.
+  It can also be a vector of symbols or just a single symbol."
+  [mw-opt]
+  (cond
+    (string? mw-opt)
+    ;; some string like "[foo bar baz]" or "foo" from the command-line
+    (let [mw (edn/read-string mw-opt)]
+      (if (sequential? mw)
+        mw
+        [mw]))
+    ;; symbol from a config file
+    (symbol? mw-opt) [mw-opt]
+    ;; nil or a vector from a config file
+    :else mw-opt))
+
 (defn -main
   [& args]
-  (let [[options args] (split-args (expand-shorthands args))]
+  (let [[options _args] (split-args (expand-shorthands args))
+        options (keywordize-options options)
+        options (merge config/config options)]
     ;; we have to check for --help first, as it's special
-    (when (options "--help")
+    (when (:help options)
       (display-help)
       (System/exit 0))
-    (when (options "--version")
+    (when (:version options)
       (println nrepl/version-string)
       (System/exit 0))
     ;; then we check for --connect
-    (let [port (Integer/parseInt (or (options "--port") "0"))
-          host (options "--host")]
-      (when (options "--connect")
+    (let [port (->int (:port options))
+          host (:host options)]
+      (when (:connect options)
         (run-repl host port)
         (System/exit 0))
       ;; otherwise we assume we have to start an nREPL server
-      (let [bind (options "--bind")
+      (let [bind (:bind options)
             ;; if some handler was explicitly passed we'll use it, otherwise we'll build one
             ;; from whatever was passed via --middleware
-            handler (and (options "--handler") (read-string (options "--handler")))
-            middleware (and (options "--middleware") (read-string (options "--middleware")))
-            handler (if handler (handler) (build-handler middleware))
-            transport (if (options "--transport") (require-and-resolve (options "--transport")))
+            handler (if (:handler options) (require-and-resolve (:handler options)))
+            middleware (sanitize-middleware-option (:middleware options))
+            handler (or handler (build-handler middleware))
+            transport (if (:transport options) (require-and-resolve (:transport options)))
             greeting-fn (if (= transport #'transport/tty) #'transport/tty-greeting)
             server (start-server :port port :bind bind :handler handler
-                                 :transport-fn transport :greeting-fn greeting-fn)
-            ^java.net.ServerSocket ssocket (:server-socket server)]
-        (when-let [ack-port (options "--ack")]
+                                 :transport-fn transport :greeting-fn greeting-fn)]
+        (when-let [ack-port (:ack options)]
           (binding [*out* *err*]
-            (println (format "ack'ing my port %d to other server running on port %s"
-                             (.getLocalPort ssocket) ack-port)
-                     (:status (send-ack (.getLocalPort ssocket) (Integer/parseInt ack-port))))))
+            (println (format "ack'ing my port %d to other server running on port %d"
+                             (:port server) ack-port)
+                     (:status (send-ack (:port server) ack-port)))))
         (let [port (:port server)
+              ^java.net.ServerSocket ssocket (:server-socket server)
               host (.getHostName (.getInetAddress ssocket))]
           ;; The format here is important, as some tools (e.g. CIDER) parse the string
           ;; to extract from it the host and the port to connect to
@@ -189,7 +222,7 @@
           (let [port-file (io/file ".nrepl-port")]
             (.deleteOnExit port-file)
             (spit port-file port))
-          (if (options "--interactive")
-            (run-repl host port (when (options "--color") colored-output))
+          (if (:interactive options)
+            (run-repl host port (when (:color options) colored-output))
             ;; need to hold process open with a non-daemon thread -- this should end up being super-temporary
             (Thread/sleep Long/MAX_VALUE)))))))
