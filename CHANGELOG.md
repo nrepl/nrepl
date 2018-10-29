@@ -4,6 +4,7 @@
 
 #### New features
 
+* [#60](https://github.com/nrepl/nrepl/issues/60): Implemented EDN transport
 * [#12](https://github.com/nrepl/nREPL/issues/12): Support custom printing
   function in `pr-values`, enabling pretty-printed REPL results.
 * [#66](https://github.com/nrepl/nrepl/pull/66): Add support for a global and local configuration file.
