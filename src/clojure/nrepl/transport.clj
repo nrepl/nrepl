@@ -5,6 +5,8 @@
    [clojure.java.io :as io]
    [clojure.walk :as walk]
    [nrepl.bencode :as bencode]
+   [clojure.edn :as edn]
+   clojure.walk
    [nrepl.misc :refer [uuid]]
    nrepl.version)
   (:import
@@ -115,6 +117,28 @@
                                  (locking out
                                    (doto out
                                      (bencode/write-bencode %)
+                                     .flush)))
+      (fn []
+        (if s
+          (.close s)
+          (do
+            (.close in)
+            (.close out))))))))
+
+(defn nrepl+edn
+  "Returns a Transport implementation that serializes messages
+   over the given Socket or InputStream/OutputStream using EDN."
+  ([^Socket s] (nrepl+edn s s s))
+  ([in out & [^Socket s]]
+   (let [in (io/reader in)
+         out (io/writer out)]
+     (fn-transport
+      #(let [payload (rethrow-on-disconnection s (java.io.PushbackReader. in))]
+         (edn/read payload))
+      #(rethrow-on-disconnection s
+                                 (locking out
+                                   (doto out
+                                     (.write (str %))
                                      .flush)))
       (fn []
         (if s

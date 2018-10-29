@@ -2,6 +2,8 @@
 
 ### master (unreleased)
 
+* [#60](https://github.com/nrepl/nrepl/issues/60): Implemented EDN transport
+
 ### 0.6.0 (2019-02-05)
 
 #### New features
