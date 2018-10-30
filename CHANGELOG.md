@@ -15,7 +15,7 @@
 
 #### Changes
 
-* [#56](https://github.com/nrepl/nREPL/issues/56): Bind the server by default to `localhost` instead of to `::` (this turned out to be a security risk).
+* [#56](https://github.com/nrepl/nREPL/issues/56): Bind the server by default to `127.0.0.1` instead of to `::` (this turned out to be a security risk).
 
 ### 0.4.5 (2018-09-02)
 

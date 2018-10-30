@@ -106,7 +106,7 @@
   "Starts a socket-based nREPL server.  Configuration options include:
 
    * :port — defaults to 0, which autoselects an open port
-   * :bind — bind address, by default \"localhost\"
+   * :bind — bind address, by default \"127.0.0.1\"
    * :handler — the nREPL message handler to use for each incoming connection;
        defaults to the result of `(default-handler)`
    * :transport-fn — a function that, given a java.net.Socket corresponding
@@ -126,9 +126,10 @@
         make-ss #(doto (ServerSocket.)
                    (.setReuseAddress true)
                    (.bind %))
-        ;; TODO: Make the default bind address configurable via a
-        ;; configuration file and/or environment variable.
-        bind (or bind "localhost")
+        ;; We fallback to 127.0.0.1 instead of to localhost to avoid
+        ;; a dependency on the order of ipv4 and ipv6 records for
+        ;; localhost in /etc/hosts
+        bind (or bind "127.0.0.1")
         ss (make-ss (addr bind port))
         server (Server. ss
                         (.getLocalPort ss)
