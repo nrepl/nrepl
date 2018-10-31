@@ -38,11 +38,7 @@
 
 (defn- set-line!
   [^LineNumberingPushbackReader reader line]
-  (-> FilterReader
-      ^Field (.getDeclaredField "in")
-      (doto (.setAccessible true))
-      ^LineNumberReader (.get reader)
-      (.setLineNumber line)))
+  (-> reader (.setLineNumber line)))
 
 (defn- set-column!
   [^LineNumberingPushbackReader reader column]
@@ -57,7 +53,7 @@
 (defn- source-logging-pushback-reader
   [code line column]
   (let [reader (LineNumberingPushbackReader. (StringReader. code))]
-    (when line (set-line! reader (int (dec line))))
+    (when line (set-line! reader (int line)))
     (when column (set-column! reader (int column)))
     reader))
 
