@@ -86,5 +86,5 @@ compatibility remains as important as always.
 ====
 You'll need Boot 2.8.2+ or Leiningen 2.8.2+ (still unreleased) to take advantage of nREPL
 0.4, as their older releases bundled nREPL 0.2.x. Leiningen users can also use the
-link:https://github.com/nrepl/lein-nrepl/pulls[lein-nrepl plugin] until Leiningen 2.8.2 is officially released.
+link:https://github.com/nrepl/lein-nrepl/pulls[lein-nrepl plugin] (0.3.0) until Leiningen 2.8.2 is officially released.
 ====
