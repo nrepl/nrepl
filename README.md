@@ -1,10 +1,11 @@
-[![Build Status](https://travis-ci.org/nrepl/nrepl.svg?branch=master)](https://travis-ci.org/nrepl/nrepl)
-[![Clojars Project](https://img.shields.io/clojars/v/nrepl.svg)](https://clojars.org/nrepl)
-[![cljdoc badge](https://cljdoc.org/badge/nrepl/nrepl)](https://cljdoc.org/d/nrepl/nrepl/CURRENT)
-
 <p align="center">
   <img src="https://raw.github.com/nrepl/nrepl/master/logo/logo-w640.png" alt="nREPL Logo"/>
 </p>
+
+----------
+[![Build Status](https://travis-ci.org/nrepl/nrepl.svg?branch=master)](https://travis-ci.org/nrepl/nrepl)
+[![Clojars Project](https://img.shields.io/clojars/v/nrepl.svg)](https://clojars.org/nrepl)
+[![cljdoc badge](https://cljdoc.org/badge/nrepl/nrepl)](https://cljdoc.org/d/nrepl/nrepl/CURRENT)
 
 nREPL is a Clojure *n*etwork REPL that
 provides a REPL server and client, along with some common APIs
