@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.github.com/nrepl/nrepl/master/logo/logo-w640.png" alt="nREPL Logo"/>
+  <img src="https://raw.github.com/nrepl/nrepl/master/logo/logo-w1280.png" width="640" alt="nREPL Logo"/>
 </p>
 
 ----------
