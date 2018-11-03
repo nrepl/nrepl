@@ -475,7 +475,7 @@
   (is (= [" :kthxbai"] (repl-values session "(read-line)"))))
 
 (def-repl-test test-url-connect
-  (with-open [conn (url-connect (str "nrepl://localhost:" (:port *server*)))]
+  (with-open [conn (url-connect (str "nrepl://127.0.0.1:" (:port *server*)))]
     (transport/send conn {:op :eval :code "(+ 1 1)"})
     (is (= [2] (response-values (response-seq conn 100))))))
 

@@ -165,14 +165,14 @@
        :value))
 
 (defn connect
-  "Connects to a socket-based REPL at the given host (defaults to localhost) and port,
+  "Connects to a socket-based REPL at the given host (defaults to 127.0.0.1) and port,
    returning the Transport (by default `nrepl.transport/bencode`)
    for that connection.
 
    Transports are most easily used with `client`, `client-session`, and
    `message`, depending on the semantics desired."
   [& {:keys [port host transport-fn] :or {transport-fn transport/bencode
-                                          host "localhost"}}]
+                                          host "127.0.0.1"}}]
   {:pre [transport-fn port]}
   (transport-fn (java.net.Socket. ^String host (int port))))
 
