@@ -5,8 +5,8 @@
   convenient API to work with them.
 
   The config resolution algorithm is the following:
-  The global config file .nrepl/config.edn is merged with
-  any local config file (.nrepl-config.edn) if present.
+  The global config file .nrepl/nrepl.edn is merged with
+  any local config file (.nrepl.edn) if present.
   The values in the local config file take precedence."
   {:author "Bozhidar Batsov"
    :added  "0.5.0"}
@@ -27,7 +27,7 @@
 
 (def config-file
   "nREPL's config file."
-  (str config-dir java.io.File/separator "config.edn"))
+  (str config-dir java.io.File/separator "nrepl.edn"))
 
 (defn- load-edn
   "Load edn from an io/reader source (filename or io/resource)."
@@ -53,4 +53,4 @@
   nREPL."
   (merge
    (load-config config-file)
-   (load-config ".nrepl-config.edn")))
+   (load-config ".nrepl.edn")))

@@ -162,8 +162,8 @@ nREPL server's behaviour via configuration files.
 
 There are two configuration files:
 
-* Global configuration file `.nrepl/config.edn`
-* Local configuration file `nrepl-config.edn`
+* Global configuration file `.nrepl/nrepl.edn`
+* Local configuration file `.nrepl.edn`
 
 The global configuration file is useful for setting options that you'd
 like to use for all the nREPL servers that you start (e.g. a common
@@ -175,12 +175,12 @@ via the environment variable `NREPL_CONFIG_DIR`.
 The local configuration file should be placed in the directory from
 which you're starting the server (normally the root directory of your
 project). Its purpose it to set project-specific settings (e.g. a common port
-you always want to use with a particular project). Any setting in `.nrepl-config.edn`
-will take precedence over a setting in `.nrepl/config.edn`.
+you always want to use with a particular project). Any setting in `.nrepl.edn`
+will take precedence over a setting in `.nrepl/nrepl.edn`.
 
 Here's an example global configuration file:
 
-.nrepl/config.edn
+.nrepl/nrepl.edn
 [source,clojure]
 ----
 {:bind         "::"
@@ -192,7 +192,7 @@ IMPORTANT: You can refer to vars either as strings or symbols.
 
 And this is an example of a local config file:
 
-.nrepl-config.edn
+.nrepl.edn
 [source,clojure]
 ----
 {:bind         "localhost"
