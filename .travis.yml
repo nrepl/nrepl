@@ -27,7 +27,7 @@ stages:
   # In addition, ensure we're on the master branch (snapshots)
   # or a branch with semver naming (releases).
   - name: deploy
-    if: repo = clojure-emacs/nREPL
+    if: repo = nrepl/nrepl
         AND type != pull_request
         AND ( branch = master OR branch =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ )
 jobs:
