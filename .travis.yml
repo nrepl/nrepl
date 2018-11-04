@@ -55,11 +55,6 @@ jobs:
       env: VERSION=1.9 TARGET=cljfmt
       jdk: oraclejdk8
 
-    # Deploy documentation
-    - stage: deploy
-      env: TARGET=docs
-      jdk: oraclejdk8
-
     # Deploy artifacts
     - stage: deploy
       env: TARGET=deploy
