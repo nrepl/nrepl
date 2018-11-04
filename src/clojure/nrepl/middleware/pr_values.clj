@@ -63,7 +63,7 @@
   evaluation contexts to produce printed results in `:value` if they so choose,
   and opt out of the printing here."
   [handler]
-  (fn [{:keys [op ^Transport transport renderer render-options] :as msg}]
+  (fn [{:keys [^Transport transport renderer render-options] :as msg}]
     (let [render-fn (or (resolve-renderer renderer) default-renderer)
           transport (rendering-transport transport render-fn render-options)]
       (handler (assoc msg :transport transport)))))
