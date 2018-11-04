@@ -41,7 +41,7 @@
              :sysutils {:plugins [[lein-sysutils "0.2.0"]]}
 
              ;; CI tools
-             :cloverage {:plugins [[lein-cloverage "1.0.11-SNAPSHOT"]]}
+             :cloverage {:plugins [[lein-cloverage "1.0.13"]]}
 
              :cljfmt {:plugins [[lein-cljfmt "0.5.7"]]
                       :cljfmt {:indents {as-> [[:inner 0]]
