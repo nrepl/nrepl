@@ -18,7 +18,7 @@ env:
     - secure: "jVAi+oFZm5Rda8xYaSP+pchkmODkvL8Kz0nNuzmQY/TYBVT/rQP5lBoeY8DRA38OCD8IO7577WySmNz5UqKwWS/gXbn+fOIqrJJ/xeDveyMNaRn79ZyF6rbncsinFvTDOzpa8D0U/HFfp/0wGuMCMcby+vnygwjovXAioPKqw+gtb8tXHpaahGzBysaClWllSkz54ANXbUwWR17v+aXbyTNlP7ObmN9CXmHWEzjUN5CI2fN72SLwB784g12jdm+Vger3FlPEkw21DfnAq9rk9Brj98Y91iY/BvuF2lNsqOUVfqVGo3M12s2TxHSLmOwkmT3fLlbhp4kq1QTFyhSA9lBYzHgjL356UyMJju6cRtBge9phwMcpOF0e9vdReTxcVu7G0oCEUjNA2E87mb/cZlZfqTzjins0p5WBjEDvzjoY6yqOBQp48vUTf1WCbdmnUd3pnOMj6p5QxpMfJYWLXfM8tnAg0ss9mP7zpOHbCEYaEaFCAmGTFA+MCrKBixUt3iFYF1JisZkWkyzYVECM+kOfBjMKyh/1JGjxqMwK54NYPy9g2pc7/dVQnZXN0aCRPrt3yFHLZRsZCWt0RAbAN26dykN00U+aCLWWwO2CV0ij6vAZSwmGwNBcXYSaQJlHkfdksSv49N98qSK7A4ye4he46X08QxYpeEDL2CqzqkE="
 jdk:
   - oraclejdk8
-  - oraclejdk9
+  - openjdk11
 stages:
   - name: check
   - name: test
