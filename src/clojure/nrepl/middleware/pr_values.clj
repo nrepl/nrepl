@@ -8,7 +8,7 @@
    nrepl.transport.Transport))
 
 (defn- default-renderer
-  "Uses print-dup or print-method to render a value to a string."
+  "Uses `print-dup` or `print-method` to render a value to a string."
   [v opts]
   (let [printer (if *print-dup* print-dup print-method)
         writer (java.io.StringWriter.)]
