@@ -15,7 +15,7 @@ code in remote environments.
 ### How is this different from the "contrib" [tools.nrepl](https://github.com/clojure/tools.nrepl/) project?
 
 Check the brief history of nREPL, available
-[here](https://nrepl.xyz/nrepl/0.4.5/about/history.html).
+[here](https://nrepl.xyz/nrepl/about/history.html).
 
 ### Status
 
