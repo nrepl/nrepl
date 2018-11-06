@@ -4,7 +4,8 @@
   (:require
    clojure.set
    [nrepl.misc :refer [uuid]]
-   [nrepl.transport :as transport])
+   [nrepl.transport :as transport]
+   [nrepl.version :as version])
   (:import
    clojure.lang.LineNumberingPushbackReader
    [java.io Reader StringReader Writer PrintWriter]))
@@ -227,18 +228,14 @@
   (throw (IllegalArgumentException.
           (format "No nREPL support known for scheme %s, url %s" (uri-scheme uri) uri))))
 
-;; TODO: Figure out if we can extract this automatically from the project metadata
-(def version-string
-  "Current version of nREPL as a string.
+(def ^{:deprecated "0.5.0"} version-string
+  "Use `nrepl.version/version-string` instead.
+  Current version of nREPL as a string.
   See also `version`."
-  "0.5.0-SNAPSHOT")
+  version/version-string)
 
-(def version
-  "Current version of nREPL.
+(def ^{:deprecated "0.5.0"} version
+  "Use `nrepl.version/version` instead.
+  Current version of nREPL.
   Map of :major, :minor, :incremental, :qualifier, and :version-string."
-  (assoc (->> version-string
-              (re-find #"(\d+)\.(\d+)\.(\d+)-?(.*)")
-              rest
-              (map #(try (Integer/parseInt %) (catch Exception e nil)))
-              (zipmap [:major :minor :incremental :qualifier]))
-         :version-string version-string))
+  version/version)
