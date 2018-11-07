@@ -62,3 +62,6 @@ as it's the default transport for `nrepl.server/start-server`.
 You'll need a bencode capable client to connect to an nREPL server that transport.
 
 nREPL's bencode implementation is available as a https://github.com/nrepl/bencode[standalone library].
+
+NOTE: The `nrepl/bencode` library was extracted from nREPL in version
+0.4.5. Before this it used to live in the `nrepl.bencode` namespace.
