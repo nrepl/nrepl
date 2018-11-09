@@ -14,6 +14,7 @@
 * [#10](https://github.com/nrepl/nREPL/issues/10): Bind *1, *2, *3 and *e in cloned session.
 * [#33](https://github.com/nrepl/nREPL/issues/33): Add ability to change value of `*print-namespace-maps*`.
 * [#68](https://github.com/nrepl/nREPL/issues/68): Avoid illegal access warning caused by set-line!.
+* [#77](https://github.com/nrepl/nREPL/issues/77): Exit when entering ctrl-d in interactive session.
 
 #### Changes
 
