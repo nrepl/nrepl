@@ -42,7 +42,7 @@
    (let [transport (nrepl/connect :host host :port port)
          client (nrepl/client-session (nrepl/client transport Long/MAX_VALUE))
          ns (atom "user")]
-     (println (format "nREPL %s" version/version-string))
+     (println (format "nREPL %s" (:version-string version/version)))
      (println (str "Clojure " (clojure-version)))
      (println (System/getProperty "java.vm.name") (System/getProperty "java.runtime.version"))
      (loop []
@@ -196,7 +196,7 @@
       (display-help)
       (System/exit 0))
     (when (:version options)
-      (println version/version-string)
+      (println (:version-string version/version))
       (System/exit 0))
     ;; then we check for --connect
     (let [port (->int (:port options))

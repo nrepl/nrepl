@@ -30,7 +30,7 @@
            (get "version"))
        default-version)))
 
-(def version-string
+(def ^{:private true} version-string
   "Current version of nREPL as a string.
   See also `version`."
   (get-version "nrepl" "nrepl"))

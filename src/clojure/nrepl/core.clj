@@ -228,14 +228,14 @@
   (throw (IllegalArgumentException.
           (format "No nREPL support known for scheme %s, url %s" (uri-scheme uri) uri))))
 
-(def ^{:deprecated "0.5.0"} version-string
-  "Use `nrepl.version/version-string` instead.
-  Current version of nREPL as a string.
-  See also `version`."
-  version/version-string)
-
 (def ^{:deprecated "0.5.0"} version
   "Use `nrepl.version/version` instead.
   Current version of nREPL.
   Map of :major, :minor, :incremental, :qualifier, and :version-string."
   version/version)
+
+(def ^{:deprecated "0.5.0"} version-string
+  "Use `(:version-string nrepl.version/version)` instead.
+  Current version of nREPL as a string.
+  See also `version`."
+ (:version-string version))
