@@ -1,6 +1,6 @@
-image::logo-w1280.png[nREPL's logo]
+= nREPL
 
-= Overview
+image::logo-w1280.png[nREPL's logo]
 
 nREPL is a Clojure network REPL that provides a REPL server and
 client, along with some common APIs of use to IDEs and other tools
