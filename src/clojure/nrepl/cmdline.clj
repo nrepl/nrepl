@@ -25,6 +25,11 @@
             (println "\033[m")
             (flush))})
 
+(defn- done?
+  [input]
+  (some (partial = input)
+        ['exit 'quit '(exit) '(quit)]))
+
 (defn- run-repl
   ([host port]
    (run-repl host port nil))
@@ -42,12 +47,15 @@
      (loop []
        (prompt @ns)
        (flush)
-       (doseq [res (nrepl/message client {:op "eval" :code (pr-str (read))})]
-         (when (:value res) (value (:value res)))
-         (when (:out res) (out (:out res)))
-         (when (:err res) (err (:err res)))
-         (when (:ns res) (reset! ns (:ns res))))
-       (recur)))))
+       (let [input (read *in* false 'exit)]
+         (if (done? input)
+           (System/exit 0)
+           (do (doseq [res (nrepl/message client {:op "eval" :code (pr-str input)})]
+                 (when (:value res) (value (:value res)))
+                 (when (:out res) (out (:out res)))
+                 (when (:err res) (err (:err res)))
+                 (when (:ns res) (reset! ns (:ns res))))
+               (recur))))))))
 
 (def #^{:private true} option-shorthands
   {"-i" "--interactive"
