@@ -10,7 +10,8 @@
    [nrepl.core :as nrepl]
    [nrepl.ack :refer [send-ack]]
    [nrepl.server :refer [start-server]]
-   [nrepl.transport :as transport]))
+   [nrepl.transport :as transport]
+   [nrepl.version :as version]))
 
 (def colored-output
   {:err #(binding [*out* *err*]
@@ -41,7 +42,7 @@
    (let [transport (nrepl/connect :host host :port port)
          client (nrepl/client-session (nrepl/client transport Long/MAX_VALUE))
          ns (atom "user")]
-     (println (format "nREPL %s" nrepl/version-string))
+     (println (format "nREPL %s" version/version-string))
      (println (str "Clojure " (clojure-version)))
      (println (System/getProperty "java.vm.name") (System/getProperty "java.runtime.version"))
      (loop []
@@ -195,7 +196,7 @@
       (display-help)
       (System/exit 0))
     (when (:version options)
-      (println nrepl/version-string)
+      (println version/version-string)
       (System/exit 0))
     ;; then we check for --connect
     (let [port (->int (:port options))

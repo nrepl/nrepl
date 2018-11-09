@@ -5,7 +5,8 @@
    [clojure.test :refer :all]
    [nrepl.core :as nrepl]
    [nrepl.core-test :refer [def-repl-test repl-server-fixture project-base-dir]]
-   [nrepl.middleware :as middleware]))
+   [nrepl.middleware :as middleware]
+   [nrepl.version :as version]))
 
 (use-fixtures :once repl-server-fixture)
 
@@ -21,7 +22,7 @@
       (when-not (every? #(contains? java %) [:major :minor :incremental :update])
         (println "Got less information out of `java.version` than we'd like:"
                  (System/getProperty "java.version") "=>" java))
-      (is (= (#'middleware/safe-version nrepl/version) nrepl))
+      (is (= (#'middleware/safe-version version/version) nrepl))
       (is (= (#'middleware/safe-version *clojure-version*) (dissoc clojure :version-string)))
       (is (= (clojure-version) (:version-string clojure)))
       (is (= (System/getProperty "java.version") (:version-string java))))

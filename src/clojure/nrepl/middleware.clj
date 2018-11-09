@@ -3,9 +3,9 @@
   (:require
    [clojure.set :as set]
    [clojure.string :as string]
-   nrepl.core
    [nrepl.misc :as misc]
-   [nrepl.transport :as transport]))
+   [nrepl.transport :as transport]
+   [nrepl.version :as version]))
 
 (defn- var-name
   [^clojure.lang.Var v]
@@ -61,7 +61,7 @@
                                                             (if verbose?
                                                               ops
                                                               (zipmap (keys ops) (repeat {}))))
-                                                     :versions {:nrepl (safe-version nrepl.core/version)
+                                                     :versions {:nrepl (safe-version version/version)
                                                                 :clojure (safe-version
                                                                           (assoc *clojure-version* :version-string (clojure-version)))
                                                                 :java (safe-version (java-version))}
@@ -207,7 +207,7 @@ be part of the API here...?)"
   (apply str "# Supported nREPL operations
 
 <small>generated from a verbose 'describe' response (nREPL v"
-         (:version-string nrepl.core/version)
+         (:version-string version/version)
          ")</small>\n\n## Operations"
          (for [[op {:keys [doc optional requires returns]}] ops]
            (str "\n\n### `" (pr-str op) "`\n\n"
@@ -244,7 +244,7 @@ be part of the API here...?)"
   [{:keys [ops versions]}]
   (apply str "= Supported nREPL operations\n\n"
          "[small]#generated from a verbose 'describe' response (nREPL v"
-         (:version-string nrepl.core/version)
+         (:version-string version/version)
          ")#\n\n== Operations"
          (for [[op {:keys [doc optional requires returns]}] ops]
            (str "\n\n=== `" (pr-str op) "`\n\n"
