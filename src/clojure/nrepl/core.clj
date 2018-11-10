@@ -238,4 +238,4 @@
   "Use `(:version-string nrepl.version/version)` instead.
   Current version of nREPL as a string.
   See also `version`."
-  (:version-string version))
+  (:version-string version/version))
