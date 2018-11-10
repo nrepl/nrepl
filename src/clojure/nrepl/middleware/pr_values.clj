@@ -3,7 +3,8 @@
   (:require
    [clojure.string :as str]
    [clojure.tools.logging :as log]
-   [nrepl.middleware :refer [set-descriptor!]])
+   [nrepl.middleware :refer [set-descriptor!]]
+   nrepl.middleware.truncate-values)
   (:import
    nrepl.transport.Transport))
 
@@ -69,6 +70,6 @@
       (handler (assoc msg :transport transport)))))
 
 (set-descriptor! #'pr-values
-                 {:requires #{}
+                 {:requires #{#'nrepl.middleware.truncate-values/truncate-values}
                   :expects #{}
                   :handles {}})

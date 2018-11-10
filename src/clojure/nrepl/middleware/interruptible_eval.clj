@@ -4,6 +4,7 @@
    clojure.main
    [nrepl.middleware :refer [set-descriptor!]]
    nrepl.middleware.pr-values
+   nrepl.middleware.truncate-values
    [nrepl.misc :refer [response-for returning]]
    [nrepl.transport :as t])
   (:import
@@ -256,7 +257,10 @@
         (h msg)))))
 
 (set-descriptor! #'interruptible-eval
-                 {:requires #{"clone" "close" #'nrepl.middleware.pr-values/pr-values}
+                 {:requires #{"clone"
+                              "close"
+                              #'nrepl.middleware.pr-values/pr-values
+                              #'nrepl.middleware.truncate-values/truncate-values}
                   :expects #{}
                   :handles {"eval"
                             {:doc "Evaluates code."
@@ -266,7 +270,8 @@
                                         "eval" "A fully-qualified symbol naming a var whose function value will be used to evaluate [code], instead of `clojure.core/eval` (the default)."
                                         "file" "The path to the file containing [code]. `clojure.core/*file*` will be bound to this."
                                         "line" "The line number in [file] at which [code] starts."
-                                        "column" "The column number in [file] at which [code] starts."}
+                                        "column" "The column number in [file] at which [code] starts."
+                                        "truncate-options" "It's a map to truncate value and outputs (*out* and *err) at specified sizes using :truncate-value and :truncate-output keys"}
                              :returns {"ns" "*ns*, after successful evaluation of `code`."
                                        "values" "The result of evaluating `code`, often `read`able. This printing is provided by the `pr-values` middleware, and could theoretically be customized. Superseded by `ex` and `root-ex` if an exception occurs during evaluation."
                                        "ex" "The type of exception thrown, if any. If present, then `values` will be absent."
