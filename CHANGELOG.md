@@ -6,19 +6,22 @@
 
 * [#12](https://github.com/nrepl/nREPL/issues/12): Support custom rendering
   function in `pr-values`, enabling pretty-printed REPL results.
-* [#66](https://github.com/nrepl/nrepl/pull/66): Add support for a global and local configuration file, as well as configuration via env variables.
+* [#66](https://github.com/nrepl/nrepl/pull/66): Add support for a global and local configuration file.
 * [#63](https://github.com/nrepl/nrepl/issues/63): Make it possible to specify the transport via the command-line client (`--transport/-t`).
 
 #### Bugs fixed
 
-* [#10](https://github.com/nrepl/nREPL/issues/10): Bind *1, *2, *3 and *e in cloned session.
+* [#10](https://github.com/nrepl/nREPL/issues/10): Bind `*1`, `*2`, `*3` and `*e` in cloned session.
 * [#33](https://github.com/nrepl/nREPL/issues/33): Add ability to change value of `*print-namespace-maps*`.
-* [#68](https://github.com/nrepl/nREPL/issues/68): Avoid illegal access warning caused by set-line!.
-* [#77](https://github.com/nrepl/nREPL/issues/77): Exit when entering ctrl-d in interactive session.
+* [#68](https://github.com/nrepl/nREPL/issues/68): Avoid illegal access warning on JDK 9+ caused by `nrepl.middleware.interruptible-eval/set-line!`.
+* [#77](https://github.com/nrepl/nREPL/issues/77): Exit cleanly after pressing `ctrl-d` in an interactive REPL.
 
 #### Changes
 
 * [#56](https://github.com/nrepl/nREPL/issues/56): Bind the server by default to `127.0.0.1` instead of to `::` (this turned out to be a security risk).
+* [#76](https://github.com/nrepl/nrepl/pull/76): Move version-related logic to a dedicated namespace (`nrepl.version`).
+* Deprecate `nrepl.core/version`.
+* Deprecate `nrepl.core/version-string`.
 
 ### 0.4.5 (2018-09-02)
 
