@@ -13,6 +13,20 @@
    [nrepl.transport :as transport]
    [nrepl.version :as version]))
 
+(defn- clean-up-and-exit
+  "Performs any necessary clean up and calls `(System/exit status)`."
+  [status]
+  (shutdown-agents)
+  (flush)
+  (binding [*out* *err*] (flush))
+  (System/exit status))
+
+(defn exit
+  "Requests that the process exit with the given `status`.  Does not
+  return."
+  [status]
+  (throw (ex-info nil {::kind ::exit ::status status})))
+
 (defmacro ^{:author "Colin Jones"} set-signal-handler!
   [signal f]
   (if (try (Class/forName "sun.misc.Signal")
@@ -215,8 +229,8 @@
     ;; nil or a vector from a config file
     :else mw-opt))
 
-(defn -main
-  [& args]
+(defn- run
+  [args]
   (set-signal-handler! "INT" handle-interrupt)
   (let [[options _args] (split-args (expand-shorthands args))
         options (keywordize-options options)
@@ -224,16 +238,16 @@
     ;; we have to check for --help first, as it's special
     (when (:help options)
       (display-help)
-      (System/exit 0))
+      (exit 0))
     (when (:version options)
       (println (:version-string version/version))
-      (System/exit 0))
+      (exit 0))
     ;; then we check for --connect
     (let [port (->int (:port options))
           host (:host options)]
       (when (:connect options)
         (run-repl host port)
-        (System/exit 0))
+        (exit 0))
       ;; otherwise we assume we have to start an nREPL server
       (let [bind (:bind options)
             ;; if some handler was explicitly passed we'll use it, otherwise we'll build one
@@ -265,3 +279,13 @@
             (run-repl host port (when (:color options) colored-output))
             ;; need to hold process open with a non-daemon thread -- this should end up being super-temporary
             (Thread/sleep Long/MAX_VALUE)))))))
+
+(defn -main
+  [& args]
+  (try
+    (run args)
+    (catch clojure.lang.ExceptionInfo ex
+      (let [{:keys [::kind ::status]} (ex-data ex)]
+        (when (= kind ::exit)
+          (clean-up-and-exit status))
+        (throw ex)))))
