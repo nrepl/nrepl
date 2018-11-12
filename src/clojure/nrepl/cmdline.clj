@@ -27,6 +27,13 @@
   [status]
   (throw (ex-info nil {::kind ::exit ::status status})))
 
+(defn die
+  "`Print`s items in `msg` to *err* and then exits with a status of 2."
+  [& msg]
+  (binding [*out* *err*]
+    (doseq [m msg] (print m)))
+  (exit 2))
+
 (defmacro ^{:author "Colin Jones"} set-signal-handler!
   [signal f]
   (if (try (Class/forName "sun.misc.Signal")
@@ -154,13 +161,20 @@
   -v/--version                Display the nREPL version."))
 
 (defn- require-and-resolve
-  "Require and resolve the symbol `sym`, returning the var."
-  [sym]
-  (require (symbol (namespace sym)))
-  (resolve sym))
+  "Attempts to resolve the config `key`'s `value` as a namespaced symbol
+  and returns the related var if successful.  Otherwise calls `die`."
+  [key sym]
+  (when-not (symbol? sym)
+    (die (format "nREPL %s: %s is not a symbol\n" (name key) (pr-str sym))))
+  (let [space (some-> (namespace sym) symbol)]
+    (when-not space
+      (die (format "nREPL %s: %s has no namespace\n" (name key) sym)))
+    (require space)
+    (or (ns-resolve space (-> sym name symbol))
+        (die (format "nREPL %s: unable to resolve %s\n" (name key) sym)))))
 
 (def ^:private resolve-mw-xf
-  (comp (map require-and-resolve)
+  (comp (map #(require-and-resolve :middleware %))
         (keep identity)))
 
 (defn- handle-seq-var
@@ -252,10 +266,10 @@
       (let [bind (:bind options)
             ;; if some handler was explicitly passed we'll use it, otherwise we'll build one
             ;; from whatever was passed via --middleware
-            handler (if (:handler options) (require-and-resolve (:handler options)))
             middleware (sanitize-middleware-option (:middleware options))
+            handler (some->> (:handler options) (require-and-resolve :handler))
             handler (or handler (build-handler middleware))
-            transport (if (:transport options) (require-and-resolve (:transport options)))
+            transport (some->> (:transport options) (require-and-resolve :transport))
             greeting-fn (if (= transport #'transport/tty) #'transport/tty-greeting)
             server (start-server :port port :bind bind :handler handler
                                  :transport-fn transport :greeting-fn greeting-fn)]
