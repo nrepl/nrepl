@@ -157,9 +157,9 @@
   "Require and resolve `thing`
   `thing` can be a string or a symbol."
   [thing]
-  (let [thing (symbol thing)]
-    (require (symbol (namespace thing)))
-    (resolve thing)))
+  (let [sym (if (symbol? thing) thing (edn/read-string thing))]
+    (require (symbol (namespace sym)))
+    (resolve sym)))
 
 (def ^:private resolve-mw-xf
   (comp (map require-and-resolve)
