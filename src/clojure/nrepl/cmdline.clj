@@ -154,12 +154,10 @@
   -v/--version                Display the nREPL version."))
 
 (defn- require-and-resolve
-  "Require and resolve `thing`
-  `thing` can be a string or a symbol."
-  [thing]
-  (let [sym (if (symbol? thing) thing (edn/read-string thing))]
-    (require (symbol (namespace sym)))
-    (resolve sym)))
+  "Require and resolve the symbol `sym`, returning the var."
+  [sym]
+  (require (symbol (namespace sym)))
+  (resolve sym))
 
 (def ^:private resolve-mw-xf
   (comp (map require-and-resolve)
@@ -212,28 +210,30 @@
     :else (Integer/parseInt x)))
 
 (defn- sanitize-middleware-option
-  "Sanitize the middleware option.
-  It can be either a string or a list, depending on whether it
-  came from the command line or a config file.
-  It can also be a vector of symbols or just a single symbol."
+  "Sanitize the middleware option.  In the config it can be either a
+  symbol or a vector of symbols."
   [mw-opt]
-  (cond
-    (string? mw-opt)
-    ;; some string like "[foo bar baz]" or "foo" from the command-line
-    (let [mw (edn/read-string mw-opt)]
-      (if (sequential? mw)
-        mw
-        [mw]))
-    ;; symbol from a config file
-    (symbol? mw-opt) [mw-opt]
-    ;; nil or a vector from a config file
-    :else mw-opt))
+  (if (symbol? mw-opt)
+    [mw-opt]
+    mw-opt))
+
+(defn- parse-cli-values
+  "Converts relevant command line argument values to their config
+  representation."
+  [options]
+  (reduce-kv (fn [result k v]
+               (case k
+                 (:handler :transport :middleware) (assoc result k (edn/read-string v))
+                 result))
+             options
+             options))
 
 (defn- run
   [args]
   (set-signal-handler! "INT" handle-interrupt)
   (let [[options _args] (split-args (expand-shorthands args))
         options (keywordize-options options)
+        options (parse-cli-values options)
         options (merge config/config options)]
     ;; we have to check for --help first, as it's special
     (when (:help options)
