@@ -201,7 +201,7 @@
                              combine-responses
                              :out))))
 
-(defn custom-renderer
+(defn custom-printer
   [value opts]
   (format "<foo %s %s>" value (or (:sub opts) "...")))
 
@@ -210,22 +210,22 @@
     (is (= ["42"]
            (-> (message client {:op :eval
                                 :code "(+ 34 8)"
-                                :renderer 'my.missing.ns/renderer})
+                                :printer 'my.missing.ns/printer})
                (combine-responses)
                (:value)))))
-  (testing "custom rendering function symbol should be used"
+  (testing "custom printing function symbol should be used"
     (is (= ["<foo true ...>"]
            (-> (message client {:op :eval
                                 :code "true"
-                                :renderer `custom-renderer})
+                                :printer `custom-printer})
                (combine-responses)
                (:value)))))
-  (testing "options should be passed to renderer"
+  (testing "options should be passed to printer"
     (is (= ["<foo 3 bar>"]
            (-> (message client {:op :eval
                                 :code "3"
-                                :renderer `custom-renderer
-                                :render-options {:sub "bar"}})
+                                :printer `custom-printer
+                                :print-options {:sub "bar"}})
                (combine-responses)
                (:value))))))
 

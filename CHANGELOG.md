@@ -4,7 +4,7 @@
 
 #### New features
 
-* [#12](https://github.com/nrepl/nREPL/issues/12): Support custom rendering
+* [#12](https://github.com/nrepl/nREPL/issues/12): Support custom printing
   function in `pr-values`, enabling pretty-printed REPL results.
 * [#66](https://github.com/nrepl/nrepl/pull/66): Add support for a global and local configuration file.
 * [#63](https://github.com/nrepl/nrepl/issues/63): Make it possible to specify the transport via the command-line client (`--transport/-t`).

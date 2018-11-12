@@ -161,11 +161,11 @@ same session are serialized.
 
 == Pretty Printing
 
-nREPL includes a `pr-values` middleware to render the results of evaluated
+nREPL includes a `pr-values` middleware to print the results of evaluated
 forms as strings for returning to the client. By default, this will use either
 `print-dup` or `print-method` to match the standard Clojure `print` behavior.
-To customize this you can pass a custom `:renderer` as a symbol along with the
-message. If present, this will be resolved to a function and used to render the
+To customize this you can pass a custom `:printer` as a symbol along with the
+message. If present, this will be resolved to a function and used to print the
 value instead.
 
 This enables using libraries like link:https://github.com/greglook/puget[puget]
@@ -175,6 +175,6 @@ to pretty-print the evaluation results automatically.
 ----
 {:op :eval
  :code "(+ 1 1)"
- :renderer 'my.custom/print-value
- :render-options {:print-width 120}}
+ :printer 'my.custom/print-value
+ :print-options {:print-width 120}}
 ----
