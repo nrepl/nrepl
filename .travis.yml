@@ -54,6 +54,11 @@ jobs:
       env: VERSION=1.9 TARGET=cljfmt
       jdk: oraclejdk8
 
+    # Verify that all files referenced in cljdoc.edn are present
+    - stage: check
+      env: VERSION=1.9 TARGET=verify_cljdoc
+      jdk: oraclejdk8
+
     # Deploy artifacts
     - stage: deploy
       env: TARGET=deploy

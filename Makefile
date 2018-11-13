@@ -21,6 +21,9 @@ cljfmt:
 cloverage:
 	lein with-profile +$(VERSION),+cloverage cloverage --codecov
 
+verify_cljdoc:
+	curl -fsSL https://raw.githubusercontent.com/cljdoc/cljdoc/master/script/verify-cljdoc-edn | bash -s doc/cljdoc.edn
+
 # When releasing, the BUMP variable controls which field in the
 # version string will be incremented in the *next* snapshot
 # version. Typically this is either "major", "minor", or "patch".
