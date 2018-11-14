@@ -13,6 +13,18 @@
    [nrepl.transport :as transport]
    [nrepl.version :as version]))
 
+(defmacro ^{:author "Colin Jones"} set-signal-handler!
+  [signal f]
+  (if (try (Class/forName "sun.misc.Signal")
+           (catch Throwable e))
+    `(try
+       (sun.misc.Signal/handle
+        (sun.misc.Signal. ~signal)
+        (proxy [sun.misc.SignalHandler] []
+          (handle [signal#] (~f signal#))))
+       (catch Throwable e#))
+    `(println "Unable to set signal handlers.")))
+
 (def colored-output
   {:err #(binding [*out* *err*]
            (print "\033[31m")
@@ -25,6 +37,9 @@
             (print x)
             (println "\033[m")
             (flush))})
+
+(def running-repl (atom {:transport nil
+                         :client nil}))
 
 (defn- done?
   [input]
@@ -43,6 +58,9 @@
          client (nrepl/client-session (nrepl/client transport Long/MAX_VALUE))
          ns (atom "user")]
      (println (format "nREPL %s" (:version-string version/version)))
+     (swap! running-repl assoc :transport transport)
+     (swap! running-repl assoc :client client)
+     (println (format "nREPL %s" nrepl/version-string))
      (println (str "Clojure " (clojure-version)))
      (println (System/getProperty "java.vm.name") (System/getProperty "java.runtime.version"))
      (loop []
@@ -139,6 +157,16 @@
       (into [] resolve-mw-xf x)
       [var])))
 
+(defn- handle-interrupt
+  [signal]
+  (let [transport (:transport @running-repl)
+        client (:client @running-repl)]
+    (if (and transport client)
+      (doseq [res (nrepl/message client {:op :interrupt})]
+        (when (= ["done" "session-idle"] (:status res))
+          (System/exit 0)))
+      (System/exit 0))))
+
 (def ^:private mw-xf
   (comp (map symbol)
         resolve-mw-xf
@@ -188,6 +216,7 @@
 
 (defn -main
   [& args]
+  (set-signal-handler! "INT" handle-interrupt)
   (let [[options _args] (split-args (expand-shorthands args))
         options (keywordize-options options)
         options (merge config/config options)]
