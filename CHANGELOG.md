@@ -22,6 +22,7 @@
 * [#76](https://github.com/nrepl/nrepl/pull/76): Move version-related logic to a dedicated namespace (`nrepl.version`).
 * Deprecate `nrepl.core/version`.
 * Deprecate `nrepl.core/version-string`.
+* [#81](https://github.com/nrepl/nrepl/pull/81): Handle interrupt in interactive session.
 
 ### 0.4.5 (2018-09-02)
 
