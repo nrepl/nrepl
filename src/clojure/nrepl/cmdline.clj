@@ -62,6 +62,8 @@
      (println (format "nREPL %s" (:version-string version/version)))
      (println (str "Clojure " (clojure-version)))
      (println (System/getProperty "java.vm.name") (System/getProperty "java.runtime.version"))
+     (println (str "Interrupt: Control+C"))
+     (println (str "Exit:      Control+D or (exit) or (quit)"))
      (loop []
        (prompt @ns)
        (flush)
