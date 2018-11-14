@@ -57,10 +57,9 @@
    (let [transport (nrepl/connect :host host :port port)
          client (nrepl/client-session (nrepl/client transport Long/MAX_VALUE))
          ns (atom "user")]
-     (println (format "nREPL %s" (:version-string version/version)))
      (swap! running-repl assoc :transport transport)
      (swap! running-repl assoc :client client)
-     (println (format "nREPL %s" nrepl/version-string))
+     (println (format "nREPL %s" (:version-string version/version)))
      (println (str "Clojure " (clojure-version)))
      (println (System/getProperty "java.vm.name") (System/getProperty "java.runtime.version"))
      (loop []
