@@ -521,3 +521,12 @@
           false-val (first (repl-values session "*print-namespace-maps*"))]
       (is (= true true-val))
       (is (= false false-val)))))
+
+(def-repl-test interrupt-load-file-with-thread-sleep
+  (let [resp (message session {:op "load-file"
+                               :file (slurp (File. project-base-dir "load-file-test/nrepl/load_file_sample2.clj"))
+                               :file-path "nrepl/load_file_sample2.clj"
+                               :file-name "load_file_sample2.clj"})]
+    (Thread/sleep 100)
+    (is (= #{"done"} (-> session (message {:op :interrupt}) first :status set)))
+    (is (= #{"done" "interrupted"} (-> resp combine-responses :status)))))
