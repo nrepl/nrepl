@@ -522,7 +522,7 @@
       (is (= true true-val))
       (is (= false false-val)))))
 
-(def-repl-test interrupt-load-file-with-thread-sleep
+(def-repl-test interrupt-load-file
   (let [resp (message session {:op "load-file"
                                :file (slurp (File. project-base-dir "load-file-test/nrepl/load_file_sample2.clj"))
                                :file-path "nrepl/load_file_sample2.clj"
