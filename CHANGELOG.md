@@ -15,6 +15,7 @@
 * [#33](https://github.com/nrepl/nREPL/issues/33): Add ability to change value of `*print-namespace-maps*`.
 * [#68](https://github.com/nrepl/nREPL/issues/68): Avoid illegal access warning on JDK 9+ caused by `nrepl.middleware.interruptible-eval/set-line!`.
 * [#77](https://github.com/nrepl/nREPL/issues/77): Exit cleanly after pressing `ctrl-d` in an interactive REPL.
+* [#13](https://github.com/nrepl/nREPL/issues/13): Catch ThreadDeath exception thrown by interrupt.
 
 #### Changes
 
