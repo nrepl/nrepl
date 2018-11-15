@@ -123,6 +123,11 @@
            :caught (fn [e]
                      (let [root-ex (#'clojure.main/root-cause e)
                            previous-cause (.getCause e)]
+                       ;; Check if the root cause or previous cause of the exception
+                       ;; is a ThreadDeath exception. In case the exception is a
+                       ;; CompilerException, the root cause is not returned by
+                       ;; the root-cause function, so we check the previous cause
+                       ;; instead.
                        (when-not (or (instance? ThreadDeath root-ex)
                                      (instance? ThreadDeath previous-cause))
                          (reset! bindings (assoc (capture-thread-bindings) #'*e e))
