@@ -11,7 +11,8 @@
   :javac-options ["-target" "8" "-source" "8"]
 
   :dependencies [[org.clojure/tools.logging "0.4.1"]
-                 [nrepl/bencode "1.0.0"]]
+                 [nrepl/bencode "1.0.0"]
+                 [com.cognitect/transit-clj "0.8.313"]]
 
   :aliases {"bump-version" ["change" "version" "leiningen.release/bump-version"]
             "test-all" ["with-profile" "+1.7:+1.8:+1.9" "test"]}

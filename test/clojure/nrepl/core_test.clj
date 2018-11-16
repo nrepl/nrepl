@@ -23,12 +23,22 @@
 (def project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
 
 (def ^{:dynamic true} *server* nil)
+(def ^{:dynamic true} *transport-fn* nil)
 
 (defn repl-server-fixture
   [f]
-  (with-open [server (server/start-server)]
-    (binding [*server* server]
-      (f)
+  (with-open [server (server/start-server :transport-fn transport/bencode)]
+    (binding [*server* server
+              *transport-fn* transport/bencode]
+      (testing "bencode transport\n"
+        (f))
+      (set! *print-length* nil)
+      (set! *print-level* nil)))
+  (with-open [server (server/start-server :transport-fn transport/transit)]
+    (binding [*server* server
+              *transport-fn* transport/transit]
+      (testing "transit transport\n"
+        (f))
       (set! *print-length* nil)
       (set! *print-level* nil))))
 
@@ -36,8 +46,9 @@
 
 (defmacro def-repl-test
   [name & body]
-  `(deftest ~(with-meta name {:private true})
-     (with-open [transport# (connect :port (:port *server*))]
+  `(deftest ~(with-meta name (merge {:private true} (meta name)))
+     (with-open [transport# (connect :port (:port *server*)
+                                     :transport-fn *transport-fn*)]
        (let [~'transport transport#
              ~'client (client transport# Long/MAX_VALUE)
              ~'session (client-session ~'client)
@@ -46,6 +57,14 @@
              ~'repl-eval #(message % {:op :eval :code %2})
              ~'repl-values (comp response-values ~'repl-eval)]
          ~@body))))
+
+(def-repl-test transit-transport-communication
+  (is (= [{:out "(0 1 2 3 4 5 6 7 8 9 10)"}
+          {:value "nil"}
+          {:value "-5"}
+          {:status ["done"]}]
+         (->> (message client {:op :eval :code "(print (range 11)) (- 3 8)"})
+              (map #(dissoc % :id :session :ns))))))
 
 (def-repl-test eval-literals
   (are [literal] (= (binding [*ns* (find-ns 'user)] ; needed for the ::keyword
@@ -159,7 +178,8 @@
 
 (def-repl-test cross-transport-*out*
   (let [sid (-> session meta ::nrepl/taking-until :session)
-        transport2 (nrepl.core/connect :port (:port *server*))]
+        transport2 (nrepl.core/connect :port (:port *server*)
+                                       :transport-fn *transport-fn*)]
     (transport/send transport2 {"op" "eval" "code" "(println :foo)"
                                 "session" sid})
     (is (->> (repeatedly #(transport/recv transport2 1000))
@@ -235,7 +255,8 @@
                           (apply + (range 6))
                           (str 12 \c)
                           (keyword "hello")))
-    (with-open [separate-connection (connect :port (:port *server*))]
+    (with-open [separate-connection (connect :port (:port *server*)
+                                             :transport-fn *transport-fn*)]
       (let [history [[15 "12c" :hello]]
             sid (-> session meta :nrepl.core/taking-until :session)
             sc-session (-> separate-connection
@@ -387,8 +408,9 @@
 
 (deftest transports-fail-on-disconnects
   (testing "Ensure that transports fail ASAP when the server they're connected to goes down."
-    (let [server (server/start-server)
-          transport (connect :port (:port server))]
+    (let [server (server/start-server :transport-fn *transport-fn*)
+          transport (connect :port (:port server)
+                             :transport-fn *transport-fn*)]
       (transport/send transport {"op" "eval" "code" "(+ 1 1)"})
 
       (let [reader (future (while true (transport/recv transport)))]
@@ -475,14 +497,20 @@
   (is (= [" :kthxbai"] (repl-values session "(read-line)"))))
 
 (def-repl-test test-url-connect
-  (with-open [conn (url-connect (str "nrepl://127.0.0.1:" (:port *server*)))]
+  (with-open [conn (url-connect (str ({transport/bencode "nrepl"
+                                       transport/transit "transit"}
+                                      *transport-fn*)
+                                     "://127.0.0.1:"
+                                     (:port *server*)))]
     (transport/send conn {:op :eval :code "(+ 1 1)"})
     (is (= [2] (response-values (response-seq conn 100))))))
 
 (deftest test-ack
-  (with-open [s (server/start-server :handler (ack/handle-ack (server/default-handler)))]
+  (with-open [s (server/start-server :transport-fn *transport-fn*
+                                     :handler (ack/handle-ack (server/default-handler)))]
     (ack/reset-ack-port!)
-    (with-open [s2 (server/start-server :ack-port (:port s))]
+    (with-open [s2 (server/start-server :transport-fn *transport-fn*
+                                        :ack-port (:port s))]
       (is (= (:port s2) (ack/wait-for-ack 10000))))))
 
 (def-repl-test agent-await
@@ -493,7 +521,7 @@
 
 (deftest cloned-session-*1-binding
   (let [port (:port *server*)
-        conn (nrepl/connect :port port)
+        conn (nrepl/connect :port port :transport-fn *transport-fn*)
         client (nrepl/client conn 1000)
         sess (nrepl/client-session client)
         eval (sess {:op :eval

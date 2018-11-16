@@ -80,7 +80,7 @@
      (catch EOFException e#
        (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server")))
      (catch Throwable e#
-       (if (and ~s (not (.isConnected ~s)))
+       (if (and ~s (not (.isClosed ~s)))
          (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server"))
          (throw e#)))))
 
@@ -103,6 +103,38 @@
                                    (doto out
                                      (bencode/write-bencode %)
                                      .flush)))
+      (fn []
+        (if s
+          (.close s)
+          (do
+            (.close in)
+            (.close out))))))))
+
+(defn transit
+  "Returns a Transport implementation that serializes messages
+   over the given Socket or InputStream/OutputStream using Transit."
+  ([^Socket s] (transit s s s))
+  ([in out & [^Socket s]]
+   (let [in (PushbackInputStream. (io/input-stream in))
+         out (io/output-stream out)]
+     (fn-transport
+      #(let [payload (rethrow-on-disconnection s (transit/read
+                                                  (transit/reader in :msgpack)))]
+         (cond-> payload
+           (get payload "op") (update "op" name)
+           (get payload "status") (update "status"
+                                          (fn [status]
+                                            (if (coll? status)
+                                              (map name status)
+                                              (name status))))))
+      #(rethrow-on-disconnection s
+                                 (locking out
+                                   (try
+                                     (transit/write
+                                      (transit/writer out :msgpack)
+                                      %)
+                                     (catch RuntimeException e
+                                       (throw (.getCause e))))))
       (fn []
         (if s
           (.close s)
