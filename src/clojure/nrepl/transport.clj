@@ -5,7 +5,8 @@
    [bencode.core :as bencode]
    [clojure.java.io :as io]
    clojure.walk
-   [nrepl.misc :refer [uuid]])
+   [nrepl.misc :refer [uuid]]
+   nrepl.version)
   (:import
    clojure.lang.RT
    [java.io EOFException PushbackInputStream PushbackReader]
@@ -144,15 +145,18 @@
                      #(.close s))))))
 
 (defn tty-greeting
-  "A greeting fn usable with nrepl.server/start-server,
+  "A greeting fn usable with `nrepl.server/start-server`,
    meant to be used in conjunction with Transports returned by the
    `tty` function.
 
    Usually, Clojure-aware client-side tooling would provide this upon connecting
    to the server, but telnet et al. isn't that."
   [transport]
-  (send transport {:out (str ";; Clojure " (clojure-version)
-                             \newline "user=> ")}))
+  (send transport {:out (str ";; nREPL " (:version-string nrepl.version/version)
+                             \newline
+                             ";; Clojure " (clojure-version)
+                             \newline
+                             "user=> ")}))
 
 (deftype QueueTransport [^BlockingQueue in ^BlockingQueue out]
   nrepl.transport.Transport
