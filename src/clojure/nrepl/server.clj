@@ -144,6 +144,7 @@
                         greeting-fn
                         (auth-wrapper handler))]
     (future (accept-connection server))
+    (binding [*out* *err*] (println "nREPL listening on" (:port server)))
     (when ack-port
       (ack/send-ack (:port server) ack-port))
     server))
