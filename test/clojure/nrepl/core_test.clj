@@ -1,6 +1,7 @@
 (ns nrepl.core-test
   (:require
    [clojure.set :as set]
+   [clojure.string :as str]
    [clojure.test :refer [are deftest is testing use-fixtures]]
    [nrepl.core :as nrepl :refer [client
                                  client-session
@@ -25,22 +26,26 @@
 (def ^{:dynamic true} *server* nil)
 (def ^{:dynamic true} *transport-fn* nil)
 
-(defn repl-server-fixture
-  [f]
-  (with-open [server (server/start-server :transport-fn transport/bencode)]
+(defn start-server-for-transport-fn
+  [transport-fn f]
+  (with-open [server (server/start-server :transport-fn transport-fn)]
     (binding [*server* server
-              *transport-fn* transport/bencode]
-      (testing "bencode transport\n"
-        (f))
-      (set! *print-length* nil)
-      (set! *print-level* nil)))
-  (with-open [server (server/start-server :transport-fn transport/transit+msgpack)]
-    (binding [*server* server
-              *transport-fn* transport/transit+msgpack]
-      (testing "transit+msgpack transport\n"
+              *transport-fn* transport-fn]
+      (testing (str (-> transport-fn class str (str/split #"\$") last)
+                    " transport\n")
         (f))
       (set! *print-length* nil)
       (set! *print-level* nil))))
+
+(def transport-fns
+  "Add your transport-fn here so it can be tested"
+  [transport/bencode
+   transport/transit+msgpack])
+
+(defn repl-server-fixture
+  [f]
+  (doseq [transport-fn transport-fns]
+    (start-server-for-transport-fn transport-fn f)))
 
 (use-fixtures :each repl-server-fixture)
 
