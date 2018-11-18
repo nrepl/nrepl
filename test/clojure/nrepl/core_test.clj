@@ -40,7 +40,8 @@
 (def transport-fns
   "Add your transport-fn here so it can be tested"
   [transport/bencode
-   transport/transit+msgpack])
+   transport/transit+msgpack
+   transport/transit+json])
 
 (defn repl-server-fixture
   [f]
@@ -495,7 +496,8 @@
 
 (def-repl-test test-url-connect
   (with-open [conn (url-connect (str ({transport/bencode "nrepl"
-                                       transport/transit+msgpack "transit+msgpack"}
+                                       transport/transit+msgpack "transit+msgpack"
+                                       transport/transit+json "transit+json"}
                                       *transport-fn*)
                                      "://127.0.0.1:"
                                      (:port *server*)))]

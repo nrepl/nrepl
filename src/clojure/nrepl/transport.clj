@@ -117,10 +117,11 @@
   ([^Socket s] (transit+msgpack s s s))
   ([in out & [^Socket s]]
    (let [in (PushbackInputStream. (io/input-stream in))
-         out (io/output-stream out)]
+         out (io/output-stream out)
+         reader (transit/reader in :msgpack)
+         writer (transit/writer out :msgpack)]
      (fn-transport
-      #(let [payload (rethrow-on-disconnection s (transit/read
-                                                  (transit/reader in :msgpack)))]
+      #(let [payload (rethrow-on-disconnection s (transit/read reader))]
          (cond-> payload
            (get payload "op") (update "op" name)
            (get payload "status") (update "status"
@@ -131,9 +132,42 @@
       #(rethrow-on-disconnection s
                                  (locking out
                                    (try
-                                     (transit/write
-                                      (transit/writer out :msgpack)
-                                      %)
+                                     (transit/write writer %)
+                                     (catch RuntimeException e
+                                       (throw (.getCause e))))))
+      (fn []
+        (if s
+          (.close s)
+          (do
+            (.close in)
+            (.close out))))))))
+
+(defn transit+json
+  "Returns a Transport implementation that serializes messages
+  over the given Socket or InputStream/OutputStream using Transit
+  with json."
+  ([^Socket s] (transit+json s s s))
+  ([in out & [^Socket s]]
+   (let [in (PushbackInputStream. (io/input-stream in))
+         out (io/output-stream out)
+         reader (transit/reader in :json)
+         writer (transit/writer out :json)]
+     (fn-transport
+      #(let [payload (rethrow-on-disconnection s (try
+                                                   (transit/read reader)
+                                                   (catch RuntimeException e
+                                                     (throw (.getCause e)))))]
+         (cond-> payload
+           (get payload "op") (update "op" name)
+           (get payload "status") (update "status"
+                                          (fn [status]
+                                            (if (coll? status)
+                                              (map name status)
+                                              (name status))))))
+      #(rethrow-on-disconnection s
+                                 (locking out
+                                   (try
+                                     (transit/write writer %)
                                      (catch RuntimeException e
                                        (throw (.getCause e))))))
       (fn []
