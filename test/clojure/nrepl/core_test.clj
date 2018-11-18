@@ -34,10 +34,10 @@
         (f))
       (set! *print-length* nil)
       (set! *print-level* nil)))
-  (with-open [server (server/start-server :transport-fn transport/transit)]
+  (with-open [server (server/start-server :transport-fn transport/transit+msgpack)]
     (binding [*server* server
-              *transport-fn* transport/transit]
-      (testing "transit transport\n"
+              *transport-fn* transport/transit+msgpack]
+      (testing "transit+msgpack transport\n"
         (f))
       (set! *print-length* nil)
       (set! *print-level* nil))))
@@ -57,14 +57,6 @@
              ~'repl-eval #(message % {:op :eval :code %2})
              ~'repl-values (comp response-values ~'repl-eval)]
          ~@body))))
-
-(def-repl-test transit-transport-communication
-  (is (= [{:out "(0 1 2 3 4 5 6 7 8 9 10)"}
-          {:value "nil"}
-          {:value "-5"}
-          {:status ["done"]}]
-         (->> (message client {:op :eval :code "(print (range 11)) (- 3 8)"})
-              (map #(dissoc % :id :session :ns))))))
 
 (def-repl-test eval-literals
   (are [literal] (= (binding [*ns* (find-ns 'user)] ; needed for the ::keyword
@@ -498,7 +490,7 @@
 
 (def-repl-test test-url-connect
   (with-open [conn (url-connect (str ({transport/bencode "nrepl"
-                                       transport/transit "transit"}
+                                       transport/transit+msgpack "transit+msgpack"}
                                       *transport-fn*)
                                      "://127.0.0.1:"
                                      (:port *server*)))]

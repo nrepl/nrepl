@@ -110,10 +110,11 @@
             (.close in)
             (.close out))))))))
 
-(defn transit
+(defn transit+msgpack
   "Returns a Transport implementation that serializes messages
-   over the given Socket or InputStream/OutputStream using Transit."
-  ([^Socket s] (transit s s s))
+  over the given Socket or InputStream/OutputStream using Transit
+  with msgpack."
+  ([^Socket s] (transit+msgpack s s s))
   ([in out & [^Socket s]]
    (let [in (PushbackInputStream. (io/input-stream in))
          out (io/output-stream out)]
