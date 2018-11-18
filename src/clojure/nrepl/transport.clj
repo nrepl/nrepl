@@ -80,7 +80,7 @@
      (catch EOFException e#
        (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server")))
      (catch Throwable e#
-       (if (and ~s (not (.isClosed ~s)))
+       (if (and ~s (not (.isConnected ~s)))
          (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server"))
          (throw e#)))))
 
@@ -110,72 +110,60 @@
             (.close in)
             (.close out))))))))
 
-(defn transit+msgpack
-  "Returns a Transport implementation that serializes messages
-  over the given Socket or InputStream/OutputStream using Transit
-  with msgpack."
-  ([^Socket s] (transit+msgpack s s s))
-  ([in out & [^Socket s]]
-   (let [in (PushbackInputStream. (io/input-stream in))
-         out (io/output-stream out)
-         reader (transit/reader in :msgpack)
-         writer (transit/writer out :msgpack)]
-     (fn-transport
-      #(let [payload (rethrow-on-disconnection s (transit/read reader))]
-         (cond-> payload
-           (get payload "op") (update "op" name)
-           (get payload "status") (update "status"
-                                          (fn [status]
-                                            (if (coll? status)
-                                              (map name status)
-                                              (name status))))))
-      #(rethrow-on-disconnection s
-                                 (locking out
-                                   (try
-                                     (transit/write writer %)
-                                     (catch RuntimeException e
-                                       (throw (.getCause e))))))
-      (fn []
-        (if s
-          (.close s)
-          (do
-            (.close in)
-            (.close out))))))))
+(defn build-transit-transport-using-type
+  "Returns a functions with a Transport implementation that serializes
+  messages over the given Socket or InputStream/OutputStream with Transit
+  using `transit-type`."
+  [transit-type]
+  (fn transit-fn
+    ([^Socket s] (transit-fn s s s))
+    ([in out & [^Socket s]]
+     (let [in (PushbackInputStream. (io/input-stream in))
+           out (io/output-stream out)
+           reader (transit/reader in transit-type)
+           writer (transit/writer out transit-type)]
+       (fn-transport
+        #(let [payload (rethrow-on-disconnection s (try
+                                                     (transit/read reader)
+                                                     (catch RuntimeException e
+                                                       (throw (.getCause e)))))]
+           (cond-> payload
+             (get payload "op") (update "op" name)
+             (get payload "status") (update "status"
+                                            (fn [status]
+                                              (if (coll? status)
+                                                (map name status)
+                                                (name status))))))
+        #(rethrow-on-disconnection s
+                                   (locking out
+                                     (try
+                                       (transit/write writer %)
+                                       (catch RuntimeException e
+                                         (throw (.getCause e))))))
+        (fn []
+          (if s
+            (.close s)
+            (do
+              (.close in)
+              (.close out)))))))))
 
-(defn transit+json
+(def transit+msgpack
   "Returns a Transport implementation that serializes messages
-  over the given Socket or InputStream/OutputStream using Transit
-  with json."
-  ([^Socket s] (transit+json s s s))
-  ([in out & [^Socket s]]
-   (let [in (PushbackInputStream. (io/input-stream in))
-         out (io/output-stream out)
-         reader (transit/reader in :json)
-         writer (transit/writer out :json)]
-     (fn-transport
-      #(let [payload (rethrow-on-disconnection s (try
-                                                   (transit/read reader)
-                                                   (catch RuntimeException e
-                                                     (throw (.getCause e)))))]
-         (cond-> payload
-           (get payload "op") (update "op" name)
-           (get payload "status") (update "status"
-                                          (fn [status]
-                                            (if (coll? status)
-                                              (map name status)
-                                              (name status))))))
-      #(rethrow-on-disconnection s
-                                 (locking out
-                                   (try
-                                     (transit/write writer %)
-                                     (catch RuntimeException e
-                                       (throw (.getCause e))))))
-      (fn []
-        (if s
-          (.close s)
-          (do
-            (.close in)
-            (.close out))))))))
+  over the given Socket or InputStream/OutputStream with Transit
+  using msgpack."
+  (build-transit-transport-using-type :msgpack))
+
+(def transit+json
+  "Returns a Transport implementation that serializes messages
+  over the given Socket or InputStream/OutputStream with Transit
+  using json."
+  (build-transit-transport-using-type :json))
+
+(def transit+json-verbose
+  "Returns a Transport implementation that serializes messages
+  over the given Socket or InputStream/OutputStream with Transit
+  using json-verbose."
+  (build-transit-transport-using-type :json-verbose))
 
 (defn tty
   "Returns a Transport implementation suitable for serving an nREPL backend

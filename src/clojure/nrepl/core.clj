@@ -228,6 +228,9 @@
 (add-socket-connect-method! "transit+json"
                             {:transport-fn transport/transit+json
                              :port 7888})
+(add-socket-connect-method! "transit+json-verbose"
+                            {:transport-fn transport/transit+json-verbose
+                             :port 7888})
 
 (defmethod url-connect :default
   [uri]

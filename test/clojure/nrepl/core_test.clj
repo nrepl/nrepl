@@ -31,17 +31,20 @@
   (with-open [server (server/start-server :transport-fn transport-fn)]
     (binding [*server* server
               *transport-fn* transport-fn]
-      (testing (str (-> transport-fn class str (str/split #"\$") last)
-                    " transport\n")
+      (testing (str (-> transport-fn meta :name) " transport\n")
         (f))
       (set! *print-length* nil)
       (set! *print-level* nil))))
 
+(def transport-fn->protocol
+  "Add your transport-fn var here so it can be tested"
+  {#'transport/bencode "nrepl"
+   #'transport/transit+msgpack "transit+msgpack"
+   #'transport/transit+json "transit+json"
+   #'transport/transit+json-verbose "transit+json-verbose"})
+
 (def transport-fns
-  "Add your transport-fn here so it can be tested"
-  [transport/bencode
-   transport/transit+msgpack
-   transport/transit+json])
+  (keys transport-fn->protocol))
 
 (defn repl-server-fixture
   [f]
@@ -495,10 +498,7 @@
   (is (= [" :kthxbai"] (repl-values session "(read-line)"))))
 
 (def-repl-test test-url-connect
-  (with-open [conn (url-connect (str ({transport/bencode "nrepl"
-                                       transport/transit+msgpack "transit+msgpack"
-                                       transport/transit+json "transit+json"}
-                                      *transport-fn*)
+  (with-open [conn (url-connect (str (transport-fn->protocol *transport-fn*)
                                      "://127.0.0.1:"
                                      (:port *server*)))]
     (transport/send conn {:op :eval :code "(+ 1 1)"})
