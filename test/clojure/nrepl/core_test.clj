@@ -2,6 +2,7 @@
   (:require
    [clojure.main]
    [clojure.set :as set]
+   [clojure.string :as str]
    [clojure.test :refer [are deftest is testing use-fixtures]]
    [nrepl.core :as nrepl :refer [client
                                  client-session
@@ -57,6 +58,13 @@
         (f))
       (set! *print-length* nil)
       (set! *print-level* nil))))
+
+(def transport-fn->protocol
+  "Add your transport-fn var here so it can be tested"
+  {#'transport/bencode "nrepl"
+   #'transport/transit+msgpack "transit+msgpack"
+   #'transport/transit+json "transit+json"
+   #'transport/transit+json-verbose "transit+json-verbose"})
 
 (def transport-fns
   (keys transport-fn->protocol))
