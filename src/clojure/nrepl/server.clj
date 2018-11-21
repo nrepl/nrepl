@@ -2,6 +2,7 @@
   "Default server implementations"
   {:author "Chas Emerick"}
   (:require
+   [clojure.java.io :as io]
    [nrepl.ack :as ack]
    [nrepl.middleware :as middleware]
    nrepl.middleware.interruptible-eval
@@ -10,6 +11,7 @@
    [nrepl.misc :refer [log response-for returning]]
    [nrepl.transport :as t])
   (:import
+   [java.io PipedInputStream PipedOutputStream]
    [java.net InetAddress InetSocketAddress ServerSocket Socket SocketException]))
 
 (defn handle*
@@ -34,12 +36,57 @@
     (catch java.io.IOException e
       (log e "Failed to close " x))))
 
+(defn- create-pipes
+  "Create intermediate streams using pipes so you can sniff at input
+  and output socket streams."
+  [^Socket s]
+  (let [in (io/input-stream s)
+        out (io/output-stream s)
+        pin-out (PipedOutputStream.)
+        pin-in  (PipedInputStream. pin-out)
+        pout-out (PipedOutputStream.)
+        pout-in (PipedInputStream. pout-out)]
+    (future
+      (try
+        (loop []
+          (let [buf (byte-array 8192)
+                n (.read in buf)]
+            (cond
+              (pos? n) (let [ba (byte-array (take n buf))]
+                         #_(log/info :bytes-in (apply str (map char ba)))
+                         (.write pin-out ba)
+                         (.flush pin-out)
+                         (recur))
+              :else (do (.close pin-out)
+                        (.close pin-in)))))
+        (catch Throwable t
+          (.close pin-out)
+          (.close pin-in))))
+    (future
+      (try
+        (loop []
+          (let [buf (byte-array 8192)
+                n (.read pout-in buf)]
+            (cond
+              (pos? n) (let [ba (byte-array (take n buf))]
+                         #_(log/info :bytes-out (apply str (map char ba)))
+                         (.write out ba)
+                         (.flush out)
+                         (recur))
+              :else (do (.close pout-out)
+                        (.close pout-in)))))
+        (catch Throwable t
+          (.close pout-out)
+          (.close pout-in))))
+    [pin-in pout-out]))
+
 (defn- accept-connection
   [{:keys [^ServerSocket server-socket open-transports transport greeting handler]
     :as server}]
   (when-not (.isClosed server-socket)
-    (let [sock (.accept server-socket)]
-      (future (let [transport (transport sock)]
+    (let [sock (.accept server-socket)
+          [in out] (create-pipes sock)]
+      (future (let [transport (transport in out sock)]
                 (try
                   (swap! open-transports conj transport)
                   (when greeting (greeting transport))

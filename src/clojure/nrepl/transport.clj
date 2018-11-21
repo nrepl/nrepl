@@ -138,6 +138,7 @@
                                    (locking out
                                      (try
                                        (transit/write writer %)
+                                       (.flush out)
                                        (catch RuntimeException e
                                          (throw (.getCause e))))))
         (fn []
