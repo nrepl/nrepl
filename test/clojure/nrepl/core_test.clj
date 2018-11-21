@@ -530,3 +530,24 @@
     (Thread/sleep 100)
     (is (= #{"done"} (-> session (message {:op :interrupt}) first :status set)))
     (is (= #{"done" "interrupted"} (-> resp combine-responses :status)))))
+
+(deftest println-in-background-thread
+  (let [port (:port *server*)
+        conn (nrepl/connect :port port)
+        client (nrepl/client conn 1000)
+        sess (nrepl/client-session client)
+        result (-> (sess {:id 1
+                          :op :eval
+                          :code (code (do (println "before")
+                                          (doto (Thread.
+                                                 (fn []
+                                                   (Thread/sleep (rand 500))
+                                                   (println "in thread")))
+                                            (.start)
+                                            (.join))
+                                          (println "after")))}))
+        background-out (-> (filter (fn [x] (= "in thread\n" (-> x :out)))
+                                   result)
+                           first)]
+    (is (not-empty background-out))
+    (is (contains? background-out :id))))

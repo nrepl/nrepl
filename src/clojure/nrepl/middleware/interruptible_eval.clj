@@ -99,7 +99,9 @@
                       (set! *3 (@bindings #'*3))
                       (set! *e (@bindings #'*e))
                       (when (resolve '*print-namespace-maps*)
-                        (set! *print-namespace-maps* (@bindings #'*print-namespace-maps*))))
+                        (set! *print-namespace-maps* (@bindings #'*print-namespace-maps*)))
+                      (alter-var-root #'*out* (constantly *out*))
+                      (alter-var-root #'*msg* (constantly *msg*)))
            :read (if (string? code)
                    (let [reader (source-logging-pushback-reader code line column)]
                      #(read {:read-cond :allow :eof %2} reader))

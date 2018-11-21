@@ -83,7 +83,8 @@
 
 (deftest repl-out-writer
   (let [[local remote] (piped-transports)
-        w (#'session/session-out :out :dummy-session-id remote)]
+        w (#'session/session-out :out :dummy-session-id remote)
+        alter-msg (alter-var-root #'eval/*msg* (constantly nil))]
     (doto w
       .flush
       (.println "println")
