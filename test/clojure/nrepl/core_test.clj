@@ -281,6 +281,7 @@
     (is (= [true] (repl-values session "(.contains (str *e) \"bad, bad code\")")))))
 
 (def-repl-test multiple-expressions-return
+  (session {:op :bypass :stdin "bypassing..."})
   (is (= [5 18] (repl-values session "5 (/ 5 0) (+ 5 6 7)"))))
 
 (def-repl-test return-on-incomplete-expr
@@ -560,3 +561,39 @@
     (Thread/sleep 100)
     (is (= #{"done"} (-> session (message {:op :interrupt}) first :status set)))
     (is (= #{"done" "interrupted"} (-> resp combine-responses :status)))))
+
+(def verbose-atom (atom []))
+
+(defn custom-verbose
+  [tag ba]
+  (swap! verbose-atom concat ba))
+
+(deftest verbosity
+  (testing "verbose server config and verbose op for transit json"
+    (let [server (server/start-server :transport-fn *transport-fn*
+                                      :verbose true)
+          transport (connect :port (:port server)
+                             :transport-fn *transport-fn*)
+          client (client transport Long/MAX_VALUE)]
+      (reset! verbose-atom nil)
+      (let [response (message client {:op :verbose :verbose-fn `custom-verbose})
+            id (apply str (map byte (-> response first :id)))
+            expected ({#'transport/bencode
+                       "1005058105100515458"
+
+                       #'transport/transit+msgpack
+                       "-125-94105100-38036"
+
+                       #'transport/transit+json
+                       (str "91349432344434105100344434"
+                            id
+                            "34443411111234443411810111498111115101344434115116971161171153444913412635115101116344491341265810011111010134939393")
+
+                       #'transport/transit+json-verbose
+                       (str "12334105100345834"
+                            id
+                            "34443411111234583411810111498111115101344434115116971161171153458123341263511510111634589134126581001111101013493125125")}
+                      *transport-fn*)]
+        (Thread/sleep 10)
+        (is (str/starts-with? (apply str (map byte @verbose-atom))
+                              expected))))))

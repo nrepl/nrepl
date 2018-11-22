@@ -36,14 +36,18 @@
     (catch java.io.IOException e
       (log e "Failed to close " x))))
 
+(defn- default-verbose
+  [tag ba]
+  (clojure.tools.logging/info tag (apply str (map byte ba))))
+
 (defn- create-pipes
   "Create intermediate streams using pipes so you can sniff at input
   and output socket streams."
-  [^Socket s]
+  [^Socket s verbose-fn]
   (let [in (io/input-stream s)
         out (io/output-stream s)
         pin-out (PipedOutputStream.)
-        pin-in  (PipedInputStream. pin-out)
+        pin-in (PipedInputStream. pin-out)
         pout-out (PipedOutputStream.)
         pout-in (PipedInputStream. pout-out)]
     (future
@@ -53,7 +57,7 @@
                 n (.read in buf)]
             (cond
               (pos? n) (let [ba (byte-array (take n buf))]
-                         #_(log/info :bytes-in (apply str (map char ba)))
+                         ((or @verbose-fn default-verbose) :in ba)
                          (.write pin-out ba)
                          (.flush pin-out)
                          (recur))
@@ -69,7 +73,7 @@
                 n (.read pout-in buf)]
             (cond
               (pos? n) (let [ba (byte-array (take n buf))]
-                         #_(log/info :bytes-out (apply str (map char ba)))
+                         ((or @verbose-fn default-verbose) :out ba)
                          (.write out ba)
                          (.flush out)
                          (recur))
@@ -81,12 +85,15 @@
     [pin-in pout-out]))
 
 (defn- accept-connection
-  [{:keys [^ServerSocket server-socket open-transports transport greeting handler]
+  [{:keys [^ServerSocket server-socket open-transports transport greeting handler opts]
     :as server}]
   (when-not (.isClosed server-socket)
     (let [sock (.accept server-socket)
-          [in out] (create-pipes sock)]
-      (future (let [transport (transport in out sock)]
+          {:keys [verbose verbose-fn]} opts]
+      (future (let [transport (if verbose
+                                (let [[in out] (create-pipes sock verbose-fn)]
+                                  (transport in out sock))
+                                (transport sock))]
                 (try
                   (swap! open-transports conj transport)
                   (when greeting (greeting transport))
@@ -117,6 +124,15 @@
   [{:keys [op transport] :as msg}]
   (t/send transport (response-for msg :status #{:error :unknown-op :done} :op op)))
 
+(defn verbose-op
+  "Reset verbose-fn to resolved `verbose-fn`"
+  [fn-keeper h]
+  (fn [{:keys [op transport verbose-fn] :as msg}]
+    (if (= op "verbose")
+      (do (reset! fn-keeper (nrepl.misc/resolve-ns-symbol :verbose-fn verbose-fn))
+          (t/send transport (response-for msg :status #{:done} :op op)))
+      (h msg))))
+
 (def default-middlewares
   [#'nrepl.middleware/wrap-describe
    #'nrepl.middleware.interruptible-eval/interruptible-eval
@@ -145,7 +161,7 @@
         "unsub"
         (h msg))))
 
-(defrecord Server [server-socket port open-transports transport greeting handler]
+(defrecord Server [server-socket port open-transports transport greeting handler opts]
   java.io.Closeable
   (close [this] (stop-server this)))
 
@@ -167,7 +183,7 @@
    either via `stop-server`, (.close server), or automatically via `with-open`.
    The port that the server is open on is available in the :port slot of the
    server map (useful if the :port option is 0 or was left unspecified."
-  [& {:keys [port bind transport-fn handler ack-port greeting-fn]}]
+  [& {:keys [port bind transport-fn handler ack-port greeting-fn verbose]}]
   (let [port (or port 0)
         addr (fn [^String bind ^Integer port] (InetSocketAddress. bind port))
         make-ss #(doto (ServerSocket.)
@@ -178,12 +194,20 @@
         ;; localhost in /etc/hosts
         bind (or bind "127.0.0.1")
         ss (make-ss (addr bind port))
+        server-opts {:verbose verbose
+                     :verbose-fn (when verbose
+                                   (atom nil))}
+        server-handler (if verbose
+                         ((partial verbose-op (:verbose-fn server-opts))
+                          (or handler (default-handler)))
+                         (or handler (default-handler)))
         server (Server. ss
                         (.getLocalPort ss)
                         (atom #{})
                         (or transport-fn t/bencode)
                         greeting-fn
-                        (or handler (default-handler)))]
+                        server-handler
+                        server-opts)]
     (future (accept-connection server))
     (when ack-port
       (ack/send-ack (:port server) ack-port transport-fn))
