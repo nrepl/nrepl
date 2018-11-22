@@ -3,7 +3,7 @@
   {:author "Chas Emerick"}
   (:require
    clojure.set
-   [nrepl.misc :refer [uuid]]
+   [nrepl.misc :refer [uuid keyworded-set]]
    [nrepl.transport :as transport]
    [nrepl.version :as version])
   (:import
@@ -66,7 +66,9 @@
 (defn- delimited-transport-seq
   [client termination-statuses delimited-slots]
   (with-meta
-    (comp (partial take-until (comp #(seq (clojure.set/intersection % termination-statuses))
+    (comp (partial take-until (comp #(seq (clojure.set/intersection
+                                           (keyworded-set %)
+                                           (keyworded-set termination-statuses)))
                                     set
                                     :status))
           (let [keys (keys delimited-slots)]

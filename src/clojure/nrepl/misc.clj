@@ -46,3 +46,8 @@
                                                (-> session meta :id)
                                                session)}))]
     (merge basis response)))
+
+(defn keyworded-set
+  "Turn the `coll` into a set of keywords."
+  [coll]
+  (set (map keyword coll)))

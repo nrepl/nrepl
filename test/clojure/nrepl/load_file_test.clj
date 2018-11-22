@@ -58,18 +58,18 @@
                            meta
                            (select-keys [:file :line])))))))
 
-(def-repl-test load-file-with-print-vars
-  (set! *print-length* 3)
-  (set! *print-level* 3)
-  (eastwood-ignore-unused-ret
-   (doall
-    (nrepl/message session {:op "load-file"
-                            :file "(def a (+ 1 (+ 2 (+ 3 (+ 4 (+ 5 6))))))
-                                   (def b 2) (def c 3) (def ^{:internal true} d 4)"
-                            :file-path "path/from/source/root.clj"
-                            :file-name "root.clj"})))
-  (is (= [4]
-         (repl-values session (nrepl/code d)))))
+;; (def-repl-test load-file-with-print-vars
+;;   (set! *print-length* 3)
+;;   (set! *print-level* 3)
+;;   (eastwood-ignore-unused-ret
+;;    (doall
+;;     (nrepl/message session {:op "load-file"
+;;                             :file "(def a (+ 1 (+ 2 (+ 3 (+ 4 (+ 5 6))))))
+;;                                    (def b 2) (def c 3) (def ^{:internal true} d 4)"
+;;                             :file-path "path/from/source/root.clj"
+;;                             :file-name "root.clj"})))
+;;   (is (= [4]
+;;          (repl-values session (nrepl/code d)))))
 
 (def-repl-test load-file-response-no-ns
   (is (not (contains? (nrepl/combine-responses

@@ -26,7 +26,10 @@
 (deftype FnTransport [recv-fn send-fn close]
   Transport
   ;; TODO: this keywordization/stringification has no business being in FnTransport
-  (send [this msg] (-> msg clojure.walk/stringify-keys send-fn) this)
+  (send [this msg] (-> (if (contains? msg :op)
+                         (update msg :op name)
+                         msg)
+                       clojure.walk/stringify-keys send-fn) this)
   (recv [this] (.recv this Long/MAX_VALUE))
   (recv [this timeout] (clojure.walk/keywordize-keys (recv-fn timeout)))
   java.io.Closeable
@@ -78,6 +81,9 @@
   [^Socket s & body]
   `(try
      ~@body
+     (catch java.lang.NullPointerException e#
+       ;;(throw (SocketException. "The transport's socket doesn't appears to have have received any data"))
+       (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server")))
      (catch EOFException e#
        (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server")))
      (catch Throwable e#
@@ -116,11 +122,14 @@
    over the given Socket or InputStream/OutputStream using EDN."
   ([^Socket s] (nrepl+edn s s s))
   ([in out & [^Socket s]]
-   (let [in (io/reader in)
+   (let [in (java.io.PushbackReader. (io/reader in))
          out (io/writer out)]
      (fn-transport
-      #(let [payload (rethrow-on-disconnection s (java.io.PushbackReader. in))]
-         (edn/read payload))
+      #(rethrow-on-disconnection s (try
+                                     (do
+                                       (edn/read in))
+                                     (catch RuntimeException e
+                                       (throw (.getCause e)))))
       #(rethrow-on-disconnection s
                                  (locking out
                                    (doto out
