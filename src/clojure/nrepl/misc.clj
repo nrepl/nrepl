@@ -60,3 +60,8 @@
         (require (symbol (namespace sym)))
         (resolve sym)
         (catch Exception _))))
+
+(defn keyworded-set
+  "Turn the `coll` into a set of keywords."
+  [coll]
+  (set (map keyword coll)))
