@@ -40,3 +40,12 @@ specific version of Clojure like this:
 ----
 $ lein with-profile 1.9 test
 ----
+
+== Logging nREPL messages
+
+You can start the server with the verbose flag set to true, there's
+a default logger that logs the input and output messages with `log/info`,
+but a op `logger` is available so you can set the field `logger` to some
+namespaced symbol representing a function.
+
+See more at test `logger` at `nrepl.core-test`.

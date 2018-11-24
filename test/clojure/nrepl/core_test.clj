@@ -581,7 +581,7 @@
   (swap! logger-atom concat ba))
 
 (deftest logger
-  (testing "verbose server config and logger-op for transit json"
+  (testing "verbose server config and logger op"
     (let [server (server/start-server :verbose true)
           transport (connect :port (:port server))
           client (client transport Long/MAX_VALUE)]

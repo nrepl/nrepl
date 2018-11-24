@@ -15,6 +15,18 @@
    [java.io PipedInputStream PipedOutputStream]
    [java.net InetAddress InetSocketAddress ServerSocket Socket SocketException]))
 
+(defn- resolve-ns-symbol
+  "Resolve a namespaced symbol to a var. Returns the var or nil if
+  the argument is nil or not resolvable."
+  [tag var-sym]
+  (when-let [var-sym (and var-sym (symbol var-sym))]
+    (try
+      (require (symbol (namespace var-sym)))
+      (resolve var-sym)
+      (catch Exception ex
+        (log "Couldn't resolve function" var-sym "to be" tag)
+        nil))))
+
 (defn handle*
   [msg handler transport]
   (try
@@ -130,7 +142,7 @@
   [logger-atom h]
   (fn [{:keys [op transport logger] :as msg}]
     (if (= op "logger")
-      (do (reset! logger-atom (nrepl.misc/resolve-ns-symbol :logger logger))
+      (do (reset! logger-atom (resolve-ns-symbol :logger logger))
           (t/send transport (response-for msg :status #{:done} :op op)))
       (h msg))))
 
@@ -168,6 +180,7 @@
 
 (defn start-server
   "Starts a socket-based nREPL server.  Configuration options include:
+
    * :port — defaults to 0, which autoselects an open port
    * :bind — bind address, by default \"127.0.0.1\"
    * :handler — the nREPL message handler to use for each incoming connection;
