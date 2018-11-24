@@ -46,15 +46,3 @@
                                                (-> session meta :id)
                                                session)}))]
     (merge basis response)))
-
-(defn resolve-ns-symbol
-  "Resolve a namespaced symbol to a var. Returns the var or nil if
-  the argument is nil or not resolvable."
-  [tag var-sym]
-  (when-let [var-sym (and var-sym (symbol var-sym))]
-    (try
-      (require (symbol (namespace var-sym)))
-      (resolve var-sym)
-      (catch Exception ex
-        (log "Couldn't resolve function" var-sym "to be" tag)
-        nil))))
