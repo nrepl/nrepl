@@ -49,3 +49,5 @@ but a op `logger` is available so you can set the field `logger` to some
 namespaced symbol representing a function.
 
 See more at test `logger` at `nrepl.core-test`.
+
+From command line, start nREPL server with `--verbose`.

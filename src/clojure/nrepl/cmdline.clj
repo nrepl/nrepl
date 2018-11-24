@@ -115,7 +115,8 @@
     "--connect"
     "--color"
     "--help"
-    "--version"})
+    "--version"
+    "--verbose"})
 
 (defn- expand-shorthands
   "Expand shorthand options into their full forms."
@@ -267,8 +268,10 @@
             transport (or (some->> (:transport options) (require-and-resolve :transport))
                           #'transport/bencode)
             greeting-fn (if (= transport #'transport/tty) #'transport/tty-greeting)
+            verbose (:verbose options)
             server (start-server :port port :bind bind :handler handler
-                                 :transport-fn transport :greeting-fn greeting-fn)]
+                                 :transport-fn transport :greeting-fn greeting-fn
+                                 :verbose verbose)]
         (when-let [ack-port (:ack options)]
           (binding [*out* *err*]
             (println (format "ack'ing my port %d to other server running on port %d"
