@@ -51,7 +51,7 @@
 
 (defn- default-logger
   [tag ba]
-  (log/info tag (apply str (map byte ba))))
+  (log/info tag (map byte ba)))
 
 (defn- create-pipes
   "Create intermediate streams using pipes so you can sniff at input
