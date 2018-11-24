@@ -1,6 +1,7 @@
 (ns nrepl.core-test
   (:require
    [clojure.set :as set]
+   [clojure.string :as str]
    [clojure.test :refer [are deftest is testing use-fixtures]]
    [nrepl.core :as nrepl :refer [client
                                  client-session
@@ -572,3 +573,21 @@
     (Thread/sleep 100)
     (is (= #{"done"} (-> session (message {:op :interrupt}) first :status set)))
     (is (= #{"done" "interrupted"} (-> resp combine-responses :status)))))
+
+(def logger-atom (atom []))
+
+(defn custom-logger
+  [tag ba]
+  (swap! logger-atom concat ba))
+
+(deftest logger
+  (testing "verbose server config and logger-op for transit json"
+    (let [server (server/start-server :verbose true)
+          transport (connect :port (:port server))
+          client (client transport Long/MAX_VALUE)]
+      (reset! logger-atom nil)
+      (let [response (message client {:op :logger :logger `custom-logger})
+            id (apply str (map byte (-> response first :id)))]
+        (Thread/sleep 10)
+        (is (str/starts-with? (apply str (map byte @logger-atom))
+                              "1005058105100515458"))))))
