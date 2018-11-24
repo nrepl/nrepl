@@ -20,6 +20,26 @@
    java.io.File
    java.net.SocketException))
 
+(defmacro when-require [n & body]
+  (let [nn (eval n)]
+    (try (require nn)
+         (catch Throwable e nil))
+    (when (find-ns nn)
+      `(do ~@body))))
+
+(def transport-fn->protocol
+  "Add your transport-fn var here so it can be tested"
+  {#'transport/bencode "nrepl"})
+
+;; There is a profile that adds the fastlane dependency and test
+;; its transports.
+(when-require 'fastlane.core
+              (def transport-fn->protocol
+                (merge transport-fn->protocol
+                       {(find-var 'fastlane.core/transit+msgpack) "transit+msgpack"
+                        (find-var 'fastlane.core/transit+json) "transit+json"
+                        (find-var 'fastlane.core/transit+json-verbose) "transit+json-verbose"})))
+
 (def project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
 
 (def ^{:dynamic true} *server* nil)
@@ -34,13 +54,6 @@
         (f))
       (set! *print-length* nil)
       (set! *print-level* nil))))
-
-(def transport-fn->protocol
-  "Add your transport-fn var here so it can be tested"
-  {#'transport/bencode "nrepl"
-   #'transport/transit+msgpack "transit+msgpack"
-   #'transport/transit+json "transit+json"
-   #'transport/transit+json-verbose "transit+json-verbose"})
 
 (def transport-fns
   (keys transport-fn->protocol))

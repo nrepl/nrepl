@@ -110,62 +110,6 @@
             (.close in)
             (.close out))))))))
 
-(defn build-transit-transport-using-type
-  "Returns a functions with a Transport implementation that serializes
-  messages over the given Socket or InputStream/OutputStream with Transit
-  using `transit-type`."
-  [transit-type]
-  (fn transit-fn
-    ([^Socket s] (transit-fn s s s))
-    ([in out & [^Socket s]]
-     (let [in (PushbackInputStream. (io/input-stream in))
-           out (io/output-stream out)
-           reader (transit/reader in transit-type)
-           writer (transit/writer out transit-type)]
-       (fn-transport
-        #(let [payload (rethrow-on-disconnection s (try
-                                                     (transit/read reader)
-                                                     (catch RuntimeException e
-                                                       (throw (.getCause e)))))]
-           (cond-> payload
-             (get payload "op") (update "op" name)
-             (get payload "status") (update "status"
-                                            (fn [status]
-                                              (if (coll? status)
-                                                (map name status)
-                                                (name status))))))
-        #(rethrow-on-disconnection s
-                                   (locking out
-                                     (try
-                                       (transit/write writer %)
-                                       (.flush out)
-                                       (catch RuntimeException e
-                                         (throw (.getCause e))))))
-        (fn []
-          (if s
-            (.close s)
-            (do
-              (.close in)
-              (.close out)))))))))
-
-(def transit+msgpack
-  "Returns a Transport implementation that serializes messages
-  over the given Socket or InputStream/OutputStream with Transit
-  using msgpack."
-  (build-transit-transport-using-type :msgpack))
-
-(def transit+json
-  "Returns a Transport implementation that serializes messages
-  over the given Socket or InputStream/OutputStream with Transit
-  using json."
-  (build-transit-transport-using-type :json))
-
-(def transit+json-verbose
-  "Returns a Transport implementation that serializes messages
-  over the given Socket or InputStream/OutputStream with Transit
-  using json-verbose."
-  (build-transit-transport-using-type :json-verbose))
-
 (defn tty
   "Returns a Transport implementation suitable for serving an nREPL backend
    via simple in/out readers, as with a tty or telnet connection."

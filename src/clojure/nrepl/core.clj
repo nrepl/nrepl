@@ -222,15 +222,6 @@
 (add-socket-connect-method! "nrepl" {:transport-fn transport/bencode
                                      :port 7888})
 (add-socket-connect-method! "telnet" {:transport-fn transport/tty})
-(add-socket-connect-method! "transit+msgpack"
-                            {:transport-fn transport/transit+msgpack
-                             :port 7888})
-(add-socket-connect-method! "transit+json"
-                            {:transport-fn transport/transit+json
-                             :port 7888})
-(add-socket-connect-method! "transit+json-verbose"
-                            {:transport-fn transport/transit+json-verbose
-                             :port 7888})
 
 (defmethod url-connect :default
   [uri]
