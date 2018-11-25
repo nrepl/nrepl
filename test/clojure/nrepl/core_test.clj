@@ -293,7 +293,6 @@
     (is (= [true] (repl-values session "(.contains (str *e) \"bad, bad code\")")))))
 
 (def-repl-test multiple-expressions-return
-  (session {:op :bypass :stdin "bypassing..."})
   (is (= [5 18] (repl-values session "5 (/ 5 0) (+ 5 6 7)"))))
 
 (def-repl-test return-on-incomplete-expr

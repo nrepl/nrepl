@@ -2,7 +2,6 @@
   "Default server implementations"
   {:author "Chas Emerick"}
   (:require
-   [clojure.java.io :as io]
    [nrepl.ack :as ack]
    [nrepl.middleware :as middleware]
    nrepl.middleware.interruptible-eval
