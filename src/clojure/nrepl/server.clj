@@ -3,8 +3,8 @@
   {:author "Chas Emerick"}
   (:require
    [clojure.java.io :as io]
-   [clojure.tools.logging :as log]
    [nrepl.ack :as ack]
+   [nrepl.logging :as log]
    [nrepl.middleware :as middleware]
    nrepl.middleware.interruptible-eval
    nrepl.middleware.load-file
@@ -18,13 +18,13 @@
 (defn- resolve-ns-symbol
   "Resolve a namespaced symbol to a var. Returns the var or nil if
   the argument is nil or not resolvable."
-  [tag var-sym]
+  [var-sym]
   (when-let [var-sym (and var-sym (symbol var-sym))]
     (try
       (require (symbol (namespace var-sym)))
       (resolve var-sym)
       (catch Exception ex
-        (log "Couldn't resolve function" var-sym "to be" tag)
+        (log "Couldn't resolve function to be logger: " var-sym)
         nil))))
 
 (defn handle*
@@ -142,7 +142,7 @@
   [logger-atom h]
   (fn [{:keys [op transport logger] :as msg}]
     (if (= op "logger")
-      (do (reset! logger-atom (resolve-ns-symbol :logger logger))
+      (do (reset! logger-atom (resolve-ns-symbol logger))
           (t/send transport (response-for msg :status #{:done} :op op)))
       (h msg))))
 

@@ -582,12 +582,25 @@
 
 (deftest logger
   (testing "verbose server config and logger op"
-    (let [server (server/start-server :verbose true)
-          transport (connect :port (:port server))
+    (let [server (server/start-server :transport-fn *transport-fn*
+                                      :verbose true)
+          transport (connect :port (:port server)
+                             :transport-fn *transport-fn*)
           client (client transport Long/MAX_VALUE)]
       (reset! logger-atom nil)
       (let [response (message client {:op :logger :logger `custom-logger})
-            id (apply str (map byte (-> response first :id)))]
+            id (apply str (map byte (-> response first :id)))
+            expected ((merge {#'transport/bencode
+                              "1005058105100515458"}
+                             (when-require 'fastlane.core
+                                           {(find-var 'fastlane.core/transit+msgpack)
+                                            "-125-94105100-38036"
+
+                                            (find-var 'fastlane.core/transit+json)
+                                            "91349432344434105100344434"
+
+                                            (find-var 'fastlane.core/transit+json-verbose)
+                                            "12334105100345834"}))
+                      *transport-fn*)]
         (Thread/sleep 10)
-        (is (str/starts-with? (apply str (map byte @logger-atom))
-                              "1005058105100515458"))))))
+        (is (.startsWith (apply str (map byte @logger-atom)) expected))))))
