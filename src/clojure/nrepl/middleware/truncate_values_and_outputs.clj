@@ -39,7 +39,7 @@
   [resp k truncate-fn opts]
   (if-some [truncated (truncate-fn (k resp) opts)]
     (let [raw-id (uuid)]
-      (swap! raw-results merge {raw-id [k (k resp)]})
+      (swap! raw-results assoc raw-id [k (k resp)])
       (assoc resp
              k truncated
              :truncated "true"
