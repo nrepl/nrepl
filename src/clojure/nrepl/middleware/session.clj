@@ -4,7 +4,6 @@
   (:require
    clojure.main
    clojure.test
-   nrepl.middleware.truncate-outputs
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.interruptible-eval :refer [*msg*]]
    [nrepl.misc :refer [uuid response-for]]
@@ -198,7 +197,7 @@
             (h msg)))))))
 
 (set-descriptor! #'session
-                 {:requires #{#'nrepl.middleware.truncate-outputs/truncate-outputs}
+                 {:requires #{}
                   :expects #{}
                   :describe-fn (fn [{:keys [session] :as describe-msg}]
                                  (when (and session (instance? clojure.lang.Atom session))

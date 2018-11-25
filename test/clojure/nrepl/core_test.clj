@@ -229,7 +229,7 @@
               (map :out)
               (remove nil?)))))
 
-(def-repl-test truncate-eval-values-and-outputs
+(def-repl-test ^{:test-refresh/focus true} truncate-eval-values-and-outputs
   (is (= [{:value "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29)"
            :truncated-value "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19"
            :truncated "true"}

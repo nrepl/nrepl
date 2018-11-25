@@ -4,7 +4,7 @@
    clojure.main
    [nrepl.middleware :refer [set-descriptor!]]
    nrepl.middleware.pr-values
-   nrepl.middleware.truncate-values
+   nrepl.middleware.truncate-values-and-outputs
    [nrepl.misc :refer [response-for returning]]
    [nrepl.transport :as t])
   (:import
@@ -260,7 +260,7 @@
                  {:requires #{"clone"
                               "close"
                               #'nrepl.middleware.pr-values/pr-values
-                              #'nrepl.middleware.truncate-values/truncate-values}
+                              #'nrepl.middleware.truncate-values-and-outputs/truncate}
                   :expects #{}
                   :handles {"eval"
                             {:doc "Evaluates code."
