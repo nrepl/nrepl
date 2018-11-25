@@ -20,24 +20,56 @@
    java.io.File
    java.net.SocketException))
 
+(defmacro when-require [n & body]
+  (let [nn (eval n)]
+    (try (require nn)
+         (catch Throwable e nil))
+    (when (find-ns nn)
+      `(do ~@body))))
+
+(def transport-fn->protocol
+  "Add your transport-fn var here so it can be tested"
+  {#'transport/bencode "nrepl"})
+
+;; There is a profile that adds the fastlane dependency and test
+;; its transports.
+(when-require 'fastlane.core
+              (def transport-fn->protocol
+                (merge transport-fn->protocol
+                       {(find-var 'fastlane.core/transit+msgpack) "transit+msgpack"
+                        (find-var 'fastlane.core/transit+json) "transit+json"
+                        (find-var 'fastlane.core/transit+json-verbose) "transit+json-verbose"})))
+
 (def project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
 
 (def ^{:dynamic true} *server* nil)
+(def ^{:dynamic true} *transport-fn* nil)
+
+(defn start-server-for-transport-fn
+  [transport-fn f]
+  (with-open [server (server/start-server :transport-fn transport-fn)]
+    (binding [*server* server
+              *transport-fn* transport-fn]
+      (testing (str (-> transport-fn meta :name) " transport\n")
+        (f))
+      (set! *print-length* nil)
+      (set! *print-level* nil))))
+
+(def transport-fns
+  (keys transport-fn->protocol))
 
 (defn repl-server-fixture
   [f]
-  (with-open [server (server/start-server)]
-    (binding [*server* server]
-      (f)
-      (set! *print-length* nil)
-      (set! *print-level* nil))))
+  (doseq [transport-fn transport-fns]
+    (start-server-for-transport-fn transport-fn f)))
 
 (use-fixtures :each repl-server-fixture)
 
 (defmacro def-repl-test
   [name & body]
-  `(deftest ~(with-meta name {:private true})
-     (with-open [transport# (connect :port (:port *server*))]
+  `(deftest ~(with-meta name (merge {:private true} (meta name)))
+     (with-open [transport# (connect :port (:port *server*)
+                                     :transport-fn *transport-fn*)]
        (let [~'transport transport#
              ~'client (client transport# Long/MAX_VALUE)
              ~'session (client-session ~'client)
@@ -159,7 +191,8 @@
 
 (def-repl-test cross-transport-*out*
   (let [sid (-> session meta ::nrepl/taking-until :session)
-        transport2 (nrepl.core/connect :port (:port *server*))]
+        transport2 (nrepl.core/connect :port (:port *server*)
+                                       :transport-fn *transport-fn*)]
     (transport/send transport2 {"op" "eval" "code" "(println :foo)"
                                 "session" sid})
     (is (->> (repeatedly #(transport/recv transport2 1000))
@@ -235,7 +268,8 @@
                           (apply + (range 6))
                           (str 12 \c)
                           (keyword "hello")))
-    (with-open [separate-connection (connect :port (:port *server*))]
+    (with-open [separate-connection (connect :port (:port *server*)
+                                             :transport-fn *transport-fn*)]
       (let [history [[15 "12c" :hello]]
             sid (-> session meta :nrepl.core/taking-until :session)
             sc-session (-> separate-connection
@@ -365,9 +399,10 @@
   (is (thrown? java.net.SocketException (repl-values session "5"))))
 
 ;; test is flaking on hudson, but passing locally! :-X
-#_(def-repl-test ensure-server-closeable
-    (.close *server*)
-    (is (thrown? java.net.ConnectException (connect :port (:port *server*)))))
+(def-repl-test ensure-server-closeable
+  (.close *server*)
+  (Thread/sleep 100)
+  (is (thrown? java.net.ConnectException (connect :port (:port *server*)))))
 
 ;; wasn't added until Clojure 1.3.0
 (defn- root-cause
@@ -387,25 +422,29 @@
 
 (deftest transports-fail-on-disconnects
   (testing "Ensure that transports fail ASAP when the server they're connected to goes down."
-    (let [server (server/start-server)
-          transport (connect :port (:port server))]
+    (let [server (server/start-server :transport-fn *transport-fn*)
+          transport (connect :port (:port server)
+                             :transport-fn *transport-fn*)]
       (transport/send transport {"op" "eval" "code" "(+ 1 1)"})
 
       (let [reader (future (while true (transport/recv transport)))]
-        (Thread/sleep 1000)
+        (Thread/sleep 100)
         (.close server)
-        (Thread/sleep 1000)
+        (Thread/sleep 100)
         (try
-          (deref reader 10000 :timeout)
+          (deref reader 1000 :timeout)
           (assert false "A reader started prior to the server closing should throw an error...")
           (catch Throwable e
             (is (disconnection-exception? e)))))
 
       (is (thrown? SocketException (transport/recv transport)))
-      ;; TODO: no idea yet why two sends are *sometimes* required to get a failure
+      ;; The next `Thread/sleep` is needed or the test would be fleaky
+      ;; for some transports that don't throw an exception the first time
+      ;; a message is sent after the server is closed.
       (try
         (transport/send transport {"op" "eval" "code" "(+ 5 1)"})
         (catch Throwable t))
+      (Thread/sleep 100)
       (is (thrown? SocketException (transport/send transport {"op" "eval" "code" "(+ 5 1)"}))))))
 
 (def-repl-test clients-fail-on-disconnects
@@ -475,14 +514,18 @@
   (is (= [" :kthxbai"] (repl-values session "(read-line)"))))
 
 (def-repl-test test-url-connect
-  (with-open [conn (url-connect (str "nrepl://127.0.0.1:" (:port *server*)))]
+  (with-open [conn (url-connect (str (transport-fn->protocol *transport-fn*)
+                                     "://127.0.0.1:"
+                                     (:port *server*)))]
     (transport/send conn {:op :eval :code "(+ 1 1)"})
     (is (= [2] (response-values (response-seq conn 100))))))
 
 (deftest test-ack
-  (with-open [s (server/start-server :handler (ack/handle-ack (server/default-handler)))]
+  (with-open [s (server/start-server :transport-fn *transport-fn*
+                                     :handler (ack/handle-ack (server/default-handler)))]
     (ack/reset-ack-port!)
-    (with-open [s2 (server/start-server :ack-port (:port s))]
+    (with-open [s2 (server/start-server :transport-fn *transport-fn*
+                                        :ack-port (:port s))]
       (is (= (:port s2) (ack/wait-for-ack 10000))))))
 
 (def-repl-test agent-await
@@ -493,25 +536,24 @@
 
 (deftest cloned-session-*1-binding
   (let [port (:port *server*)
-        conn (nrepl/connect :port port)
+        conn (nrepl/connect :port port :transport-fn *transport-fn*)
         client (nrepl/client conn 1000)
         sess (nrepl/client-session client)
-        eval (sess {:op :eval
-                    :code "(+ 1 4)"})
-        new-sess-id (->> (sess {:id 1
+        sess-id (->> (sess {:op :eval
+                            :code "(+ 1 4)"})
+                     last
+                     :session)
+        new-sess-id (->> (sess {:session sess-id
                                 :op :clone})
-                         (filter (fn [x] (= 1 (:id x))))
-                         first
-                         :new-session)
-        cloned-sess (nrepl.core/client-session client :session new-sess-id)
-        cloned-sess-*1 (->> (cloned-sess {:id 2
+                         last
+                         :session)
+        cloned-sess (nrepl/client-session client :session new-sess-id)
+        cloned-sess-*1 (->> (cloned-sess {:session new-sess-id
                                           :op :eval
                                           :code "*1"})
-                            (filter (fn [x] (and (= 2 (:id x))
-                                                 (contains? x :value))))
                             first
                             :value)]
-    (is (= cloned-sess-*1 "5"))))
+    (is (= "5" cloned-sess-*1))))
 
 (def-repl-test print-namespace-maps-binding
   (when (resolve '*print-namespace-maps*)

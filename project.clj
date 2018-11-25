@@ -14,7 +14,7 @@
                  [nrepl/bencode "1.0.0"]]
 
   :aliases {"bump-version" ["change" "version" "leiningen.release/bump-version"]
-            "test-all" ["with-profile" "+1.7:+1.8:+1.9" "test"]}
+            "test-all" ["with-profile" "+1.7:+1.8:+1.9:+fastlane" "test"]}
 
   :release-tasks [["vcs" "assert-committed"]
                   ["bump-version" "release"]
@@ -28,7 +28,7 @@
                                     :password :env/clojars_password
                                     :sign-releases false}]]
 
-  :profiles {
+  :profiles {:fastlane {:dependencies [[nrepl/fastlane "0.1.0-SNAPSHOT"]]}
              ;; Clojure versions matrix
              :provided {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}

@@ -139,5 +139,5 @@
                         (or handler (default-handler)))]
     (future (accept-connection server))
     (when ack-port
-      (ack/send-ack (:port server) ack-port))
+      (ack/send-ack (:port server) ack-port transport-fn))
     server))
