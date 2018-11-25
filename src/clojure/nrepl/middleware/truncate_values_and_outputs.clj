@@ -1,7 +1,9 @@
 (ns nrepl.middleware.truncate-values-and-outputs
   (:require
    [clojure.tools.logging :as log]
-   [nrepl.middleware :refer [set-descriptor!]])
+   [nrepl.middleware :refer [set-descriptor!]]
+   [nrepl.misc :refer [response-for uuid]]
+   [nrepl.transport :as t])
   (:import
    nrepl.transport.Transport))
 
@@ -31,32 +33,34 @@
         (log/warn "Couldn't resolve truncate strategy function" var-sym)
         nil))))
 
+(defonce raw-results (atom {}))
+
+(defn- check-truncate
+  [resp k truncate-fn opts]
+  (if-some [truncated (truncate-fn (k resp) opts)]
+    (let [raw-id (uuid)]
+      (swap! raw-results merge {raw-id [k (k resp)]})
+      (assoc resp
+             k truncated
+             :truncated "true"
+             :raw-id raw-id))
+    resp))
+
 (defn- truncate-msg
   "Truncates `:value`, `:out` and `:err` from resp to a specified size using
    using `:truncate-fn` strategy, creating `:truncate-value` or `truncate-out`
   or `truncate-err` and `:truncated` set to \"true\" if the message contains
   the truncated slot."
   [resp value-truncate-fn output-truncate-fn opts]
-  (merge
-   (if-some [truncated-value (value-truncate-fn (:value resp) opts)]
-     (-> (assoc resp
-                :truncated-value truncated-value
-                :truncated "true"))
-     resp)
-   (if-some [truncated-out (output-truncate-fn (:out resp) opts)]
-     (-> (assoc resp
-                :truncated-out truncated-out
-                :truncated "true"))
-     resp)
-   (if-some [truncated-err (output-truncate-fn (:err resp) opts)]
-     (-> (assoc resp
-                :truncated-err truncated-err
-                :truncated "true"))
-     resp)))
+  (let [raw-id (uuid)]
+    (-> resp
+        (check-truncate :value value-truncate-fn opts)
+        (check-truncate :out output-truncate-fn opts)
+        (check-truncate :err output-truncate-fn opts))))
 
 (defn- truncate-transport
-  "Wraps a `Transport` with code which truncates the value of
-  messages sent to it."
+  "Wraps a `Transport` with code which truncates the values and outputs
+  of messages sent to it."
   [^Transport transport value-truncate-fn output-truncate-fn opts]
   (reify Transport
     (recv [this]
@@ -70,17 +74,24 @@
 (defn truncate
   "Middleware that returns a handler which truncates any `:value`, `out` or
   `err` slot in a message to a specified size using the `:truncate-options`
-  slot."
+  slot. It also handles fetching of raw values or outputs which were
+  truncated for a specific request `ID`."
   [handler]
-  (fn [{:keys [^Transport transport truncate-value-strategy truncate-output-strategy truncate-options]
+  (fn [{:keys [^Transport transport op truncate-value-strategy truncate-output-strategy truncate-options]
         :as msg}]
-    (let [value-truncate-fn (or (resolve-strategy truncate-value-strategy)
-                                default-value-strategy)
-          output-truncate-fn (or (resolve-strategy truncate-output-strategy)
-                                 default-output-strategy)
-          transport (truncate-transport
-                     transport value-truncate-fn output-truncate-fn truncate-options)]
-      (handler (assoc msg :transport transport)))))
+    (if (= op "fetch-raw")
+      (if-some [[k result] (get @raw-results (:raw-id msg))]
+        (do
+          (swap! raw-results dissoc (:raw-id msg))
+          (t/send transport (response-for msg k result :status :done)))
+        (t/send transport (response-for msg :status #{:error :inexistent-id :done})))
+      (let [value-truncate-fn (or (resolve-strategy truncate-value-strategy)
+                                  default-value-strategy)
+            output-truncate-fn (or (resolve-strategy truncate-output-strategy)
+                                   default-output-strategy)
+            transport (truncate-transport
+                       transport value-truncate-fn output-truncate-fn truncate-options)]
+        (handler (assoc msg :transport transport))))))
 
 (set-descriptor! #'truncate
                  {:requires #{}

@@ -229,16 +229,21 @@
               (map :out)
               (remove nil?)))))
 
-(def-repl-test ^{:test-refresh/focus true} truncate-eval-values-and-outputs
-  (is (= [{:value "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29)"
-           :truncated-value "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19"
-           :truncated "true"}
-          {:status ["done"]}]
-         (->> (message session {:op :eval
-                                :truncate-options {:truncate-value 50}
-                                :code "(range 30)"})
-              (map #(dissoc % :id :session :ns))))
-      "value size bigger than truncate")
+(def-repl-test truncate-eval-values-and-outputs
+  (testing "truncate value"
+    (let [resps (->> (message session {:op :eval
+                                       :truncate-options {:truncate-value 50}
+                                       :code "(range 30)"})
+                     (map #(dissoc % :id :session :ns)))]
+      (is (= [{:value "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19"
+               :truncated "true"}
+              {:status ["done"]}]
+             (map #(dissoc % :raw-id) resps)))
+      (is (= [{:value "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29)"
+               :status ["done"]}]
+             (->> (message session {:op :fetch-raw
+                                    :raw-id (:raw-id (first resps))})
+                  (map #(dissoc % :id :session :ns)))))))
   (is (= [{:value ":a"}
           {:status ["done"]}]
          (->> (message session {:op :eval
@@ -246,52 +251,93 @@
                                 :code ":a"})
               (map #(dissoc % :id :session :ns))))
       "value size less than truncate")
-  (is (= [{:out "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29)"
-           :truncated-out "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19"
-           :truncated "true"}
-          {:value "nil"}
-          {:status ["done"]}]
-         (->> (message session {:op :eval
-                                :truncate-options {:truncate-output 50}
-                                :code "(print (range 30))"})
-              (map #(dissoc % :id :session :ns))))
-      "out should be truncated")
+  (testing "truncate out"
+    (let [resps (->> (message session {:op :eval
+                                       :truncate-options {:truncate-output 50}
+                                       :code "(print (range 30))"})
+                     (map #(dissoc % :id :session :ns)))]
+      (is (= [{:out "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19"
+               :truncated "true"}
+              {:value "nil"}
+              {:status ["done"]}]
+             (map #(dissoc % :raw-id) resps)))
+      (is (= [{:out "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29)"
+               :status ["done"]}]
+             (->> (message session {:op :fetch-raw
+                                    :raw-id (:raw-id (first resps))})
+                  (map #(dissoc % :id :session :ns)))))))
+  (testing "truncate err"
+    (let [resps (->> (message session {:op :eval
+                                       :truncate-options {:truncate-output 12}
+                                       :code "(+ 1 nil)"})
+                     (map #(dissoc % :id :session :ns)))]
+      (is (= [{:ex "class java.lang.NullPointerException",
+               :root-ex "class java.lang.NullPointerException",
+               :status ["eval-error"]}
+              {:err "NullPointerE"
+               :truncated "true"}
+              {:status ["done"]}]
+             (map #(dissoc % :raw-id) resps)))
+      (is (= [{:err "NullPointerException   clojure.lang.Numbers.ops"
+               :status ["done"]}]
+             (->> (message session {:op :fetch-raw
+                                    :raw-id (:raw-id (second resps))})
+                  (map #(dissoc % :id :session :ns))
+                  (map #(update % :err subs 0 47)))))))
+  (testing "value, out and err should all be truncated"
+    (let [resps (->> (message session {:op :eval
+                                       :truncate-options {:truncate-value 6
+                                                          :truncate-output 10}
+                                       :code "(+ 1 nil) (range 30) (print (range 30))"})
+                     (map #(dissoc % :id :session :ns)))]
+      (is (= [{:ex "class java.lang.NullPointerException",
+               :root-ex "class java.lang.NullPointerException",
+               :status ["eval-error"]}
+              {:err "NullPointe"
+               :truncated "true"}
+              {:value "(0 1 2"
+               :truncated "true"}
+              {:out "(0 1 2 3 4"
+               :truncated "true"}
+              {:value "nil"}
+              {:status ["done"]}]
+             (map #(dissoc % :raw-id) resps)))
+      (is (= [{:err "NullPointerException   clojure.lang.Numbers.ops",
+               :status ["done"]}
+              {:status ["done"],
+               :value "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29)"}
+              {:out "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29)",
+               :status ["done"]}]
+             (->> (concat
+                   (->> (message session {:op :fetch-raw
+                                          :raw-id (:raw-id (nth resps 1))})
+                        (map #(update % :err subs 0 47)))
+                   (message session {:op :fetch-raw
+                                     :raw-id (:raw-id (nth resps 2))})
+                   (message session {:op :fetch-raw
+                                     :raw-id (:raw-id (nth resps 3))}))
+                  (map #(dissoc % :id :session :ns)))))
+      (is (= [{:status ["done" "inexistent-id" "error"]}
+              {:status ["done" "inexistent-id" "error"]}
+              {:status ["done" "inexistent-id" "error"]}]
+             (->> (concat
+                   (message session {:op :fetch-raw
+                                     :raw-id (:raw-id (nth resps 1))})
+                   (message session {:op :fetch-raw
+                                     :raw-id (:raw-id (nth resps 2))})
+                   (message session {:op :fetch-raw
+                                     :raw-id (:raw-id (nth resps 3))}))
+                  (map #(dissoc % :id :session :ns))))
+          "inexistent raw-ids")
+      (is (= [{:status ["done" "inexistent-id" "error"]}]
+             (->> (message session {:op :fetch-raw
+                                    :raw-id (:raw-id {:s 3})})
+                  (map #(dissoc % :id :session :ns))))
+          "invalid raw-id")))
   (is (= [{:ex "class java.lang.NullPointerException",
            :root-ex "class java.lang.NullPointerException",
            :status ["eval-error"]}
-          {:err "NullPointerException   clojure.lang.Numbers.ops (Numbers.java:1018)\n"
-           :truncated-err "NullPointerE"
-           :truncated "true"}
-          {:status ["done"]}]
-         (->> (message session {:op :eval
-                                :truncate-options {:truncate-output 12}
-                                :code "(+ 1 nil)"})
-              (map #(dissoc % :id :session :ns))))
-      "err should be truncated")
-  (is (= [{:ex "class java.lang.NullPointerException",
-           :root-ex "class java.lang.NullPointerException",
-           :status ["eval-error"]}
-          {:err "NullPointerException   clojure.lang.Numbers.ops (Numbers.java:1018)\n"
-           :truncated-err "NullPointe"
-           :truncated "true"}
-          {:value "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29)"
-           :truncated-value "(0 1 2"
-           :truncated "true"}
-          {:out "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29)"
-           :truncated-out "(0 1 2 3 4"
-           :truncated "true"}
-          {:value "nil"}
-          {:status ["done"]}]
-         (->> (message session {:op :eval
-                                :truncate-options {:truncate-value 6
-                                                   :truncate-output 10}
-                                :code "(+ 1 nil) (range 30) (print (range 30))"})
-              (map #(dissoc % :id :session :ns))))
-      "value, out and err should all be truncated")
-  (is (= [{:ex "class java.lang.NullPointerException",
-           :root-ex "class java.lang.NullPointerException",
-           :status ["eval-error"]}
-          {:err "NullPointerException   clojure.lang.Numbers.ops (Numbers.java:1018)\n"}
+          {:err "NullPointerException   clojure.lang.Numbers.ops"}
           {:value "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49)"}
           {:out "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49)"}
           {:value "nil"}
@@ -299,7 +345,10 @@
          (->> (message session {:op :eval
                                 :truncate-options {}
                                 :code "(+ 1 nil) (range 50) (print (range 50))"})
-              (map #(dissoc % :id :session :ns))))
+              (map #(dissoc % :id :session :ns))
+              (map #(if (:err %)
+                      (update % :err subs 0 47)
+                      %))))
       "nothing should be truncated when not passing :truncate-value or :truncate-output to the message"))
 
 (defn custom-truncate-strategy
@@ -309,8 +358,7 @@
     (subs v truncate-init truncate)))
 
 (def-repl-test truncation-with-custom-truncate-fns
-  (is (= [{:value "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29)"
-           :truncated-value "2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19"
+  (is (= [{:value "2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19"
            :truncated "true"}
           {:status ["done"]}]
          (->> (message session {:op :eval
@@ -318,38 +366,33 @@
                                                    :truncate 50}
                                 :truncate-value-strategy `custom-truncate-strategy
                                 :code "(range 30)"})
-              (map #(dissoc % :id :session :ns))))
+              (map #(dissoc % :id :session :ns :raw-id))))
       "custom truncate strategy for value")
-  (is (= [{:out "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29)"
-           :truncated-out "2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19"
+  (is (= [{:out "2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19"
            :truncated "true"}
           {:value "nil"}
           {:ex "class java.lang.NullPointerException",
            :root-ex "class java.lang.NullPointerException",
            :status ["eval-error"]}
-          {:err "NullPointerException   clojure.lang.Numbers.ops (Numbers.java:1018)\n",
-           :truncated "true",
-           :truncated-err "ointerException   clojure.lang.Numbers.ops (N"}
+          {:truncated "true",
+           :err "ointerException   clojure.lang.Numbers.ops (N"}
           {:status ["done"]}]
          (->> (message session {:op :eval
                                 :truncate-options {:truncate-init 5
                                                    :truncate 50}
                                 :truncate-output-strategy `custom-truncate-strategy
                                 :code "(print (range 30)) (+ 5 nil)"})
-              (map #(dissoc % :id :session :ns))))
+              (map #(dissoc % :id :session :ns :raw-id))))
       "custom truncate strategy for outputs")
-  (is (= [{:out "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29)"
-           :truncated-out "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19"
+  (is (= [{:out "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19"
            :truncated "true"}
           {:value "nil"}
           {:ex "class java.lang.NullPointerException",
            :root-ex "class java.lang.NullPointerException",
            :status ["eval-error"]}
-          {:err "NullPointerException   clojure.lang.Numbers.ops (Numbers.java:1018)\n",
-           :truncated "true",
-           :truncated-err "NullPointerException   clojure.lang.Numbers.ops (N"}
-          {:value "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29)"
-           :truncated-value "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19"
+          {:truncated "true",
+           :err "NullPointerException   clojure.lang.Numbers.ops (N"}
+          {:value "(0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19"
            :truncated "true"}
           {:status ["done"]}]
          (->> (message session {:op :eval
@@ -358,7 +401,7 @@
                                 :truncate-value-strategy `my.missing.ns/truncate-value
                                 :truncate-output-strategy `my.missing.ns/truncate-output
                                 :code "(print (range 30)) (+ 5 nil) (range 30)"})
-              (map #(dissoc % :id :session :ns))))
+              (map #(dissoc % :id :session :ns :raw-id))))
       "bad symbols should fall back to default truncate strategies"))
 
 (def-repl-test ensure-whitespace-prints
