@@ -29,9 +29,9 @@ and connect with it using the built-in client.
 
 [source,shell]
 ----
-$ clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.5"}}}' -m nrepl.cmdline --interactive
+$ clj -Sdeps '{:deps {nrepl {:mvn/version "0.5.0"}}}' -m nrepl.cmdline --interactive
 nREPL server started on port 59403 on host 0:0:0:0:0:0:0:0 - nrepl://0:0:0:0:0:0:0:0:59403
-nREPL 0.4.5
+nREPL 0.5.0
 Clojure 1.9.0
 Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
 user=> (+ 1 2)
@@ -42,8 +42,8 @@ If you want to connect to a server that's already running you can do it like thi
 
 [source,shell]
 ----
-$ clj -Sdeps '{:deps {nrepl {:mvn/version "0.4.5"}}}' -m nrepl.cmdline --connect --host host --port port
-nREPL 0.4.5
+$ clj -Sdeps '{:deps {nrepl {:mvn/version "0.5.0"}}}' -m nrepl.cmdline --connect --host host --port port
+nREPL 0.5.0
 Clojure 1.9.0
 Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
 user=> (+ 1 2)

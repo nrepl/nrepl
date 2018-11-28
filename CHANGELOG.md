@@ -2,6 +2,8 @@
 
 ### master (unreleased)
 
+### 0.5.0 (2018-11-28)
+
 #### New features
 
 * [#12](https://github.com/nrepl/nREPL/issues/12): Support custom printing
