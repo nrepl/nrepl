@@ -2,8 +2,8 @@
   {:author "Chas Emerick"}
   (:require
    [clojure.string :as str]
-   [clojure.tools.logging :as log]
-   [nrepl.middleware :refer [set-descriptor!]])
+   [nrepl.middleware :refer [set-descriptor!]]
+   [nrepl.misc :as misc])
   (:import
    nrepl.transport.Transport))
 
@@ -24,7 +24,7 @@
       (require (symbol (namespace var-sym)))
       (resolve var-sym)
       (catch Exception ex
-        (log/warn "Couldn't resolve printer function" var-sym)
+        (misc/log ex "Couldn't resolve printer function" var-sym)
         nil))))
 
 (defn- printing-transport
