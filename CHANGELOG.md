@@ -2,6 +2,8 @@
 
 ### master (unreleased)
 
+### 0.5.1 (2018-11-30)
+
 #### Changes
 
 * [#89](https://github.com/nrepl/nrepl/issues/89): Remove `tools.logging` dependency.

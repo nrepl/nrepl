@@ -22,7 +22,7 @@ Add this alias to `~/.clojure/deps.edn`:
 ;; ...
 :aliases {:nREPL
           {:extra-deps
-            {nrepl/nrepl {:mvn/version "0.5.0"}}}}
+            {nrepl/nrepl {:mvn/version "0.5.1"}}}}
 }
 ----
 
@@ -43,7 +43,7 @@ how you can easily start a ClojureScript capable nREPL:
 ;; ...
 :aliases {:nREPL
           {:extra-deps
-           {nrepl/nrepl {:mvn/version "0.5.0"}
+           {nrepl/nrepl {:mvn/version "0.5.1"}
             cider/piggieback {:mvn/version "0.3.8"}}}}
 }
 ----
