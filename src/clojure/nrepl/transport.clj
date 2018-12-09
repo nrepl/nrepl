@@ -159,7 +159,7 @@
                              "user=> ")}))
 
 (defmulti uri-scheme
-  "Show uri scheme associated with a transport var"
+  "Return the uri scheme associated with a transport var."
   identity)
 
 (defmethod uri-scheme #'bencode [_] "nrepl")
