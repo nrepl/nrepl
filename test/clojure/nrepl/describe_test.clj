@@ -1,7 +1,6 @@
 (ns nrepl.describe-test
   {:author "Chas Emerick"}
   (:require
-   [clojure.java.io :as io]
    [clojure.test :refer :all]
    [nrepl.core :as nrepl]
    [nrepl.core-test :refer [def-repl-test repl-server-fixture project-base-dir]]
@@ -37,16 +36,3 @@
     (is (= op-names (set (keys ops))))
     (is (every? seq (map (comp :doc val) ops)))
     (is (= {:current-ns "user"} aux))))
-
-;; quite misplaced, but this'll do for now...
-(def-repl-test update-op-docs
-  (let [describe-response (nrepl/combine-responses
-                           (nrepl/message timeout-client
-                                          {:op "describe" :verbose? "true"}))]
-    (spit (io/file project-base-dir "doc" "modules" "ROOT" "pages" "ops.adoc")
-          (str
-           "////\n"
-           "This file is _generated_ by " #'update-op-docs
-           "\n   *Do not edit!*\n"
-           "////\n"
-           (#'middleware/describe-adoc describe-response)))))
