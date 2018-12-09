@@ -212,11 +212,6 @@
   [middleware]
   (apply nrepl.server/default-handler (->mw-list middleware)))
 
-(defn- url-scheme [transport]
-  (if (= transport #'transport/tty)
-    "telnet"
-    "nrepl"))
-
 (defn- ->int [x]
   (cond
     (nil? x) x
@@ -269,7 +264,8 @@
             middleware (sanitize-middleware-option (:middleware options))
             handler (some->> (:handler options) (require-and-resolve :handler))
             handler (or handler (build-handler middleware))
-            transport (some->> (:transport options) (require-and-resolve :transport))
+            transport (or (some->> (:transport options) (require-and-resolve :transport))
+                          #'transport/bencode)
             greeting-fn (if (= transport #'transport/tty) #'transport/tty-greeting)
             server (start-server :port port :bind bind :handler handler
                                  :transport-fn transport :greeting-fn greeting-fn)]
@@ -284,7 +280,7 @@
           ;; The format here is important, as some tools (e.g. CIDER) parse the string
           ;; to extract from it the host and the port to connect to
           (println (format "nREPL server started on port %d on host %s - %s://%s:%d"
-                           port host (url-scheme transport) host port))
+                           port host (transport/uri-scheme transport) host port))
           ;; Many clients look for this file to infer the port to connect to
           (let [port-file (io/file ".nrepl-port")]
             (.deleteOnExit port-file)

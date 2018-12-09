@@ -158,6 +158,19 @@
                              \newline
                              "user=> ")}))
 
+(defmulti uri-scheme
+  "Show uri scheme associated with a transport var"
+  identity)
+
+(defmethod uri-scheme #'bencode [_] "nrepl")
+
+(defmethod uri-scheme #'tty [_] "telnet")
+
+(defmethod uri-scheme :default
+  [transport]
+  (printf "WARNING: No uri scheme associated with transport %s\n" transport)
+  "unknown")
+
 (deftype QueueTransport [^BlockingQueue in ^BlockingQueue out]
   nrepl.transport.Transport
   (send [this msg] (.put out msg) this)
