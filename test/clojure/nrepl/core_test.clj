@@ -15,6 +15,7 @@
                                  response-values
                                  url-connect]]
    [nrepl.ack :as ack]
+   [nrepl.core-test.responses :as responses]
    [nrepl.server :as server]
    [nrepl.transport :as transport])
   (:import
@@ -574,33 +575,29 @@
     (is (= #{"done"} (-> session (message {:op :interrupt}) first :status set)))
     (is (= #{"done" "interrupted"} (-> resp combine-responses :status)))))
 
-(def logger-atom (atom []))
+(def logger-atom (atom #{}))
 
 (defn custom-logger
-  [tag ba]
-  (swap! logger-atom concat ba))
+  [channel data]
+  (if (contains? #{:encoded-in :encoded-out} channel)
+    (swap! logger-atom conj {channel (str/join data)})
+    (swap! logger-atom conj {channel data})))
 
 (deftest logger
   (testing "verbose server config and logger op"
-    (let [server (server/start-server :transport-fn *transport-fn*
+    (let [transport-fn *transport-fn*
+          server (server/start-server :transport-fn transport-fn
                                       :verbose true)
           transport (connect :port (:port server)
-                             :transport-fn *transport-fn*)
+                             :transport-fn transport-fn)
           client (client transport Long/MAX_VALUE)]
-      (reset! logger-atom nil)
-      (let [response (message client {:op :logger :logger `custom-logger})
-            id (apply str (map byte (-> response first :id)))
-            expected ((merge {#'transport/bencode
-                              "1005058105100515458"}
-                             (when-require 'fastlane.core
-                                           {(find-var 'fastlane.core/transit+msgpack)
-                                            "-125-94105100-38036"
-
-                                            (find-var 'fastlane.core/transit+json)
-                                            "91349432344434105100344434"
-
-                                            (find-var 'fastlane.core/transit+json-verbose)
-                                            "12334105100345834"}))
-                      *transport-fn*)]
-        (Thread/sleep 10)
-        (is (.startsWith (apply str (map byte @logger-atom)) expected))))))
+      (message client {:op :logger :logger `custom-logger})
+      (Thread/sleep 100)
+      (reset! logger-atom #{})
+      (let [response (message client {:op :eval :code "(+ 2 5)" :id "102" :session "123456"})
+            expected ({#'transport/bencode
+                       responses/bencode-logs}
+                      transport-fn)]
+        (Thread/sleep 100)
+        (when (some? expected)
+          (is (= expected  @logger-atom)))))))

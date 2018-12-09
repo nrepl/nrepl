@@ -27,7 +27,7 @@
                                     :password :env/clojars_password
                                     :sign-releases false}]]
 
-  :profiles {:fastlane {:dependencies [[nrepl/fastlane "0.1.0-SNAPSHOT"]]}
+  :profiles {:fastlane {:dependencies [[nrepl/fastlane "0.1.0"]]}
              ;; Clojure versions matrix
              :provided {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}

@@ -45,9 +45,32 @@ $ lein with-profile 1.9 test
 
 You can start the server with the verbose flag set to true, there's
 a default logger that logs the input and output messages with `log/info`,
-but a op `logger` is available so you can set the field `logger` to some
+but an op `logger` is available so you can set the field `logger` to some
 namespaced symbol representing a function.
 
-See more at test `logger` at `nrepl.core-test`.
+This function receives two arguments, the first one is which channel
+is producing the log and the second is the data itself.
+
+The channel can have the values of `:encoded-in` or `:encoded-out` (which is
+a byte array with the raw data incoming or outcoming to the server) and
+`:encoded-out` or `:decoded-out` (which is the request map, the message received
+or which is about to be sent to the client).
+See more at test `nrepl.core-test.logger`.
 
 From command line, start nREPL server with `--verbose`.
+
+Here is some output using the default logger with the bencode transport:
+
+[source,clojure]
+----
+user=> (- 2 3)
+INFO:  :encoded-in (100 52 58 99 111 100 101 55 58 40 45 32 50 32 51 41 50 58 105 100 51 54 58 50 56 51 101 99 101 51 102 45 49 98 57 53 45 52 50 57 50 45 98 48 102 51 45 101 56 53 55 52 48 102 55 49 100 100 101 50 58 111 112 52 58 101 118 97 108 55 58 115 101 115 115 105 111 110 51 54 58 52 57 99 102 98 51 101 57 45 101 98 101 97 45 52 53 54 52 45 97 57 101 97 45 56 52 101 50 98 55 48 97 56 52 102 53 101)
+INFO:  :decoded-in {:code (- 2 3), :id 283ece3f-1b95-4292-b0f3-e85740f71dde, :op eval, :session 49cfb3e9-ebea-4564-a9ea-84e2b70a84f5}
+INFO:  :decoded-out {:id 283ece3f-1b95-4292-b0f3-e85740f71dde, :session 49cfb3e9-ebea-4564-a9ea-84e2b70a84f5, :value -1, :ns user}
+INFO:  :decoded-out {:id 283ece3f-1b95-4292-b0f3-e85740f71dde, :session 49cfb3e9-ebea-4564-a9ea-84e2b70a84f5, :status #{:done}}
+INFO:  :encoded-out (100 50 58 105 100 51 54 58 50 56 51 101 99 101 51 102 45 49 98 57 53 45 52 50 57 50 45 98 48 102 51 45 101 56 53 55 52 48 102 55 49 100 100 101 50 58 110 115 52 58 117 115 101 114 55 58 115 101 115 115 105 111 110 51 54 58 52 57 99 102 98 51 101 57 45 101 98 101 97 45 52 53 54 52 45 97 57 101 97 45 56 52 101 50 98 55 48 97 56 52 102 53 53 58 118 97 108 117 101 50 58 45 49 101)
+INFO:  :encoded-out (100 50 58 105 100 51 54 58 50 56 51 101 99 101 51 102 45 49 98 57 53 45 52 50 57 50 45 98 48 102 51 45 101 56 53 55 52 48 102 55 49 100 100 101 55 58 115 101 115 115 105 111 110 51 54 58 52 57 99 102 98 51 101 57 45 101 98 101 97 45 52 53 54 52 45 97 57 101 97 45 56 52 101 50 98 55 48 97 56 52 102 53 54 58 115 116 97 116 117 115 108 52 58 100 111 110 101 101 101)
+-1
+;; It will probably not be this perfect because the print to STDOUT happens async,
+;; so result and other prints could be tangled together
+----

@@ -8,6 +8,7 @@
    [nrepl.middleware :as middleware]
    nrepl.middleware.interruptible-eval
    nrepl.middleware.load-file
+   nrepl.middleware.message-logger
    nrepl.middleware.session
    [nrepl.misc :refer [log response-for returning]]
    [nrepl.transport :as t])
@@ -28,19 +29,23 @@
         nil))))
 
 (defn handle*
-  [msg handler transport]
+  [msg handler transport server-opts]
   (try
-    (handler (assoc msg :transport transport))
+    (handler (assoc msg
+                    :transport transport
+                    :server-opts server-opts))
     (catch Throwable t
       (log t "Unhandled REPL handler exception processing message" msg))))
 
 (defn handle
   "Handles requests received via [transport] using [handler].
    Returns nil when [recv] returns nil for the given transport."
-  [handler transport]
-  (when-let [msg (t/recv transport)]
-    (future (handle* msg handler transport))
-    (recur handler transport)))
+  ([handler transport]
+   (handle handler transport {}))
+  ([handler transport server-opts]
+   (when-let [msg (t/recv transport)]
+     (future (handle* msg handler transport server-opts))
+     (recur handler transport server-opts))))
 
 (defn- safe-close
   [^java.io.Closeable x]
@@ -50,8 +55,8 @@
       (log e "Failed to close " x))))
 
 (defn- default-logger
-  [tag ba]
-  (log/info tag (map byte ba)))
+  [channel ba]
+  (log/info channel (map byte ba)))
 
 (defn- create-pipes
   "Create intermediate streams using pipes so you can sniff at input
@@ -70,7 +75,7 @@
                 n (.read in buf)]
             (cond
               (pos? n) (let [ba (byte-array (take n buf))]
-                         ((or @logger default-logger) :in ba)
+                         ((or @logger default-logger) :encoded-in ba)
                          (.write pin-out ba)
                          (.flush pin-out)
                          (recur))
@@ -86,7 +91,7 @@
                 n (.read pout-in buf)]
             (cond
               (pos? n) (let [ba (byte-array (take n buf))]
-                         ((or @logger default-logger) :out ba)
+                         ((or @logger default-logger) :encoded-out ba)
                          (.write out ba)
                          (.flush out)
                          (recur))
@@ -110,7 +115,7 @@
                 (try
                   (swap! open-transports conj transport)
                   (when greeting (greeting transport))
-                  (handle handler transport)
+                  (handle handler transport opts)
                   (finally
                     (swap! open-transports disj transport)
                     (safe-close transport)))))
@@ -151,7 +156,8 @@
    #'nrepl.middleware.interruptible-eval/interruptible-eval
    #'nrepl.middleware.load-file/wrap-load-file
    #'nrepl.middleware.session/add-stdin
-   #'nrepl.middleware.session/session])
+   #'nrepl.middleware.session/session
+   #'nrepl.middleware.message-logger/logger])
 
 (defn default-handler
   "A default handler supporting interruptible evaluation, stdin, sessions, and

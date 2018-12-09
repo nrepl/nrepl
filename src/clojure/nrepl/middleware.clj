@@ -122,7 +122,7 @@
                              (-> (descriptor m)
                                  ;; only conj'ing m here to support direct reference to
                                  ;; middleware dependencies in :expects and :requires,
-                                 ;; e.g. interruptable-eval's dep on
+                                 ;; e.g. interruptible-eval's dep on
                                  ;; nrepl.middleware.pr-values/pr-values
                                  (update-in [:handles] (comp set #(conj % m) keys))
                                  (assoc :implemented-by m))))]
