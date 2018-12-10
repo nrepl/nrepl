@@ -2,6 +2,8 @@
 
 ### master (unreleased)
 
+### 0.5.2 (2018-12-10)
+
 #### Bugs fixed
 
 * [#90](https://github.com/nrepl/nREPL/issues/90): Doesn't display properly URLs if using a 3rd-party transport.
