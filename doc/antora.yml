@@ -1,5 +1,5 @@
 name: nrepl
 title: nREPL
-version: 0.5.2
+version: master
 nav:
 - modules/ROOT/nav.adoc
