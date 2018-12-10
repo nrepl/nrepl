@@ -14,7 +14,7 @@
                            (swap! refs-to-ids dissoc ref)
                            (swap! ids-to-refs dissoc id)))
                        (recur))
-              "soft-elisions-collector"))
+                     "soft-elisions-collector"))
     {:put (fn [x]
             (let [x (if (nil? x) NULL x)
                   id (keyword (gensym))

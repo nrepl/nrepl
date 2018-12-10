@@ -191,7 +191,7 @@
           "clone" (register-session msg)
           "close" (close-session msg)
           "ls-sessions" (t/send transport (response-for msg :status :done
-                                            :sessions (or (keys @sessions) [])))
+                                                        :sessions (or (keys @sessions) [])))
           (h msg))))))
 
 (set-descriptor! #'session

@@ -4,10 +4,10 @@
   Initially developed for unrepl."
   (:refer-clojure :exclude [pr pr-str])
   (:require
-    [clojure.core :as core]
-    [clojure.string :as str]
-    [clojure.edn :as edn]
-    [clojure.main :as main]))
+   [clojure.core :as core]
+   [clojure.string :as str]
+   [clojure.edn :as edn]
+   [clojure.main :as main]))
 
 ; even with limits on breadth and depth of printing, we can easily get big values:
 ; the biggest tree would have fitting in these lilites would have breadth-limit^depth-limit
@@ -36,7 +36,7 @@
 (defn ensure-defaults [bindings]
   (let [bindings (merge-with #(or %1 %2) bindings defaults)]
     (assoc bindings #'*print-budget*
-      (long (min (* 1N (bindings #'*print-level*) (bindings #'*print-length*)) Long/MAX_VALUE)))))
+           (long (min (* 1N (bindings #'*print-level*) (bindings #'*print-length*)) Long/MAX_VALUE)))))
 
 (defprotocol MachinePrintable
   (-print-on [x write rem-depth]))
@@ -281,7 +281,7 @@
         m {:cause (.getLocalizedMessage root)
            :via (vec (map base via))
            :trace (vec (map StackTraceElement->vec'
-                            (.getStackTrace ^Throwable (or root o))))}
+                            (.getStackTrace (or root ^Throwable o))))}
         data (ex-data root)]
     (if data
       (assoc m :data data)
