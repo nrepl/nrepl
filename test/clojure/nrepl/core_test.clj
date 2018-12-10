@@ -265,11 +265,11 @@
 
 ;; ;; expected: (= {:value [nil], :out "5\n"} (-> (map read-response-value (repl-eval client "(println 5)")) combine-responses (select-keys [:value :out])))
 ;; ;;   actual: java.net.SocketException: The transport's socket appears to have lost its connection to the nREPL server
-;; (def-repl-test separate-value-from-*out*
-;;   (is (= {:value [nil] :out "5\n"}
-;;          (-> (map read-response-value (repl-eval client "(println 5)"))
-;;              combine-responses
-;;              (select-keys [:value :out])))))
+(def-repl-test separate-value-from-*out*
+  (is (= {:value [nil] :out "5\n"}
+         (-> (map read-response-value (repl-eval client "(println 5)"))
+             combine-responses
+             (select-keys [:value :out])))))
 
 ;; expected: (= "5\n:foo\n" (-> (repl-eval client "(println 5)(println :foo)") combine-responses :out))
 ;;   actual: java.net.SocketException: The transport's socket appears to have lost its connection to the nREPL server

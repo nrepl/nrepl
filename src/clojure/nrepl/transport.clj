@@ -95,9 +95,10 @@
   [^Socket s & body]
   `(try
      ~@body
-     (catch java.lang.NullPointerException e#
-       ;;(throw (SocketException. "The transport's socket doesn't appears to have have received any data"))
+     (catch RuntimeException e#
        (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server")))
+     (catch java.lang.NullPointerException e#
+        (throw (SocketException. "The transport's socket doesn't appears to have have received any data")))
      (catch EOFException e#
        (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server")))
      (catch Throwable e#
@@ -139,11 +140,7 @@
    (let [in (java.io.PushbackReader. (io/reader in))
          out (io/writer out)]
      (fn-transport
-      #(rethrow-on-disconnection s (try
-                                     (do
-                                       (edn/read in))
-                                     (catch RuntimeException e
-                                       (throw (.getCause e)))))
+      #(rethrow-on-disconnection s (edn/read in))
       #(rethrow-on-disconnection s
                                  (locking out
                                    (doto out
