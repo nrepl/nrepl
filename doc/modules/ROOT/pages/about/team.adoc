@@ -9,6 +9,7 @@ does a lot of the groundwork on major new features.
 * link:https://github.com/bbatsov[Bozhidar Batsov] (maintainer)
 * link:https://github.com/SevereOverfl0w[Dominic Monroe]
 * link:https://github.com/arrdem[Reid McKenzie]
+* link:https://github.com/cgrand[Christophe Grand]
 
 == CIDER Alumni
 
