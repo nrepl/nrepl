@@ -1,5 +1,6 @@
 (ns nrepl.impl.docs
   (:require
+   [clojure.tools.cli :as cli]
    [clojure.java.io :as io]
    [clojure.string :as string]
    [nrepl.core :as nrepl]
@@ -8,6 +9,36 @@
    [nrepl.version :as version])
   (:import
    (java.io File)))
+
+(def cli-options
+  [["-f" "--file FILE" "File to write output into (defaults to standard output)"
+    :default *out*]
+   ["-h" "--help" "Show this help message"]
+   ["-l" "--lein"]
+   ["-o" "--output OUT" "One of: raw, adoc, md" :default "adoc"
+    :validate [#(contains? #{"raw" "adoc" "md"} %)]]])
+;; io/file (File. (System/getProperty "nrepl.basedir" ".")) "doc" "modules" "ROOT" "pages" "ops.adoc")
+
+(defn exit [status msg]
+  (println msg)
+  (System/exit status))
+
+(defn usage [options-summary]
+  (->> ["Regenerate ops documentation"
+        ""
+        "Usage: lein -m +maint run nrepl.impl.docs [options]"
+        ""
+        "Options:"
+        options-summary]
+       (string/join \newline)))
+
+(defn error-msg [errors]
+  (str "The following errors occurred while parsing your command:\n\n"
+       (string/join \newline errors)))
+
+(defn exit [status msg]
+  (println msg)
+  (System/exit status))
 
 ;; oh, kill me now
 (defn- markdown-escape
@@ -29,15 +60,15 @@ use in e.g. wiki pages, github, etc."
 <small>generated from a verbose 'describe' response (nREPL v"
          (:version-string version/version)
          ")</small>\n\n## Operations"
-         (for [[op {:keys [doc optional requires returns]}] ops]
+         (for [[op {:keys [doc optional requires returns]}] (sort ops)]
            (str "\n\n### `" (pr-str op) "`\n\n"
                 (markdown-escape doc) "\n\n"
                 "###### Required parameters\n\n"
-                (message-slot-markdown requires)
+                (message-slot-markdown (sort requires))
                 "\n\n###### Optional parameters\n\n"
-                (message-slot-markdown optional)
+                (message-slot-markdown (sort optional))
                 "\n\n###### Returns\n\n"
-                (message-slot-markdown returns)))))
+                (message-slot-markdown (sort returns))))))
 
 ;; because `` is expected to work, this only escapes certain characters. As opposed to using + to properly escape everything.
 (defn- adoc-escape
@@ -74,25 +105,42 @@ use in e.g. wiki pages, github, etc."
                 (message-slot-adoc (sort returns))
                 "\n"))))
 
+(declare -main)
+
+(defn- format-response [format resp]
+  (cond (= format "raw") (pr-str resp)
+        (= format "md") (str "<!-- This file is *generated* by " #'-main
+                             "\n   **Do not edit!** -->\n"
+                             (describe-markdown resp))
+        (= format "adoc") (str "////\n"
+                               "This file is _generated_ by " #'-main
+                               "\n   *Do not edit!*\n"
+                               "////\n"
+                               (describe-adoc resp))))
+
 (defn -main
   "Regenerate the ops documentation in ops.adoc"
   [& args]
-  (let [project-base-dir (File. (System/getProperty "nrepl.basedir" "."))
-        ops-adoc (io/file project-base-dir "doc" "modules" "ROOT" "pages" "ops.adoc")]
-    (spit ops-adoc
-          (str
-           "////\n"
-           "This file is _generated_ by " #'-main
-           "\n   *Do not edit!*\n"
-           "////\n"
-           (let [[local remote] (transport/piped-transports)
-                 handler (server/default-handler)
-                 msg {:op "describe"
-                      :verbose? "true"
-                      :id "1"}]
-             (handler (assoc msg :transport remote))
-             (-> (nrepl/response-seq local 500)
-                 first
-                 clojure.walk/keywordize-keys
-                 describe-adoc))))
-    (println (str "Regenerated " (.getPath ops-adoc)))))
+  (let [{:keys [options arguments errors summary]} (cli/parse-opts args cli-options)]
+    (cond
+      (:help options) (exit 0 (usage summary))
+      errors (exit 1 (error-msg errors))
+      :else
+      (let [file (if (:lein options)
+                   (io/file (File. (System/getProperty "nrepl.basedir" "."))
+                            "doc" "modules" "ROOT" "pages" "ops.adoc")
+                   (File. (:file options)))
+            format (:output options)
+            resp (let [[local remote] (transport/piped-transports)
+                       handler (server/default-handler)
+                       msg {:op "describe"
+                            :verbose? "true"
+                            :id "1"}]
+                   (handler (assoc msg :transport remote))
+                   (-> (nrepl/response-seq local 500)
+                       first
+                       clojure.walk/keywordize-keys))
+            docs (format-response format resp)]
+        (if (= *out* file) (println docs)
+            (do (spit file docs)
+                (println (str "Regenerated " (.getPath file)))))))))
