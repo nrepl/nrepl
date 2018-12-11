@@ -21,16 +21,6 @@
   "Function returning the evaluation of its argument."
   nil)
 
-(defmacro ^{:private true} def-dynamic-when-not-resolved
-  "Define a dynamic var if it can't be resolved."
-  [sym value]
-  (when-not (resolve sym)
-    `(def ~(vary-meta sym assoc :dynamic true) ~value)))
-
-;; Needed for backward compatibility with Clojure 1.7 and 1.8.
-;; See https://github.com/nrepl/nrepl/issues/33 for details.
-(def-dynamic-when-not-resolved *print-namespace-maps* nil)
-
 (defn- capture-thread-bindings
   "Capture thread bindings, excluding nrepl implementation vars."
   []
@@ -98,8 +88,8 @@
                       (set! *2 (@bindings #'*2))
                       (set! *3 (@bindings #'*3))
                       (set! *e (@bindings #'*e))
-                      (when (resolve '*print-namespace-maps*)
-                        (set! *print-namespace-maps* (@bindings #'*print-namespace-maps*))))
+                      (when-some [v (resolve '*print-namespace-maps*)]
+                        (var-set v (@bindings v))))
            :read (if (string? code)
                    (let [reader (source-logging-pushback-reader code line column)]
                      #(read {:read-cond :allow :eof %2} reader))
