@@ -97,8 +97,8 @@ the handled `:op` and a value that contains any of four entries:
 The values in the `:handles` map are used to support the `"describe"` operation,
 which provides "a machine- and human-readable directory and documentation for
 the operations supported by an nREPL endpoint" (see
-`nrepl.impl.docs/-main` and the results of
-`"describe"` (via `lein with-profile +maint run nrepl.impl.docs`) <<ops.adoc,here>>).
+`nrepl.impl.docs/generate-ops-info` and the results of
+`lein with-profile +maint run nrepl.impl.docs` <<ops.adoc,here>>).
 
 NOTE: There's also `lein with-profile +maint run nrepl.impl.docs --output md` if you'd like to
 generate an ops listing in Markdown format.

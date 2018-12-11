@@ -12,7 +12,7 @@
 
 (def cli-options
   [["-f" "--file FILE" "File to write output into (defaults to standard output)"
-    :default *out*]
+    :parse-fn #(File. %) :default *out*]
    ["-h" "--help" "Show this help message"]
    ["-l" "--lein"]
    ["-o" "--output OUT" "One of: raw, adoc, md" :default "adoc"
@@ -24,7 +24,7 @@
   (System/exit status))
 
 (defn usage [options-summary]
-  (->> ["Regenerate ops documentation"
+  (->> ["Regenerate and output the ops documentation to the specified destination in the specified format."
         ""
         "Usage: lein -m +maint run nrepl.impl.docs [options]"
         ""
@@ -118,8 +118,20 @@ use in e.g. wiki pages, github, etc."
                                "////\n"
                                (describe-adoc resp))))
 
+(defn generate-ops-info []
+  (let [[local remote] (transport/piped-transports)
+        handler (server/default-handler)
+        msg {:op "describe"
+             :verbose? "true"
+             :id "1"}]
+    (handler (assoc msg :transport remote))
+    (-> (nrepl/response-seq local 500)
+        first
+        clojure.walk/keywordize-keys)))
+
 (defn -main
-  "Regenerate the ops documentation in ops.adoc"
+  "Regenerate and output the ops documentation to the specified destination in
+  the specified format."
   [& args]
   (let [{:keys [options arguments errors summary]} (cli/parse-opts args cli-options)]
     (cond
@@ -129,17 +141,9 @@ use in e.g. wiki pages, github, etc."
       (let [file (if (:lein options)
                    (io/file (File. (System/getProperty "nrepl.basedir" "."))
                             "doc" "modules" "ROOT" "pages" "ops.adoc")
-                   (File. (:file options)))
+                   (:file options))
             format (:output options)
-            resp (let [[local remote] (transport/piped-transports)
-                       handler (server/default-handler)
-                       msg {:op "describe"
-                            :verbose? "true"
-                            :id "1"}]
-                   (handler (assoc msg :transport remote))
-                   (-> (nrepl/response-seq local 500)
-                       first
-                       clojure.walk/keywordize-keys))
+            resp (generate-ops-info)
             docs (format-response format resp)]
         (if (= *out* file) (println docs)
             (do (spit file docs)
