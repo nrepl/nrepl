@@ -11,7 +11,8 @@
   (:import
    clojure.lang.LineNumberingPushbackReader
    [java.io PrintWriter Reader Writer]
-   java.util.concurrent.LinkedBlockingQueue))
+   java.util.concurrent.atomic.AtomicLong
+   [java.util.concurrent LinkedBlockingQueue BlockingQueue Executor SynchronousQueue ThreadFactory ThreadPoolExecutor TimeUnit]))
 
 (def ^{:private true} sessions (atom {}))
 
@@ -23,6 +24,40 @@
 
 (def ^{:dynamic true :private true} *out-limit* 1024)
 (def ^{:dynamic true :private true} *skipping-eol* false)
+
+(defn- configure-thread-factory
+  "Returns a new ThreadFactory for the given session.  This implementation
+   generates daemon threads, with names that include the session id."
+  []
+  (let [session-thread-counter (AtomicLong. 0)
+        ;; Create a constant dcl for use across evaluations. This allows
+        ;; modifications to the classloader to persist.
+        cl (clojure.lang.DynamicClassLoader.
+            (.getContextClassLoader (Thread/currentThread)))]
+    (reify ThreadFactory
+      (newThread [_ runnable]
+        (doto (Thread. runnable
+                       (format "nREPL-worker-%s" (.getAndIncrement session-thread-counter)))
+          (.setDaemon true)
+          (.setContextClassLoader cl))))))
+
+(defn- configure-executor
+  "Returns a ThreadPoolExecutor, configured (by default) to
+   have 1 core thread, use an unbounded queue, create only daemon threads,
+   and allow unused threads to expire after 30s."
+  [& {:keys [keep-alive queue thread-factory]
+      :or {keep-alive 30000
+           queue (SynchronousQueue.)}}]
+  (let [^ThreadFactory thread-factory (or thread-factory (configure-thread-factory))]
+    (ThreadPoolExecutor. 1 Integer/MAX_VALUE
+                         (long 30000) TimeUnit/MILLISECONDS
+                         ^BlockingQueue queue
+                         thread-factory)))
+
+(def default-executor (delay (configure-executor)))
+
+(defn default-exec [id ^Runnable thunk ^Runnable ack]
+  (.submit ^java.util.concurrent.ExecutorService @default-executor ^Callable #(do (.run thunk) (.run ack))))
 
 (defn- session-out
   "Returns a PrintWriter suitable for binding as *out* or *err*.  All of
@@ -137,14 +172,51 @@
          (atom (merge baseline-bindings (dissoc (get-thread-bindings) #'*agent*))
                :meta {:id id
                       :stdin-reader stdin-reader
-                      :input-queue input-queue}))))))
+                      :input-queue input-queue
+                      :exec default-exec}))))))
+
+(defn session-exec [id]
+  (let [cl (clojure.lang.DynamicClassLoader.
+            (.getContextClassLoader (Thread/currentThread)))
+        queue (LinkedBlockingQueue.)
+        running (atom nil)
+        thread (atom nil)
+        main-loop #(let [[id ^Runnable r ^Runnable ack] (.take queue)]
+                     (reset! running id)
+                     (when (try
+                             (.run r)
+                             (compare-and-set! running id nil)
+                             (finally
+                               (compare-and-set! running id nil)))
+                       (some-> ack .run)
+                       (recur)))
+        spawn-thread #(doto (Thread. main-loop (str "nRepl-session-" id))
+                        (.setDaemon true)
+                        (.setContextClassLoader cl)
+                        .start)]
+    (reset! thread (spawn-thread))
+    {:interrupt (fn [exec-id] ; nil means interrupt whatever is running
+                  ; returns :idle, interrupted id or nil
+                  (let [current @running]
+                    (cond
+                      (nil? current) :idle
+                      (and (or (nil? exec-id) (= current exec-id)) ; cas only checks identity, so check equality first 
+                        (compare-and-set! running current nil))
+                      (do
+                        (doto ^Thread @thread .interrupt .stop)
+                        (reset! thread (spawn-thread))
+                        current))))
+     :close #(.interrupt ^Thread @thread)
+     :exec (fn [exec-id r ack]
+             (.put queue [exec-id r ack]))}))
 
 (defn- register-session
   "Registers a new session containing the baseline bindings contained in the
    given message's :session."
   [{:keys [session transport] :as msg}]
   (let [session (create-session transport @session)
-        id (-> session meta :id)]
+        {:keys [id]} (meta session)]
+    (alter-meta! session into (session-exec id))
     (swap! sessions assoc id session)
     (t/send transport (response-for msg :status :done :new-session id))))
 
