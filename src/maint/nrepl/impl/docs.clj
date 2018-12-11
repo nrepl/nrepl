@@ -19,11 +19,11 @@
     :validate [#(contains? #{"raw" "adoc" "md"} %)]]])
 ;; io/file (File. (System/getProperty "nrepl.basedir" ".")) "doc" "modules" "ROOT" "pages" "ops.adoc")
 
-(defn exit [status msg]
+(defn- exit [status msg]
   (println msg)
   (System/exit status))
 
-(defn usage [options-summary]
+(defn- usage [options-summary]
   (->> ["Regenerate and output the ops documentation to the specified destination in the specified format."
         ""
         "Usage: lein -m +maint run nrepl.impl.docs [options]"
@@ -32,13 +32,9 @@
         options-summary]
        (string/join \newline)))
 
-(defn error-msg [errors]
+(defn- error-msg [errors]
   (str "The following errors occurred while parsing your command:\n\n"
        (string/join \newline errors)))
-
-(defn exit [status msg]
-  (println msg)
-  (System/exit status))
 
 ;; oh, kill me now
 (defn- markdown-escape
