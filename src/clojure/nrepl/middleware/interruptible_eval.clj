@@ -135,6 +135,8 @@
 
 ;; A little mini-agent implementation. Needed because agents cannot be used to host REPL
 ;; evaluation: http://dev.clojure.org/jira/browse/NREPL-17
+
+
 (defn- prep-session
   [session]
   (locking session
@@ -183,11 +185,11 @@
         "eval"
         (if-not (:code msg)
           (t/send transport (response-for msg :status #{:error :no-code :done}))
-          (exec id 
-            #(binding [*msg* msg]
-               (evaluate @session msg))
-            #(t/send transport (response-for msg :status :done))))
-        
+          (exec id
+                #(binding [*msg* msg]
+                   (evaluate @session msg))
+                #(t/send transport (response-for msg :status :done))))
+
         "interrupt"
         (let [interrupted-id (when interrupt (interrupt interrupt-id))]
           (case interrupted-id
@@ -200,7 +202,7 @@
                                  :id interrupted-id
                                  :session session-id})
               (t/send transport (response-for msg :status #{:done})))))
-        
+
         (h msg)))))
 
 (set-descriptor! #'interruptible-eval
