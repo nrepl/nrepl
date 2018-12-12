@@ -10,8 +10,7 @@
    clojure.lang.LineNumberingPushbackReader
    [java.io FilterReader LineNumberReader StringReader Writer]
    java.lang.reflect.Field
-   [java.util.concurrent BlockingQueue Executor SynchronousQueue ThreadFactory ThreadPoolExecutor TimeUnit]
-   java.util.concurrent.atomic.AtomicLong))
+   java.util.concurrent.Executor))
 
 (def ^:dynamic *msg*
   "The message currently being evaluated."
@@ -130,49 +129,6 @@
             (.flush ^Writer out)
             (.flush ^Writer err)))))
     (maybe-restore-original-ns @bindings)))
-
-
-
-;; A little mini-agent implementation. Needed because agents cannot be used to host REPL
-;; evaluation: http://dev.clojure.org/jira/browse/NREPL-17
-
-
-(defn- prep-session
-  [session]
-  (locking session
-    (returning session
-               (when-not (-> session meta :queue)
-                 (alter-meta! session assoc :queue (atom clojure.lang.PersistentQueue/EMPTY))))))
-
-(declare run-next)
-(defn- run-next*
-  [session ^Executor executor]
-  (let [qa (-> session meta :queue)]
-    (loop []
-      (let [q @qa
-            qn (pop q)]
-        (if-not (compare-and-set! qa q qn)
-          (recur)
-          (when (seq qn)
-            (.execute executor (run-next session executor (peek qn)))))))))
-
-(defn- run-next
-  [session executor f]
-  #(try
-     (f)
-     (finally
-       (run-next* session executor))))
-
-(defn queue-eval
-  "Queues the function for the given session."
-  [session ^Executor executor f]
-  (let [qa (-> session prep-session meta :queue)]
-    (loop []
-      (let [q @qa]
-        (if-not (compare-and-set! qa q (conj q f))
-          (recur)
-          (when (empty? q)
-            (.execute executor (run-next session executor f))))))))
 
 (defn interruptible-eval
   "Evaluation middleware that supports interrupts.  Returns a handler that supports
