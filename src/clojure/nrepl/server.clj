@@ -130,6 +130,7 @@
         make-ss #(doto (ServerSocket.)
                    (.setReuseAddress true)
                    (.bind %))
+        transport-fn (or transport-fn t/bencode)
         ;; We fallback to 127.0.0.1 instead of to localhost to avoid
         ;; a dependency on the order of ipv4 and ipv6 records for
         ;; localhost in /etc/hosts
@@ -138,7 +139,7 @@
         server (Server. ss
                         (.getLocalPort ss)
                         (atom #{})
-                        (or transport-fn t/bencode)
+                        transport-fn
                         greeting-fn
                         (or handler (default-handler)))]
     (future (accept-connection server))
