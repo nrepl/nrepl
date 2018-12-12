@@ -2,6 +2,12 @@
 
 ### master (unreleased)
 
+### 0.5.3 (2018-12-12)
+
+#### Bugs fixed
+
+* Make sure we never send a nil transport to via `send-ack`.
+
 ### 0.5.2 (2018-12-10)
 
 #### Bugs fixed
