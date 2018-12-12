@@ -3,6 +3,7 @@
   {:author "Chas Emerick"}
   (:require
    [clojure.java.io :as io]
+   [clojure.string :as str]
    [nrepl.ack :as ack]
    [nrepl.logging :as log]
    [nrepl.middleware :as middleware]
@@ -54,20 +55,28 @@
     (catch java.io.IOException e
       (log e "Failed to close " x))))
 
-(defn- default-logger
+(defn- default-bytes-logger
   [channel ba]
   (log/info channel (map byte ba)))
+
+(defn- default-string-logger
+  [channel ba]
+  (log/info channel (str/join (map char ba))))
 
 (defn- create-pipes
   "Create intermediate streams using pipes so you can sniff at input
   and output socket streams."
-  [^Socket s logger]
+  [^Socket s logger {:keys [default-logger-behaviour]}]
   (let [in (io/input-stream s)
         out (io/output-stream s)
         pin-out (PipedOutputStream.)
         pin-in (PipedInputStream. pin-out)
         pout-out (PipedOutputStream.)
-        pout-in (PipedInputStream. pout-out)]
+        pout-in (PipedInputStream. pout-out)
+        default-logger (case default-logger-behaviour
+                         :silenced (constantly nil)
+                         :encoded-as-string default-string-logger
+                         :encoded-as-bytes default-bytes-logger)]
     (future
       (try
         (loop []
@@ -109,7 +118,7 @@
     (let [sock (.accept server-socket)
           {:keys [verbose logger]} opts]
       (future (let [transport (if verbose
-                                (let [[in out] (create-pipes sock logger)]
+                                (let [[in out] (create-pipes sock logger opts)]
                                   (transport in out sock))
                                 (transport sock))]
                 (try
@@ -197,7 +206,7 @@
    * :ack-port — if specified, the port of an already-running server
        that will be connected to inform of the new server's port.
        Useful only by Clojure tooling implementations.
-  * :greeting-fn - called after a client connects, receives a nrepl.transport/Transport.
+   * :greeting-fn - called after a client connects, receives a nrepl.transport/Transport.
        Usually, Clojure-aware client-side tooling would provide this greeting upon connecting
        to the server, but telnet et al. isn't that. See `nrepl.transport/tty-greeting`
        for an example of such a function.
@@ -205,11 +214,15 @@
    * :verbose — if specified, the socket input and outputs will be
        logged by the `default-logger` or a client function set by the
        `logger-op`.
+   * :default-logger-behaviour — can be `:silenced`, meaning that it will not
+       log anything, `:encoded-as-bytes` logs the encoded data as bytes and
+       `:encoded-as-string` logs the encoded data as string. If not specified,
+       `:encoded-as-string` will be used.
    Returns a (record) handle to the server that is started, which may be stopped
    either via `stop-server`, (.close server), or automatically via `with-open`.
    The port that the server is open on is available in the :port slot of the
    server map (useful if the :port option is 0 or was left unspecified."
-  [& {:keys [port bind transport-fn handler ack-port greeting-fn verbose]}]
+  [& {:keys [port bind transport-fn handler ack-port greeting-fn verbose default-logger-behaviour]}]
   (let [port (or port 0)
         addr (fn [^String bind ^Integer port] (InetSocketAddress. bind port))
         make-ss #(doto (ServerSocket.)
@@ -222,7 +235,9 @@
         ss (make-ss (addr bind port))
         server-opts {:verbose verbose
                      :logger (when verbose
-                               (atom nil))}
+                               (atom nil))
+                     :default-logger-behaviour (or default-logger-behaviour
+                                                   :encoded-as-string)}
         server-handler (if verbose
                          ((partial logger-op (:logger server-opts))
                           (or handler (default-handler)))

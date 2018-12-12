@@ -35,7 +35,10 @@
   [handler]
   (fn [{:keys [^Transport transport server-opts] :as msg}]
     (if (:verbose server-opts)
-      (let [logger-fn (or (deref (:logger server-opts)) default-logger)
+      (let [logger-fn (or (deref (:logger server-opts))
+                          (if (= :silenced (:default-logger-behaviour server-opts))
+                            (constantly nil)
+                            default-logger))
             transport (logger-transport transport logger-fn)]
         (logger-fn :decoded-in (dissoc msg :transport :server-opts))
         (handler (assoc msg :transport transport)))

@@ -148,18 +148,20 @@
   []
   (println "Usage:
 
-  -i/--interactive            Start nREPL and connect to it with the built-in client.
-  -c/--connect                Connect to a running nREPL with the built-in client.
-  -C/--color                  Use colors to differentiate values from output in the REPL. Must be combined with --interactive.
-  -b/--bind ADDR              Bind address, by default \"127.0.0.1\".
-  -h/--host ADDR              Host address to connect to when using --connect. Defaults to \"127.0.0.1\".
-  -p/--port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
-  --ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.
-  -n/--handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`.
-  -m/--middleware MIDDLEWARE  A sequence of vars, representing middleware you wish to mix in to the nREPL handler.
-  -t/--transport TRANSPORT    The transport to use. By default that's nrepl.transport/bencode.
-  --help                      Show this help message.
-  -v/--version                Display the nREPL version."))
+  -i/--interactive                     Start nREPL and connect to it with the built-in client.
+  -c/--connect                         Connect to a running nREPL with the built-in client.
+  -C/--color                           Use colors to differentiate values from output in the REPL. Must be combined with --interactive.
+  -b/--bind ADDR                       Bind address, by default \"127.0.0.1\".
+  -h/--host ADDR                       Host address to connect to when using --connect. Defaults to \"127.0.0.1\".
+  -p/--port PORT                       Start nREPL on PORT. Defaults to 0 (random port) if not specified.
+  --ack ACK-PORT                       Acknowledge the port of this server to another nREPL server running on ACK-PORT.
+  -n/--handler HANDLER                 The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`.
+  -m/--middleware MIDDLEWARE           A sequence of vars, representing middleware you wish to mix in to the nREPL handler.
+  -t/--transport TRANSPORT             The transport to use. By default that's nrepl.transport/bencode.
+  --help                               Show this help message.
+  -v/--version                         Display the nREPL version.
+  --verbose                            Logs server encoded and decoded messages, use it for debugging.
+  --default-logger-behaviour BEHAVIOUR Default logging can be set as `silenced`, `encoded-as-bytes` or `encoded-as-string`."))
 
 (defn- require-and-resolve
   "Attempts to resolve the config `key`'s `value` as a namespaced symbol
@@ -269,9 +271,11 @@
                           #'transport/bencode)
             greeting-fn (if (= transport #'transport/tty) #'transport/tty-greeting)
             verbose (:verbose options)
+            default-logger-behaviour (some->> (:default-logger-behaviour options) keyword)
             server (start-server :port port :bind bind :handler handler
                                  :transport-fn transport :greeting-fn greeting-fn
-                                 :verbose verbose)]
+                                 :verbose verbose
+                                 :default-logger-behaviour default-logger-behaviour)]
         (when-let [ack-port (:ack options)]
           (binding [*out* *err*]
             (println (format "ack'ing my port %d to other server running on port %d"
