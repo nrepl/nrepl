@@ -54,9 +54,16 @@
                          ^BlockingQueue queue
                          thread-factory)))
 
-(def default-executor (delay (configure-executor)))
+(def default-executor "Delay containing the default Executor." (delay (configure-executor)))
 
-(defn default-exec [id ^Runnable thunk ^Runnable ack]
+(defn default-exec
+  "Submits a task for execution using #'default-executor.
+   The submitted task is made of:
+   * an id (typically the message id),
+   * thunk, a Runnable, the task itself,
+   * ack, another Runnable, ran to notify of succesful execution of thunk.
+   The thunk/ack split is meaningful for interruptible eval: only the thunk can be interrupted."
+  [id ^Runnable thunk ^Runnable ack]
   (.submit ^java.util.concurrent.ExecutorService @default-executor ^Callable #(do (.run thunk) (.run ack))))
 
 (defn- session-out
@@ -175,7 +182,16 @@
                       :input-queue input-queue
                       :exec default-exec}))))))
 
-(defn session-exec [id]
+(defn session-exec
+  "Takes a session id and returns a maps of three functions meant for interruptible-eval:
+   * :exec, takes an id (typically a msg-id), a thunk and an ack runnables (see #'default-exec for ampler
+     context). Executions are serialized and occurs on a single thread. 
+   * :interrupt, takes an id and tries to interrupt the matching execution (submitted with :exec above).
+     A nil id is meant to match the currently running execution. The return value can be either:
+     :idle (no running execution), the interrupted id, or nil when the running id doesn't match the id argument.
+     Upon succesful interruption the backing thread is replaced.
+   * :close, terminates the backing thread."
+  [id]
   (let [cl (clojure.lang.DynamicClassLoader.
             (.getContextClassLoader (Thread/currentThread)))
         queue (LinkedBlockingQueue.)
