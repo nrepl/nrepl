@@ -20,14 +20,14 @@
                 expr
                 (binding [*print-meta* true]
                   (pr-str expr)))
-         msg (merge {:code expr :transport remote}
-                    (when ns {:ns ns}))
+         msg (cond-> {:code expr :transport remote
+                      :session (atom {#'*out* (java.io.PrintWriter. out)
+                                      #'*err* (java.io.PrintWriter. err)})}
+               ns (assoc :ns ns))
          resp-fn (if ns
                    (juxt :ns :value)
                    :value)]
-     (eval/evaluate {#'*out* (java.io.PrintWriter. out)
-                     #'*err* (java.io.PrintWriter. err)}
-                    msg)
+     (eval/evaluate msg)
      (->> (nrepl/response-seq local 0)
           (map resp-fn)
           (cons (str out))

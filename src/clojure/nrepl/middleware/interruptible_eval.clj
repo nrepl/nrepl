@@ -47,88 +47,64 @@
     reader))
 
 (defn evaluate
-  "Evaluates some code within the dynamic context defined by a map of `bindings`,
-   as per `clojure.core/get-thread-bindings`.
+  "Evaluates a msg's code within the dynamic context of its session.
 
-   Uses `clojure.main/repl` to drive the evaluation of :code in a second
-   map argument (either a string or a seq of forms to be evaluated), which may
-   also optionally specify a :ns (resolved via `find-ns`).  The map MUST
-   contain a Transport implementation in :transport; expression results and errors
-   will be sent via that Transport.
-
-   Returns the dynamic scope that remains after evaluating all expressions
-   in :code.
-
-   It is assumed that `bindings` already contains useful/appropriate entries
-   for all vars indicated by `clojure.main/with-bindings`."
-  [bindings {:keys [code ns transport session eval file line column] :as msg}]
-  (let [explicit-ns-binding (when-let [ns (and ns (-> ns symbol find-ns))]
-                              {#'*ns* ns})
-        original-ns (bindings #'*ns*)
-        maybe-restore-original-ns (fn [bindings]
-                                    (if-not explicit-ns-binding
-                                      bindings
-                                      (assoc bindings #'*ns* original-ns)))
-        file (or file (get bindings #'*file*))
-        bindings (atom (merge bindings explicit-ns-binding {#'*file* file}))
-        session (or session (atom nil))
-        out (@bindings #'*out*)
-        err (@bindings #'*err*)]
-    (if (and ns (not explicit-ns-binding))
+   Uses `clojure.main/repl` to drive the evaluation of :code (either a string
+   or a seq of forms to be evaluated), which may also optionally specify a :ns
+   (resolved via `find-ns`).  The map MUST contain a Transport implementation
+   in :transport; expression results and errors will be sent via that Transport."
+  [{:keys [code ns transport session eval file line column] :as msg}]
+  (let [explicit-ns (and ns (-> ns symbol find-ns))
+        original-ns (@session #'*ns*)
+        maybe-restore-original-ns (if explicit-ns
+                                    #(assoc % #'*ns* original-ns)
+                                    identity)
+        session (or session (atom {}))]
+    (if (and ns (not explicit-ns))
       (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}
                                            :ns ns}))
-      (with-bindings @bindings
-        (try
-          (clojure.main/repl
-           :eval (if eval (find-var (symbol eval)) clojure.core/eval)
-           ;; clojure.main/repl paves over certain vars even if they're already thread-bound
-           :init #(do (set! *compile-path* (@bindings #'*compile-path*))
-                      (set! *1 (@bindings #'*1))
-                      (set! *2 (@bindings #'*2))
-                      (set! *3 (@bindings #'*3))
-                      (set! *e (@bindings #'*e))
-                      (when-some [v (resolve '*print-namespace-maps*)]
-                        (var-set v (@bindings v))))
-           :read (if (string? code)
-                   (let [reader (source-logging-pushback-reader code line column)]
-                     #(read {:read-cond :allow :eof %2} reader))
-                   (let [code (.iterator ^Iterable code)]
-                     #(or (and (.hasNext code) (.next code)) %2)))
-           :prompt (fn [])
-           :need-prompt (constantly false)
-           ;; TODO: pretty-print?
-           :print (fn [v]
-                    (reset! bindings (assoc (capture-thread-bindings)
-                                            #'*3 *2
-                                            #'*2 *1
-                                            #'*1 v))
-                    (.flush ^Writer err)
-                    (.flush ^Writer out)
-                    (reset! session (maybe-restore-original-ns @bindings))
-                    (t/send transport (response-for msg
-                                                    {:value v
-                                                     :ns (-> *ns* ns-name str)})))
-           ;; TODO: customizable exception prints
-           :caught (fn [e]
-                     (let [root-ex (#'clojure.main/root-cause e)
-                           previous-cause (.getCause e)]
-                       ;; Check if the root cause or previous cause of the exception
-                       ;; is a ThreadDeath exception. In case the exception is a
-                       ;; CompilerException, the root cause is not returned by
-                       ;; the root-cause function, so we check the previous cause
-                       ;; instead.
-                       (when-not (or (instance? ThreadDeath root-ex)
-                                     (instance? ThreadDeath previous-cause))
-                         (reset! bindings (assoc (capture-thread-bindings) #'*e e))
-                         (reset! session (maybe-restore-original-ns @bindings))
-                         (t/send transport (response-for msg {:status :eval-error
-                                                              :ex (-> e class str)
-                                                              :root-ex (-> root-ex class str)}))
-                         (clojure.main/repl-caught e)))))
-          (finally
-            (.flush ^Writer out)
-            (.flush ^Writer err)))))
-    (maybe-restore-original-ns @bindings)))
+      (try
+        (clojure.main/repl
+         :eval (if eval (find-var (symbol eval)) clojure.core/eval)
+         :init #(let [bindings
+                      (-> (get-thread-bindings)
+                          (into @session)
+                          (cond-> explicit-ns (assoc #'*ns* explicit-ns)
+                                  file (assoc #'*file* file)))]
+                  (pop-thread-bindings)
+                  (push-thread-bindings bindings))
+         :read (if (string? code)
+                 (let [reader (source-logging-pushback-reader code line column)]
+                   #(read {:read-cond :allow :eof %2} reader))
+                 (let [code (.iterator ^Iterable code)]
+                   #(or (and (.hasNext code) (.next code)) %2)))
+         :prompt #(reset! session (maybe-restore-original-ns (capture-thread-bindings)))
+         :need-prompt (constantly true)
+         ;; TODO: pretty-print?
+         :print (fn [v]
+                  (.flush *err*)
+                  (.flush *out*)
+                  (t/send transport (response-for msg
+                                                  {:value v
+                                                   :ns (-> *ns* ns-name str)})))
+         ;; TODO: customizable exception prints
+         :caught (fn [e]
+                   (let [root-ex (#'clojure.main/root-cause e)
+                         previous-cause (.getCause e)]
+                     ;; Check if the root cause or previous cause of the exception
+                     ;; is a ThreadDeath exception. In case the exception is a
+                     ;; CompilerException, the root cause is not returned by
+                     ;; the root-cause function, so we check the previous cause
+                     ;; instead.
+                     (when-not (or (instance? ThreadDeath root-ex)
+                                   (instance? ThreadDeath previous-cause))
+                       (t/send transport (response-for msg {:status :eval-error
+                                                            :ex (-> e class str)
+                                                            :root-ex (-> root-ex class str)}))
+                       (clojure.main/repl-caught e)))))
+        (finally
+          (some-> ^Writer (@session #'*err*) .flush)
+          (some-> ^Writer (@session #'*out*) .flush))))))
 
 (defn interruptible-eval
   "Evaluation middleware that supports interrupts.  Returns a handler that supports
@@ -143,7 +119,7 @@
           (t/send transport (response-for msg :status #{:error :no-code :done}))
           (exec id
                 #(binding [*msg* msg]
-                   (evaluate @session msg))
+                   (evaluate msg))
                 #(t/send transport (response-for msg :status :done))))
 
         "interrupt"
