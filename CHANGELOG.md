@@ -2,6 +2,10 @@
 
 ### master (unreleased)
 
+### Changes
+
+* [#16](https://github.com/nrepl/nrepl/issues/16): Use a single session thread per evaluation.
+
 ### 0.5.3 (2018-12-12)
 
 #### Bugs fixed
