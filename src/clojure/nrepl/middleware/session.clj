@@ -165,10 +165,10 @@
                               #'*in* stdin-reader
                               #'*ns* (create-ns 'user)
                               #'*out-limit* (or (baseline-bindings #'*out-limit*) 1024)
-                          ;; clojure.test captures *out* at load-time, so we need to make sure
-                          ;; runtime output of test status/results is redirected properly
-                          ;; TODO: is this something we need to consider in general, or is this
-                          ;; specific hack reasonable?
+                              ;; clojure.test captures *out* at load-time, so we need to make sure
+                              ;; runtime output of test status/results is redirected properly
+                              ;; TODO: is this something we need to consider in general, or is this
+                              ;; specific hack reasonable?
                               #'clojure.test/*test-out* out})
                        :meta {:id id
                               :stdin-reader stdin-reader

@@ -66,7 +66,6 @@
       (try
         (clojure.main/repl
          :eval (if eval (find-var (symbol eval)) clojure.core/eval)
-         ;; clojure.main/repl paves over certain vars even if they're already thread-bound
          :init #(let [bindings
                       (-> (get-thread-bindings)
                           (into @session)
