@@ -47,20 +47,12 @@
     reader))
 
 (defn evaluate
-  "Evaluates some code within the dynamic context defined by a map of `bindings`,
-   as per `clojure.core/get-thread-bindings`.
+  "Evaluates a msg's code within the dynamic context of its session.
 
-   Uses `clojure.main/repl` to drive the evaluation of :code in a second
-   map argument (either a string or a seq of forms to be evaluated), which may
-   also optionally specify a :ns (resolved via `find-ns`).  The map MUST
-   contain a Transport implementation in :transport; expression results and errors
-   will be sent via that Transport.
-
-   Returns the dynamic scope that remains after evaluating all expressions
-   in :code.
-
-   It is assumed that `bindings` already contains useful/appropriate entries
-   for all vars indicated by `clojure.main/with-bindings`."
+   Uses `clojure.main/repl` to drive the evaluation of :code (either a string
+   or a seq of forms to be evaluated), which may also optionally specify a :ns
+   (resolved via `find-ns`).  The map MUST contain a Transport implementation
+   in :transport; expression results and errors will be sent via that Transport."
   [{:keys [code ns transport session eval file line column] :as msg}]
   (let [explicit-ns (and ns (-> ns symbol find-ns))
         original-ns (@session #'*ns*)
