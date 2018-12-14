@@ -5,7 +5,7 @@
    clojure.main
    clojure.test
    [nrepl.middleware :refer [set-descriptor!]]
-   [nrepl.middleware.interruptible-eval :refer [*msg*]]
+   [nrepl.middleware.interruptible-eval :refer [*msg* evaluate]]
    [nrepl.misc :refer [uuid response-for]]
    [nrepl.transport :as t])
   (:import
@@ -156,31 +156,27 @@
    merged in."
   ([transport] (create-session transport {}))
   ([transport baseline-bindings]
-   (clojure.main/with-bindings
-     (let [id (uuid)
-           out (session-out :out id transport)
-           {:keys [input-queue stdin-reader]} (session-in id transport)]
-       (binding [*out* out
-                 *err* (session-out :err id transport)
-                 *in* stdin-reader
-                 *ns* (create-ns 'user)
-                 *out-limit* (or (baseline-bindings #'*out-limit*) 1024)
-                 *1 (baseline-bindings #'*1)
-                 *2 (baseline-bindings #'*2)
-                 *3 (baseline-bindings #'*3)
-                 *e (baseline-bindings #'*e)
-                 ;; clojure.test captures *out* at load-time, so we need to make sure
-                 ;; runtime output of test status/results is redirected properly
-                 ;; TODO: is this something we need to consider in general, or is this
-                 ;; specific hack reasonable?
-                 clojure.test/*test-out* out]
-         ;; nrepl.server happens to use agents for connection dispatch
-         ;; don't capture that *agent* binding for userland REPL sessions
-         (atom (merge baseline-bindings (dissoc (get-thread-bindings) #'*agent*))
-               :meta {:id id
-                      :stdin-reader stdin-reader
-                      :input-queue input-queue
-                      :exec default-exec}))))))
+   (let [id (uuid)
+         out (session-out :out id transport)
+         {:keys [input-queue stdin-reader]} (session-in id transport)
+         session (atom (into baseline-bindings
+                         {#'*out* out
+                          #'*err* (session-out :err id transport)
+                          #'*in* stdin-reader
+                          #'*ns* (create-ns 'user)
+                          #'*out-limit* (or (baseline-bindings #'*out-limit*) 1024)
+                          ;; clojure.test captures *out* at load-time, so we need to make sure
+                          ;; runtime output of test status/results is redirected properly
+                          ;; TODO: is this something we need to consider in general, or is this
+                          ;; specific hack reasonable?
+                          #'clojure.test/*test-out* out})
+          :meta {:id id
+                 :stdin-reader stdin-reader
+                 :input-queue input-queue
+                 :exec default-exec})
+         msg {:code "" :session session}]
+     (binding [*msg* msg] (evaluate msg)) ; to fully initialize bindings
+     session)))
 
 (defn session-exec
   "Takes a session id and returns a maps of three functions meant for interruptible-eval:
