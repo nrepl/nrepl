@@ -77,9 +77,9 @@
          ;; clojure.main/repl paves over certain vars even if they're already thread-bound
          :init #(let [bindings
                       (-> (get-thread-bindings)
-                        (into @session)
-                        (cond-> explicit-ns (assoc #'*ns* explicit-ns)
-                          file (assoc #'*file* file)))]
+                          (into @session)
+                          (cond-> explicit-ns (assoc #'*ns* explicit-ns)
+                                  file (assoc #'*file* file)))]
                   (pop-thread-bindings)
                   (push-thread-bindings bindings))
          :read (if (string? code)
@@ -112,8 +112,8 @@
                                                             :root-ex (-> root-ex class str)}))
                        (clojure.main/repl-caught e)))))
         (finally
-          (some-> ^Writer (@session #'*err*) .flush )
-          (some-> ^Writer (@session #'*out*) .flush ))))))
+          (some-> ^Writer (@session #'*err*) .flush)
+          (some-> ^Writer (@session #'*out*) .flush))))))
 
 (defn interruptible-eval
   "Evaluation middleware that supports interrupts.  Returns a handler that supports
