@@ -10,8 +10,7 @@
    clojure.lang.LineNumberingPushbackReader
    [java.io FilterReader LineNumberReader StringReader Writer]
    java.lang.reflect.Field
-   [java.util.concurrent BlockingQueue Executor SynchronousQueue ThreadFactory ThreadPoolExecutor TimeUnit]
-   java.util.concurrent.atomic.AtomicLong))
+   java.util.concurrent.Executor))
 
 (def ^:dynamic *msg*
   "The message currently being evaluated."
@@ -131,117 +130,34 @@
             (.flush ^Writer err)))))
     (maybe-restore-original-ns @bindings)))
 
-(defn- configure-thread-factory
-  "Returns a new ThreadFactory for the given session.  This implementation
-   generates daemon threads, with names that include the session id."
-  []
-  (let [session-thread-counter (AtomicLong. 0)
-        ;; Create a constant dcl for use across evaluations. This allows
-        ;; modifications to the classloader to persist.
-        cl (clojure.lang.DynamicClassLoader.
-            (.getContextClassLoader (Thread/currentThread)))]
-    (reify ThreadFactory
-      (newThread [_ runnable]
-        (doto (Thread. runnable
-                       (format "nREPL-worker-%s" (.getAndIncrement session-thread-counter)))
-          (.setDaemon true)
-          (.setContextClassLoader cl))))))
-
-(defn- configure-executor
-  "Returns a ThreadPoolExecutor, configured (by default) to
-   have 1 core thread, use an unbounded queue, create only daemon threads,
-   and allow unused threads to expire after 30s."
-  [& {:keys [keep-alive queue thread-factory]
-      :or {keep-alive 30000
-           queue (SynchronousQueue.)}}]
-  (let [^ThreadFactory thread-factory (or thread-factory (configure-thread-factory))]
-    (ThreadPoolExecutor. 1 Integer/MAX_VALUE
-                         (long 30000) TimeUnit/MILLISECONDS
-                         ^BlockingQueue queue
-                         thread-factory)))
-
-(def default-executor (delay (configure-executor)))
-
-;; A little mini-agent implementation. Needed because agents cannot be used to host REPL
-;; evaluation: http://dev.clojure.org/jira/browse/NREPL-17
-(defn- prep-session
-  [session]
-  (locking session
-    (returning session
-               (when-not (-> session meta :queue)
-                 (alter-meta! session assoc :queue (atom clojure.lang.PersistentQueue/EMPTY))))))
-
-(declare run-next)
-(defn- run-next*
-  [session ^Executor executor]
-  (let [qa (-> session meta :queue)]
-    (loop []
-      (let [q @qa
-            qn (pop q)]
-        (if-not (compare-and-set! qa q qn)
-          (recur)
-          (when (seq qn)
-            (.execute executor (run-next session executor (peek qn)))))))))
-
-(defn- run-next
-  [session executor f]
-  #(try
-     (f)
-     (finally
-       (run-next* session executor))))
-
-(defn queue-eval
-  "Queues the function for the given session."
-  [session ^Executor executor f]
-  (let [qa (-> session prep-session meta :queue)]
-    (loop []
-      (let [q @qa]
-        (if-not (compare-and-set! qa q (conj q f))
-          (recur)
-          (when (empty? q)
-            (.execute executor (run-next session executor f))))))))
-
 (defn interruptible-eval
   "Evaluation middleware that supports interrupts.  Returns a handler that supports
    \"eval\" and \"interrupt\" :op-erations that delegates to the given handler
    otherwise."
   [h & configuration]
-  (let [executor (:executor configuration @default-executor)]
-    (fn [{:keys [op session interrupt-id id transport] :as msg}]
+  (fn [{:keys [op session interrupt-id id transport] :as msg}]
+    (let [{:keys [interrupt exec] session-id :id} (meta session)]
       (case op
         "eval"
         (if-not (:code msg)
           (t/send transport (response-for msg :status #{:error :no-code :done}))
-          (queue-eval session executor
-                      (fn []
-                        (alter-meta! session assoc
-                                     :thread (Thread/currentThread)
-                                     :eval-msg msg)
-                        (binding [*msg* msg]
-                          (evaluate @session msg)
-                          (t/send transport (response-for msg :status :done))
-                          (alter-meta! session dissoc :thread :eval-msg)))))
+          (exec id
+                #(binding [*msg* msg]
+                   (evaluate @session msg))
+                #(t/send transport (response-for msg :status :done))))
 
         "interrupt"
-        ;; interrupts are inherently racy; we'll check the agent's :eval-msg's :id and
-        ;; bail if it's different than the one provided, but it's possible for
-        ;; that message's eval to finish and another to start before we send
-        ;; the interrupt / .stop.
-        (let [{:keys [id eval-msg ^Thread thread]} (meta session)]
-          (if (or (not interrupt-id)
-                  (= interrupt-id (:id eval-msg)))
-            (if-not thread
-              (t/send transport (response-for msg :status #{:done :session-idle}))
-              (do
-                ;; notify of the interrupted status before we .stop the thread so
-                ;; it is received before the standard :done status (thereby ensuring
-                ;; that is stays within the scope of a nrepl/message seq
-                (t/send transport {:status #{:interrupted}
-                                   :id (:id eval-msg)
-                                   :session id})
-                (.stop thread)
-                (t/send transport (response-for msg :status #{:done}))))
-            (t/send transport (response-for msg :status #{:error :interrupt-id-mismatch :done}))))
+        (let [interrupted-id (when interrupt (interrupt interrupt-id))]
+          (case interrupted-id
+            nil (t/send transport (response-for msg :status #{:error :interrupt-id-mismatch :done}))
+            :idle (t/send transport (response-for msg :status #{:done :session-idle}))
+            (do
+              ;; interrupt prevents the interrupted computation to be ack'ed,
+              ;; so a :done will never ne emitted before :interrupted
+              (t/send transport {:status #{:interrupted :done}
+                                 :id interrupted-id
+                                 :session session-id})
+              (t/send transport (response-for msg :status #{:done})))))
 
         (h msg)))))
 

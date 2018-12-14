@@ -358,7 +358,7 @@
                                                        (def halted? false)))})]
     (Thread/sleep 100)
     (is (= #{"done"} (-> session (message {:op :interrupt}) first :status set)))
-    (is (= #{"done" "interrupted"} (-> resp combine-responses :status)))
+    (is (= #{} (reduce disj #{"done" "interrupted"} (-> resp combine-responses :status))))
     (is (= [true] (repl-values session "halted?")))))
 
 ;; NREPL-66: ensure that bindings of implementation vars aren't captured by user sessions
