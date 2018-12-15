@@ -269,7 +269,7 @@
             greeting-fn (if (= transport #'transport/tty) #'transport/tty-greeting)
             server (start-server :port port :bind bind :handler handler
                                  :transport-fn transport :greeting-fn greeting-fn)]
-        (when-let [ack-port (:ack options)]
+        (when-let [ack-port (some-> (:ack options) ->int)]
           (binding [*out* *err*]
             (println (format "ack'ing my port %d to other server running on port %d"
                              (:port server) ack-port)

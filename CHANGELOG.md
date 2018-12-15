@@ -2,7 +2,11 @@
 
 ### master (unreleased)
 
-### Changes
+#### Bugs fixed
+
+* Make sure ack port parameter is converted to integer for command line nREPL initialization.
+
+#### Changes
 
 * [#16](https://github.com/nrepl/nrepl/issues/16): Use a single session thread per evaluation.
 
