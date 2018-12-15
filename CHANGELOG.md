@@ -2,7 +2,11 @@
 
 ### master (unreleased)
 
-### Changes
+#### Bugs fixed
+
+* When starting the REPL, make sure the transport option is used correctly.
+
+#### Changes
 
 * [#16](https://github.com/nrepl/nrepl/issues/16): Use a single session thread per evaluation.
 

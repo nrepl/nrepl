@@ -70,12 +70,13 @@
 (defn- run-repl
   ([host port]
    (run-repl host port nil))
-  ([host port {:keys [prompt err out value]
+  ([host port {:keys [prompt err out value transport]
                :or {prompt #(print (str % "=> "))
                     err print
                     out print
-                    value println}}]
-   (let [transport (nrepl/connect :host host :port port)
+                    value println
+                    transport #'transport/bencode}}]
+   (let [transport (nrepl/connect :host host :port port :transport-fn transport)
          client (nrepl/client-session (nrepl/client transport Long/MAX_VALUE))
          ns (atom "user")]
      (swap! running-repl assoc :transport transport)
@@ -253,9 +254,11 @@
       (exit 0))
     ;; then we check for --connect
     (let [port (->int (:port options))
-          host (:host options)]
+          host (:host options)
+          transport (or (some->> (:transport options) (require-and-resolve :transport))
+                        #'transport/bencode)]
       (when (:connect options)
-        (run-repl host port)
+        (run-repl host port {:transport transport})
         (exit 0))
       ;; otherwise we assume we have to start an nREPL server
       (let [bind (:bind options)
@@ -264,8 +267,6 @@
             middleware (sanitize-middleware-option (:middleware options))
             handler (some->> (:handler options) (require-and-resolve :handler))
             handler (or handler (build-handler middleware))
-            transport (or (some->> (:transport options) (require-and-resolve :transport))
-                          #'transport/bencode)
             greeting-fn (if (= transport #'transport/tty) #'transport/tty-greeting)
             server (start-server :port port :bind bind :handler handler
                                  :transport-fn transport :greeting-fn greeting-fn)]
@@ -286,7 +287,8 @@
             (.deleteOnExit port-file)
             (spit port-file port))
           (if (:interactive options)
-            (run-repl host port (when (:color options) colored-output))
+            (run-repl host port (merge (when (:color options) colored-output)
+                                       {:transport transport}))
             ;; need to hold process open with a non-daemon thread -- this should end up being super-temporary
             (Thread/sleep Long/MAX_VALUE)))))))
 
