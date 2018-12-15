@@ -5,6 +5,7 @@
 #### Bugs fixed
 
 * Make sure ack port parameter is converted to integer for command line nREPL initialization.
+* When starting the REPL, make sure the transport option is used correctly.
 
 #### Changes
 
