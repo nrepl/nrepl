@@ -1,6 +1,6 @@
 (defproject nrepl "0.6.0-SNAPSHOT"
   :description "nREPL is a Clojure *n*etwork REPL."
-  :url "https://nrepl.xyz"
+  :url "https://nrepl.org"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :scm {:name "git" :url "https://github.com/nrepl/nrepl"}
