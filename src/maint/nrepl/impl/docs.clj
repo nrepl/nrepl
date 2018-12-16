@@ -103,7 +103,7 @@ use in e.g. wiki pages, github, etc."
                 "\n"))))
 
 (defn- format-response [format resp]
-  (cond (= format "raw") (pr-str (select-keys resp [:ops :versions]))
+  (cond (= format "raw") (pr-str (select-keys resp [:ops]))
         (= format "md") (str "<!-- This file is *generated* by " #'-main
                              "\n   **Do not edit!** -->\n"
                              (describe-markdown resp))
@@ -139,3 +139,5 @@ use in e.g. wiki pages, github, etc."
         (if (= *out* file) (println docs)
             (do (spit file docs)
                 (println (str "Regenerated " (.getAbsolutePath file)))))))))
+
+(defn pwd [] (println (.getAbsolutePath (File. "."))))
