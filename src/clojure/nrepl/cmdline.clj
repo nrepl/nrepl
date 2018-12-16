@@ -274,7 +274,7 @@
           (binding [*out* *err*]
             (println (format "ack'ing my port %d to other server running on port %d"
                              (:port server) ack-port)
-                     (:status (send-ack (:port server) ack-port)))))
+                     (:status (send-ack (:port server) ack-port transport)))))
         (let [port (:port server)
               ^java.net.ServerSocket ssocket (:server-socket server)
               host (.getHostName (.getInetAddress ssocket))]
