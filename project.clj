@@ -31,6 +31,7 @@
                                     :sign-releases false}]]
 
   :profiles {:fastlane {:dependencies [[nrepl/fastlane "0.1.0-SNAPSHOT"]]}
+             :test {:dependencies [[com.hypirion/io "0.3.1"]]}
              ;; Clojure versions matrix
              :provided {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
@@ -53,4 +54,5 @@
                                          merge-meta [[:inner 0]]}}}
 
              :eastwood {:plugins [[jonase/eastwood "0.2.6"]]
-                        :eastwood {:config-files ["eastwood.clj"]}}})
+                        :eastwood {:config-files ["eastwood.clj"]}
+                        :dependencies [[com.hypirion/io "0.3.1"]]}})

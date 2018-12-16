@@ -447,6 +447,16 @@
       (Thread/sleep 100)
       (is (thrown? SocketException (transport/send transport {"op" "eval" "code" "(+ 5 1)"}))))))
 
+(deftest server-starts-with-minimal-configuration
+  (testing "Ensure server starts with minimal configuration"
+    (let [server (server/start-server)
+          transport (connect :port (:port server))
+          client (client transport Long/MAX_VALUE)]
+      (is (= ["3"]
+             (-> (message client {:op :eval :code "(- 4 1)"})
+                 combine-responses
+                 :value))))))
+
 (def-repl-test clients-fail-on-disconnects
   (testing "Ensure that clients fail ASAP when the server they're connected to goes down."
     (let [resp (repl-eval client "1 2 3 4 5 6 7 8 9 10")]
