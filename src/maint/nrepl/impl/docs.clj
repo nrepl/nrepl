@@ -1,4 +1,5 @@
 (ns nrepl.impl.docs
+  "Doc generation utilities"
   (:require
    [clojure.tools.cli :as cli]
    [clojure.java.io :as io]
@@ -10,21 +11,21 @@
   (:import
    (java.io File)))
 
+(declare -main)
+
 (def cli-options
   [["-f" "--file FILE" "File to write output into (defaults to standard output)"
     :parse-fn #(File. %) :default *out*]
    ["-h" "--help" "Show this help message"]
-   ["-l" "--lein"]
    ["-o" "--output OUT" "One of: raw, adoc, md" :default "adoc"
     :validate [#(contains? #{"raw" "adoc" "md"} %)]]])
-;; io/file (File. (System/getProperty "nrepl.basedir" ".")) "doc" "modules" "ROOT" "pages" "ops.adoc")
 
 (defn- exit [status msg]
   (println msg)
   (System/exit status))
 
 (defn- usage [options-summary]
-  (->> ["Regenerate and output the ops documentation to the specified destination in the specified format."
+  (->> [(:doc (meta #'-main))
         ""
         "Usage: lein -m +maint run nrepl.impl.docs [options]"
         ""
@@ -101,10 +102,8 @@ use in e.g. wiki pages, github, etc."
                 (message-slot-adoc (sort returns))
                 "\n"))))
 
-(declare -main)
-
 (defn- format-response [format resp]
-  (cond (= format "raw") (pr-str resp)
+  (cond (= format "raw") (pr-str (select-keys resp [:ops :versions]))
         (= format "md") (str "<!-- This file is *generated* by " #'-main
                              "\n   **Do not edit!** -->\n"
                              (describe-markdown resp))
@@ -126,21 +125,17 @@ use in e.g. wiki pages, github, etc."
         clojure.walk/keywordize-keys)))
 
 (defn -main
-  "Regenerate and output the ops documentation to the specified destination in
-  the specified format."
+  "Regenerate and output the ops documentation to the specified destination in the specified format."
   [& args]
   (let [{:keys [options arguments errors summary]} (cli/parse-opts args cli-options)]
     (cond
       (:help options) (exit 0 (usage summary))
       errors (exit 1 (error-msg errors))
       :else
-      (let [file (if (:lein options)
-                   (io/file (File. (System/getProperty "nrepl.basedir" "."))
-                            "doc" "modules" "ROOT" "pages" "ops.adoc")
-                   (:file options))
+      (let [file (:file options)
             format (:output options)
             resp (generate-ops-info)
             docs (format-response format resp)]
         (if (= *out* file) (println docs)
             (do (spit file docs)
-                (println (str "Regenerated " (.getPath file)))))))))
+                (println (str "Regenerated " (.getAbsolutePath file)))))))))
