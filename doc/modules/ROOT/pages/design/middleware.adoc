@@ -94,13 +94,13 @@ the handled `:op` and a value that contains any of four entries:
 ** `:returns`, a map of slots that may be found in messages sent in response
     to handling the indicated `:op`
 
-The values in the `:handles` map is used to support the `"describe"` operation,
+The values in the `:handles` map are used to support the `"describe"` operation,
 which provides "a machine- and human-readable directory and documentation for
 the operations supported by an nREPL endpoint" (see
-`nrepl.middleware/describe-adoc`, and the results of
-`"describe"` and `describe-doc` <<ops.adoc,here>>).
+`nrepl.impl.docs/generate-ops-info` and the results of
+`lein with-profile +maint run nrepl.impl.docs` <<ops.adoc,here>>).
 
-NOTE: There's also `nrepl.middleware/describe-markdown` if you'd like to
+NOTE: There's also `lein with-profile +maint run nrepl.impl.docs --output md` if you'd like to
 generate an ops listing in Markdown format.
 
 The `:requires` and `:expects` entries control the order in which

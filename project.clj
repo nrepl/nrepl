@@ -13,7 +13,10 @@
   :dependencies [[nrepl/bencode "1.0.0"]]
 
   :aliases {"bump-version" ["change" "version" "leiningen.release/bump-version"]
-            "test-all" ["with-profile" "+1.7:+1.8:+1.9:+fastlane" "test"]}
+            "test-all" ["with-profile" "+1.7:+1.8:+1.9:+fastlane" "test"]
+            "docs" ["with-profile" "+maint" "run" "-m" "nrepl.impl.docs" "--file"
+                    ~(clojure.java.io/as-relative-path
+                      (clojure.java.io/file "doc" "modules" "ROOT" "pages" "ops.adoc"))]}
 
   :release-tasks [["vcs" "assert-committed"]
                   ["bump-version" "release"]
@@ -38,6 +41,8 @@
                       :dependencies [[org.clojure/clojure "1.10.0-master-SNAPSHOT"]]}
 
              :sysutils {:plugins [[lein-sysutils "0.2.0"]]}
+             :maint {:source-paths ["src/maint"]
+                     :dependencies [[org.clojure/tools.cli "0.4.1"]]}
 
              ;; CI tools
              :cloverage {:plugins [[lein-cloverage "1.0.13"]]}
