@@ -139,5 +139,3 @@ use in e.g. wiki pages, github, etc."
         (if (= *out* file) (println docs)
             (do (spit file docs)
                 (println (str "Regenerated " (.getAbsolutePath file)))))))))
-
-(defn pwd [] (println (.getAbsolutePath (File. "."))))
