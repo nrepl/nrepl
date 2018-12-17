@@ -60,7 +60,7 @@
 
 (def ^:private datafy
   (or (some-> 'clojure.core.protocols/datafy resolve deref)
-      clojure.lang.Var$Unbound))
+      (clojure.lang.Var$Unbound. #'datafy)))
 
 (def ^:private navigable?
   (if-some [Navigable (some-> 'clojure.core.protocols/Navigable resolve deref)]
@@ -69,7 +69,7 @@
 
 (def ^:private nav
   (or (some-> 'clojure.core.protocols/nav resolve deref)
-      clojure.lang.Var$Unbound))
+      (clojure.lang.Var$Unbound. #'nav)))
 
 (when (bound? #'datafy)
   (require 'clojure.datafy))
