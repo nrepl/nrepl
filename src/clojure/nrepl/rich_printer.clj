@@ -47,36 +47,34 @@
   (-print-on [x write rem-depth]))
 
 ;; clojure 1.10 support
-(when 'clojure.core.protocols/datafy resolve)
-
 (defn- really-satisfies? [protocol x]
   (when (class x)
     (let [default (get (:impls protocol) Object)
           impl (find-protocol-impl protocol x)]
       (not (identical? impl default)))))
 
-(def ^:private datafiable? 
+(def ^:private datafiable?
   (if-some [Datafiable (some-> 'clojure.core.protocols/Datafiable resolve deref)]
     #(or (get (meta %) 'clojure.core.protocols/datafy) (really-satisfies? Datafiable %))
     (constantly false)))
 
 (def ^:private datafy
   (or (some-> 'clojure.core.protocols/datafy resolve deref)
-    clojure.lang.Var$Unbound))
+      clojure.lang.Var$Unbound))
 
-(def ^:private navigable? 
+(def ^:private navigable?
   (if-some [Navigable (some-> 'clojure.core.protocols/Navigable resolve deref)]
     #(or (get (meta %) 'clojure.core.protocols/nav) (really-satisfies? Navigable %))
     (constantly false)))
 
 (def ^:private nav
   (or (some-> 'clojure.core.protocols/nav resolve deref)
-    clojure.lang.Var$Unbound))
+      clojure.lang.Var$Unbound))
 
 (when (bound? #'datafy)
   (require 'clojure.datafy))
 
-(defn- browsify 
+(defn- browsify
   "only for datafiables"
   [x]
   (let [d (datafy x)]
@@ -93,7 +91,7 @@
       ; the (pos? (or *print-length* 1)) is here to prevent stack overflows
       (binding [*print-length* 0]
         (print-on write x 0))
-      
+
       (do
         (when (datafiable? x)
           (write "#unrepl/browsable ["))
