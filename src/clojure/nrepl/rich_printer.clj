@@ -33,6 +33,11 @@
                #'*print-level* 8
                #'*string-length* 72})
 
+(defn- bump [n m]
+  (if (< n (- Long/MAX_VALUE m))
+    (+ n m)
+    Long/MAX_VALUE))
+
 (defn ensure-defaults [bindings]
   (let [bindings (merge-with #(or %1 %2) bindings defaults)]
     (assoc bindings #'*print-budget*
@@ -41,20 +46,68 @@
 (defprotocol MachinePrintable
   (-print-on [x write rem-depth]))
 
-(defn print-on [write x rem-depth]
+;; clojure 1.10 support
+(when 'clojure.core.protocols/datafy resolve)
+
+(defn- really-satisfies? [protocol x]
+  (when (class x)
+    (let [default (get (:impls protocol) Object)
+          impl (find-protocol-impl protocol x)]
+      (not (identical? impl default)))))
+
+(def ^:private datafiable? 
+  (if-some [Datafiable (some-> 'clojure.core.protocols/Datafiable resolve deref)]
+    #(or (get (meta %) 'clojure.core.protocols/datafy) (really-satisfies? Datafiable %))
+    (constantly false)))
+
+(def ^:private datafy
+  (or (some-> 'clojure.core.protocols/datafy resolve deref)
+    clojure.lang.Var$Unbound))
+
+(def ^:private navigable? 
+  (if-some [Navigable (some-> 'clojure.core.protocols/Navigable resolve deref)]
+    #(or (get (meta %) 'clojure.core.protocols/nav) (really-satisfies? Navigable %))
+    (constantly false)))
+
+(def ^:private nav
+  (or (some-> 'clojure.core.protocols/nav resolve deref)
+    clojure.lang.Var$Unbound))
+
+(when (bound? #'datafy)
+  (require 'clojure.datafy))
+
+(defn- browsify 
+  "only for datafiables"
+  [x]
+  (let [d (datafy x)]
+    (if (and (navigable? x) (or (map? d) (vector? d)))
+      (reduce-kv (fn [d k v] (assoc d k (tagged-literal 'unrepl/browsable [v #(nav x k v)]))) d d)
+      d)))
+;; end of 1.10
+
+(defn print-on
+  [write x rem-depth]
   (let [rem-depth (dec rem-depth)
         budget (set! *print-budget* (dec *print-budget*))]
     (if (and (or (neg? rem-depth) (neg? budget)) (pos? (or *print-length* 1)))
       ; the (pos? (or *print-length* 1)) is here to prevent stack overflows
       (binding [*print-length* 0]
         (print-on write x 0))
+      
       (do
+        (when (datafiable? x)
+          (write "#unrepl/browsable ["))
         (when (and *print-meta* (meta x))
           (write "#unrepl/meta [")
           (-print-on (meta x) write rem-depth)
           (write " "))
         (-print-on x write rem-depth)
         (when (and *print-meta* (meta x))
+          (write "]"))
+        (when (datafiable? x)
+          (write " ")
+          (set! *print-budget* (bump *print-budget* 1))
+          (print-on write (tagged-literal 'unrepl/... (*elide* (lazy-seq [(list (browsify x))]))) (inc rem-depth))
           (write "]"))))))
 
 (defn base64-encode [^java.io.InputStream in]
@@ -300,7 +353,6 @@
 (extend-protocol MachinePrintable
   clojure.lang.TaggedLiteral
   (-print-on [x write rem-depth]
-
     (case (:tag x)
       unrepl/... (binding ; don't elide the elision 
                   [*print-length* Long/MAX_VALUE
@@ -309,6 +361,13 @@
                    *string-length* Long/MAX_VALUE]
                    (write (str "#" (:tag x) " "))
                    (print-on write (:form x) Long/MAX_VALUE))
+      unrepl/browsable (let [[x thunk] (:form x)
+                             rem-depth (inc rem-depth)]
+                         (set! *print-budget* (bump *print-budget* 2))
+                         (write (str "#" (:tag x) " ["))
+                         (print-on write (:form x) rem-depth)
+                         (write " ")
+                         (print-on write (tagged-literal 'unrepl/... (*elide* (lazy-seq [(thunk)]))) rem-depth))
       (print-tag-lit-on write (:tag x) (:form x) rem-depth)))
 
   clojure.lang.Ratio
