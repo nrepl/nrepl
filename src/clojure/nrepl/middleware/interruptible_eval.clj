@@ -63,48 +63,50 @@
     (if (and ns (not explicit-ns))
       (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}
                                            :ns ns}))
-      (try
-        (clojure.main/repl
-         :eval (if eval (find-var (symbol eval)) clojure.core/eval)
-         :init #(let [bindings
-                      (-> (get-thread-bindings)
-                          (into @session)
-                          (cond-> explicit-ns (assoc #'*ns* explicit-ns)
-                                  file (assoc #'*file* file)))]
-                  (pop-thread-bindings)
-                  (push-thread-bindings bindings))
-         :read (if (string? code)
-                 (let [reader (source-logging-pushback-reader code line column)]
-                   #(read {:read-cond :allow :eof %2} reader))
-                 (let [code (.iterator ^Iterable code)]
-                   #(or (and (.hasNext code) (.next code)) %2)))
-         :prompt #(reset! session (maybe-restore-original-ns (capture-thread-bindings)))
-         :need-prompt (constantly true)
-         ;; TODO: pretty-print?
-         :print (fn [v]
-                  (.flush *err*)
-                  (.flush *out*)
-                  (t/send transport (response-for msg
-                                                  {:value v
-                                                   :ns (-> *ns* ns-name str)})))
-         ;; TODO: customizable exception prints
-         :caught (fn [e]
-                   (let [root-ex (#'clojure.main/root-cause e)
-                         previous-cause (.getCause e)]
-                     ;; Check if the root cause or previous cause of the exception
-                     ;; is a ThreadDeath exception. In case the exception is a
-                     ;; CompilerException, the root cause is not returned by
-                     ;; the root-cause function, so we check the previous cause
-                     ;; instead.
-                     (when-not (or (instance? ThreadDeath root-ex)
-                                   (instance? ThreadDeath previous-cause))
-                       (t/send transport (response-for msg {:status :eval-error
-                                                            :ex (-> e class str)
-                                                            :root-ex (-> root-ex class str)}))
-                       (clojure.main/repl-caught e)))))
-        (finally
-          (some-> ^Writer (@session #'*err*) .flush)
-          (some-> ^Writer (@session #'*out*) .flush))))))
+      (let [ctxcl (.getContextClassLoader (Thread/currentThread))]
+        (try
+          (clojure.main/repl
+           :eval (if eval (find-var (symbol eval)) clojure.core/eval)
+           :init #(let [bindings
+                        (-> (get-thread-bindings)
+                            (into @session)
+                            (cond-> explicit-ns (assoc #'*ns* explicit-ns)
+                                    file (assoc #'*file* file)))]
+                    (pop-thread-bindings)
+                    (push-thread-bindings bindings))
+           :read (if (string? code)
+                   (let [reader (source-logging-pushback-reader code line column)]
+                     #(read {:read-cond :allow :eof %2} reader))
+                   (let [code (.iterator ^Iterable code)]
+                     #(or (and (.hasNext code) (.next code)) %2)))
+           :prompt #(reset! session (maybe-restore-original-ns (capture-thread-bindings)))
+           :need-prompt (constantly true)
+           ;; TODO: pretty-print?
+           :print (fn [v]
+                    (.flush *err*)
+                    (.flush *out*)
+                    (t/send transport (response-for msg
+                                                    {:value v
+                                                     :ns (-> *ns* ns-name str)})))
+           ;; TODO: customizable exception prints
+           :caught (fn [e]
+                     (let [root-ex (#'clojure.main/root-cause e)
+                           previous-cause (.getCause e)]
+                       ;; Check if the root cause or previous cause of the exception
+                       ;; is a ThreadDeath exception. In case the exception is a
+                       ;; CompilerException, the root cause is not returned by
+                       ;; the root-cause function, so we check the previous cause
+                       ;; instead.
+                       (when-not (or (instance? ThreadDeath root-ex)
+                                     (instance? ThreadDeath previous-cause))
+                         (t/send transport (response-for msg {:status :eval-error
+                                                              :ex (-> e class str)
+                                                              :root-ex (-> root-ex class str)}))
+                         (clojure.main/repl-caught e)))))
+          (finally
+            (.setContextClassLoader (Thread/currentThread) ctxcl)
+            (some-> ^Writer (@session #'*err*) .flush)
+            (some-> ^Writer (@session #'*out*) .flush)))))))
 
 (defn interruptible-eval
   "Evaluation middleware that supports interrupts.  Returns a handler that supports
