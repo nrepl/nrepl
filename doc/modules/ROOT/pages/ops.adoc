@@ -168,3 +168,35 @@ Optional parameters::
 Returns::
 * `:status` A status of "need-input" will be sent if a session's \*in* requires content in order to satisfy an attempted read operation.
 
+=== `:sideloader-start`
+
+Enable sideloading for the current session. Code evaluated in another session won't trigger sideloading. However once sideloaded classes are available to all sessions.
+
+When sideloading is enabled, the server will ask the client for missing classes and resources.
+
+Required parameters::
+{blank}
+
+
+Optional parameters::
+{blank}
+
+Returns::
+* `:status` A status of "sideloader-lookup" will be sent with parameters `type` (`"resource"` or `"class"`) and `name`.
+* never returns "done".
+
+
+=== `:sideloader-provide`
+
+Provides a resource or class previously asked by a "sideloader-lookup" status.
+
+Required parameters::
+* `:type` being `"resource"` or `"class"`
+* `:name`
+* `:content` base64-encoded bytes array of the class or resource.
+
+Optional parameters::
+{blank}
+
+Returns::
+* `:status` A status of "unexpected-provide" will be sent with parameters `type` (`"resource"` or `"class"`) and `name` if this session's sideloader hasn't asked for this resource/class or it has already been provided.
