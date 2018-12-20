@@ -7,6 +7,7 @@
    nrepl.middleware.interruptible-eval
    nrepl.middleware.load-file
    nrepl.middleware.session
+   nrepl.middleware.sideloader
    [nrepl.misc :refer [log response-for returning]]
    [nrepl.transport :as t])
   (:import
@@ -86,7 +87,8 @@
    #'nrepl.middleware.interruptible-eval/interruptible-eval
    #'nrepl.middleware.load-file/wrap-load-file
    #'nrepl.middleware.session/add-stdin
-   #'nrepl.middleware.session/session])
+   #'nrepl.middleware.session/session
+   #'nrepl.middleware.sideloader/sideloader])
 
 (defn default-handler
   "A default handler supporting interruptible evaluation, stdin, sessions, and
