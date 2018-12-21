@@ -6,6 +6,7 @@
   (:require
    [clojure.java.io :as io]
    [clojure.edn :as edn]
+   [clojure.string :as str]
    [nrepl.config :as config]
    [nrepl.core :as nrepl]
    [nrepl.ack :refer [send-ack]]
@@ -124,7 +125,7 @@
 
 (defn- keywordize-options [options]
   (reduce-kv
-   #(assoc %1 (keyword (clojure.string/replace-first %2 "--" "")) %3)
+   #(assoc %1 (keyword (str/replace-first %2 "--" "")) %3)
    {}
    options))
 
