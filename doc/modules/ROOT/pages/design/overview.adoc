@@ -1,7 +1,7 @@
 = Overview
 
-nREPL largely consists of three abstractions: <<handlers.adoc,handlers>>,
-<<middleware.adoc,middleware>>, and  <<transports.adoc,transports>>.
+nREPL largely consists of three abstractions: <<design/handlers.adoc,handlers>>,
+<<design/middleware.adoc,middleware>>, and  <<design/transports.adoc,transports>>.
 These are roughly analogous to the handlers, middleware, and
 adapters of link:https://github.com/ring-clojure/ring[Ring], though there are some
 important semantic differences. Finally, nREPL is fundamentally message-oriented

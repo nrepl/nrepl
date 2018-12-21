@@ -13,7 +13,7 @@ may seem peculiar, but is motivated by two factors:
   code like `"(+ 1 2) (def a 6)"`).
 
 Thus, messages provided to nREPL handlers are guaranteed to contain a
-`:transport` entry containing the <<transports,transports>> that should be used
+`:transport` entry containing the <<design/transports.adoc,transports>> that should be used
 to send all responses precipitated by a given message.  (This slot is added by
 the nREPL server itself, thus, if a client sends any message containing a
 `"transport"` entry, it will be bashed out by the `Transport` that was the
