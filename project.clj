@@ -53,6 +53,6 @@
                                          with-debug-bindings [[:inner 0]]
                                          merge-meta [[:inner 0]]}}}
 
-             :eastwood {:plugins [[jonase/eastwood "0.2.6"]]
+             :eastwood {:plugins [[jonase/eastwood "0.3.4"]]
                         :eastwood {:config-files ["eastwood.clj"]}
                         :dependencies [[com.hypirion/io "0.3.1"]]}})
