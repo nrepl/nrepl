@@ -184,11 +184,11 @@ Here's an example global configuration file:
 [source,clojure]
 ----
 {:bind         "::"
- :transport    "nrepl.transport/tty"
- :middleware   ["some.ns/mw1" "some.ns/mw1"]}
+ :transport    nrepl.transport/tty
+ :middleware   [some.ns/mw1 some.ns/mw1]}
 ----
 
-IMPORTANT: You can refer to vars either as strings or symbols.
+IMPORTANT: You should refer to vars only as symbols.
 
 And this is an example of a local config file:
 
@@ -198,10 +198,10 @@ And this is an example of a local config file:
 {:bind         "localhost"
  :port         12345
  :ack          23456
- :handler      "some.ns/awesome-handler"
- :transport    "nrepl.transport/bencode"}
+ :handler      some.ns/awesome-handler
+ :transport    nrepl.transport/bencode}
 ----
 
-IMPORTANT: At the time of this writing Boot and Leiningen don't honor the new
-configuration files. They are current leveraged only by the built-in command-line
-interface.
+IMPORTANT: At the time of this writing Boot doesn't honor the new
+configuration files. They are current supported by the built-in command-line
+interface and by Leiningen 2.8.3+.
