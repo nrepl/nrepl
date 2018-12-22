@@ -7,6 +7,7 @@
 * Make sure ack port parameter is converted to integer for command line nREPL initialization.
 * When starting the REPL, make sure the transport option is used correctly.
 * Make sure calling `send-ack` at `cmdline` ns works with the correct transport.
+* [#8](https://github.com/nrepl/nrepl/issues/8): Clean up context classloader after eval.
 
 #### Changes
 
