@@ -30,7 +30,7 @@
                                     :password :env/clojars_password
                                     :sign-releases false}]]
 
-  :profiles {:fastlane {:dependencies [[nrepl/fastlane "0.1.0-SNAPSHOT"]]}
+  :profiles {:fastlane {:dependencies [[nrepl/fastlane "0.1.0"]]}
              :test {:dependencies [[com.hypirion/io "0.3.1"]]}
              ;; Clojure versions matrix
              :provided {:dependencies [[org.clojure/clojure "1.9.0"]]}
