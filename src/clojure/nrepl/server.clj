@@ -83,7 +83,7 @@
 
    Additional middlewares to mix into the default stack may be provided; these
    should all be values (usually vars) that have an nREPL middleware descriptor
-   in their metadata (see nrepl.middleware/set-descriptor!)."
+   in their metadata (see `nrepl.middleware/set-descriptor!`)."
   [& additional-middlewares]
   (let [stack (middleware/linearize-middleware-stack (concat default-middlewares
                                                              additional-middlewares))]
