@@ -105,25 +105,3 @@
             "\n#{}\n"]
            (->> (nrepl/response-seq local 0)
                 (map :out))))))
-
-;; TODO
-(comment
-  (def-repl-test auto-print-stack-trace
-    (is (= true (repl-value "(set! nrepl/*print-detail-on-error* true)")))
-    (is (.contains (-> (repl "(throw (Exception. \"foo\" (Exception. \"nested exception\")))")
-                       full-response
-                       :err)
-                   "nested exception")))
-
-  (def-repl-test install-custom-error-detail-fn
-    (->> (nrepl/send-with connection
-                          (set! nrepl/*print-error-detail*
-                                (fn [ex] (print "custom printing!")))
-                          (set! nrepl/*print-detail-on-error* true))
-         nrepl/response-seq
-         doall)
-    (is (= "custom printing!"
-           (->> (nrepl/send-with connection
-                                 (throw (Exception. "foo")))
-                full-response
-                :err)))))
