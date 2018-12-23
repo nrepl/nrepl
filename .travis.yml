@@ -11,6 +11,7 @@ env:
     - VERSION=1.7 TARGET=test
     - VERSION=1.8 TARGET=test
     - VERSION=1.9 TARGET=test
+    - VERSION=1.10 TARGET=test
   global:
     # deployment credentials
     - secure: "f2pEAipCOs8JRMzSVMnbqBPbWFzI7G/FjPW9FY9ZjAhRvpslRC6JzG4r6uSJMoKU474ZQk+hzpYXCNSuqbztvYdd50J7E5iT3SpOIpRkNHtao0kEfxzFlH7P+sQ0LWPU5KZJXMue/9lKLxXdersdl2SAU7PSntQwqTEEicMluYs="
@@ -31,32 +32,28 @@ stages:
         AND ( branch = master OR branch =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ )
 jobs:
   include:
-    # Test latest OpenJDK against latest Clojure stable
-    - env: VERSION=1.9 TARGET=test
-      jdk: openjdk8
-
     # Test Clojure master against a single JDK
     - env: VERSION=master TARGET=test
       jdk: oraclejdk8
 
     # Coverage analysis
-    - env: VERSION=1.9 TARGET=cloverage
+    - env: VERSION=1.10 TARGET=cloverage
       jdk: oraclejdk8
       after_success: bash <(curl -s https://codecov.io/bash) -f target/coverage/codecov.json
 
     # Eastwood linter
     - stage: check
-      env: VERSION=1.9 TARGET=eastwood
+      env: VERSION=1.10 TARGET=eastwood
       jdk: oraclejdk8
 
     # Check cljfmt
     - stage: check
-      env: VERSION=1.9 TARGET=cljfmt
+      env: VERSION=1.10 TARGET=cljfmt
       jdk: oraclejdk8
 
     # Verify that all files referenced in cljdoc.edn are present
     - stage: check
-      env: VERSION=1.9 TARGET=verify_cljdoc
+      env: VERSION=1.10 TARGET=verify_cljdoc
       jdk: oraclejdk8
 
     # Deploy artifacts
@@ -67,4 +64,4 @@ jobs:
   fast_finish: true      # don't wait for allowed failures before build finish
   allow_failures:
     - env: VERSION=master TARGET=test
-    - env: VERSION=1.9 TARGET=cloverage
+    - env: VERSION=1.10 TARGET=cloverage
