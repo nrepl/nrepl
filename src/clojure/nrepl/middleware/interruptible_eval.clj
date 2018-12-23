@@ -81,7 +81,6 @@
                      #(or (and (.hasNext code) (.next code)) %2)))
            :prompt #(reset! session (maybe-restore-original-ns (capture-thread-bindings)))
            :need-prompt (constantly true)
-           ;; TODO: pretty-print?
            :print (fn [v]
                     (.flush *err*)
                     (.flush *out*)
