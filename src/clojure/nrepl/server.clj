@@ -89,15 +89,6 @@
                                                              additional-middlewares))]
     ((apply comp (reverse stack)) unknown-op)))
 
-;; TODO
-#_(defn- output-subscriptions
-    [h]
-    (fn [{:keys [op sub unsub] :as msg}]
-      (case op
-        "sub" ;; TODO
-        "unsub"
-        (h msg))))
-
 (defrecord Server [server-socket port open-transports transport greeting handler]
   java.io.Closeable
   (close [this] (stop-server this)))
