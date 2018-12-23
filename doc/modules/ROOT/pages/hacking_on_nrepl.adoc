@@ -1,15 +1,23 @@
 = Hacking on nREPL
 
+This section is dedicated to people, who're hacking on nREPL itself (e.g. to fix bugs or to enhance
+existing functionality).
+
+There are generally two approaches to hacking on nREPL - you can either make some changes, build a new server
+and run it locally to test your changes (e.g. via `clj`) or you can hack on nREPL in the classic
+interactive Lisp manner and just make some changes and test them directly from a running (n)REPL.
+
 == Building nREPL
 
-Releases are available from Clojars, and SNAPSHOT builds from master's
+NOTE: Releases are available from Clojars, and SNAPSHOT builds from master's
 HEAD are automatically deployed there as well, so manually building
-nREPL shouldn't ever be necessary (unless you're hacking on it).  But,
-if you insist:
+nREPL shouldn't ever be necessary (unless you're hacking on it).
+
+Building nREPL locally is a very simple process:
 
 . Clone the repo
-. Make sure you have lein installed
-. Run the lein build:
+. Make sure you have Leingingen installed
+. Run the build:
 
 [source,shell]
 ----
@@ -22,6 +30,48 @@ Afterwards you can simply do something like:
 ----
 $ clj -Sdeps '{:deps {nrepl {:mvn/version "0.5.3-SNAPSHOT"}}}' -m nrepl.cmdline --interactive
 ----
+
+Now you can start playing the server you've built.
+
+== Interactive Hacking
+
+As nREPL is fundamental to the development workflows of many people it might be
+unclear how exactly you can hack on it, while at the same time you're already
+running an nREPL server, powering the REPL in which you're doing to hacking.
+
+Developing nREPL while connected to nREPL is a classic example of eating your own dog food.
+
+The development process is actually pretty simple - you just need to
+connect to nREPL as you'd normally would (e.g. by using CIDER, vim-iced or Calva), make
+some changes and test them by starting new nREPL instances from the
+REPL and connecting to them to see how they are having.
+
+In practice it might not be convenient to spin many nREPL connections
+from your editor, so a combination of `nrepl.server/start-server` and
+`nrepl.core/connect` is a very good alternative.
+
+[source,clojure]
+----
+;; first we have to start a new server
+=> (require '[nrepl.server :refer [start-server stop-server]])
+nil
+=> (def server (start-server :port 7888))
+='user/server
+=> (require '[nrepl.core :as nrepl])
+nil
+;; now you can connect to the server and send it some messages
+=> (with-open [conn (nrepl/connect :port 7888)]
+     (-> (nrepl/client conn 1000)    ; message receive timeout required
+         (nrepl/message {:op "eval" :code "(+ 2 3)"})
+         nrepl/response-values))
+;; when you're done with a server you can stop it
+=> (stop-server server)
+----
+
+
+NOTE: You don't really need an nREPL-powered REPL for this
+workflow. It's going to work in exactly the same manner regardless of
+the REPL you're using.
 
 == Running the tests
 
@@ -39,4 +89,40 @@ specific version of Clojure like this:
 [source,shell]
 ----
 $ lein with-profile 1.9 test
+----
+
+== Running cljfmt
+
+Our CI build enforces consistent indentation in all source files using `cljfmt`. You can run it
+locally using:
+
+[source,shell]
+----
+$ lein with-profile cljfmt cljfmt check
+----
+
+You can have cljfmt fix indentation problems like this:
+
+[source,shell]
+----
+$ lein with-profile cljfmt cljfmt fix
+----
+
+== Running Eastwood
+
+Our CI build enforces some lint checks via `Eastwood`. You can run it
+locally using:
+
+[source,shell]
+----
+$ lein with-profile eastwood eastwood
+----
+
+== Regenerating the Built-in Ops Documentation
+
+If you've made any changes to the built-in middleware descriptors you can regenerate their documentation using:
+
+[source,shell]
+----
+$ lein docs
 ----
