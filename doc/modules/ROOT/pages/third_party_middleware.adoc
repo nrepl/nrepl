@@ -53,5 +53,5 @@ which was eventually integrated into `cider-nrepl`.
 [NOTE]
 ====
 This list doesn't aim to be complete. You can find more 3rd-party middlewares listed
-link:https://github.com/nrepl/nREPL/wiki/Extensions[here].
+link:https://github.com/nrepl/nrepl/wiki/Extensions[here].
 ====
