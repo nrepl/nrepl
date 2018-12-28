@@ -12,6 +12,7 @@
 #### Changes
 
 * [#16](https://github.com/nrepl/nrepl/issues/16): Use a single session thread per evaluation.
+* [#107](https://github.com/nrepl/nrepl/issues/107): Stop reading and evaluating code on first read error.
 * Support single-arity printer functions.
 * Restore the `nrepl.bencode` namespace.
 

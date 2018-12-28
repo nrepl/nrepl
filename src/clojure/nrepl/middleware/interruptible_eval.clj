@@ -71,7 +71,13 @@
                     (push-thread-bindings bindings))
            :read (if (string? code)
                    (let [reader (source-logging-pushback-reader code line column)]
-                     #(read {:read-cond :allow :eof %2} reader))
+                     #(try (read {:read-cond :allow :eof %2} reader)
+                           (catch RuntimeException e
+                             ;; If error happens during reading the string, we
+                             ;; don't want eval to start reading and executing the
+                             ;; rest of it. So we skip over the remaining text.
+                             (.skip ^LineNumberingPushbackReader reader Long/MAX_VALUE)
+                             (throw e))))
                    (let [code (.iterator ^Iterable code)]
                      #(or (and (.hasNext code) (.next code)) %2)))
            :prompt #(reset! session (maybe-restore-original-ns (capture-thread-bindings)))
@@ -138,7 +144,7 @@
                  {:requires #{"clone" "close" #'nrepl.middleware.pr-values/pr-values}
                   :expects #{}
                   :handles {"eval"
-                            {:doc "Evaluates code."
+                            {:doc "Evaluates code. Note that unlike regular stream-based Clojure REPLs, nREPL's `:eval` short-circuits on first read error and will not try to read and execute the remaining code in the message."
                              :requires {"code" "The code to be evaluated."
                                         "session" "The ID of the session within which to evaluate the code."}
                              :optional {"id" "An opaque message ID that will be included in responses related to the evaluation, and which may be used to restrict the scope of a later \"interrupt\" operation."

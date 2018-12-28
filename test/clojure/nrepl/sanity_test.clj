@@ -70,6 +70,23 @@
     ["" 4 20 1 0] "(+ 2 2) (* *1 5) (/ *2 4) (- *3 4)"
     ["" nil] '*1))
 
+(deftest read-error-short-circuits-execution
+  (testing "read error prevents the remaining code from being read and executed"
+    (let [[err out & vals] (internal-eval "(comment {:a} (println \"BOOM!\"))")]
+      (if (and (= (:major *clojure-version*) 1)
+               (<= (:minor *clojure-version*) 9))
+        (is (re-matches #"(?s)^RuntimeException Map literal must contain an even number of forms[^\n]+\n$" err))
+        (is (re-matches #"(?s)^Syntax error reading source at[^\n]+\nMap literal must contain an even number of forms\n" err)))
+      (is (= "" out))
+      (is (= vals [nil]))))
+
+  (testing "exactly one read error is produced even if there is remaining code in the message"
+    (let [[err out & vals] (internal-eval ")]} 42")]
+      (is (re-find #"Unmatched delimiter: \)" err))
+      (is (not (re-find #"Unmatched delimiter: \]" err)))
+      (is (not (re-find #"Unmatched delimiter: \}" err)))
+      (is (= vals [nil])))))
+
 (deftest stdout-stderr
   (are [result expr] (= result (internal-eval expr))
     ["5 6 7 \n 8 9 10\n" nil] '(println 5 6 7 \newline 8 9 10)
