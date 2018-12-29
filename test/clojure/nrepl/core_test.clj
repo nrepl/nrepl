@@ -300,7 +300,7 @@
     (is (nil? value))
     (is (= #{"done" "eval-error"} status))
     (is (re-seq #"EOF while reading" (first (repl-values session "(or (.getMessage *e)
-                                                                      (-> *e Throwable->map .toString))"))))))
+                                                                      (-> *e Throwable->map :cause))"))))))
 
 (def-repl-test switch-ns
   (is (= "otherns" (-> (repl-eval session "(ns otherns) (defn function [] 12)")
