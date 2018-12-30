@@ -10,7 +10,7 @@
    [nrepl.config :as config]
    [nrepl.core :as nrepl]
    [nrepl.ack :refer [send-ack]]
-   [nrepl.server :refer [start-server]]
+   [nrepl.server :as nrepl-server]
    [nrepl.transport :as transport]
    [nrepl.version :as version]))
 
@@ -68,6 +68,20 @@
   (some (partial = input)
         ['exit 'quit '(exit) '(quit)]))
 
+(defn repl-intro
+  "Returns nREPL interactive repl intro copy and version info as a new-line
+  separated string."
+  []
+  (format "nREPL %s
+Clojure %s
+%s %s
+Interrupt: Control+C
+Exit:      Control+D or (exit) or (quit)"
+          (:version-string version/version)
+          (clojure-version)
+          (System/getProperty "java.vm.name")
+          (System/getProperty "java.runtime.version")))
+
 (defn- run-repl
   ([host port]
    (run-repl host port nil))
@@ -82,11 +96,7 @@
          ns (atom "user")]
      (swap! running-repl assoc :transport transport)
      (swap! running-repl assoc :client client)
-     (println (format "nREPL %s" (:version-string version/version)))
-     (println (str "Clojure " (clojure-version)))
-     (println (System/getProperty "java.vm.name") (System/getProperty "java.runtime.version"))
-     (println (str "Interrupt: Control+C"))
-     (println (str "Exit:      Control+D or (exit) or (quit)"))
+     (println (repl-intro))
      (loop []
        (prompt @ns)
        (flush)
@@ -103,6 +113,7 @@
 (def #^{:private true} option-shorthands
   {"-i" "--interactive"
    "-r" "--repl"
+   "-f" "--repl-fn"
    "-c" "--connect"
    "-b" "--bind"
    "-h" "--host"
@@ -145,9 +156,9 @@
         (recur (rest rem-args)
                (assoc options arg (first rem-args)))))))
 
-(defn- display-help
+(defn help
   []
-  (println "Usage:
+  (str "Usage:
 
   -i/--interactive            Start nREPL and connect to it with the built-in client.
   -c/--connect                Connect to a running nREPL with the built-in client.
@@ -228,7 +239,7 @@
     [mw-opt]
     mw-opt))
 
-(defn- parse-cli-values
+(defn parse-cli-values
   "Converts relevant command line argument values to their config
   representation."
   [options]
@@ -239,64 +250,202 @@
              options
              options))
 
-(defn- run
+(defn args->cli-options
+  "Takes CLI args list and returns vector of parsed options map and
+  remaining args."
   [args]
-  (set-signal-handler! "INT" handle-interrupt)
   (let [[options _args] (split-args (expand-shorthands args))
-        options (keywordize-options options)
-        options (parse-cli-values options)
-        options (merge config/config options)]
-    ;; we have to check for --help first, as it's special
-    (when (:help options)
-      (display-help)
-      (exit 0))
-    (when (:version options)
-      (println (:version-string version/version))
-      (exit 0))
-    ;; then we check for --connect
-    (let [port (->int (:port options))
-          host (:host options)
-          transport (or (some->> (:transport options) (require-and-resolve :transport))
-                        #'transport/bencode)]
-      (when (:connect options)
-        (run-repl host port {:transport transport})
-        (exit 0))
-      ;; otherwise we assume we have to start an nREPL server
-      (let [bind (:bind options)
-            ;; if some handler was explicitly passed we'll use it, otherwise we'll build one
-            ;; from whatever was passed via --middleware
-            middleware (sanitize-middleware-option (:middleware options))
-            handler (some->> (:handler options) (require-and-resolve :handler))
-            handler (or handler (build-handler middleware))
-            greeting-fn (if (= transport #'transport/tty) #'transport/tty-greeting)
-            server (start-server :port port :bind bind :handler handler
-                                 :transport-fn transport :greeting-fn greeting-fn)]
-        (when-let [ack-port (some-> (:ack options) ->int)]
-          (binding [*out* *err*]
-            (println (format "ack'ing my port %d to other server running on port %d"
-                             (:port server) ack-port)
-                     (:status (send-ack (:port server) ack-port transport)))))
-        (let [port (:port server)
-              ^java.net.ServerSocket ssocket (:server-socket server)
-              host (.getHostName (.getInetAddress ssocket))]
-          ;; The format here is important, as some tools (e.g. CIDER) parse the string
-          ;; to extract from it the host and the port to connect to
-          (println (format "nREPL server started on port %d on host %s - %s://%s:%d"
-                           port host (transport/uri-scheme transport) host port))
-          ;; Many clients look for this file to infer the port to connect to
-          (let [port-file (io/file ".nrepl-port")]
-            (.deleteOnExit port-file)
-            (spit port-file port))
-          (if (:interactive options)
-            (run-repl host port (merge (when (:color options) colored-output)
-                                       {:transport transport}))
-            ;; need to hold process open with a non-daemon thread -- this should end up being super-temporary
-            (Thread/sleep Long/MAX_VALUE)))))))
+        merge-config (partial merge config/config)
+        options (-> options
+                    (keywordize-options)
+                    (parse-cli-values)
+                    (merge-config))]
+    [options _args]))
+
+(defn display-help
+  "Prints the help copy to the screen and exits the program with exit code 0."
+  []
+  (println (help))
+  (exit 0))
+
+(defn display-version
+  "Prints nREPL version to the screen and exits the program with exit code 0."
+  []
+  (println (:version-string version/version))
+  (exit 0))
+
+(defn- options->transport
+  "Takes a map of nREPL CLI options.
+  Returns either a default transport or the value of :transport."
+  [options]
+  (or (some->> options
+               (:transport)
+               (require-and-resolve :transport))
+      #'transport/bencode))
+
+(defn- options->handler
+  "Takes a map of nREPL CLI options and list of middleware.
+  Returns a request handler function.
+  If some handler was explicitly passed we'll use it, otherwise we'll build
+  one from whatever was passed via --middleware"
+  [options middleware]
+  (or (some->> options
+               (:handler)
+               (require-and-resolve :handler))
+      (build-handler middleware)))
+
+(defn- options->ack-port
+  "Takes a map of nREPL CLI options.
+  Returns integer ack port or nil."
+  [options]
+  (some-> options
+          (:ack)
+          (->int)))
+
+(defn- options->repl-fn
+  "Takes a map of nREPL CLI options.
+  Returns either the :repl-fn config option or uses run-repl."
+  [options]
+  (or (some->> options
+               (:repl-fn)
+               (symbol)
+               (require-and-resolve :repl-fn))
+      #'run-repl))
+
+(defn- options->greeting
+  "Takes a map of nREPL CLI options and the selected transport for the server.
+  Returns a greeting function or nil."
+  [options transport]
+  (when (= transport #'transport/tty)
+    #'transport/tty-greeting))
+
+(defn connection-opts
+  "Takes map of nREPL CLI options
+  Returns map of processed options used to connect or start a nREPL server."
+  [options]
+  {:port (->int (:port options))
+   :host (:host options)
+   :transport (options->transport options)
+   :repl-fn (options->repl-fn options)})
+
+(defn server-opts
+  "Takes a map of nREPL CLI options
+  Returns map of processed options to start an nREPL server."
+  [options]
+  (let [middleware (sanitize-middleware-option (:middleware options))
+        {:keys [host port transport]} (connection-opts options)]
+    (merge options
+           {:host host
+            :port port
+            :transport transport
+            :bind (:bind options)
+            :middleware middleware
+            :handler (options->handler options middleware)
+            :greeting (options->greeting options transport)
+            :ack-port (options->ack-port options)
+            :repl-fn (options->repl-fn options)})))
+
+(defn interactive-repl
+  "Runs an interactive repl if :interactive CLI option is true otherwise
+  puts the current thread to sleep
+  Takes nREPL server map and processed CLI options map.
+  Returns nil."
+  [server options]
+  (let [transport (:transport options)
+        repl-fn (:repl-fn options)
+        host (:host server)
+        port (:port server)]
+    (repl-fn host port (merge (when (:color options) colored-output)
+                              {:transport transport}))))
+
+(defn connect-to-server
+  "Connects to a running nREPL server and runs a REPL. Exits program when REPL
+  is closed.
+  Takes a map of nREPL CLI options."
+  [{:keys [host port transport] :as options}]
+  (interactive-repl {:host host
+                     :port port}
+                    options)
+  (exit 0))
+
+(defn ack-server
+  "Acknowledge the port of this server to another nREPL server running on
+  :ack port.
+  Takes nREPL server map and processed CLI options map.
+  Prints a message describing the acknowledgement between servers.
+  Returns nil."
+  [server options]
+  (when-let [ack-port (:ack-port options)]
+    (let [port (:port server)
+          transport (:transport options)]
+      (binding [*out* *err*]
+        (println (format "ack'ing my port %d to other server running on port %d"
+                         port ack-port)
+                 (send-ack port ack-port transport))))))
+
+(defn server-started-message
+  "Returns nREPL server started message that some tools rely on to parse the
+  connection details from.
+  Takes nREPL server map and processed CLI options map.
+  Returns connection header string."
+  [server options]
+  (let [transport (:transport options)
+        port (:port server)
+        ^java.net.ServerSocket ssocket (:server-socket server)
+        host (.getHostName (.getInetAddress ssocket))]
+    ;; The format here is important, as some tools (e.g. CIDER) parse the string
+    ;; to extract from it the host and the port to connect to
+    (format "nREPL server started on port %d on host %s - %s://%s:%d"
+            port host (transport/uri-scheme transport) host port)))
+
+(defn save-port-file
+  "Writes a file relative to project classpath with port number so other tools
+  can infer the nREPL server port.
+  Takes nREPL server map and processed CLI options map.
+  Returns nil."
+  [server options]
+  ;; Many clients look for this file to infer the port to connect to
+  (let [port (:port server)
+        port-file (io/file ".nrepl-port")]
+    (.deleteOnExit port-file)
+    (spit port-file port)))
+
+(defn start-server
+  "Creates an nREPL server instance.
+  Takes map of CLI options.
+  Returns nREPL server map."
+  [{:keys [port bind handler transport greeting] :as options}]
+  (nrepl-server/start-server
+   :port port
+   :bind bind
+   :handler handler
+   :transport-fn transport
+   :greeting-fn greeting))
+
+(defn dispatch-commands
+  "Look at options to dispatch a specified command.
+  Takes CLI options map. May return a server map, nil, or exit."
+  [options]
+  (cond (:help options)    (display-help)
+        (:version options) (display-version)
+        (:connect options) (connect-to-server (connection-opts options))
+        :else (let [options (server-opts options)
+                    server (start-server options)]
+                (ack-server server options)
+                (println (server-started-message server options))
+                (save-port-file server options)
+                (if (:interactive options)
+                  (interactive-repl server options)
+                  ;; need to hold process open with a non-daemon thread
+                  ;;   -- this should end up being super-temporary
+                  (Thread/sleep Long/MAX_VALUE)))))
 
 (defn -main
   [& args]
   (try
-    (run args)
+    (set-signal-handler! "INT" handle-interrupt)
+    (let [[options _args] (args->cli-options args)]
+      (dispatch-commands options))
     (catch clojure.lang.ExceptionInfo ex
       (let [{:keys [::kind ::status]} (ex-data ex)]
         (when (= kind ::exit)
