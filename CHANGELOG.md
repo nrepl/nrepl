@@ -4,9 +4,9 @@
 
 #### Bugs fixed
 
-* Make sure ack port parameter is converted to integer for command line nREPL initialization.
-* When starting the REPL, make sure the transport option is used correctly.
-* Make sure calling `send-ack` at `cmdline` ns works with the correct transport.
+* [CLI] Make sure ack port parameter is converted to integer for command line nREPL initialization.
+* [CLI] When starting the REPL, make sure the transport option is used correctly.
+* [CLI] Make sure calling `send-ack` at `cmdline` ns works with the correct transport.
 * [#8](https://github.com/nrepl/nrepl/issues/8): Clean up context classloader after eval.
 
 #### Changes
@@ -23,7 +23,7 @@
 
 #### Bugs fixed
 
-* [#90](https://github.com/nrepl/nrepl/issues/90): Doesn't display properly URLs if using a 3rd-party transport.
+* [CLI] [#90](https://github.com/nrepl/nrepl/issues/90): Doesn't display properly URLs if using a 3rd-party transport.
 
 ### 0.5.1 (2018-11-30)
 
@@ -38,14 +38,14 @@
 * [#12](https://github.com/nrepl/nrepl/issues/12): Support custom printing
   function in `pr-values`, enabling pretty-printed REPL results.
 * [#66](https://github.com/nrepl/nrepl/pull/66): Add support for a global and local configuration file.
-* [#63](https://github.com/nrepl/nrepl/issues/63): Make it possible to specify the transport via the command-line client (`--transport/-t`).
+* [CLI] [#63](https://github.com/nrepl/nrepl/issues/63): Make it possible to specify the transport via the command-line client (`--transport/-t`).
 
 #### Bugs fixed
 
 * [#10](https://github.com/nrepl/nrepl/issues/10): Bind `*1`, `*2`, `*3` and `*e` in cloned session.
 * [#33](https://github.com/nrepl/nrepl/issues/33): Add ability to change value of `*print-namespace-maps*`.
 * [#68](https://github.com/nrepl/nrepl/issues/68): Avoid illegal access warning on JDK 9+ caused by `nrepl.middleware.interruptible-eval/set-line!`.
-* [#77](https://github.com/nrepl/nrepl/issues/77): Exit cleanly after pressing `ctrl-d` in an interactive REPL.
+* [CLI] [#77](https://github.com/nrepl/nrepl/issues/77): Exit cleanly after pressing `ctrl-d` in an interactive REPL.
 * [#13](https://github.com/nrepl/nrepl/issues/13): Catch ThreadDeath exception thrown by interrupt.
 
 #### Changes
@@ -54,17 +54,17 @@
 * [#76](https://github.com/nrepl/nrepl/pull/76): Move version-related logic to a dedicated namespace (`nrepl.version`).
 * Deprecate `nrepl.core/version`.
 * Deprecate `nrepl.core/version-string`.
-* [#81](https://github.com/nrepl/nrepl/pull/81): Handle interrupt in interactive session.
+* [CLI] [#81](https://github.com/nrepl/nrepl/pull/81): Handle interrupt in interactive session.
 
 ### 0.4.5 (2018-09-02)
 
 #### New features
 
-* The built-in the CLI generates an `.nrepl-port` file on server startup.
-* [#39](https://github.com/nrepl/nrepl/issues/39): Add a `--connect` command-line option allowing you to connect.
+* [CLI] The built-in the CLI generates an `.nrepl-port` file on server startup.
+* [CLI] [#39](https://github.com/nrepl/nrepl/issues/39): Add a `--connect` command-line option allowing you to connect.
 with the built-in client to an already running nREPL server.
-* Add shorthand names for most command-line options.
-* Add a `-v/--version` command-line option.
+* [CLI] Add shorthand names for most command-line options.
+* [CLI] Add a `-v/--version` command-line option.
 
 #### Changes
 
@@ -78,21 +78,21 @@ with the built-in client to an already running nREPL server.
 
 #### New features
 
-* Added `--help` command-line option.
-* Added `--bind` command-line option.
-* Added `--handler` and `--middleware` command-line options. Extremely useful when starting nREPL using
+* [CLI] Added `--help` command-line option.
+* [CLI] Added `--bind` command-line option.
+* [CLI] Added `--handler` and `--middleware` command-line options. Extremely useful when starting nREPL using
 `clj` and `tools.deps`, as this allows you to inject middleware trivially without the need for
 something like `lein` or `boot`.
 
 #### Bugs fixed
 
-* Add missing newline after colorized values displayed in the REPL.
+* [CLI] Add missing newline after colorized values displayed in the REPL.
 
 ### 0.4.3 (2018-07-26)
 
 #### New features
 
-* Display connection info when starting the built-in cmd client. This makes it possible
+* [CLI] Display connection info when starting the built-in cmd client. This makes it possible
 for clients like CIDER to parse it and auto-connect to the server. Pretty handy if you're
 using `clj` to start your server.
 
