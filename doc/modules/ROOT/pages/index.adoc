@@ -50,3 +50,17 @@ NOTE: The migration of nREPL out of Clojure Contrib is probably the
 only case where we were forced to make breaking changes.footnote:[Apart
 from removing deprecated code that is.] Those are detailed in great
 detail <<installation.adoc#upgrading,here>>.
+
+== Beyond Clojure
+
+While this site is mostly about nREPL's reference (canonical) Clojure implementation,
+it's important to point out that the nREPL protocol is language-agnostic and can be
+leveraged for many languages that have similar semantics to Clojure (in particular the ability to
+evaluate code at runtime).
+
+One way to describe nREPL would be as something similar in
+nature to the link:https://langserver.org/[Language Server Protocol]. nREPL is not nearly as
+ambitious as LSP, but on the other hand it's also much simpler and it's trivial to
+create nREPL clients in any language.
+
+You can find some alternative nREPL implementations and more on subject <<beyond_clojure.adoc,here>>.

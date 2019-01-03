@@ -1,0 +1,13 @@
+= Beyond Clojure
+
+As mentioned earlier the nREPL protocol is language-agnostic and can
+be leveraged for many languages that have similar semantics to Clojure
+(in particular the ability to evaluate code at runtime).
+
+Here's a listing of alternative nREPL implementations.
+
+== Alternative Implementations
+
+* link:https://github.com/Foxboron/HyREPL[HyREPL] - an nREPL for the link:http://hylang.org/[Hy programming language]
+
+* link:https://gitlab.com/technomancy/jeejah[JeeJah] - an nREPL server for link:https://fennel-lang.org/[Fennel] and link:https://www.lua.org/[Lua]

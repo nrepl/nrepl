@@ -12,6 +12,7 @@
 * xref:ops.adoc[Built-in Ops]
 * xref:third_party_middleware.adoc[Third-party Middleware]
 * xref:hacking_on_nrepl.adoc[Hacking on nREPL]
+* xref:beyond_clojure.adoc[Beyond Clojure]
 * xref:faq.adoc[FAQ]
 * xref:troubleshooting.adoc[Troubleshooting]
 * xref:additional_resources.adoc[Additional Resources]
