@@ -15,6 +15,7 @@ client/tool.  Tools that support nREPL include:
 * link:https://github.com/jasongilman/proto-repl[Proto REPL] (Clojure development environment and REPL for Atom)
 * link:https://github.com/BetterThanTomorrow/calva[Calva] (Clojure & ClojureScript support for VS Code)
 * link:https://github.com/trptcolin/reply/[REPL-y] (command-line client for nREPL)
+* link:https://github.com/eraserhd/rep[rep] - A single-shot nREPL client designed for shell invocation.
 
 NOTE: Both Leiningen and Boot use internally REPL-y, as their command-line nREPL client.
 
