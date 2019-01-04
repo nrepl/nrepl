@@ -55,8 +55,8 @@ detail <<installation.adoc#upgrading,here>>.
 
 While this site is mostly about nREPL's reference (canonical) Clojure implementation,
 it's important to point out that the nREPL protocol is language-agnostic and can be
-leveraged for many languages that have similar semantics to Clojure (in particular the ability to
-evaluate code at runtime).
+leveraged for many languages that have the ability to evaluate code
+at runtime.
 
 One way to describe nREPL would be as something similar in
 nature to the link:https://langserver.org/[Language Server Protocol]. nREPL is not nearly as
