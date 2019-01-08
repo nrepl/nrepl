@@ -162,6 +162,9 @@ Clojure one.
 
 == Pretty Printing
 
+NOTE: Pretty-printing support was added in nREPL 0.5 and the API is still
+considered experimental.
+
 nREPL includes a `pr-values` middleware to print the results of evaluated
 forms as strings for returning to the client. By default, this will use either
 `print-dup` or `print-method` to match the standard Clojure `print` behavior.
@@ -179,3 +182,33 @@ to pretty-print the evaluation results automatically.
  :printer 'my.custom/print-value
  :print-options {:print-width 120}}
 ----
+
+[NOTE]
+====
+A note for client authors - passing strings will work just fine as
+well (using the bencode transport you can't pass keywords and symbols
+as anyways).
+
+[source,clojure]
+----
+{"op" "eval"
+ "code" "(+ 1 1)"
+ "printer" "my.custom/print-value"
+ "print-options" {"print-width" 120}}
+----
+
+nREPL will take of converting the keys of the `print-options` map to
+keywords, so they'd work as expected with their respective printers.
+====
+
+The requirement for the `printer` function are the following:
+
+* It should take one or two arguments - a value to print, and an optional print options map.
+* It should return the printed value as a string. This means you can't use directly
+functions like `clojure.pprint/pprint`, as they output the printed value instead of returning
+it as a string.
+* The printer function should have no side-effects.
+* In the absence of print options it should ideally respect Clojure's print dynamic vars - e.g. `*print-length*`, `*print-right-margin*`, etc.
+
+Great examples of functions that honour the API contract are
+`zprint.core/zprint-str` and `puget.printer/pprint-str`.
