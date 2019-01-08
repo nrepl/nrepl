@@ -55,20 +55,18 @@ Raising a monthly budget of over $5000 would open the possibility of someone wor
 which would speed up the pace of development significantly.
 
 We welcome both individual and corporate sponsors! We also offer a wide array of funding channels to account
-for your preferences (although currently link:https://opencollective.com/cider[Open Collective] is our preferred funding platform).
+for your preferences (although currently link:https://opencollective.com/nrepl[Open Collective] is our preferred funding platform).
 
 If you're working in a company that's making significant use of nREPL we'd appreciate it if you suggest to your company
 to become a nREPL sponsor.
 
 You can support the development of nREPL, CIDER, link:https://github.com/clojure-emacs/clojure-mode[clojure-mode] and link:https://github.com/clojure-emacs/inf-clojure[inf-clojure] via
-link:https://opencollective.com/cider[Open Collective],
-link:https://salt.bountysource.com/teams/cider[Salt],
+link:https://opencollective.com/nrepl[Open Collective],
 link:https://www.patreon.com/bbatsov[Patreon],
-link:https://liberapay.com/bbatsov/donate[Liberapay] and PayPal.
-
-link:https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GRQKNBM6P8VRQ[image:https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif[Paypal]]
+link:https://liberapay.com/bbatsov/donate[Liberapay] and
+link:https://www.paypal.me/bbatsov[PayPal].
 
 === Open Collective
 
-* [link:https://opencollective.com/cider#backer[Become a backer]] (for individuals)
-* [link:https://opencollective.com/cider#sponsor[Become a sponsor]] (for companies)
+* [link:https://opencollective.com/nrepl#backer[Become a backer]] (for individuals)
+* [link:https://opencollective.com/nrepl#sponsor[Become a sponsor]] (for companies)
