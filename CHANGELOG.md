@@ -12,6 +12,7 @@
 #### Changes
 
 * [#16](https://github.com/nrepl/nrepl/issues/16): Use a single session thread per evaluation.
+* Support single-arity printer functions.
 
 ### 0.5.3 (2018-12-12)
 

@@ -9,11 +9,12 @@
 
 (defn- default-printer
   "Uses `print-dup` or `print-method` to print a value to a string."
-  [v opts]
-  (let [printer (if *print-dup* print-dup print-method)
-        writer (java.io.StringWriter.)]
-    (printer v writer)
-    (str writer)))
+  ([v] (default-printer v nil))
+  ([v _opts]
+   (let [printer (if *print-dup* print-dup print-method)
+         writer (java.io.StringWriter.)]
+     (printer v writer)
+     (str writer))))
 
 (defn- resolve-printer
   "Resolve a namespaced symbol to a printer var. Returns the var or nil if
@@ -41,7 +42,13 @@
              (if (and (string? (:value resp)) (:printed-value resp))
                (dissoc resp :printed-value)
                (if-let [[_ v] (find resp :value)]
-                 (assoc resp :value (str/trim-newline (print-fn v opts)))
+                 (let [printed-value (str/trim-newline
+                                      ;; Support both functions that take and don't take
+                                      ;; an options map as their second param
+                                      (if (not-empty opts)
+                                        (print-fn v opts)
+                                        (print-fn v)))]
+                   (assoc resp :value printed-value))
                  resp)))
       this)))
 
