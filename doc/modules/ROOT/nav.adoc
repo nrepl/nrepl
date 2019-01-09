@@ -10,7 +10,7 @@
 ** xref:design/transports.adoc[Transports]
 ** xref:design/middleware.adoc[Middleware]
 * xref:ops.adoc[Built-in Ops]
-* xref:Extensions.adoc[Extensions]
+* xref:extensions.adoc[Extensions]
 * xref:hacking_on_nrepl.adoc[Hacking on nREPL]
 * xref:beyond_clojure.adoc[Beyond Clojure]
 * xref:faq.adoc[FAQ]
