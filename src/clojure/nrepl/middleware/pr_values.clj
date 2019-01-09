@@ -5,7 +5,7 @@
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.misc :as misc])
   (:import
-   nrepl.transport.Transport))
+   (nrepl.transport Transport)))
 
 (defn- default-printer
   "Uses `print-dup` or `print-method` to print a value to a string."
