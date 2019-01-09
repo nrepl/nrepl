@@ -14,7 +14,7 @@
    ["Middleware" {:file "doc/modules/ROOT/pages/design/middleware.adoc"}]]
   ["Built-in Ops" {:file "doc/modules/ROOT/pages/ops.adoc"}]
   ["FAQ" {:file "doc/modules/ROOT/pages/faq.adoc"}]
-  ["Third-party Middleware" {:file "doc/modules/ROOT/pages/third_party_middleware.adoc"}]
+  ["Extensions" {:file "doc/modules/ROOT/pages/extensions.adoc"}]
   ["Hacking on nREPL" {:file "doc/modules/ROOT/pages/hacking_on_nrepl.adoc"}]
   ["About" {}
    ["History" {:file "doc/modules/ROOT/pages/about/history.adoc"}]

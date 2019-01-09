@@ -1,6 +1,6 @@
-= Third-party Middleware
+= Extensions
 
-Here's a list of notable nREPL middleware you might encounter in the wild.
+Here's a list of notable nREPL extensions (middleware or transports) you might encounter in the wild.
 
 [WARNING]
 ====
@@ -8,18 +8,14 @@ Make sure you're using the latest versions of those middlewares, as
 all of them added support for nREPL 0.4+ fairly recently.
 ====
 
-== Clojure Editor Support
+== Official
 
-* link:https://github.com/clojure-emacs/cider-nrepl[cider-nrepl]: A collection of nREPL middleware designed to enhance CIDER (and Clojure editors in general).
-* link:https://github.com/clojure-emacs/refactor-nrepl[refactor-nrepl]: A collection of functionality designed to support editor refactoring features.
-* link:https://github.com/liquidz/iced-nrepl[iced-nrepl]: nREPL middleware to support vim-iced.
+Official extensions are developed and maintained by nREPL's Core Team and are
+hosted under the nREPL GitHub organization.
 
-== Debugging
+=== Middleware
 
-* link:http://bpiel.github.io/sayid/[sayid]: A powerful tracing/debugging tool. It is a great alternative of CIDER-nREPL's basic tracing functionality.
-* link:https://github.com/vvvvalvalval/scope-capture-nrepl[scope-capture-nrepl]: A companion library to scope-capture, providing an nREPL middleware that lets you put your REPL in the context of an Execution Point.
-
-== ClojureScript Support
+==== ClojureScript Support
 
 * link:https://github.com/nrepl/piggieback[Piggieback]
 
@@ -33,11 +29,35 @@ nREPL support.
 only stubs the piggieback API, leverages its own nREPL middleware
 internally for ClojureScript evaluation)
 
-== HTTP Support
+=== Transports
+
+==== HTTP Support
 
 * link:https://github.com/nrepl/drawbridge[drawbridge]
 
-== Deprecated Middleware
+==== Transit Support
+
+* link:https://github.com/nrepl/fastlane[fastlane]
+
+== Third-party
+
+Third-party extensions are not developed and maintained by nREPL's Core Team and are
+hosted outside the nREPL GitHub organization.
+
+=== Middleware
+
+==== Clojure Editor Support
+
+* link:https://github.com/clojure-emacs/cider-nrepl[cider-nrepl]: A collection of nREPL middleware designed to enhance CIDER (and Clojure editors in general).
+* link:https://github.com/clojure-emacs/refactor-nrepl[refactor-nrepl]: A collection of functionality designed to support editor refactoring features.
+* link:https://github.com/liquidz/iced-nrepl[iced-nrepl]: nREPL middleware to support vim-iced.
+
+==== Debugging
+
+* link:http://bpiel.github.io/sayid/[sayid]: A powerful tracing/debugging tool. It is a great alternative of CIDER-nREPL's basic tracing functionality.
+* link:https://github.com/vvvvalvalval/scope-capture-nrepl[scope-capture-nrepl]: A companion library to scope-capture, providing an nREPL middleware that lets you put your REPL in the context of an Execution Point.
+
+==== Deprecated
 
 This section lists middlewares that were somewhat prominent in the
 past, but were replaced by alternatives down the road.
