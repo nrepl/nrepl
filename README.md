@@ -15,7 +15,7 @@ code in remote environments.
 ### How is this different from the "contrib" [tools.nrepl](https://github.com/clojure/tools.nrepl/) project?
 
 Check the brief history of nREPL, available
-[here](https://nrepl.xyz/nrepl/about/history.html).
+[here](https://nrepl.org/nrepl/about/history.html).
 
 ### Status
 
@@ -39,7 +39,7 @@ the needs of the essential tools of the Clojure(Script) ecosystem
 
 ## Usage
 
-See the [manual](https://nrepl.xyz).
+See the [manual](https://nrepl.org).
 
 ## API Documentation
 

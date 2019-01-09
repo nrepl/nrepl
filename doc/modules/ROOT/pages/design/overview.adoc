@@ -1,7 +1,7 @@
 = Overview
 
-nREPL largely consists of three abstractions: <<handlers.adoc,handlers>>,
-<<middleware.adoc,middleware>>, and  <<transports.adoc,transports>>.
+nREPL largely consists of three abstractions: <<design/handlers.adoc,handlers>>,
+<<design/middleware.adoc,middleware>>, and  <<design/transports.adoc,transports>>.
 These are roughly analogous to the handlers, middleware, and
 adapters of link:https://github.com/ring-clojure/ring[Ring], though there are some
 important semantic differences. Finally, nREPL is fundamentally message-oriented
@@ -74,25 +74,3 @@ monitor the exchange of messages between the client and nREPL
 requests and responses). That's a great way to get a better understanding
 of nREPL server responses.
 ====
-
-// Note: Seems that's some section from the nREPL 0.1 era, as 0.2+ doesn't have
-// this timeout behaviour. (@bbatsov)
-
-// == Timeouts and Interrupts
-
-// Each message has a timeout associated with it, which controls the maximum time
-// that a message's code will be allowed to run before being interrupted and a
-// response message being sent indicating a status of `timeout`.
-
-// The processing of a message may be interrupted by a client by sending another
-// message containing code that invokes the `nrepl/interrupt`
-// function, providing it with the string ID of the message to be interrupted.
-// The interrupt will be responded to separately as with any other message. (The
-// provided client implementation provides a simple abstraction for handling
-// responses that makes issuing interrupts very straightforward.)
-
-// *Note that interrupts are performed on a “best-effort” basis, and are subject
-// to the limitations of Java’s threading model.  For more read
-// link:http://download.oracle.com/javase/1.5.0/docs/api/java/lang/Thread.html#interrupt%28%29[here]
-// and
-// link:http://download.oracle.com/javase/1.5.0/docs/guide/misc/threadPrimitiveDeprecation.html[here].*

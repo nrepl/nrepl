@@ -1,3 +1,108 @@
 = Troubleshooting
 
-Coming soon!
+This section of the manual tries to summarize the most common problems that you may encounter
+while using nREPL and their solutions.
+
+Generally it's also a good idea to check whether the problem you've experienced is not a bug that's
+already reported on our issue tracker.
+
+== Middleware
+
+=== Warnings when Starting nREPL
+
+If you encounter something like:
+
+[source,shell]
+----
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-apropos, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-classpath, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-complete, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-debug, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-enlighten, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-format, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-info, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-inspect, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-macroexpand, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-slurp, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-ns, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-out, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-content-type, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-slurp, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-pprint, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-pprint-fn, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-profile, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-refresh, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-resource, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-spec, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-stacktrace, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-test, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-trace, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-tracker, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-undef, see nrepl.middleware/set-descriptor!
+[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-version, see nrepl.middleware/set-descriptor!
+nREPL server started on port 36457 on host 127.0.0.1 - nrepl://127.0.0.1:36457
+----
+
+This means that you're trying to load middleware that's not targeting
+nREPL 0.4+. Make sure you're using the latest versions of all the
+middleware libraries in your project/profiles and that you're not
+loading any projects with explicit `tools.nrepl` dependencies that get
+required early in your projects (e.g. in `user.clj`). The root of this
+problem is that many middleware libraries try to support both
+`tools.nrepl` and the modern nREPL 0.4+ using code like:
+
+[source,clojure]
+----
+;; Compatibility with the legacy tools.nrepl and the new nREPL 0.4.x.
+;; The assumption is that if someone is using old lein repl or boot repl
+;; they'll end up using the tools.nrepl, otherwise the modern one.
+(if (find-ns 'clojure.tools.nrepl)
+  (require
+   '[clojure.tools.nrepl.middleware :refer [set-descriptor!]]
+   '[clojure.tools.nrepl.middleware.session :refer [session]]
+   '[clojure.tools.nrepl.middleware.pr-values :refer [pr-values]]
+   '[clojure.tools.nrepl.server :as nrepl-server])
+  (require
+   '[nrepl.middleware :refer [set-descriptor!]]
+   '[nrepl.middleware.session :refer [session]]
+   '[nrepl.middleware.pr-values :refer [pr-values]]
+   '[nrepl.server :as nrepl-server]))
+----
+
+This will obviously break if you've started an nREPL 0.4+ server, but
+somehow `tools.nrepl` gets loaded and the middleware decides it's
+running in nREPL 0.2 mode. This problem will become less common when
+the compatibility code is removed from middleware libraries down the
+road and they adopt a hard dependency on nREPL 0.4+.
+
+Leiningen users might use this command to check for wayward deps:
+
+[source,shell]
+----
+$ lein deps :why org.clojure/tools.nrepl
+----
+
+== Leiningen
+
+=== The REPL Task Crashes
+
+If you experience problems running `lein repl` you have to make sure that:
+
+* You're not using Leiningen 2.8.2 (a bug there rendered the `repl` task unusable - it was addressed in 2.8.3).
+* Your project is using Clojure 1.7+.
+* Your project is using Java 8+.
+* You're not trying to load any middleware that haven't been updated for nREPL 0.4+.
+
+== Boot
+
+=== The REPL Task Crashes
+
+If you experience problems running `lein repl` you have to make sure that:
+
+* Your project is using Clojure 1.7+.
+* Your project is using Java 8+.
+* You're not trying to load any middleware that haven't been updated for nREPL 0.4+.
+
+=== nREPL Configuration Files are Ignored
+
+Boot currently (as of 2.8.2) doesn't yet support the configuration mechanism introduced in nREPL 0.5.

@@ -3,7 +3,7 @@
 == Issues
 
 Report issues and suggest features and improvements on the
-link:https://github.com/nrepl/nREPL/issues[GitHub issue tracker]. Don't ask
+link:https://github.com/nrepl/nrepl/issues[GitHub issue tracker]. Don't ask
 questions on the issue tracker - use the <<about/support.adoc#,support channels>> instead.
 
 If you want to file a bug, please provide all the necessary info listed in
@@ -15,7 +15,7 @@ new GitHub issue).
 Patches in any form are always welcome! GitHub pull requests are even better! :-)
 
 Before submitting a patch or a pull request make sure all tests are
-passing and that your patch is in line with the link:https://github.com/nrepl/nREPL/blob/master/.github/CONTRIBUTING.md[contribution guidelines].
+passing and that your patch is in line with the link:https://github.com/nrepl/nrepl/blob/master/.github/CONTRIBUTING.md[contribution guidelines].
 
 == Documentation
 
@@ -25,7 +25,7 @@ Consider improving and extending this manual.
 
 === Working on the Manual
 
-The manual is generated from the asciidoc files in the link:https://github.com/nrepl/nREPL/tree/master/doc[doc] folder of nREPL's GitHub repo and is published to https://nrepl.org.
+The manual is generated from the asciidoc files in the link:https://github.com/nrepl/nrepl/tree/master/doc[doc] folder of nREPL's GitHub repo and is published to https://nrepl.org.
 link:https://antora.org[Antora] is used to convert the manual into HTML.
 The filesystem layout is described at https://docs.antora.org/antora/1.1/component-structure/
 
@@ -44,7 +44,7 @@ $ ./antora site.yml
 TIP: If `npm install` fails, see link:https://docs.antora.org/antora/1.1/install/troubleshoot-nodegit/[Antora's troubleshooting documentation].
 
 If you want to make changes to the manual's page structure you'll have to edit
-link:https://github.com/nrepl/nREPL/blob/master/doc/modules/ROOT/nav.adoc[nav.adoc].
+link:https://github.com/nrepl/nrepl/blob/master/doc/modules/ROOT/nav.adoc[nav.adoc].
 
 == Funding
 
@@ -55,20 +55,18 @@ Raising a monthly budget of over $5000 would open the possibility of someone wor
 which would speed up the pace of development significantly.
 
 We welcome both individual and corporate sponsors! We also offer a wide array of funding channels to account
-for your preferences (although currently link:https://opencollective.com/cider[Open Collective] is our preferred funding platform).
+for your preferences (although currently link:https://opencollective.com/nrepl[Open Collective] is our preferred funding platform).
 
 If you're working in a company that's making significant use of nREPL we'd appreciate it if you suggest to your company
 to become a nREPL sponsor.
 
 You can support the development of nREPL, CIDER, link:https://github.com/clojure-emacs/clojure-mode[clojure-mode] and link:https://github.com/clojure-emacs/inf-clojure[inf-clojure] via
-link:https://opencollective.com/cider[Open Collective],
-link:https://salt.bountysource.com/teams/cider[Salt],
+link:https://opencollective.com/nrepl[Open Collective],
 link:https://www.patreon.com/bbatsov[Patreon],
-link:https://liberapay.com/bbatsov/donate[Liberapay] and PayPal.
-
-link:https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=GRQKNBM6P8VRQ[image:https://www.paypalobjects.com/en_US/i/btn/btn_donate_SM.gif[Paypal]]
+link:https://liberapay.com/bbatsov/donate[Liberapay] and
+link:https://www.paypal.me/bbatsov[PayPal].
 
 === Open Collective
 
-* [link:https://opencollective.com/cider#backer[Become a backer]] (for individuals)
-* [link:https://opencollective.com/cider#sponsor[Become a sponsor]] (for companies)
+* [link:https://opencollective.com/nrepl#backer[Become a backer]] (for individuals)
+* [link:https://opencollective.com/nrepl#sponsor[Become a sponsor]] (for companies)

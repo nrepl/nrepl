@@ -20,14 +20,14 @@
                 expr
                 (binding [*print-meta* true]
                   (pr-str expr)))
-         msg (merge {:code expr :transport remote}
-                    (when ns {:ns ns}))
+         msg (cond-> {:code expr :transport remote
+                      :session (atom {#'*out* (java.io.PrintWriter. out)
+                                      #'*err* (java.io.PrintWriter. err)})}
+               ns (assoc :ns ns))
          resp-fn (if ns
                    (juxt :ns :value)
                    :value)]
-     (eval/evaluate {#'*out* (java.io.PrintWriter. out)
-                     #'*err* (java.io.PrintWriter. err)}
-                    msg)
+     (eval/evaluate msg)
      (->> (nrepl/response-seq local 0)
           (map resp-fn)
           (cons (str out))
@@ -77,9 +77,9 @@
                              (prn 'user/foo))
     ["problem" "" :value] '(do (.write *err* "problem")
                                :value))
-  (is (re-seq #"Exception: No such var: user/foo" (-> '(prn user/foo)
-                                                      internal-eval
-                                                      first))))
+  (is (re-seq #"No such var: user/foo" (-> '(prn user/foo)
+                                           internal-eval
+                                           first))))
 
 (deftest repl-out-writer
   (let [[local remote] (piped-transports)
@@ -105,25 +105,3 @@
             "\n#{}\n"]
            (->> (nrepl/response-seq local 0)
                 (map :out))))))
-
-;; TODO
-(comment
-  (def-repl-test auto-print-stack-trace
-    (is (= true (repl-value "(set! nrepl/*print-detail-on-error* true)")))
-    (is (.contains (-> (repl "(throw (Exception. \"foo\" (Exception. \"nested exception\")))")
-                       full-response
-                       :err)
-                   "nested exception")))
-
-  (def-repl-test install-custom-error-detail-fn
-    (->> (nrepl/send-with connection
-                          (set! nrepl/*print-error-detail*
-                                (fn [ex] (print "custom printing!")))
-                          (set! nrepl/*print-detail-on-error* true))
-         nrepl/response-seq
-         doall)
-    (is (= "custom printing!"
-           (->> (nrepl/send-with connection
-                                 (throw (Exception. "foo")))
-                full-response
-                :err)))))

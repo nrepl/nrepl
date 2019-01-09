@@ -83,20 +83,11 @@
 
    Additional middlewares to mix into the default stack may be provided; these
    should all be values (usually vars) that have an nREPL middleware descriptor
-   in their metadata (see nrepl.middleware/set-descriptor!)."
+   in their metadata (see `nrepl.middleware/set-descriptor!`)."
   [& additional-middlewares]
   (let [stack (middleware/linearize-middleware-stack (concat default-middlewares
                                                              additional-middlewares))]
     ((apply comp (reverse stack)) unknown-op)))
-
-;; TODO
-#_(defn- output-subscriptions
-    [h]
-    (fn [{:keys [op sub unsub] :as msg}]
-      (case op
-        "sub" ;; TODO
-        "unsub"
-        (h msg))))
 
 (defrecord Server [server-socket port open-transports transport greeting handler]
   java.io.Closeable
@@ -130,6 +121,7 @@
         make-ss #(doto (ServerSocket.)
                    (.setReuseAddress true)
                    (.bind %))
+        transport-fn (or transport-fn t/bencode)
         ;; We fallback to 127.0.0.1 instead of to localhost to avoid
         ;; a dependency on the order of ipv4 and ipv6 records for
         ;; localhost in /etc/hosts
@@ -138,7 +130,7 @@
         server (Server. ss
                         (.getLocalPort ss)
                         (atom #{})
-                        (or transport-fn t/bencode)
+                        transport-fn
                         greeting-fn
                         (or handler (default-handler)))]
     (future (accept-connection server))

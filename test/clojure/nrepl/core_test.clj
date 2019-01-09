@@ -235,8 +235,14 @@
                              :out))))
 
 (defn custom-printer
-  [value opts]
-  (format "<foo %s %s>" value (or (:sub opts) "...")))
+  ([value]
+   (custom-printer value nil))
+  ([value opts]
+   (format "<foo %s %s>" value (or (:sub opts) "..."))))
+
+(defn single-arity-printer
+  [value]
+  (format "[ %s ]" value))
 
 (def-repl-test value-printing
   (testing "bad symbol should fall back to default printer"
@@ -251,6 +257,21 @@
            (-> (message client {:op :eval
                                 :code "true"
                                 :printer `custom-printer})
+               (combine-responses)
+               (:value)))))
+  (testing "single-arity printers are supported in the absence of :print-options"
+    (is (= ["[ 42 ]"]
+           (-> (message client {:op :eval
+                                :code "42"
+                                :printer `single-arity-printer})
+               (combine-responses)
+               (:value)))))
+  (testing "empty print options are ignored"
+    (is (= ["[ 42 ]"]
+           (-> (message client {:op :eval
+                                :code "42"
+                                :printer `single-arity-printer
+                                :print-options {}})
                (combine-responses)
                (:value)))))
   (testing "options should be passed to printer"
@@ -307,7 +328,7 @@
   (let [{:keys [out status value]} (combine-responses (repl-eval session "(missing paren"))]
     (is (nil? value))
     (is (= #{"done" "eval-error"} status))
-    (is (re-seq #"EOF while reading" (first (repl-values session "(.getMessage *e)"))))))
+    (is (re-seq #"EOF while reading" (first (repl-values session "(-> *e Throwable->map :cause)"))))))
 
 (def-repl-test switch-ns
   (is (= "otherns" (-> (repl-eval session "(ns otherns) (defn function [] 12)")
@@ -366,7 +387,7 @@
                                                        (def halted? false)))})]
     (Thread/sleep 100)
     (is (= #{"done"} (-> session (message {:op :interrupt}) first :status set)))
-    (is (= #{"done" "interrupted"} (-> resp combine-responses :status)))
+    (is (= #{} (reduce disj #{"done" "interrupted"} (-> resp combine-responses :status))))
     (is (= [true] (repl-values session "halted?")))))
 
 ;; NREPL-66: ensure that bindings of implementation vars aren't captured by user sessions
@@ -454,6 +475,16 @@
         (catch Throwable t))
       (Thread/sleep 100)
       (is (thrown? SocketException (transport/send transport {"op" "eval" "code" "(+ 5 1)"}))))))
+
+(deftest server-starts-with-minimal-configuration
+  (testing "Ensure server starts with minimal configuration"
+    (let [server (server/start-server)
+          transport (connect :port (:port server))
+          client (client transport Long/MAX_VALUE)]
+      (is (= ["3"]
+             (-> (message client {:op :eval :code "(- 4 1)"})
+                 combine-responses
+                 :value))))))
 
 (def-repl-test clients-fail-on-disconnects
   (testing "Ensure that clients fail ASAP when the server they're connected to goes down."

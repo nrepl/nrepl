@@ -1,0 +1,30 @@
+= Beyond Clojure
+
+As mentioned earlier the nREPL protocol is language-agnostic and can
+be leveraged for many languages that have the ability to evaluate code
+at runtime.
+
+== Alternative Server Implementations
+
+Those server implementations are developed and
+maintained by third-parties (as opposed to nREPL's team), and their
+maturity might vary.
+
+NOTE: Certain nREPL clients may make Clojure-specific assumptions which
+will cause bugs when used with other servers, while other clients are
+designed with language-agnosticism in mind. Usually the nREPL servers would mention in their
+documentation which clients are known to work well with them.
+
+* link:https://github.com/Foxboron/HyREPL[HyREPL] - an nREPL for the link:http://hylang.org/[Hy programming language]
+
+* link:https://gitlab.com/technomancy/jeejah[JeeJah] - an nREPL server for link:https://fennel-lang.org/[Fennel] and link:https://www.lua.org/[Lua]
+
+* link:https://gitlab.com/technomancy/ogion[Ogion] - an nREPL server for link:https://racket-lang.org/[Racket]
+
+* link:http://wiki.call-cc.org/eggref/5/nrepl[Chicken NREPL] - an nREPL server for link:https://call-cc.org/[Chicken Scheme]
+
+* link:https://github.com/sjl/cl-nrepl[cl-nrepl] - an nREPL server for Common Lisp
+
+* link:https://github.com/bodil/cljs-noderepl[cljs-noderepl] - an nREPL server for ClojureScript running on Node.js
+
+As you can see nREPL has implementations for many popular Lisp dialects, but it's certainly not limited to Lisp dialects.

@@ -16,7 +16,7 @@ priorities eventually led to work on nREPL slowing significantly, to the
 frustration of its most active users.
 
 Eventually, I proposed migrating nREPL out of Clojure Contrib in the summer of
-2017 (https://github.com/nrepl/nREPL/issues/1), with the objective of
+2017 (https://github.com/nrepl/nrepl/issues/1), with the objective of
 reconstituting an environment where the people most interested in and impacted
 by nREPL could participate in its development as easily as possible.
 

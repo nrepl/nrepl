@@ -7,3 +7,8 @@ Before submitting a PR make sure the following things have been done:
 - [ ] You've updated the [changelog](../CHANGELOG.md)(that only applies to user-visible changes)
 
 Thanks!
+
+*If you're just starting out to hack on nREPL you might find this [section of its
+manual][1] extremely useful.*
+
+[1]: https:/nrepl.org/nrepl/hacking_on_nrepl.html

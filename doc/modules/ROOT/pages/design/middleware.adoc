@@ -94,13 +94,13 @@ the handled `:op` and a value that contains any of four entries:
 ** `:returns`, a map of slots that may be found in messages sent in response
     to handling the indicated `:op`
 
-The values in the `:handles` map is used to support the `"describe"` operation,
+The values in the `:handles` map are used to support the `"describe"` operation,
 which provides "a machine- and human-readable directory and documentation for
 the operations supported by an nREPL endpoint" (see
-`nrepl.middleware/describe-adoc`, and the results of
-`"describe"` and `describe-doc` <<ops.adoc,here>>).
+`nrepl.impl.docs/generate-ops-info` and the results of
+`lein with-profile +maint run nrepl.impl.docs` <<ops.adoc,here>>).
 
-NOTE: There's also `nrepl.middleware/describe-markdown` if you'd like to
+NOTE: There's also `lein with-profile +maint run nrepl.impl.docs --output md` if you'd like to
 generate an ops listing in Markdown format.
 
 The `:requires` and `:expects` entries control the order in which
@@ -135,12 +135,21 @@ should do the same, or use a similar alternative base handler.
 
 == Sessions
 
-Sessions persist link:https://clojure.org/reference/vars[dynamic vars]
-(collected by `get-thread-bindings`) against a unique lookup. This is
-allows you to have a different value for `*e` from different REPL
-clients (e.g. two separate REPL-y instances). An existing session can
-be cloned to create a new one, which then can be modified. This allows
-for copying of existing preferences into new environments.
+There are two types of sessions: ephemeral sessions and long-lived sessions
+(or registered sessions).
+
+When a message arrives without a session id, an ephemeral session is created
+and assigned to it. Ephemeral sessions are bound to the processing of a single message.
+
+The only way to create a long-lived session is to clone an existing session (even an
+ephemeral one). Cloning a session creates a new session that initially shares the link:https://clojure.org/reference/vars[dynamic bindings] of the original session.
+
+Sessions (long-lived ones since they are the useful ones) serialize evaluations
+and make dynamic bindings available for inspection to other ops.
+
+All other ops have no serialization guarantee (they are serialized in the current
+implementation since they run on the server IO thread). However evals run on a
+dedicated thread so a running eval can't block another op.
 
 Sessions become even more useful when different nREPL extensions start
 taking advantage of
@@ -151,15 +160,10 @@ separately. link:https://github.com/nrepl/piggieback[piggieback] uses
 sessions to allow host a ClojureScript REPL alongside an existing
 Clojure one.
 
-An easy mistake is to confuse a `session` with an `id`. The difference
-between a session and id, is that an `id` is for tracking a single
-message, and sessions are for tracking remote state. They're
-fundamental to allowing simultaneous activities in the same nREPL.
-For instance - if you want to evaluate two expressions simultaneously
-you'll have to do this in separate session, as all requests within the
-same session are serialized.
-
 == Pretty Printing
+
+NOTE: Pretty-printing support was added in nREPL 0.5 and the API is still
+considered experimental.
 
 nREPL includes a `pr-values` middleware to print the results of evaluated
 forms as strings for returning to the client. By default, this will use either
@@ -178,3 +182,33 @@ to pretty-print the evaluation results automatically.
  :printer 'my.custom/print-value
  :print-options {:print-width 120}}
 ----
+
+[NOTE]
+====
+A note for client authors - passing strings will work just fine as
+well (using the bencode transport you can't pass keywords and symbols
+as anyways).
+
+[source,clojure]
+----
+{"op" "eval"
+ "code" "(+ 1 1)"
+ "printer" "my.custom/print-value"
+ "print-options" {"print-width" 120}}
+----
+
+nREPL will take of converting the keys of the `print-options` map to
+keywords, so they'd work as expected with their respective printers.
+====
+
+The requirement for the `printer` function are the following:
+
+* It should take one or two arguments - a value to print, and an optional print options map.
+* It should return the printed value as a string. This means you can't use directly
+functions like `clojure.pprint/pprint`, as they output the printed value instead of returning
+it as a string.
+* The printer function should have no side-effects.
+* In the absence of print options it should ideally respect Clojure's print dynamic vars - e.g. `*print-length*`, `*print-right-margin*`, etc.
+
+Great examples of functions that honour the API contract are
+`zprint.core/zprint-str` and `puget.printer/pprint-str`.
