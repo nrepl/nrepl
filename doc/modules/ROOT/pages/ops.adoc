@@ -4,7 +4,7 @@ This file is _generated_ by #'nrepl.describe-test/update-op-docs
 ////
 = Supported nREPL operations
 
-[small]#generated from a verbose 'describe' response (nREPL v0.4.5)#
+[small]#generated from a verbose 'describe' response (nREPL v0.6.0-SNAPSHOT)#
 
 == Operations
 

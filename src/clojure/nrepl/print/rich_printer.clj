@@ -1,4 +1,4 @@
-(ns nrepl.rich-printer
+(ns nrepl.print.rich-printer
   "A printer that produces a pure EDN representation of a Clojure value.
   Features elisions, MIME attachments and general purpose object browsing.
   Initially developed for unrepl."
