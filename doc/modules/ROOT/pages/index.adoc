@@ -5,7 +5,7 @@ image::logo-w1280.png[nREPL's logo]
 
 == Overview
 
-nREPL is a Clojure network REPL that provides a REPL server and
+nREPL is a Clojure **n**etwork REPL that provides a REPL server and
 client, along with some common APIs of use to IDEs and other tools
 that may need to evaluate Clojure code in remote environments.
 
@@ -26,13 +26,38 @@ that essentially any non-JVM Clojure implementation should be able to
 implement it, with allowances for hosts that lack the concurrency primitives to
 support e.g. asynchronous evaluation, interrupts, etc.
 
-For more information about the motivation, architecture, use cases, and
+TIP: For more information about the motivation, architecture, use cases, and
 discussion related to nREPL, see the original design notes,
 available link:https://docs.google.com/document/edit?id=1dnb1ONTpK9ttO5W4thxiXkU5Ki89gK62anRqKEK4YZI&authkey=CMuszuMI&hl=en#[here],
 and the link:https://github.com/clojure/tools.nrepl/wiki/nREPL.Next[notes] and
 link:http://groups.google.com/group/clojure-dev/browse_frm/thread/6e366c1d0eaeec59[discussion]
 around its recent redesign.footnote:[It's not that recent anymore, as the
 redesign happened in 2012. It marked the beginning of the long-lived nREPL 0.2 series.]
+
+== Beyond Clojure
+
+While this site is mostly about nREPL's reference (canonical) Clojure implementation,
+it's important to point out that the nREPL protocol is language-agnostic and can be
+leveraged for many languages that have the ability to evaluate code
+at runtime.
+
+One way to describe nREPL would be as something similar in
+nature to the link:https://langserver.org/[Language Server Protocol]. nREPL is not nearly as
+ambitious as LSP, but on the other hand it's also much simpler and it's trivial to
+create nREPL clients in any language.
+
+TIP: You can find some alternative nREPL implementations and more on the subject <<beyond_clojure.adoc,here>>.
+
+== Community-Driven
+
+One of the defining attributes of nREPL is that it's a project built by
+the Clojure community for the Clojure community. Making it easy for everyone
+interested to participate in the development of nREPL was one of the biggest
+reasons why we decided to leave the "Clojure Contrib" umbrella.
+
+Everyone's welcome to get involved in the project, so we can take it to the next level!
+
+TIP: Check out the how you can help nREPL <<about/contributing.adoc,here>>.
 
 == Status
 
@@ -50,17 +75,3 @@ NOTE: The migration of nREPL out of Clojure Contrib is probably the
 only case where we were forced to make breaking changes.footnote:[Apart
 from removing deprecated code that is.] Those are detailed in great
 detail <<installation.adoc#upgrading,here>>.
-
-== Beyond Clojure
-
-While this site is mostly about nREPL's reference (canonical) Clojure implementation,
-it's important to point out that the nREPL protocol is language-agnostic and can be
-leveraged for many languages that have the ability to evaluate code
-at runtime.
-
-One way to describe nREPL would be as something similar in
-nature to the link:https://langserver.org/[Language Server Protocol]. nREPL is not nearly as
-ambitious as LSP, but on the other hand it's also much simpler and it's trivial to
-create nREPL clients in any language.
-
-You can find some alternative nREPL implementations and more on subject <<beyond_clojure.adoc,here>>.
