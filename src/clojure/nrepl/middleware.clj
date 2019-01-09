@@ -4,7 +4,8 @@
    [clojure.set :as set]
    [nrepl.misc :as misc]
    [nrepl.transport :as transport]
-   [nrepl.version :as version]))
+   [nrepl.version :as version])
+  (:import (java.io BufferedWriter PrintWriter StringWriter Writer)))
 
 (defn- var-name
   [^clojure.lang.Var v]
@@ -182,3 +183,20 @@
        extend-deps
        (topologically-sort comparator)
        (map :implemented-by)))
+
+(defn replying-PrintWriter
+  "Returns a PrintWriter suitable for binding as *out* or *err*. All of the
+  content written to that PrintWriter will be sent as messages on the transport
+  of msg, keyed by key."
+  ^java.io.PrintWriter
+  [key {:keys [transport buffer-size] :as msg}]
+  (-> (proxy [Writer] []
+        (write [cbuf off len]
+          (let [text (str (doto (StringWriter.)
+                            (.write cbuf ^int off ^int len)))]
+            (when (pos? (count text))
+              (transport/send transport (misc/response-for msg key text)))))
+        (flush [])
+        (close []))
+      (BufferedWriter. (or buffer-size 1024))
+      (PrintWriter. true)))

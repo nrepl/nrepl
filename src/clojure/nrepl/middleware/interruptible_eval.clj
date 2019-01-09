@@ -2,7 +2,8 @@
   {:author "Chas Emerick"}
   (:require
    clojure.main
-   [nrepl.middleware :refer [set-descriptor!]]
+   clojure.test
+   [nrepl.middleware :refer [replying-PrintWriter set-descriptor!]]
    nrepl.middleware.pr-values
    [nrepl.misc :refer [response-for returning]]
    [nrepl.transport :as t])
@@ -49,7 +50,7 @@
    or a seq of forms to be evaluated), which may also optionally specify a :ns
    (resolved via `find-ns`).  The map MUST contain a Transport implementation
    in :transport; expression results and errors will be sent via that Transport."
-  [{:keys [code ns transport session eval file line column] :as msg}]
+  [{:keys [transport session eval ns code file line column out-limit] :as msg}]
   (let [explicit-ns (and ns (-> ns symbol find-ns))
         original-ns (@session #'*ns*)
         maybe-restore-original-ns (if explicit-ns
@@ -58,13 +59,23 @@
     (if (and ns (not explicit-ns))
       (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}
                                            :ns ns}))
-      (let [ctxcl (.getContextClassLoader (Thread/currentThread))]
+      (let [ctxcl (.getContextClassLoader (Thread/currentThread))
+            msg (assoc msg :buffer-size (or out-limit (get (meta session) :out-limit)))
+            out (replying-PrintWriter :out msg)
+            err (replying-PrintWriter :err msg)]
         (try
           (clojure.main/repl
            :eval (if eval (find-var (symbol eval)) clojure.core/eval)
            :init #(let [bindings
                         (-> (get-thread-bindings)
                             (into @session)
+                            (into {#'*out* out
+                                   #'*err* err
+                                   ;; clojure.test captures *out* at load-time, so we need to make sure
+                                   ;; runtime output of test status/results is redirected properly
+                                   ;; TODO: is this something we need to consider in general, or is this
+                                   ;; specific hack reasonable?
+                                   #'clojure.test/*test-out* out})
                             (cond-> explicit-ns (assoc #'*ns* explicit-ns)
                                     file (assoc #'*file* file)))]
                     (pop-thread-bindings)
@@ -106,8 +117,8 @@
                          (clojure.main/repl-caught e)))))
           (finally
             (.setContextClassLoader (Thread/currentThread) ctxcl)
-            (some-> ^Writer (@session #'*err*) .flush)
-            (some-> ^Writer (@session #'*out*) .flush)))))))
+            (.flush err)
+            (.flush out)))))))
 
 (defn interruptible-eval
   "Evaluation middleware that supports interrupts.  Returns a handler that supports
