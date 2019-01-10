@@ -125,7 +125,7 @@
             :idle (t/send transport (response-for msg :status #{:done :session-idle}))
             (do
               ;; interrupt prevents the interrupted computation to be ack'ed,
-              ;; so a :done will never ne emitted before :interrupted
+              ;; so a :done will never be emitted before :interrupted
               (t/send transport {:status #{:interrupted :done}
                                  :id interrupted-id
                                  :session session-id})
