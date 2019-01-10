@@ -297,8 +297,10 @@
                            (nrepl/client 1000)
                            (nrepl/client-session :session sid))]
         (is (= history (repl-values sc-session "[*3 *2 *1]")))
-        (is (= history (repl-values sc-session "*1")))))) (testing "without a session id, REPL-bound vars like *1 have default values"
-                                                            (is (= [nil] (repl-values client "*1")))))
+        (is (= history (repl-values sc-session "*1"))))))
+
+  (testing "without a session id, REPL-bound vars like *1 have default values"
+    (is (= [nil] (repl-values client "*1")))))
 
 (def-repl-test session-set!
   (repl-eval session (code
