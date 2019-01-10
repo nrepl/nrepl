@@ -25,8 +25,7 @@
       (require (symbol (namespace var-sym)))
       (resolve var-sym)
       (catch Exception ex
-        (misc/log ex "Couldn't resolve printer function" var-sym)
-        nil))))
+        (misc/log ex "Couldn't resolve printer function" var-sym)))))
 
 (defn- printing-transport
   "Wraps a `Transport` with code which prints the value of messages sent to
