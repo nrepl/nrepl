@@ -27,4 +27,6 @@ documentation which clients are known to work well with them.
 
 * link:https://github.com/bodil/cljs-noderepl[cljs-noderepl] - an nREPL server for ClojureScript running on Node.js
 
+* link:https://github.com/vspinu/R-nREPL[R-nREPL] - an nREPL server for R
+
 As you can see nREPL has implementations for many popular Lisp dialects, but it's certainly not limited to Lisp dialects.
