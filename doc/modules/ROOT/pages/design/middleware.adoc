@@ -83,6 +83,13 @@ indicate a dependency on _any_ middleware that handles the specified `:op`.
 * `:expects`, the same as `:requires`, except the referenced middleware must
   exist in the final stack at a lower level than the middleware being
 described.
+
+TIP: Another way to think of `:expects` and `:requires` would be
+_before_ and _after_. Middleware you're expecting should have already
+been applied by the time the middleware that expects it gets applied,
+and middleware that's required should be applied afterwards. We'll
+expand on this in the paragraphs to come.
+
 * `:handles`, a map that documents the operations implemented by the
   middleware.  Each entry in this map must have as its key the string value of
 the handled `:op` and a value that contains any of four entries:
@@ -100,7 +107,7 @@ the operations supported by an nREPL endpoint" (see
 `nrepl.impl.docs/generate-ops-info` and the results of
 `lein with-profile +maint run nrepl.impl.docs` <<ops.adoc,here>>).
 
-NOTE: There's also `lein with-profile +maint run nrepl.impl.docs --output md` if you'd like to
+TIP: There's also `lein with-profile +maint run nrepl.impl.docs --output md` if you'd like to
 generate an ops listing in Markdown format.
 
 The `:requires` and `:expects` entries control the order in which
