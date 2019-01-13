@@ -13,6 +13,7 @@
 
 * [#16](https://github.com/nrepl/nrepl/issues/16): Use a single session thread per evaluation.
 * Support single-arity printer functions.
+* Restore the `nrepl.bencode` namespace.
 
 ### 0.5.3 (2018-12-12)
 

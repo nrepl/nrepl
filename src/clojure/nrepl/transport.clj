@@ -2,9 +2,9 @@
   {:author "Chas Emerick"}
   (:refer-clojure :exclude [send])
   (:require
-   [bencode.core :as bencode]
    [clojure.java.io :as io]
    clojure.walk
+   [nrepl.bencode :as bencode]
    [nrepl.misc :refer [uuid]]
    nrepl.version)
   (:import

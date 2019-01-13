@@ -10,8 +10,6 @@
   :test-paths ["test/clojure"]
   :javac-options ["-target" "8" "-source" "8"]
 
-  :dependencies [[nrepl/bencode "1.0.0"]]
-
   :aliases {"bump-version" ["change" "version" "leiningen.release/bump-version"]
             "test-all" ["with-profile" "+1.7:+1.8:+1.9:+fastlane" "test"]
             "docs" ["with-profile" "+maint" "run" "-m" "nrepl.impl.docs" "--file"
