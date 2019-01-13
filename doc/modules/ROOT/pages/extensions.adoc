@@ -54,7 +54,7 @@ hosted outside the nREPL GitHub organization.
 
 ==== Debugging
 
-* link:http://bpiel.github.io/sayid/[sayid]: A powerful tracing/debugging tool. It is a great alternative of CIDER-nREPL's basic tracing functionality.
+* link:https://clojure-emacs.github.io/sayid/[sayid]: A powerful tracing/debugging tool. It is a great alternative of CIDER-nREPL's basic tracing functionality.
 * link:https://github.com/vvvvalvalval/scope-capture-nrepl[scope-capture-nrepl]: A companion library to scope-capture, providing an nREPL middleware that lets you put your REPL in the context of an Execution Point.
 
 ==== Deprecated
