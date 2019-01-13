@@ -21,6 +21,7 @@ client/tool.  Tools that support nREPL include:
 * link:https://github.com/rksm/node-nrepl-client[node-nrepl-client] (An nREPL client for programmatic use from node.js written in Javascript)
 * link:https://github.com/kanej/parle[Parle] (A command-line nREPL client using node.js written in ClojureScript)
 * link:https://github.com/vspinu/R-nREPL[R-nREPL] (nREPL client for R)
+* link:https://github.com/Saikyun/miracle[miracle] (fork of `monroe` targeting Arcadia)
 
 Some of these clients will only work with Clojure nREPL servers, while
 others are built with language-agnosticism and can connect to nREPL
