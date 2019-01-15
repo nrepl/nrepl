@@ -215,7 +215,7 @@ The requirement for the `printer` function are the following:
 functions like `clojure.pprint/pprint`, as they output the printed value instead of returning
 it as a string.
 * The printer function should have no side-effects.
-* In the absence of print options it should ideally respect Clojure's print dynamic vars - e.g. `*print-length*`, `*print-right-margin*`, etc.
+* In the absence of print options it should ideally respect Clojure's print dynamic vars - e.g. `+*print-length*+`, `+*print-right-margin*+`, etc.
 
 Great examples of functions that honour the API contract are
 `zprint.core/zprint-str` and `puget.printer/pprint-str`.
