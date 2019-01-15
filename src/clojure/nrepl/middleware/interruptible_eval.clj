@@ -16,14 +16,10 @@
   "The message currently being evaluated."
   nil)
 
-(def ^:dynamic *eval*
-  "Function returning the evaluation of its argument."
-  nil)
-
 (defn- capture-thread-bindings
   "Capture thread bindings, excluding nrepl implementation vars."
   []
-  (dissoc (get-thread-bindings) #'*msg* #'*eval*))
+  (dissoc (get-thread-bindings) #'*msg*))
 
 (defn- set-line!
   [^LineNumberingPushbackReader reader line]
@@ -58,8 +54,7 @@
         original-ns (@session #'*ns*)
         maybe-restore-original-ns (if explicit-ns
                                     #(assoc % #'*ns* original-ns)
-                                    identity)
-        session (or session (atom {}))]
+                                    identity)]
     (if (and ns (not explicit-ns))
       (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}
                                            :ns ns}))
