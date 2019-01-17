@@ -3,7 +3,7 @@
   (:refer-clojure :exclude [send])
   (:require
    [clojure.java.io :as io]
-   clojure.walk
+   [clojure.walk :as walk]
    [nrepl.bencode :as bencode]
    [nrepl.misc :refer [uuid]]
    nrepl.version)
@@ -22,12 +22,25 @@
      ms or if the underlying channel has been closed.")
   (send [this msg] "Sends msg. Implementations should return the transport."))
 
+;; adapted from clojure.walk to support namespaced keywords
+(defn- stringify-key
+  [k]
+  (cond
+    (and (keyword? k) (namespace k)) (str (namespace k) "/" (name k))
+    (keyword? k) (name k)
+    :else k))
+
+(defn- stringify-keys
+  [m]
+  (let [f (fn [[k v]] [(stringify-key k) v])]
+    (walk/postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) m)))
+
 (deftype FnTransport [recv-fn send-fn close]
   Transport
   ;; TODO: this keywordization/stringification has no business being in FnTransport
-  (send [this msg] (-> msg clojure.walk/stringify-keys send-fn) this)
+  (send [this msg] (-> msg stringify-keys send-fn) this)
   (recv [this] (.recv this Long/MAX_VALUE))
-  (recv [this timeout] (clojure.walk/keywordize-keys (recv-fn timeout)))
+  (recv [this timeout] (walk/keywordize-keys (recv-fn timeout)))
   java.io.Closeable
   (close [this] (close)))
 
