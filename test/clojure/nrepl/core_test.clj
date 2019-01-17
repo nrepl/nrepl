@@ -588,9 +588,9 @@
 
 (def-repl-test print-namespace-maps-binding
   (when (resolve '*print-namespace-maps*)
-    (let [set-true (repl-eval session "(set! *print-namespace-maps* true)")
+    (let [set-true (dorun (repl-eval session "(set! *print-namespace-maps* true)"))
           true-val (first (repl-values session "*print-namespace-maps*"))
-          set-false (repl-eval session "(set! *print-namespace-maps* false)")
+          set-false (dorun (repl-eval session "(set! *print-namespace-maps* false)"))
           false-val (first (repl-values session "*print-namespace-maps*"))]
       (is (= true true-val))
       (is (= false false-val)))))
