@@ -17,16 +17,19 @@ env:
     - secure: "f2pEAipCOs8JRMzSVMnbqBPbWFzI7G/FjPW9FY9ZjAhRvpslRC6JzG4r6uSJMoKU474ZQk+hzpYXCNSuqbztvYdd50J7E5iT3SpOIpRkNHtao0kEfxzFlH7P+sQ0LWPU5KZJXMue/9lKLxXdersdl2SAU7PSntQwqTEEicMluYs="
     - secure: "PheOCJixQP9LaDcmkHGAOLmmPG6AQyN+PkgYw23cDTcFA6FKh4uVj28PHhlCQc0V6KrwzDqUAoSzyhSlcGm6LiZks714w6WHL3jpfIxnVKHN0J8FktnCy9Td9nrKhBCC2kNisaEhRyK4LojDcdFpliXZjJoituDnp4YhnaRIpsw="
 jdk:
-  - oraclejdk8
+  - openjdk8
   - openjdk11
+  - openjdk-ea
 stages:
   - name: check
+    jdk: openjdk11
   - name: test
-  # Deploy only from the home repo where the credentials can be
-  # properly decrypted. Never deploy from a pull request job.
-  # In addition, ensure we're on the master branch (snapshots)
-  # or a branch with semver naming (releases).
   - name: deploy
+    jdk: openjdk11
+    # Deploy only from the home repo where the credentials can be
+    # properly decrypted. Never deploy from a pull request job.
+    # In addition, ensure we're on the master branch (snapshots)
+    # or a branch with semver naming (releases).
     if: repo = nrepl/nrepl
         AND type != pull_request
         AND ( branch = master OR branch =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ )
@@ -36,32 +39,26 @@ jobs:
     - env: VERSION=master TARGET=test
       jdk: oraclejdk8
 
-    # Coverage analysis
-    - env: VERSION=1.10 TARGET=cloverage
-      jdk: oraclejdk8
-      after_success: bash <(curl -s https://codecov.io/bash) -f target/coverage/codecov.json
-
-    # Eastwood linter
     - stage: check
       env: VERSION=1.10 TARGET=eastwood
-      jdk: oraclejdk8
 
-    # Check cljfmt
     - stage: check
       env: VERSION=1.10 TARGET=cljfmt
-      jdk: oraclejdk8
 
-    # Verify that all files referenced in cljdoc.edn are present
     - stage: check
       env: VERSION=1.10 TARGET=verify_cljdoc
-      jdk: oraclejdk8
 
-    # Deploy artifacts
+    - stage: test
+      env: VERSION=1.10 TARGET=cloverage
+      jdk: openjdk11
+      after_success: bash <(curl -s https://codecov.io/bash) -f target/coverage/codecov.json
+
     - stage: deploy
       env: TARGET=deploy
-      jdk: oraclejdk8
 
-  fast_finish: true      # don't wait for allowed failures before build finish
+matrix:
+  fast_finish: true
   allow_failures:
+    - jdk: openjdk-ea
     - env: VERSION=master TARGET=test
     - env: VERSION=1.10 TARGET=cloverage
