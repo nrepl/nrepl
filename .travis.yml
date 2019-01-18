@@ -12,6 +12,7 @@ env:
     - VERSION=1.8 TARGET=test
     - VERSION=1.9 TARGET=test
     - VERSION=1.10 TARGET=test
+    - VERSION=master TARGET=test
   global:
     # deployment credentials
     - secure: "f2pEAipCOs8JRMzSVMnbqBPbWFzI7G/FjPW9FY9ZjAhRvpslRC6JzG4r6uSJMoKU474ZQk+hzpYXCNSuqbztvYdd50J7E5iT3SpOIpRkNHtao0kEfxzFlH7P+sQ0LWPU5KZJXMue/9lKLxXdersdl2SAU7PSntQwqTEEicMluYs="
@@ -35,10 +36,6 @@ stages:
         AND ( branch = master OR branch =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ )
 jobs:
   include:
-    # Test Clojure master against a single JDK
-    - env: VERSION=master TARGET=test
-      jdk: oraclejdk8
-
     - stage: check
       env: VERSION=1.10 TARGET=eastwood
 
