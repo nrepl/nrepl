@@ -77,9 +77,7 @@
                              (prn 'user/foo))
     ["problem" "" :value] '(do (.write *err* "problem")
                                :value))
-  (is (re-seq #"No such var: user/foo" (-> '(prn user/foo)
-                                           internal-eval
-                                           first))))
+  (is (re-seq #"Divide by zero" (first (internal-eval '(/ 1 0))))))
 
 (deftest repl-out-writer
   (let [[local remote] (piped-transports)
