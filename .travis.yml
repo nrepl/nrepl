@@ -1,6 +1,6 @@
+dist: xenial
 language: clojure
 lein: 2.8.1
-sudo: false
 cache:
   directories:
     - $HOME/.m2
