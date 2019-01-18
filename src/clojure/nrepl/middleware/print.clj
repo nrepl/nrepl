@@ -9,6 +9,7 @@
    [nrepl.transport :as transport])
   (:import
    (java.io BufferedWriter PrintWriter StringWriter Writer)
+   (nrepl QuotaExceeded)
    (nrepl.transport Transport)))
 
 (defn- to-char-array
@@ -19,12 +20,40 @@
     (integer? x) (char-array [(char x)])
     :else x))
 
+(defn with-quota-writer
+  "Returns a `java.io.Writer` that wraps `writer` and throws `QuotaExceeded` once
+  it has written more than `quota` bytes."
+  ^java.io.Writer
+  [^Writer writer quota]
+  (if-not quota
+    writer
+    (let [total (volatile! 0)]
+      (proxy [Writer] []
+        (toString []
+          (.toString writer))
+        (write
+          ([x]
+           (let [cbuf (to-char-array x)]
+             (.write ^Writer this cbuf (int 0) (count cbuf))))
+          ([x off len]
+           (locking total
+             (let [cbuf (to-char-array x)
+                   rem (- quota @total)]
+               (vswap! total + len)
+               (.write writer cbuf ^int off ^int (min len rem))
+               (when (neg? (- rem len))
+                 (throw (QuotaExceeded.)))))))
+        (flush []
+          (.flush writer))
+        (close []
+          (.close writer))))))
+
 (defn replying-PrintWriter
   "Returns a `java.io.PrintWriter` suitable for binding as `*out*` or `*err*`. All
   of the content written to that `PrintWriter` will be sent as messages on the
   transport of `msg`, keyed by `key`."
   ^java.io.PrintWriter
-  [key {:keys [transport ::buffer-size] :as msg}]
+  [key {:keys [transport] :as msg} {:keys [::buffer-size ::quota] :as opts}]
   (-> (proxy [Writer] []
         (write
           ([x]
@@ -39,6 +68,7 @@
         (flush [])
         (close []))
       (BufferedWriter. (or buffer-size 1024))
+      (with-quota-writer quota)
       (PrintWriter. true)))
 
 ;; private in clojure.core
@@ -54,22 +84,37 @@
    {:keys [::keys] :as resp}]
   (let [print-key (fn [key]
                     (let [value (get resp key)]
-                      (with-open [writer (replying-PrintWriter key msg)]
-                        (print-fn value writer))))]
+                      (try
+                        (with-open [writer (replying-PrintWriter key msg)]
+                          (print-fn value writer))
+                        (catch QuotaExceeded _
+                          (transport/send
+                           transport
+                           (misc/response-for msg :status ::truncated))))))]
     (run! print-key keys))
   (transport/send transport (apply dissoc resp (conj keys ::keys))))
 
 (defn- send-nonstreamed
   [{:keys [::print-fn transport] :as msg}
    {:keys [::keys] :as resp}]
-  (let [resp (->> keys
-                  (into (dissoc resp ::keys)
-                        (map (fn [key]
-                               (let [value (get resp key)
-                                     writer (StringWriter.)]
-                                 (print-fn value writer)
-                                 [key (str writer)])))))]
-    (transport/send transport resp)))
+  (let [print-key (fn [key]
+                    (let [value (get resp key)
+                          writer (-> (StringWriter.)
+                                     (with-quota-writer msg))
+                          truncated? (volatile! false)]
+                      (try
+                        (print-fn value writer)
+                        (catch QuotaExceeded _
+                          (vreset! truncated? true)))
+                      [key (str writer) @truncated?]))
+        rf (completing
+            (fn [resp [key printed-value truncated?]]
+              (cond-> (assoc resp key printed-value)
+                truncated? (update ::truncated-keys (fnil conj []) key))))
+        resp (transduce (map print-key) rf resp keys)]
+    (transport/send transport (cond-> (dissoc resp ::keys)
+                                (::truncated-keys resp)
+                                (update :status conj ::truncated)))))
 
 (defn- printing-transport
   [{:keys [transport ::stream?] :as msg}]
@@ -117,7 +162,9 @@
   streamed to the client over one or more messages.
 
   * `::buffer-size` – the size of the buffer to use when streaming results.
-  Defaults to 1024."
+  Defaults to 1024.
+
+  * `::quota` – a hard limit on the number of bytes printed for each value."
   [handler]
   (fn [{:keys [::options] :as msg}]
     (let [print-var (or (resolve-print msg) #'pr-on)

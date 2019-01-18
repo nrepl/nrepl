@@ -243,7 +243,9 @@ results automatically. The middleware supports the following options:
  :code "(+ 1 1)"
  :nrepl.middleware.print/print 'my.custom/print-value
  :nrepl.middleware.print/options {:print-width 120}
- :nrepl.middleware.print/stream? true}
+ :nrepl.middleware.print/stream? true
+ :nrepl.middleware.print/buffer-size 1024
+ :nrepl.middleware.print/quota 8096}
 ----
 
 The functionality of the `print` middleware is reusable by other middlewares. If

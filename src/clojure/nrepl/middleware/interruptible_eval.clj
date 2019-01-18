@@ -61,7 +61,11 @@
       (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}
                                            :ns ns}))
       (let [ctxcl (.getContextClassLoader (Thread/currentThread))
-            msg (assoc msg ::print/buffer-size (or out-limit (get (meta session) :out-limit)))
+            msg (-> msg
+                    ;; TODO: out-limit -> out-buffer-size | err-buffer-size
+                    (assoc ::print/buffer-size (or out-limit (get (meta session) :out-limit)))
+                    ;; TODO: new options: out-quota |  err-quota
+                    (dissoc ::print/quota))
             out (print/replying-PrintWriter :out msg)
             err (print/replying-PrintWriter :err msg)]
         (try

@@ -382,6 +382,53 @@
       (is (= {:ns "user"} resp3))
       (is (= {:status ["done"]} resp4)))))
 
+(def-repl-test print-quota
+  (testing "quota option respected"
+    (is (= [{:ns "user"
+             :value "(0 1 2 3"
+             :status ["nrepl.middleware.print/truncated"]
+             ::middleware.print/truncated-keys ["value"]}
+            {:status ["done"]}]
+           (->> (message client {:op :eval
+                                 :code (code (range 512))
+                                 ::middleware.print/quota 8})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "works with streamed printing"
+    (is (= [{:value "(0 1 2 3"}
+            {:status ["nrepl.middleware.print/truncated"]}
+            {:ns "user"}
+            {:status ["done"]}]
+           (->> (message client {:op :eval
+                                 :code (code (range 512))
+                                 ::middleware.print/stream? 1
+                                 ::middleware.print/quota 8})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "works with custom printer"
+    (is (= [{:ns "user"
+             :value "<foo (0 "
+             :status ["nrepl.middleware.print/truncated"]
+             ::middleware.print/truncated-keys ["value"]}
+            {:status ["done"]}]
+           (->> (message client {:op :eval
+                                 :code (code (range 512))
+                                 ::middleware.print/print `custom-printer
+                                 ::middleware.print/quota 8})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "works with custom printer and streamed printing"
+    (is (= [{:value "<foo (0 "}
+            {:status ["nrepl.middleware.print/truncated"]}
+            {:ns "user"}
+            {:status ["done"]}]
+           (->> (message client {:op :eval
+                                 :code (code (range 512))
+                                 ::middleware.print/print `custom-printer
+                                 ::middleware.print/stream? 1
+                                 ::middleware.print/quota 8})
+                (mapv #(dissoc % :id :session)))))))
+
 (def-repl-test session-return-recall
   (testing "sessions persist across connections"
     (repl-values session (code
