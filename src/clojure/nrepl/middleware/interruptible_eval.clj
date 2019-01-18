@@ -76,14 +76,15 @@
                      #(or (and (.hasNext code) (.next code)) %2)))
            :prompt #(reset! session (maybe-restore-original-ns (capture-thread-bindings)))
            :need-prompt (constantly true)
-           :print (fn [v]
-                    (.flush *err*)
+           :print (fn [value]
+                    ;; *out* has :tag metadata; *err* does not
+                    (.flush ^Writer *err*)
                     (.flush *out*)
                     (t/send transport (response-for msg
-                                                    {:value v
+                                                    {:value value
                                                      :ns (-> *ns* ns-name str)})))
            ;; TODO: customizable exception prints
-           :caught (fn [e]
+           :caught (fn [^Throwable e]
                      (let [root-ex (#'clojure.main/root-cause e)
                            previous-cause (.getCause e)]
                        ;; Check if the root cause or previous cause of the exception

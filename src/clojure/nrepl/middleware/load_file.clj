@@ -74,7 +74,7 @@ be loaded."} file-contents (atom {}))
    This middleware depends on the availability of an :op \"eval\"
    middleware below it (such as interruptible-eval)."
   [h]
-  (fn [{:keys [op file file-name file-path transport] :as msg}]
+  (fn [{:keys [op file file-name file-path ^Transport transport] :as msg}]
     (if (not= op "load-file")
       (h msg)
       (h (assoc (dissoc msg :file :file-name :file-path)
