@@ -118,15 +118,14 @@
   [& {:keys [port bind transport-fn handler ack-port greeting-fn]}]
   (let [port (or port 0)
         addr (fn [^String bind ^Integer port] (InetSocketAddress. bind port))
-        make-ss #(doto (ServerSocket.)
-                   (.setReuseAddress true)
-                   (.bind %))
         transport-fn (or transport-fn t/bencode)
         ;; We fallback to 127.0.0.1 instead of to localhost to avoid
         ;; a dependency on the order of ipv4 and ipv6 records for
         ;; localhost in /etc/hosts
         bind (or bind "127.0.0.1")
-        ss (make-ss (addr bind port))
+        ss (doto (ServerSocket.)
+             (.setReuseAddress true)
+             (.bind (addr bind port)))
         server (Server. ss
                         (.getLocalPort ss)
                         (atom #{})
