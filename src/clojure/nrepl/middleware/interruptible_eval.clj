@@ -3,8 +3,8 @@
   (:require
    clojure.main
    clojure.test
-   [nrepl.middleware :refer [replying-PrintWriter set-descriptor!]]
-   nrepl.middleware.pr-values
+   [nrepl.middleware :refer [set-descriptor!]]
+   [nrepl.middleware.print :as print]
    [nrepl.misc :refer [response-for returning]]
    [nrepl.transport :as t])
   (:import
@@ -50,7 +50,8 @@
    or a seq of forms to be evaluated), which may also optionally specify a :ns
    (resolved via `find-ns`).  The map MUST contain a Transport implementation
    in :transport; expression results and errors will be sent via that Transport."
-  [{:keys [transport session eval ns code file line column out-limit] :as msg}]
+  [{:keys [transport session eval ns code file line column out-limit]
+    :as msg}]
   (let [explicit-ns (and ns (-> ns symbol find-ns))
         original-ns (@session #'*ns*)
         maybe-restore-original-ns (if explicit-ns
@@ -60,9 +61,9 @@
       (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}
                                            :ns ns}))
       (let [ctxcl (.getContextClassLoader (Thread/currentThread))
-            msg (assoc msg :buffer-size (or out-limit (get (meta session) :out-limit)))
-            out (replying-PrintWriter :out msg)
-            err (replying-PrintWriter :err msg)]
+            msg (assoc msg ::print/buffer-size (or out-limit (get (meta session) :out-limit)))
+            out (print/replying-PrintWriter :out msg)
+            err (print/replying-PrintWriter :err msg)]
         (try
           (clojure.main/repl
            :eval (if eval (find-var (symbol eval)) clojure.core/eval)
@@ -97,9 +98,9 @@
                     ;; *out* has :tag metadata; *err* does not
                     (.flush ^Writer *err*)
                     (.flush *out*)
-                    (t/send transport (response-for msg
-                                                    {:value value
-                                                     :ns (-> *ns* ns-name str)})))
+                    (t/send transport (response-for msg {:ns (str (ns-name *ns*))
+                                                         :value value
+                                                         ::print/keys #{:value}})))
            ;; TODO: customizable exception prints
            :caught (fn [^Throwable e]
                      (let [root-ex (#'clojure.main/root-cause e)
@@ -152,7 +153,7 @@
         (h msg)))))
 
 (set-descriptor! #'interruptible-eval
-                 {:requires #{"clone" "close" #'nrepl.middleware.pr-values/pr-values}
+                 {:requires #{"clone" "close" #'print/wrap-print}
                   :expects #{}
                   :handles {"eval"
                             {:doc "Evaluates code. Note that unlike regular stream-based Clojure REPLs, nREPL's `:eval` short-circuits on first read error and will not try to read and execute the remaining code in the message."
@@ -164,7 +165,7 @@
                                         "line" "The line number in [file] at which [code] starts."
                                         "column" "The column number in [file] at which [code] starts."}
                              :returns {"ns" "*ns*, after successful evaluation of `code`."
-                                       "values" "The result of evaluating `code`, often `read`able. This printing is provided by the `pr-values` middleware, and could theoretically be customized. Superseded by `ex` and `root-ex` if an exception occurs during evaluation."
+                                       "values" "The result of evaluating `code`, often `read`able. This printing is provided by the `print` middleware. Superseded by `ex` and `root-ex` if an exception occurs during evaluation."
                                        "ex" "The type of exception thrown, if any. If present, then `values` will be absent."
                                        "root-ex" "The type of the root exception thrown, if any. If present, then `values` will be absent."}}
                             "interrupt"

@@ -2,10 +2,11 @@
   (:require
    [clojure.test :refer :all]
    [nrepl.core :as nrepl]
-   [nrepl.middleware :as middleware]
    [nrepl.middleware.interruptible-eval :as eval]
+   [nrepl.middleware.print :as print]
    [nrepl.middleware.session :as session]
-   [nrepl.transport :refer [piped-transports]])
+   [nrepl.misc :as misc]
+   [nrepl.transport :as transport :refer [piped-transports]])
   (:import
    (java.util.concurrent BlockingQueue LinkedBlockingQueue TimeUnit)))
 
@@ -24,7 +25,7 @@
      (eval/evaluate msg)
      (-> (nrepl/response-seq local 0)
          (nrepl/combine-responses)
-         (dissoc :session)))))
+         (select-keys [:ns :value :out :err])))))
 
 (deftest eval-sanity
   (try
@@ -113,7 +114,7 @@
 
 (deftest repl-out-writer
   (let [[local remote] (piped-transports)
-        w (middleware/replying-PrintWriter :out {:transport remote})]
+        w (print/replying-PrintWriter :out {:transport remote})]
     (doto w
       .flush
       (.println "println")
