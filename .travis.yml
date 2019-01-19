@@ -47,7 +47,7 @@ jobs:
 
     - stage: test
       env: VERSION=1.10 TARGET=cloverage
-      jdk: openjdk11
+      jdk: openjdk8
       after_success: bash <(curl -s https://codecov.io/bash) -f target/coverage/codecov.json
 
     - stage: deploy
