@@ -137,10 +137,10 @@
     ;; Works for all integral types.
     ;; Note: BigInts (42N) not tested, since they are not
     ;; supported in 1.2.
-    (Byte. "42")    "i42e"
-    (Short. "42")   "i42e"
-    (Integer. "42") "i42e"
-    (Long. "42")    "i42e"))
+    (Byte/parseByte "42" 10)   "i42e"
+    (Short/parseShort "42" 10) "i42e"
+    (Integer/parseInt "42" 10) "i42e"
+    (Long/parseLong "42" 10)   "i42e"))
 
 (deftest test-named-writing
   (are [x y] (= (>output x :writer write-bencode) y)
