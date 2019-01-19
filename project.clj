@@ -45,13 +45,14 @@
                      :dependencies [[org.clojure/tools.cli "0.4.1"]]}
 
              ;; CI tools
-             :cloverage {:plugins [[lein-cloverage "1.0.13"]]}
+             :cloverage [:test
+                         {:plugins [[lein-cloverage "1.0.13"]]}]
 
              :cljfmt {:plugins [[lein-cljfmt "0.6.1"]]
                       :cljfmt {:indents {as-> [[:inner 0]]
                                          with-debug-bindings [[:inner 0]]
                                          merge-meta [[:inner 0]]}}}
 
-             :eastwood {:plugins [[jonase/eastwood "0.3.4"]]
-                        :eastwood {:config-files ["eastwood.clj"]}
-                        :dependencies [[com.hypirion/io "0.3.1"]]}})
+             :eastwood [:test
+                        {:plugins [[jonase/eastwood "0.3.4"]]
+                         :eastwood {:config-files ["eastwood.clj"]}}]})
