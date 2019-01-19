@@ -46,7 +46,13 @@
 
              ;; CI tools
              :cloverage [:test
-                         {:plugins [[lein-cloverage "1.0.13"]]}]
+                         {:plugins [[lein-cloverage "1.0.13"]]
+                          :cloverage {:codecov? true
+                                      ;; Cloverage can't handle some of the code
+                                      ;; in this project
+                                      :ns-exclude-regex [#"nrepl.middleware.interruptible-eval"
+                                                         #"nrepl.middleware.session"]
+                                      :test-ns-regex [#"^((?!nrepl.sanity-test).)*$"]}}]
 
              :cljfmt {:plugins [[lein-cljfmt "0.6.1"]]
                       :cljfmt {:indents {as-> [[:inner 0]]
