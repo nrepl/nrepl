@@ -9,10 +9,13 @@
    [nrepl.misc :refer [uuid response-for]]
    [nrepl.transport :as t])
   (:import
-   clojure.lang.LineNumberingPushbackReader
-   [java.io PrintWriter Reader Writer]
-   java.util.concurrent.atomic.AtomicLong
-   [java.util.concurrent LinkedBlockingQueue BlockingQueue Executor SynchronousQueue ThreadFactory ThreadPoolExecutor TimeUnit]))
+   (clojure.lang LineNumberingPushbackReader)
+   (java.io PrintWriter Reader Writer)
+   (java.util.concurrent.atomic AtomicLong)
+   (java.util.concurrent BlockingQueue LinkedBlockingQueue SynchronousQueue
+                         Executor ExecutorService
+                         ThreadFactory ThreadPoolExecutor
+                         TimeUnit)))
 
 (def ^{:private true} sessions (atom {}))
 
@@ -64,7 +67,8 @@
    * ack, another Runnable, ran to notify of succesful execution of thunk.
    The thunk/ack split is meaningful for interruptible eval: only the thunk can be interrupted."
   [id ^Runnable thunk ^Runnable ack]
-  (.submit ^java.util.concurrent.ExecutorService @default-executor ^Callable #(do (.run thunk) (.run ack))))
+  (let [^Runnable f #(do (.run thunk) (.run ack))]
+    (.submit ^ExecutorService @default-executor f)))
 
 (defn- session-out
   "Returns a PrintWriter suitable for binding as *out* or *err*.  All of

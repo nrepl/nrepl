@@ -190,14 +190,17 @@
     (is (re-seq #"oops" (:err results)))))
 
 (def-repl-test cross-transport-*out*
-  (let [sid (-> session meta ::nrepl/taking-until :session)
-        transport2 (nrepl.core/connect :port (:port *server*)
-                                       :transport-fn *transport-fn*)]
-    (transport/send transport2 {"op" "eval" "code" "(println :foo)"
-                                "session" sid})
-    (is (->> (repeatedly #(transport/recv transport2 1000))
-             (take-while identity)
-             (some #(= ":foo\n" (:out %)))))))
+  (let [sid (-> session meta ::nrepl/taking-until :session)]
+    (with-open [transport2 (nrepl.core/connect :port (:port *server*)
+                                               :transport-fn *transport-fn*)]
+      (transport/send transport2 {"op" "eval" "code" "(println :foo)"
+                                  "session" sid})
+      (is (= [{:out ":foo\n"}
+              {:ns "user" :value "nil"}
+              {:status ["done"]}]
+             (->> (repeatedly #(transport/recv transport2 100))
+                  (into [] (comp (take-while identity)
+                                 (map #(dissoc % :session))))))))))
 
 (def-repl-test streaming-out
   (is (= (for [x (range 10)]
