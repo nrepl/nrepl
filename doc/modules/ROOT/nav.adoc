@@ -4,6 +4,7 @@
 ** xref:usage/server.adoc[Server]
 ** xref:usage/clients.adoc[Clients]
 ** xref:usage/misc.adoc[Misc]
+** link:https://cljdoc.org/d/nrepl/nrepl/CURRENT[API docs]
 * Design
 ** xref:design/overview.adoc[Overview]
 ** xref:design/handlers.adoc[Handlers]
