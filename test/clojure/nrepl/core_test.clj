@@ -431,10 +431,10 @@
 
 (def-repl-test session-return-recall
   (testing "sessions persist across connections"
-    (repl-values session (code
-                          (apply + (range 6))
-                          (str 12 \c)
-                          (keyword "hello")))
+    (dorun (repl-values session (code
+                                 (apply + (range 6))
+                                 (str 12 \c)
+                                 (keyword "hello"))))
     (with-open [separate-connection (connect :port (:port *server*)
                                              :transport-fn *transport-fn*)]
       (let [history [[15 "12c" :hello]]
@@ -449,9 +449,9 @@
     (is (= [nil] (repl-values client "*1")))))
 
 (def-repl-test session-set!
-  (repl-eval session (code
-                      (set! *compile-path* "badpath")
-                      (set! *warn-on-reflection* true)))
+  (dorun (repl-eval session (code
+                             (set! *compile-path* "badpath")
+                             (set! *warn-on-reflection* true))))
   (is (= [["badpath" true]] (repl-values session (code [*compile-path* *warn-on-reflection*])))))
 
 (def-repl-test exceptions
