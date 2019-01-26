@@ -16,6 +16,9 @@
 * Restore the `nrepl.bencode` namespace.
 * [#117](https://github.com/nrepl/nrepl/issues/117): Replace
   `nrepl.middleware.pr-values` with `nrepl.middleware.print`.
+  * New dynamic vars in `nrepl.middleware.print` for configuring the print
+    middleware at the REPL. See the Misc page in the Usage section of the
+    documentation for more information.
   * The new middleware provides behaviour that is backwards-compatible with the
     old one. Existing middleware descriptors whose `:requires` set contains
     `#'pr-values` should instead use `#'wrap-print`. See the Middleware page in

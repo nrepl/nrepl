@@ -279,6 +279,15 @@
                (combine-responses)
                (:value))))))
 
+(def-repl-test override-value-printing
+  (testing "custom ::print/keys"
+    (is (= [{:ns "user" :value [1 2 3 4 5]}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code "[1 2 3 4 5]"
+                                  ::middleware.print/keys []})
+                (mapv #(dissoc % :id :session)))))))
+
 (def-repl-test streamed-printing
   (testing "value response arrives before ns response"
     (let [responses (->> (message client {:op :eval
@@ -427,6 +436,95 @@
                                  ::middleware.print/print `custom-printer
                                  ::middleware.print/stream? 1
                                  ::middleware.print/quota 8})
+                (mapv #(dissoc % :id :session)))))))
+
+(defn custom-session-printer
+  [value ^Writer writer]
+  (.write writer (format "<bar %s>" value)))
+
+(def-repl-test session-print-configuration
+  (testing "setting *print-fn* works"
+    (is (= [{:ns "user" :value "<bar #'nrepl.core-test/custom-session-printer>"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (set! nrepl.middleware.print/*print-fn* (resolve `custom-session-printer)))})
+                (mapv #(dissoc % :id :session)))))
+
+    (is (= [{:ns "user" :value "<bar (0 1 2 3 4 5 6 7 8 9)>"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (range 10))})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "request can still override *print-fn*"
+    (is (= [{:ns "user" :value "<foo (0 1 2 3 4 5 6 7 8 9) ...>"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (range 10))
+                                  ::middleware.print/print `custom-printer})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "setting stream options works"
+    (is (= [{:value "<bar true>"}
+            {:ns "user"}
+            {:value "<bar 8>"}
+            {:ns "user"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (set! nrepl.middleware.print/*stream?* true)
+                                              (set! nrepl.middleware.print/*buffer-size* 8))})
+                (mapv #(dissoc % :id :session)))))
+
+    (is (= [{:value "<bar (0 "}
+            {:value "1 2 3 4 "}
+            {:value "5 6 7 8 "}
+            {:value "9)>"}
+            {:ns "user"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (range 10))})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "request can still override stream options"
+    (is (= [{:ns "user" :value "<bar (0 1 2 3 4 5 6 7 8 9)>"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (range 10))
+                                  ::middleware.print/stream? nil})
+                (mapv #(dissoc % :id :session)))))
+
+    (is (= [{:value "<bar (0 1 2 3 4 "}
+            {:value "5 6 7 8 9)>"}
+            {:ns "user"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (range 10))
+                                  ::middleware.print/buffer-size 16})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "setting *quota* works"
+    (is (= [{:value "<bar 8>"}
+            {:ns "user"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (set! nrepl.middleware.print/*quota* 8))})
+                (mapv #(dissoc % :id :session)))))
+    (is (= [{:value "<bar (0 "}
+            {:status ["nrepl.middleware.print/truncated"]}
+            {:ns "user"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (range 512))})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "request can still override *quota*"
+    (is (= [{:value "<bar (0 1 2 3 4 "}
+            {:status ["nrepl.middleware.print/truncated"]}
+            {:ns "user"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (range 512))
+                                  ::middleware.print/quota 16})
                 (mapv #(dissoc % :id :session)))))))
 
 (def-repl-test session-return-recall

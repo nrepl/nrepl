@@ -114,7 +114,7 @@
 
 (deftest repl-out-writer
   (let [[local remote] (piped-transports)
-        w (print/replying-PrintWriter :out {:transport remote})]
+        w (print/replying-PrintWriter :out {:transport remote} {})]
     (doto w
       .flush
       (.println "println")

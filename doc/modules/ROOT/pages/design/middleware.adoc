@@ -175,7 +175,9 @@ considered experimental.
 nREPL includes a `print` middleware to print the results of evaluated forms as
 strings for returning to the client. This enables using libraries like
 link:https://github.com/greglook/puget[puget] to pretty print the evaluation
-results automatically. The middleware supports the following options:
+results automatically. The middleware options may be provided in either requests
+or responses (the former taking precedence over the latter if any options are
+specified in both). The following options are supported:
 
 * `:nrepl.middleware.print/print`: a fully-qualified symbol naming a var whose
   function to use for printing. Defaults to the equivalent of `clojure.core/pr`.
@@ -237,6 +239,10 @@ results automatically. The middleware supports the following options:
    include `:nrepl.middleware.print/truncated-keys`, indicating which keys in
    the response were truncated.
 
+* `:nrepl.middleware.print/keys`: a seq of the keys in the response whose values
+  should be printed. Defaults to `[:value]` for `eval` and `load-file`
+  responses.
+
 [source,clojure]
 ----
 {:op :eval
@@ -252,8 +258,8 @@ The functionality of the `print` middleware is reusable by other middlewares. If
 a middleware descriptor's `:requires` set contains
 `#'nrepl.middleware.print/wrap-print`, then it can expect:
 
-* Any responses it returns which contain the key `:nrepl.middleware.print/keys`
-  will have the values corresponding to those keys printed.
+* Any responses it returns will have its values printed according to the above
+  options, as provided in the request and/or response.
 
 ** For example, to ensure that `:value` is printed, responses from the `eval`
   middleware look like this:

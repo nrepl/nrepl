@@ -61,18 +61,17 @@
       (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}
                                            :ns ns}))
       (let [ctxcl (.getContextClassLoader (Thread/currentThread))
-            msg (-> msg
-                    ;; TODO: out-limit -> out-buffer-size | err-buffer-size
-                    (assoc ::print/buffer-size (or out-limit (get (meta session) :out-limit)))
-                    ;; TODO: new options: out-quota |  err-quota
-                    (dissoc ::print/quota))
-            out (print/replying-PrintWriter :out msg)
-            err (print/replying-PrintWriter :err msg)]
+            ;; TODO: out-limit -> out-buffer-size | err-buffer-size
+            ;; TODO: new options: out-quota | err-quota
+            opts {::print/buffer-size (or out-limit (get (meta session) :out-limit))}
+            out (print/replying-PrintWriter :out msg opts)
+            err (print/replying-PrintWriter :err msg opts)]
         (try
           (clojure.main/repl
            :eval (if eval (find-var (symbol eval)) clojure.core/eval)
            :init #(let [bindings
                         (-> (get-thread-bindings)
+                            (into print/default-bindings)
                             (into @session)
                             (into {#'*out* out
                                    #'*err* err
@@ -102,9 +101,10 @@
                     ;; *out* has :tag metadata; *err* does not
                     (.flush ^Writer *err*)
                     (.flush *out*)
-                    (t/send transport (response-for msg {:ns (str (ns-name *ns*))
-                                                         :value value
-                                                         ::print/keys #{:value}})))
+                    (t/send transport (response-for msg (merge (print/bound-configuration)
+                                                               {:ns (str (ns-name *ns*))
+                                                                :value value
+                                                                ::print/keys #{:value}}))))
            ;; TODO: customizable exception prints
            :caught (fn [^Throwable e]
                      (let [root-ex (#'clojure.main/root-cause e)
