@@ -84,21 +84,20 @@ Returns::
 
 === `:interrupt`
 
-Attempts to interrupt some code evaluation. When interruption succeeds, the thread used by for
-code evaluation changes, while Clojure dynamic bindings are preserved, other `ThreadLocals` are not. So when running code intimately tied to the current thread identity, best avoid interruptions.
+Attempts to interrupt some executing request. When interruption succeeds, the thread used for execution is killed, and a new thread spawned for the session. While the session middleware ensures that Clojure dynamic bindings are preserved, other ThreadLocals are not. Hence, when running code intimately tied to the current thread identity, it is best to avoid interruptions.
 
 Required parameters::
-* `:session` The ID of the session used to start the evaluation to be interrupted.
+* `:session` The ID of the session used to start the request to be interrupted.
 
 
 Optional parameters::
-* `:interrupt-id` The opaque message ID sent with the original "eval" request.
+* `:interrupt-id` The opaque message ID sent with the request to be interrupted.
 
 
 Returns::
-* `:status` 'interrupted' if an evaluation was identified and interruption will be attempted
-'session-idle' if the session is not currently evaluating any code
-'interrupt-id-mismatch' if the session is currently evaluating code sent using a different ID than specified by the "interrupt-id" value 
+* `:status` 'interrupted' if a request was identified and interruption will be attempted
+'session-idle' if the session is not currently executing any request
+'interrupt-id-mismatch' if the session is currently executing a request sent using a different ID than specified by the "interrupt-id" value
 
 
 

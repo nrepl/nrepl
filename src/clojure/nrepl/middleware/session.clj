@@ -146,7 +146,7 @@
 (defn session-exec
   "Takes a session id and returns a maps of three functions meant for interruptible-eval:
    * :exec, takes an id (typically a msg-id), a thunk and an ack runnables (see #'default-exec for ampler
-     context). Executions are serialized and occurs on a single thread. 
+     context). Executions are serialized and occurs on a single thread.
    * :interrupt, takes an id and tries to interrupt the matching execution (submitted with :exec above).
      A nil id is meant to match the currently running execution. The return value can be either:
      :idle (no running execution), the interrupted id, or nil when the running id doesn't match the id argument.
@@ -158,13 +158,13 @@
         queue (LinkedBlockingQueue.)
         running (atom nil)
         thread (atom nil)
-        main-loop #(let [[id ^Runnable r ^Runnable ack] (.take queue)]
-                     (reset! running id)
+        main-loop #(let [[exec-id ^Runnable r ^Runnable ack] (.take queue)]
+                     (reset! running exec-id)
                      (when (try
                              (.run r)
-                             (compare-and-set! running id nil)
+                             (compare-and-set! running exec-id nil)
                              (finally
-                               (compare-and-set! running id nil)))
+                               (compare-and-set! running exec-id nil)))
                        (some-> ack .run)
                        (recur)))
         spawn-thread #(doto (Thread. main-loop (str "nRepl-session-" id))
@@ -197,6 +197,21 @@
     (swap! sessions assoc id session)
     (t/send transport (response-for msg :status :done :new-session id))))
 
+(defn- interrupt-session
+  [{:keys [session interrupt-id transport] :as msg}]
+  (let [{:keys [interrupt] session-id :id} (meta session)
+        interrupted-id (when interrupt (interrupt interrupt-id))]
+    (case interrupted-id
+      nil (t/send transport (response-for msg :status #{:error :interrupt-id-mismatch :done}))
+      :idle (t/send transport (response-for msg :status #{:session-idle :done}))
+      (do
+        ;; interrupt prevents the interrupted computation from being ack'ed, so
+        ;; a :done will never be emitted before :interrupted
+        (t/send transport {:status #{:interrupted :done}
+                           :id interrupted-id
+                           :session session-id})
+        (t/send transport (response-for msg :status #{:done}))))))
+
 (defn- close-session
   "Drops the session associated with the given message."
   [{:keys [session transport] :as msg}]
@@ -206,16 +221,18 @@
 (defn session
   "Session middleware.  Returns a handler which supports these :op-erations:
 
-   * \"ls-sessions\", which results in a response message
-     containing a list of the IDs of the currently-retained sessions in a
-     :session slot.
-   * \"close\", which drops the session indicated by the
-     ID in the :session slot.  The response message's :status will include
-     :session-closed.
    * \"clone\", which will cause a new session to be retained.  The ID of this
      new session will be returned in a response message in a :new-session
      slot.  The new session's state (dynamic scope, etc) will be a copy of
      the state of the session identified in the :session slot of the request.
+   * \"interrupt\", which will attempt to interrupt the current execution with
+     id provided in the :interrupt-id slot.
+   * \"close\", which drops the session indicated by the
+     ID in the :session slot.  The response message's :status will include
+     :session-closed.
+   * \"ls-sessions\", which results in a response message
+     containing a list of the IDs of the currently-retained sessions in a
+     :session slot.
 
    Messages indicating other operations are delegated to the given handler,
    with the session identified by the :session ID added to the message. If
@@ -235,6 +252,7 @@
         (let [msg (assoc msg :session the-session)]
           (case op
             "clone" (register-session msg)
+            "interrupt" (interrupt-session msg)
             "close" (close-session msg)
             "ls-sessions" (t/send transport (response-for msg :status :done
                                                           :sessions (or (keys @sessions) [])))
@@ -246,7 +264,19 @@
                   :describe-fn (fn [{:keys [session] :as describe-msg}]
                                  (when (and session (instance? clojure.lang.Atom session))
                                    {:current-ns (-> @session (get #'*ns*) str)}))
-                  :handles {"close"
+                  :handles {"clone"
+                            {:doc "Clones the current session, returning the ID of the newly-created session."
+                             :requires {}
+                             :optional {"session" "The ID of the session to be cloned; if not provided, a new session with default bindings is created, and mapped to the returned session ID."}
+                             :returns {"new-session" "The ID of the new session."}}
+                            "interrupt"
+                            {:doc "Attempts to interrupt some executing request. When interruption succeeds, the thread used for execution is killed, and a new thread spawned for the session. While the session middleware ensures that Clojure dynamic bindings are preserved, other ThreadLocals are not. Hence, when running code intimately tied to the current thread identity, it is best to avoid interruptions."
+                             :requires {"session" "The ID of the session used to start the request to be interrupted."}
+                             :optional {"interrupt-id" "The opaque message ID sent with the request to be interrupted."}
+                             :returns {"status" "'interrupted' if a request was identified and interruption will be attempted
+'session-idle' if the session is not currently executing any request
+'interrupt-id-mismatch' if the session is currently executing a request sent using a different ID than specified by the \"interrupt-id\" value"}}
+                            "close"
                             {:doc "Closes the specified session."
                              :requires {"session" "The ID of the session to be closed."}
                              :optional {}
@@ -255,12 +285,7 @@
                             {:doc "Lists the IDs of all active sessions."
                              :requires {}
                              :optional {}
-                             :returns {"sessions" "A list of all available session IDs."}}
-                            "clone"
-                            {:doc "Clones the current session, returning the ID of the newly-created session."
-                             :requires {}
-                             :optional {"session" "The ID of the session to be cloned; if not provided, a new session with default bindings is created, and mapped to the returned session ID."}
-                             :returns {"new-session" "The ID of the new session."}}}})
+                             :returns {"sessions" "A list of all available session IDs."}}}})
 
 (defn add-stdin
   "stdin middleware.  Returns a handler that supports a \"stdin\" :op-eration, which

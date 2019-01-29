@@ -5,13 +5,12 @@
    clojure.test
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.print :as print]
-   [nrepl.misc :refer [response-for returning]]
+   [nrepl.misc :refer [response-for]]
    [nrepl.transport :as t])
   (:import
    clojure.lang.LineNumberingPushbackReader
    [java.io FilterReader LineNumberReader StringReader Writer]
-   java.lang.reflect.Field
-   java.util.concurrent.Executor))
+   (java.lang.reflect Field)))
 
 (def ^:dynamic *msg*
   "The message currently being evaluated."
@@ -140,20 +139,6 @@
                 #(binding [*msg* msg]
                    (evaluate msg))
                 #(t/send transport (response-for msg :status :done))))
-
-        "interrupt"
-        (let [interrupted-id (when interrupt (interrupt interrupt-id))]
-          (case interrupted-id
-            nil (t/send transport (response-for msg :status #{:error :interrupt-id-mismatch :done}))
-            :idle (t/send transport (response-for msg :status #{:done :session-idle}))
-            (do
-              ;; interrupt prevents the interrupted computation to be ack'ed,
-              ;; so a :done will never be emitted before :interrupted
-              (t/send transport {:status #{:interrupted :done}
-                                 :id interrupted-id
-                                 :session session-id})
-              (t/send transport (response-for msg :status #{:done})))))
-
         (h msg)))))
 
 (set-descriptor! #'interruptible-eval
@@ -171,11 +156,4 @@
                              :returns {"ns" "*ns*, after successful evaluation of `code`."
                                        "values" "The result of evaluating `code`, often `read`able. This printing is provided by the `print` middleware. Superseded by `ex` and `root-ex` if an exception occurs during evaluation."
                                        "ex" "The type of exception thrown, if any. If present, then `values` will be absent."
-                                       "root-ex" "The type of the root exception thrown, if any. If present, then `values` will be absent."}}
-                            "interrupt"
-                            {:doc "Attempts to interrupt some code evaluation."
-                             :requires {"session" "The ID of the session used to start the evaluation to be interrupted."}
-                             :optional {"interrupt-id" "The opaque message ID sent with the original \"eval\" request."}
-                             :returns {"status" "'interrupted' if an evaluation was identified and interruption will be attempted
-'session-idle' if the session is not currently evaluating any code
-'interrupt-id-mismatch' if the session is currently evaluating code sent using a different ID than specified by the \"interrupt-id\" value "}}}})
+                                       "root-ex" "The type of the root exception thrown, if any. If present, then `values` will be absent."}}}})
