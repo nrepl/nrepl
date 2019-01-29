@@ -83,8 +83,8 @@
 (defmethod <bytes clojure.lang.IPersistentMap
   [input]
   (->> input
-       (map (fn [[k v]] [k (<bytes v)]))
-       (into {})))
+       (into {} (map (fn [[k v]]
+                       [k (<bytes v)])))))
 
 (defmacro ^{:private true} rethrow-on-disconnection
   [^Socket s & body]
