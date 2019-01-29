@@ -201,12 +201,18 @@
   [{:keys [session interrupt-id transport] :as msg}]
   (let [{:keys [interrupt] session-id :id} (meta session)
         interrupted-id (when interrupt (interrupt interrupt-id))]
-    (case interrupted-id
-      nil (t/send transport (response-for msg :status #{:error :interrupt-id-mismatch :done}))
-      :idle (t/send transport (response-for msg :status #{:session-idle :done}))
+    (cond
+      (nil? interrupt)
+      (t/send transport (response-for msg :status #{:error :session-ephemeral :done}))
+
+      (nil? interrupted-id)
+      (t/send transport (response-for msg :status #{:error :interrupt-id-mismatch :done}))
+
+      (= :idle interrupted-id)
+      (t/send transport (response-for msg :status #{:session-idle :done}))
+
+      :else
       (do
-        ;; interrupt prevents the interrupted computation from being ack'ed, so
-        ;; a :done will never be emitted before :interrupted
         (t/send transport {:status #{:interrupted :done}
                            :id interrupted-id
                            :session session-id})
@@ -275,7 +281,8 @@
                              :optional {"interrupt-id" "The opaque message ID sent with the request to be interrupted."}
                              :returns {"status" "'interrupted' if a request was identified and interruption will be attempted
 'session-idle' if the session is not currently executing any request
-'interrupt-id-mismatch' if the session is currently executing a request sent using a different ID than specified by the \"interrupt-id\" value"}}
+'interrupt-id-mismatch' if the session is currently executing a request sent using a different ID than specified by the \"interrupt-id\" value
+'session-ephemeral' if the session is an ephemeral session"}}
                             "close"
                             {:doc "Closes the specified session."
                              :requires {"session" "The ID of the session to be closed."}
