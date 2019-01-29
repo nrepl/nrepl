@@ -98,6 +98,7 @@ Returns::
 * `:status` 'interrupted' if a request was identified and interruption will be attempted
 'session-idle' if the session is not currently executing any request
 'interrupt-id-mismatch' if the session is currently executing a request sent using a different ID than specified by the "interrupt-id" value
+'session-ephemeral' if the session is an ephemeral session
 
 
 

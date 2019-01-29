@@ -612,21 +612,27 @@
          (map (juxt :value :out) (repl-eval client "(println 100) 42")))))
 
 (def-repl-test interrupt
-  (is (= #{"error" "interrupt-id-mismatch" "done"}
-         (-> (message client {:op :interrupt :interrupt-id "foo"})
-             first
-             :status
-             set)))
+  (testing "ephemeral session"
+    (is (= #{"error" "session-ephemeral" "done"}
+           (set (:status (first (message client {:op :interrupt}))))
+           (set (:status (first (message client {:op :interrupt :interrupt-id "foo"})))))))
 
-  (let [resp (message session {:op :eval :code (code (do
-                                                       (def halted? true)
-                                                       halted?
-                                                       (Thread/sleep 30000)
-                                                       (def halted? false)))})]
-    (Thread/sleep 100)
-    (is (= #{"done"} (-> session (message {:op :interrupt}) first :status set)))
-    (is (= #{} (reduce disj #{"done" "interrupted"} (-> resp combine-responses :status))))
-    (is (= [true] (repl-values session "halted?")))))
+  (testing "registered session"
+    (is (= #{"done" "session-idle"}
+           (set (:status (first (message session {:op :interrupt}))))
+           (set (:status (first (message session {:op :interrupt :interrupt-id "foo"}))))))
+
+    (let [resp (message session {:op :eval :code (code (do
+                                                         (def halted? true)
+                                                         halted?
+                                                         (Thread/sleep 30000)
+                                                         (def halted? false)))})]
+      (Thread/sleep 100)
+      (is (= #{"done" "error" "interrupt-id-mismatch"}
+             (set (:status (first (message session {:op :interrupt :interrupt-id "foo"}))))))
+      (is (= #{"done"} (-> session (message {:op :interrupt}) first :status set)))
+      (is (= #{} (reduce disj #{"done" "interrupted"} (-> resp combine-responses :status))))
+      (is (= [true] (repl-values session "halted?"))))))
 
 ;; NREPL-66: ensure that bindings of implementation vars aren't captured by user sessions
 ;; (https://github.com/clojure-emacs/cider/issues/785)
