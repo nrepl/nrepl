@@ -295,8 +295,7 @@
 
 (defn #^{:private true} token-seq
   [input]
-  (->> #(read-bencode input)
-       repeatedly
+  (->> (repeatedly #(read-bencode input))
        (take-while identity)))
 
 ;; ## Writing bencode
