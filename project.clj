@@ -46,7 +46,8 @@
 
              ;; CI tools
              :cloverage [:test
-                         {:plugins [[lein-cloverage "1.0.13"]]
+                         {:plugins [[lein-cloverage "1.0.12-SNAPSHOT"]]
+                          :dependencies [[cloverage "1.0.12-SNAPSHOT"]]
                           :cloverage {:codecov? true
                                       ;; Cloverage can't handle some of the code
                                       ;; in this project
