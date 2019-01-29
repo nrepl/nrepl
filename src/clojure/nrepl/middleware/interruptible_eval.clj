@@ -2,8 +2,9 @@
   {:author "Chas Emerick"}
   (:require
    clojure.main
+   clojure.test
    [nrepl.middleware :refer [set-descriptor!]]
-   nrepl.middleware.pr-values
+   [nrepl.middleware.print :as print]
    [nrepl.misc :refer [response-for returning]]
    [nrepl.transport :as t])
   (:import
@@ -49,7 +50,8 @@
    or a seq of forms to be evaluated), which may also optionally specify a :ns
    (resolved via `find-ns`).  The map MUST contain a Transport implementation
    in :transport; expression results and errors will be sent via that Transport."
-  [{:keys [code ns transport session eval file line column] :as msg}]
+  [{:keys [transport session eval ns code file line column out-limit]
+    :as msg}]
   (let [explicit-ns (and ns (-> ns symbol find-ns))
         original-ns (@session #'*ns*)
         maybe-restore-original-ns (if explicit-ns
@@ -58,13 +60,26 @@
     (if (and ns (not explicit-ns))
       (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}
                                            :ns ns}))
-      (let [ctxcl (.getContextClassLoader (Thread/currentThread))]
+      (let [ctxcl (.getContextClassLoader (Thread/currentThread))
+            ;; TODO: out-limit -> out-buffer-size | err-buffer-size
+            ;; TODO: new options: out-quota | err-quota
+            opts {::print/buffer-size (or out-limit (get (meta session) :out-limit))}
+            out (print/replying-PrintWriter :out msg opts)
+            err (print/replying-PrintWriter :err msg opts)]
         (try
           (clojure.main/repl
            :eval (if eval (find-var (symbol eval)) clojure.core/eval)
            :init #(let [bindings
                         (-> (get-thread-bindings)
+                            (into print/default-bindings)
                             (into @session)
+                            (into {#'*out* out
+                                   #'*err* err
+                                   ;; clojure.test captures *out* at load-time, so we need to make sure
+                                   ;; runtime output of test status/results is redirected properly
+                                   ;; TODO: is this something we need to consider in general, or is this
+                                   ;; specific hack reasonable?
+                                   #'clojure.test/*test-out* out})
                             (cond-> explicit-ns (assoc #'*ns* explicit-ns)
                                     file (assoc #'*file* file)))]
                     (pop-thread-bindings)
@@ -86,9 +101,10 @@
                     ;; *out* has :tag metadata; *err* does not
                     (.flush ^Writer *err*)
                     (.flush *out*)
-                    (t/send transport (response-for msg
-                                                    {:value value
-                                                     :ns (-> *ns* ns-name str)})))
+                    (t/send transport (response-for msg (merge (print/bound-configuration)
+                                                               {:ns (str (ns-name *ns*))
+                                                                :value value
+                                                                ::print/keys #{:value}}))))
            ;; TODO: customizable exception prints
            :caught (fn [^Throwable e]
                      (let [root-ex (#'clojure.main/root-cause e)
@@ -106,8 +122,8 @@
                          (clojure.main/repl-caught e)))))
           (finally
             (.setContextClassLoader (Thread/currentThread) ctxcl)
-            (some-> ^Writer (@session #'*err*) .flush)
-            (some-> ^Writer (@session #'*out*) .flush)))))))
+            (.flush err)
+            (.flush out)))))))
 
 (defn interruptible-eval
   "Evaluation middleware that supports interrupts.  Returns a handler that supports
@@ -141,7 +157,7 @@
         (h msg)))))
 
 (set-descriptor! #'interruptible-eval
-                 {:requires #{"clone" "close" #'nrepl.middleware.pr-values/pr-values}
+                 {:requires #{"clone" "close" #'print/wrap-print}
                   :expects #{}
                   :handles {"eval"
                             {:doc "Evaluates code. Note that unlike regular stream-based Clojure REPLs, nREPL's `:eval` short-circuits on first read error and will not try to read and execute the remaining code in the message."
@@ -153,7 +169,7 @@
                                         "line" "The line number in [file] at which [code] starts."
                                         "column" "The column number in [file] at which [code] starts."}
                              :returns {"ns" "*ns*, after successful evaluation of `code`."
-                                       "values" "The result of evaluating `code`, often `read`able. This printing is provided by the `pr-values` middleware, and could theoretically be customized. Superseded by `ex` and `root-ex` if an exception occurs during evaluation."
+                                       "values" "The result of evaluating `code`, often `read`able. This printing is provided by the `print` middleware. Superseded by `ex` and `root-ex` if an exception occurs during evaluation."
                                        "ex" "The type of exception thrown, if any. If present, then `values` will be absent."
                                        "root-ex" "The type of the root exception thrown, if any. If present, then `values` will be absent."}}
                             "interrupt"

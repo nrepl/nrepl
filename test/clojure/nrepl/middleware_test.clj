@@ -4,17 +4,9 @@
    [nrepl.middleware :as middleware :refer [linearize-middleware-stack]]
    nrepl.middleware.interruptible-eval
    nrepl.middleware.load-file
-   nrepl.middleware.session))
-
-; wanted to just use resolve to avoid the long var names, but
-; it seems that unqualified resolves *don't work* within the context of a
-; clojure-maven-plugin test execution?!?
-(def ^{:private true} default-middlewares
-  [#'nrepl.middleware.session/add-stdin
-   #'nrepl.middleware.load-file/wrap-load-file
-   #'nrepl.middleware/wrap-describe
-   #'nrepl.middleware.session/session
-   #'nrepl.middleware.interruptible-eval/interruptible-eval])
+   nrepl.middleware.print
+   nrepl.middleware.session
+   [nrepl.server :refer [default-middlewares]]))
 
 (defn- wonky-resolve [s] (if (symbol? s) (resolve s) s))
 
@@ -32,17 +24,17 @@
 
 (deftest sanity
   (let [stack (indexed-stack default-middlewares)]
-    (is (stack 'pr-values))
+    (is (stack 'wrap-print))
     (are [before after] (< (stack before) (stack after))
       'interruptible-eval 'wrap-load-file
       'interruptible-eval 'session
-      'wrap-describe 'pr-values
-      'interruptible-eval 'pr-values))
+      'wrap-describe 'wrap-print
+      'interruptible-eval 'wrap-print))
 
   (let [n ^{::middleware/descriptor
             {:expects #{"clone"} :requires #{}}} {:dummy :middleware2}
         m ^{::middleware/descriptor
-            {:expects #{"eval"} :requires #{n #'nrepl.middleware.pr-values/pr-values}}}
+            {:expects #{"eval"} :requires #{n #'nrepl.middleware.print/wrap-print}}}
         {:dummy :middleware}
         q ^{::middleware/descriptor
             {:expects #{} :requires #{"describe" "eval"}}} {:dummy :middleware3}
@@ -50,15 +42,15 @@
     ;(->> stack clojure.set/map-invert (into (sorted-map)) vals println)
     (are [before after] (< (stack before) (stack after))
       'interruptible-eval m
-      m 'pr-values
+      m 'wrap-print
       'session n
       q 'wrap-describe
       m n
 
       'interruptible-eval 'wrap-load-file
       'interruptible-eval 'session
-      'wrap-describe 'pr-values
-      'interruptible-eval 'pr-values)))
+      'wrap-describe 'wrap-print
+      'interruptible-eval 'wrap-print)))
 
 (deftest append-dependency-free-middleware
   (let [m ^{::middleware/descriptor

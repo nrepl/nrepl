@@ -78,7 +78,7 @@ Returns::
 * `:ex` The type of exception thrown, if any. If present, then ``values`` will be absent.
 * `:ns` \*ns*, after successful evaluation of ``code``.
 * `:root-ex` The type of the root exception thrown, if any. If present, then ``values`` will be absent.
-* `:values` The result of evaluating ``code``, often ``read``able. This printing is provided by the ``pr-values`` middleware, and could theoretically be customized. Superseded by ``ex`` and ``root-ex`` if an exception occurs during evaluation.
+* `:values` The result of evaluating ``code``, often ``read``able. This printing is provided by the ``print`` middleware. Superseded by ``ex`` and ``root-ex`` if an exception occurs during evaluation.
 
 
 
@@ -119,7 +119,7 @@ Returns::
 * `:ex` The type of exception thrown, if any. If present, then ``values`` will be absent.
 * `:ns` \*ns*, after successful evaluation of ``code``.
 * `:root-ex` The type of the root exception thrown, if any. If present, then ``values`` will be absent.
-* `:values` The result of evaluating ``code``, often ``read``able. This printing is provided by the ``pr-values`` middleware, and could theoretically be customized. Superseded by ``ex`` and ``root-ex`` if an exception occurs during evaluation.
+* `:values` The result of evaluating ``code``, often ``read``able. This printing is provided by the ``print`` middleware. Superseded by ``ex`` and ``root-ex`` if an exception occurs during evaluation.
 
 
 

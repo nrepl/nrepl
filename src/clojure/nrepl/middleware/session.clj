@@ -3,14 +3,13 @@
   {:author "Chas Emerick"}
   (:require
    clojure.main
-   clojure.test
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.interruptible-eval :refer [*msg* evaluate]]
    [nrepl.misc :refer [uuid response-for]]
    [nrepl.transport :as t])
   (:import
    (clojure.lang LineNumberingPushbackReader)
-   (java.io PrintWriter Reader Writer)
+   (java.io Reader)
    (java.util.concurrent.atomic AtomicLong)
    (java.util.concurrent BlockingQueue LinkedBlockingQueue SynchronousQueue
                          Executor ExecutorService
@@ -25,7 +24,6 @@
 ;; depending upon the expectations of the client/user.  I'm not sure at the moment
 ;; how best to make it configurable though...
 
-(def ^{:dynamic true :private true} *out-limit* 1024)
 (def ^{:dynamic true :private true} *skipping-eol* false)
 
 (defn- configure-thread-factory
@@ -69,35 +67,6 @@
   [id ^Runnable thunk ^Runnable ack]
   (let [^Runnable f #(do (.run thunk) (.run ack))]
     (.submit ^ExecutorService @default-executor f)))
-
-(defn- session-out
-  "Returns a PrintWriter suitable for binding as *out* or *err*.  All of
-   the content written to that PrintWriter will (when .flush-ed) be sent on the
-   given transport in messages specifying the given session-id.
-   `channel-type` should be :out or :err, as appropriate."
-  [channel-type session-id transport]
-  (let [buf (StringBuilder.)]
-    (PrintWriter. (proxy [Writer] []
-                    (close [] (.flush ^Writer this))
-                    (write [& [x ^Integer off ^Integer len]]
-                      (locking buf
-                        (cond
-                          (number? x) (.append buf (char x))
-                          (not off) (.append buf x)
-                          ;; the CharSequence overload of append takes an *end* idx, not length!
-                          (instance? CharSequence x) (.append buf ^CharSequence x (int off) (int (+ len off)))
-                          :else (.append buf ^chars x off len))
-                        (when (<= *out-limit* (.length buf))
-                          (.flush ^Writer this))))
-                    (flush []
-                      (let [text (locking buf (let [text (str buf)]
-                                                (.setLength buf 0)
-                                                text))]
-                        (when (pos? (count text))
-                          (t/send (or (:transport *msg*) transport)
-                                  (response-for *msg* :session session-id
-                                                channel-type text))))))
-                  true)))
 
 (defn- session-in
   "Returns a LineNumberingPushbackReader suitable for binding to *in*.
@@ -154,33 +123,25 @@
 
 (defn- create-session
   "Returns a new atom containing a map of bindings as per
-   `clojure.core/get-thread-bindings`.  Values for *out*, *err*, and *in*
-   are obtained using `session-in` and `session-out`, *ns* defaults to 'user,
-   and other bindings as optionally provided in `baseline-bindings` are
-   merged in."
-  ([transport] (create-session transport {}))
-  ([transport baseline-bindings]
+  `clojure.core/get-thread-bindings`. *in* is obtained using `session-in`, *ns*
+  defaults to 'user, and other bindings as optionally provided in
+  `session` are merged in."
+  ([{:keys [transport session out-limit] :as msg}]
    (let [id (uuid)
-         out (session-out :out id transport)
          {:keys [input-queue stdin-reader]} (session-in id transport)
-         session (atom (into baseline-bindings
-                             {#'*out* out
-                              #'*err* (session-out :err id transport)
-                              #'*in* stdin-reader
-                              #'*ns* (create-ns 'user)
-                              #'*out-limit* (or (baseline-bindings #'*out-limit*) 1024)
-                              ;; clojure.test captures *out* at load-time, so we need to make sure
-                              ;; runtime output of test status/results is redirected properly
-                              ;; TODO: is this something we need to consider in general, or is this
-                              ;; specific hack reasonable?
-                              #'clojure.test/*test-out* out})
-                       :meta {:id id
-                              :stdin-reader stdin-reader
-                              :input-queue input-queue
-                              :exec default-exec})
-         msg {:code "" :session session}]
-     (binding [*msg* msg] (evaluate msg)) ; to fully initialize bindings
-     session)))
+         the-session (atom (into (or (some-> session deref) {})
+                                 {#'*in* stdin-reader
+                                  #'*ns* (create-ns 'user)})
+                           :meta {:id id
+                                  :out-limit (or out-limit (:out-limit (meta session)))
+                                  :stdin-reader stdin-reader
+                                  :input-queue input-queue
+                                  :exec default-exec})
+         msg {:code "" :session the-session}]
+     ;; to fully initialize bindings
+     (binding [*msg* msg]
+       (evaluate msg))
+     the-session)))
 
 (defn session-exec
   "Takes a session id and returns a maps of three functions meant for interruptible-eval:
@@ -230,7 +191,7 @@
   "Registers a new session containing the baseline bindings contained in the
    given message's :session."
   [{:keys [session transport] :as msg}]
-  (let [session (create-session transport @session)
+  (let [session (create-session msg)
         {:keys [id]} (meta session)]
     (alter-meta! session into (session-exec id))
     (swap! sessions assoc id session)
@@ -265,18 +226,13 @@
    *msg* to the currently-evaluated message so that session-specific *out*
    and *err* content can be associated with the originating message)."
   [h]
-  (fn [{:keys [op session transport out-limit] :as msg}]
+  (fn [{:keys [op session transport] :as msg}]
     (let [the-session (if session
                         (@sessions session)
-                        (create-session transport))]
+                        (create-session msg))]
       (if-not the-session
         (t/send transport (response-for msg :status #{:error :unknown-session :done}))
         (let [msg (assoc msg :session the-session)]
-          ;; TODO: yak, this is ugly; need to cleanly thread out-limit through to
-          ;; session-out without abusing a dynamic var
-          ;; (there's no reason to allow a connected client to fark around with
-          ;; a session-out's "buffer")
-          (when out-limit (swap! the-session assoc #'*out-limit* out-limit))
           (case op
             "clone" (register-session msg)
             "close" (close-session msg)

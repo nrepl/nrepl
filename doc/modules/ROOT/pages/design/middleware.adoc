@@ -169,53 +169,109 @@ Clojure one.
 
 == Pretty Printing
 
-NOTE: Pretty-printing support was added in nREPL 0.5 and the API is still
+NOTE: Pretty printing support was added in nREPL 0.5 and the API is still
 considered experimental.
 
-nREPL includes a `pr-values` middleware to print the results of evaluated
-forms as strings for returning to the client. By default, this will use either
-`print-dup` or `print-method` to match the standard Clojure `print` behavior.
-To customize this you can pass a custom `:printer` as a symbol along with the
-message. If present, this will be resolved to a function and used to print the
-value instead.
+nREPL includes a `print` middleware to print the results of evaluated forms as
+strings for returning to the client. This enables using libraries like
+link:https://github.com/greglook/puget[puget] to pretty print the evaluation
+results automatically. The middleware options may be provided in either requests
+or responses (the former taking precedence over the latter if any options are
+specified in both). The following options are supported:
 
-This enables using libraries like link:https://github.com/greglook/puget[puget]
-to pretty-print the evaluation results automatically.
+* `:nrepl.middleware.print/print`: a fully-qualified symbol naming a var whose
+  function to use for printing. Defaults to the equivalent of `clojure.core/pr`.
+
+** The var must point to a function of three arguments:
+
+*** `value`: the value to print.
+*** `writer`: the `java.io.Writer` to print on.
+*** `options`: a (possibly nil) map of options.
+
+** Note well that the printing function is expected to not interact with
+   `\*out*` or `\*err*` at all, even rebinding them (e.g. via `with-out-str`).
+   Output may be printed to either of those streams during its operation –
+   consider the following example:
+
++
+[source,clojure]
+----
+(->> [1 2 3]
+     (map (fn [n]
+            (println n)
+            n)))
+----
+
+** The result of the expression is `(1 2 3)`, and evaluating it will result in
+   each of the three numbers being printed to `\*out*`. However, because `map`
+   is lazy, the calls to `println` will be interleaved with the operation of the
+   printer function. Hence if the printer function is coupled to `\*out*`, its
+   output might be interleaved with that of the calls to `println`.
+
+*** Technically, `map` is not fully lazy – it returns a chunked sequence – but
+    the principle still applies.
+
+** Further, note that `clojure.pprint/pprint` rebinds `\*out*` internally (even
+   when using its explicit `writer` arity). It is not possible to prevent the
+   interleaving of output when using `clojure.pprint`.
+
+* `:nrepl.middleware.print/options`: a map of options to pass to the printing
+  function. Defaults to `nil`.
+
+* `:nrepl.middleware.print/stream?`: if logical true, the result of printing
+  each value will be streamed to the client over one or more messages. Defaults
+  to false.
+
+* `:nrepl.middleware.print/buffer-size`: size of the buffer to use when
+  streaming results. Defaults to 1024.
+
+** Note that this only represents an upper bound on the number of bytes per
+  message – the printing function may also call `flush` on `writer`, which will
+  result in a response being sent immediately.
+
+* `:nrepl.middleware.print/quota`: a hard limit on the number of bytes printed
+  for each value.
+
+** A status of `:nrepl.middleware.print/truncated` will be returned by the
+   middleware if the quota is exceeded. In streamed mode, this will be conveyed
+   as a discrete response after the final printing result. Otherwise, it will be
+   added to the status of the response, and additionally the response will
+   include `:nrepl.middleware.print/truncated-keys`, indicating which keys in
+   the response were truncated.
+
+* `:nrepl.middleware.print/keys`: a seq of the keys in the response whose values
+  should be printed. Defaults to `[:value]` for `eval` and `load-file`
+  responses.
 
 [source,clojure]
 ----
 {:op :eval
  :code "(+ 1 1)"
- :printer 'my.custom/print-value
- :print-options {:print-width 120}}
+ :nrepl.middleware.print/print 'my.custom/print-value
+ :nrepl.middleware.print/options {:print-width 120}
+ :nrepl.middleware.print/stream? true
+ :nrepl.middleware.print/buffer-size 1024
+ :nrepl.middleware.print/quota 8096}
 ----
 
-[NOTE]
-====
-A note for client authors - passing strings will work just fine as
-well (using the bencode transport you can't pass keywords and symbols
-as anyways).
+The functionality of the `print` middleware is reusable by other middlewares. If
+a middleware descriptor's `:requires` set contains
+`#'nrepl.middleware.print/wrap-print`, then it can expect:
 
+* Any responses it returns will have its values printed according to the above
+  options, as provided in the request and/or response.
+
+** For example, to ensure that `:value` is printed, responses from the `eval`
+  middleware look like this:
+
++
 [source,clojure]
 ----
-{"op" "eval"
- "code" "(+ 1 1)"
- "printer" "my.custom/print-value"
- "print-options" {"print-width" 120}}
+{:ns "user"
+ :value '(1 2 3)
+ :nrepl.middleware.print/keys #{:value}}
 ----
 
-nREPL will take of converting the keys of the `print-options` map to
-keywords, so they'd work as expected with their respective printers.
-====
-
-The requirement for the `printer` function are the following:
-
-* It should take one or two arguments - a value to print, and an optional print options map.
-* It should return the printed value as a string. This means you can't use directly
-functions like `clojure.pprint/pprint`, as they output the printed value instead of returning
-it as a string.
-* The printer function should have no side-effects.
-* In the absence of print options it should ideally respect Clojure's print dynamic vars - e.g. `+*print-length*+`, `+*print-right-margin*+`, etc.
-
-Great examples of functions that honour the API contract are
-`zprint.core/zprint-str` and `puget.printer/pprint-str`.
+* Any requests it handles will contain the key `:nrepl.middleware.print/print-fn`,
+  whose value is a function that calls the given printer function with the given
+  options – i.e. its signature is `[value writer]`.

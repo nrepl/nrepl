@@ -1,5 +1,77 @@
 = Misc Functionality
 
+== Pretty Printing
+
+NOTE: Pretty printing support was added in nREPL 0.6 and the API is still
+considered experimental.
+
+The namespace `nrepl.middleware.print` contains some dynamic vars you can `set!`
+at the REPL to alter how evaluation results will be printed. Note that if your
+nREPL client supports passing these options in requests, then it may override
+some or all of these options.
+
+* `\*print-fn*`: the function to use for printing. Defaults to the equivalent of
+  `clojure.core/pr`. The function must take two arguments:
+
+** `value`: the value to print.
+** `writer`: the `java.io.Writer` to print on.
+
+* `\*stream?*`: if logical true, the result of printing each value will be
+  streamed to the client over one or more messages. Defaults to false.
+
+** This lets you see results being printed incrementally, and optionally
+   interrupt the evaluation while it is printing.
+
+** Your nREPL client may not fully support this mode of operation.
+
+* `\*buffer-size*`: size of the buffer to use when streaming results. Defaults
+  to 1024.
+
+* `\*quota*`: a hard limit on the number of bytes printed for each value.
+  Defaults to nil (no limit).
+
+** Your nREPL client may not indicate if truncation has occurred.
+
+For example, to prevent printing infinite lazy sequences from causing the REPL
+to hang:
+
+[source,clojure]
+----
+user=> (set! nrepl.middleware.print/*quota* 32)
+32
+user=> (range)
+(0 1 2 3 4 5 6 7 8 9 10 11 12 13
+user=>
+----
+
+Or to use `clojure.pprint` to print evaluation results:
+
+[source,clojure]
+----
+user=> (set! nrepl.middleware.print/*print-fn* clojure.pprint/pprint)
+#object[clojure.pprint$pprint 0x2bc11aa0 "clojure.pprint$pprint@2bc11aa0"]
+
+user=> (meta #'int)
+{:added "1.0",
+ :ns #object[clojure.lang.Namespace 0xea12515 "clojure.core"],
+ :name int,
+ :file "clojure/core.clj",
+ :column 1,
+ :line 882,
+ :arglists ([x]),
+ :doc "Coerce to int",
+ :inline
+ #object[clojure.core$int__inliner__5509 0x3c79d89 "clojure.core$int__inliner__5509@3c79d89"]}
+
+user=>
+----
+
+However, note well that `clojure.pprint/pprint` rebinds `\*out*` internally, and
+so if anything else prints to `\*out*` while evaluating, that output will end up
+intermingled in the result. See the
+<<../design/middleware#_pretty_printing,print middleware documentation>> for a
+more detailed explanation.
+
 == Hot-loading dependencies
 
 From time to time you'd want to experiment with some library without

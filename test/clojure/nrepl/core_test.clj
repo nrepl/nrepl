@@ -14,10 +14,11 @@
                                  response-values
                                  url-connect]]
    [nrepl.ack :as ack]
+   [nrepl.middleware.print :as middleware.print]
    [nrepl.server :as server]
    [nrepl.transport :as transport])
   (:import
-   java.io.File
+   (java.io File Writer)
    java.net.SocketException))
 
 (defmacro when-require [n & body]
@@ -238,60 +239,300 @@
                              :out))))
 
 (defn custom-printer
-  ([value]
-   (custom-printer value nil))
-  ([value opts]
-   (format "<foo %s %s>" value (or (:sub opts) "..."))))
-
-(defn single-arity-printer
-  [value]
-  (format "[ %s ]" value))
+  [value ^Writer writer opts]
+  (.write writer (format "<foo %s %s>" value (or (:sub opts) "..."))))
 
 (def-repl-test value-printing
   (testing "bad symbol should fall back to default printer"
-    (is (= ["42"]
-           (-> (message client {:op :eval
-                                :code "(+ 34 8)"
-                                :printer 'my.missing.ns/printer})
-               (combine-responses)
-               (:value)))))
+    (is (= [{::middleware.print/error "Couldn't resolve var my.missing.ns/printer"
+             :status ["nrepl.middleware.print/error"]}
+            {:ns "user" :value "42"}
+            {:status ["done"]}]
+           (->> (message client {:op :eval
+                                 :code "(+ 34 8)"
+                                 ::middleware.print/print "my.missing.ns/printer"})
+                (mapv #(dissoc % :id :session))))))
+
   (testing "custom printing function symbol should be used"
     (is (= ["<foo true ...>"]
            (-> (message client {:op :eval
                                 :code "true"
-                                :printer `custom-printer})
+                                ::middleware.print/print `custom-printer})
                (combine-responses)
                (:value)))))
-  (testing "single-arity printers are supported in the absence of :print-options"
-    (is (= ["[ 42 ]"]
-           (-> (message client {:op :eval
-                                :code "42"
-                                :printer `single-arity-printer})
-               (combine-responses)
-               (:value)))))
+
   (testing "empty print options are ignored"
-    (is (= ["[ 42 ]"]
+    (is (= ["<foo 42 ...>"]
            (-> (message client {:op :eval
                                 :code "42"
-                                :printer `single-arity-printer
-                                :print-options {}})
+                                ::middleware.print/print `custom-printer
+                                ::middleware.print/options {}})
                (combine-responses)
                (:value)))))
+
   (testing "options should be passed to printer"
     (is (= ["<foo 3 bar>"]
            (-> (message client {:op :eval
                                 :code "3"
-                                :printer `custom-printer
-                                :print-options {:sub "bar"}})
+                                ::middleware.print/print `custom-printer
+                                ::middleware.print/options {:sub "bar"}})
                (combine-responses)
                (:value))))))
 
+(def-repl-test override-value-printing
+  (testing "custom ::print/keys"
+    (is (= [{:ns "user" :value [1 2 3 4 5]}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code "[1 2 3 4 5]"
+                                  ::middleware.print/keys []})
+                (mapv #(dissoc % :id :session)))))))
+
+(def-repl-test streamed-printing
+  (testing "value response arrives before ns response"
+    (let [responses (->> (message client {:op :eval
+                                          :code (code (range 10))
+                                          ::middleware.print/stream? 1})
+                         (mapv #(dissoc % :id :session)))]
+      (is (= [{:value "(0 1 2 3 4 5 6 7 8 9)"}
+              {:ns "user"}
+              {:status ["done"]}]
+             responses))))
+
+  (testing "multiple forms"
+    (let [responses (->> (message client {:op :eval
+                                          :code (code (range 10)
+                                                      (range 10))
+                                          ::middleware.print/stream? 1})
+                         (mapv #(dissoc % :id :session)))]
+      (is (= [{:value "(0 1 2 3 4 5 6 7 8 9)"}
+              {:ns "user"}
+              {:value "(0 1 2 3 4 5 6 7 8 9)"}
+              {:ns "user"}
+              {:status ["done"]}]
+             responses))))
+
+  (testing "*out* still handled correctly"
+    (let [responses (->> (message client {:op :eval
+                                          :code (code (->> (range 2)
+                                                           (map println)))
+                                          ::middleware.print/stream? 1})
+                         (mapv #(dissoc % :id :session)))]
+      (is (= [{:out "0\n"}
+              {:out "1\n"}
+              {:value "(nil nil)"}
+              {:ns "user"}
+              {:status ["done"]}]
+             responses))))
+
+  (testing "large output should be streamed"
+    (let [[resp1 resp2 resp3 resp4] (->> (message client {:op :eval
+                                                          :code (code (range 512))
+                                                          ::middleware.print/stream? 1})
+                                         (mapv #(dissoc % :id :session)))]
+      (is (.startsWith (:value resp1) "(0 1 2 3"))
+      (is (= {} (dissoc resp1 :value)))
+      (is (.endsWith (:value resp2) "510 511)"))
+      (is (= {} (dissoc resp2 :value)))
+      (is (= {:ns "user"} resp3))
+      (is (= {:status ["done"]} resp4))))
+
+  (testing "interruptible"
+    (let [eval-responses (->> (message session {:op :eval
+                                                :code (code (range))
+                                                ::middleware.print/stream? 1})
+                              (map #(dissoc % :id :session)))
+          _ (Thread/sleep 100)
+          interrupt-responses (->> (message session {:op :interrupt})
+                                   (mapv #(dissoc % :id :session)))]
+      ;; check the interrupt succeeded first; otherwise eval-responses will not terminate
+      (is (= [{:status ["done"]}] interrupt-responses))
+      (is (.startsWith (:value (first eval-responses)) "(0 1 2 3"))
+      (is (= {:status ["done" "interrupted"]} (last eval-responses)))))
+
+  (testing "respects buffer-size option"
+    (is (= [{:value "(0 1 2 3"}
+            {:value " 4 5 6 7"}
+            {:value " 8 9 10 "}
+            {:value "11 12 13"}
+            {:value " 14 15)"}
+            {:ns "user"}
+            {:status ["done"]}]
+           (->> (message client {:op :eval
+                                 :code (code (range 16))
+                                 ::middleware.print/stream? 1
+                                 ::middleware.print/buffer-size 8})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "works with custom printer"
+    (let [[resp1 resp2 resp3 resp4] (->> (message client {:op :eval
+                                                          :code (code (range 512))
+                                                          ::middleware.print/stream? 1
+                                                          ::middleware.print/print `custom-printer})
+                                         (mapv #(dissoc % :id :session)))]
+      (is (.startsWith (:value resp1) "<foo (0 1 2 3"))
+      (is (= {} (dissoc resp1 :value)))
+      (is (.endsWith (:value resp2) "510 511) ...>"))
+      (is (= {} (dissoc resp2 :value)))
+      (is (= {:ns "user"} resp3))
+      (is (= {:status ["done"]} resp4))))
+
+  (testing "works with custom printer and print-options"
+    (let [[resp1 resp2 resp3 resp4] (->> (message client {:op :eval
+                                                          :code (code (range 512))
+                                                          ::middleware.print/stream? 1
+                                                          ::middleware.print/print `custom-printer
+                                                          ::middleware.print/options {:sub "bar"}})
+                                         (mapv #(dissoc % :id :session)))]
+      (is (.startsWith (:value resp1) "<foo (0 1 2 3"))
+      (is (= {} (dissoc resp1 :value)))
+      (is (.endsWith (:value resp2) "510 511) bar>"))
+      (is (= {} (dissoc resp2 :value)))
+      (is (= {:ns "user"} resp3))
+      (is (= {:status ["done"]} resp4)))))
+
+(def-repl-test print-quota
+  (testing "quota option respected"
+    (is (= [{:ns "user"
+             :value "(0 1 2 3"
+             :status ["nrepl.middleware.print/truncated"]
+             ::middleware.print/truncated-keys ["value"]}
+            {:status ["done"]}]
+           (->> (message client {:op :eval
+                                 :code (code (range 512))
+                                 ::middleware.print/quota 8})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "works with streamed printing"
+    (is (= [{:value "(0 1 2 3"}
+            {:status ["nrepl.middleware.print/truncated"]}
+            {:ns "user"}
+            {:status ["done"]}]
+           (->> (message client {:op :eval
+                                 :code (code (range 512))
+                                 ::middleware.print/stream? 1
+                                 ::middleware.print/quota 8})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "works with custom printer"
+    (is (= [{:ns "user"
+             :value "<foo (0 "
+             :status ["nrepl.middleware.print/truncated"]
+             ::middleware.print/truncated-keys ["value"]}
+            {:status ["done"]}]
+           (->> (message client {:op :eval
+                                 :code (code (range 512))
+                                 ::middleware.print/print `custom-printer
+                                 ::middleware.print/quota 8})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "works with custom printer and streamed printing"
+    (is (= [{:value "<foo (0 "}
+            {:status ["nrepl.middleware.print/truncated"]}
+            {:ns "user"}
+            {:status ["done"]}]
+           (->> (message client {:op :eval
+                                 :code (code (range 512))
+                                 ::middleware.print/print `custom-printer
+                                 ::middleware.print/stream? 1
+                                 ::middleware.print/quota 8})
+                (mapv #(dissoc % :id :session)))))))
+
+(defn custom-session-printer
+  [value ^Writer writer]
+  (.write writer (format "<bar %s>" value)))
+
+(def-repl-test session-print-configuration
+  (testing "setting *print-fn* works"
+    (is (= [{:ns "user" :value "<bar #'nrepl.core-test/custom-session-printer>"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (set! nrepl.middleware.print/*print-fn* (resolve `custom-session-printer)))})
+                (mapv #(dissoc % :id :session)))))
+
+    (is (= [{:ns "user" :value "<bar (0 1 2 3 4 5 6 7 8 9)>"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (range 10))})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "request can still override *print-fn*"
+    (is (= [{:ns "user" :value "<foo (0 1 2 3 4 5 6 7 8 9) ...>"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (range 10))
+                                  ::middleware.print/print `custom-printer})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "setting stream options works"
+    (is (= [{:value "<bar true>"}
+            {:ns "user"}
+            {:value "<bar 8>"}
+            {:ns "user"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (set! nrepl.middleware.print/*stream?* true)
+                                              (set! nrepl.middleware.print/*buffer-size* 8))})
+                (mapv #(dissoc % :id :session)))))
+
+    (is (= [{:value "<bar (0 "}
+            {:value "1 2 3 4 "}
+            {:value "5 6 7 8 "}
+            {:value "9)>"}
+            {:ns "user"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (range 10))})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "request can still override stream options"
+    (is (= [{:ns "user" :value "<bar (0 1 2 3 4 5 6 7 8 9)>"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (range 10))
+                                  ::middleware.print/stream? nil})
+                (mapv #(dissoc % :id :session)))))
+
+    (is (= [{:value "<bar (0 1 2 3 4 "}
+            {:value "5 6 7 8 9)>"}
+            {:ns "user"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (range 10))
+                                  ::middleware.print/buffer-size 16})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "setting *quota* works"
+    (is (= [{:value "<bar 8>"}
+            {:ns "user"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (set! nrepl.middleware.print/*quota* 8))})
+                (mapv #(dissoc % :id :session)))))
+    (is (= [{:value "<bar (0 "}
+            {:status ["nrepl.middleware.print/truncated"]}
+            {:ns "user"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (range 512))})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "request can still override *quota*"
+    (is (= [{:value "<bar (0 1 2 3 4 "}
+            {:status ["nrepl.middleware.print/truncated"]}
+            {:ns "user"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (range 512))
+                                  ::middleware.print/quota 16})
+                (mapv #(dissoc % :id :session)))))))
+
 (def-repl-test session-return-recall
   (testing "sessions persist across connections"
-    (repl-values session (code
-                          (apply + (range 6))
-                          (str 12 \c)
-                          (keyword "hello")))
+    (dorun (repl-values session (code
+                                 (apply + (range 6))
+                                 (str 12 \c)
+                                 (keyword "hello"))))
     (with-open [separate-connection (connect :port (:port *server*)
                                              :transport-fn *transport-fn*)]
       (let [history [[15 "12c" :hello]]
@@ -306,9 +547,9 @@
     (is (= [nil] (repl-values client "*1")))))
 
 (def-repl-test session-set!
-  (repl-eval session (code
-                      (set! *compile-path* "badpath")
-                      (set! *warn-on-reflection* true)))
+  (dorun (repl-eval session (code
+                             (set! *compile-path* "badpath")
+                             (set! *warn-on-reflection* true))))
   (is (= [["badpath" true]] (repl-values session (code [*compile-path* *warn-on-reflection*])))))
 
 (def-repl-test exceptions
