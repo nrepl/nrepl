@@ -1,7 +1,8 @@
 (ns nrepl.middleware.print
   "Support for configurable printing. See the docstring of `wrap-print` and the
   Pretty Printing section of the Middleware documentation for more information."
-  {:author "Michael Griffiths"}
+  {:author "Michael Griffiths"
+   :added  "0.6.0"}
   (:refer-clojure :exclude [print])
   (:require
    [nrepl.middleware :refer [set-descriptor!]]
@@ -19,12 +20,6 @@
     (print-dup x w)
     (print-method x w))
   nil)
-
-;; Note well that the below dynamic vars only exist for the convenience of being
-;; able to set them at the REPL. They are not used directly by the middleware,
-;; which only inspects requests and responses for the printing configuration.
-;; The eval middleware uses `bound-configuration` to return any bound values in
-;; the session in its responses.
 
 (def ^:dynamic *print-fn*
   "Function to use for printing. Takes two arguments: `value`, the value to print,
@@ -53,7 +48,7 @@
    #'*buffer-size* *buffer-size*
    #'*quota* *quota*})
 
-(defn bound-configuration
+(defn- bound-configuration
   "Returns a map, suitable for merging into responses handled by this middleware,
   of the currently-bound dynamic vars used for configuration."
   []
@@ -171,7 +166,7 @@
     (recv [this timeout]
       (transport/recv transport timeout))
     (send [this resp]
-      (let [{:keys [::stream?] :as opts} (-> (merge msg resp opts)
+      (let [{:keys [::stream?] :as opts} (-> (merge msg (bound-configuration) resp opts)
                                              (select-keys configuration-keys))
             resp (apply dissoc resp configuration-keys)]
         (if stream?
@@ -182,10 +177,7 @@
 (defn- resolve-print
   [{:keys [::print transport] :as msg}]
   (when-let [var-sym (some-> print (symbol))]
-    (let [print-var (try
-                      (require (symbol (namespace var-sym)))
-                      (resolve var-sym)
-                      (catch Exception _))]
+    (let [print-var (misc/requiring-resolve var-sym)]
       (when-not print-var
         (let [resp {:status ::error
                     ::error (str "Couldn't resolve var " var-sym)}]

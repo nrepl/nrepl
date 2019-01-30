@@ -4,12 +4,13 @@
    clojure.main
    clojure.test
    [nrepl.middleware :refer [set-descriptor!]]
+   [nrepl.middleware.caught :as caught]
    [nrepl.middleware.print :as print]
    [nrepl.misc :refer [response-for]]
    [nrepl.transport :as t])
   (:import
-   clojure.lang.LineNumberingPushbackReader
-   [java.io FilterReader LineNumberReader StringReader Writer]
+   (clojure.lang Compiler$CompilerException LineNumberingPushbackReader)
+   (java.io FilterReader LineNumberReader StringReader Writer)
    (java.lang.reflect Field)))
 
 (def ^:dynamic *msg*
@@ -42,6 +43,15 @@
     (when column (set-column! reader (int column)))
     reader))
 
+;; TODO: use `nrepl.middleware.session/interrupted?` – currently introduces a
+;; circular dependency
+(defn- interrupted?
+  "Returns true if the given throwable was ultimately caused by an interrupt."
+  [^Throwable e]
+  (or (instance? ThreadDeath (clojure.main/root-cause e))
+      (and (instance? Compiler$CompilerException e)
+           (instance? ThreadDeath (.getCause e)))))
+
 (defn evaluate
   "Evaluates a msg's code within the dynamic context of its session.
 
@@ -70,6 +80,7 @@
            :eval (if eval (find-var (symbol eval)) clojure.core/eval)
            :init #(let [bindings
                         (-> (get-thread-bindings)
+                            (into caught/default-bindings)
                             (into print/default-bindings)
                             (into @session)
                             (into {#'*out* out
@@ -100,25 +111,16 @@
                     ;; *out* has :tag metadata; *err* does not
                     (.flush ^Writer *err*)
                     (.flush *out*)
-                    (t/send transport (response-for msg (merge (print/bound-configuration)
-                                                               {:ns (str (ns-name *ns*))
-                                                                :value value
-                                                                ::print/keys #{:value}}))))
-           ;; TODO: customizable exception prints
+                    (t/send transport (response-for msg {:ns (str (ns-name *ns*))
+                                                         :value value
+                                                         ::print/keys #{:value}})))
            :caught (fn [^Throwable e]
-                     (let [root-ex (#'clojure.main/root-cause e)
-                           previous-cause (.getCause e)]
-                       ;; Check if the root cause or previous cause of the exception
-                       ;; is a ThreadDeath exception. In case the exception is a
-                       ;; CompilerException, the root cause is not returned by
-                       ;; the root-cause function, so we check the previous cause
-                       ;; instead.
-                       (when-not (or (instance? ThreadDeath root-ex)
-                                     (instance? ThreadDeath previous-cause))
-                         (t/send transport (response-for msg {:status :eval-error
-                                                              :ex (-> e class str)
-                                                              :root-ex (-> root-ex class str)}))
-                         (clojure.main/repl-caught e)))))
+                     (when-not (interrupted? e)
+                       (let [resp {::caught/throwable e
+                                   :status :eval-error
+                                   :ex (str (class e))
+                                   :root-ex (str (class (clojure.main/root-cause e)))}]
+                         (t/send transport (response-for msg resp))))))
           (finally
             (.setContextClassLoader (Thread/currentThread) ctxcl)
             (.flush err)
@@ -142,7 +144,7 @@
         (h msg)))))
 
 (set-descriptor! #'interruptible-eval
-                 {:requires #{"clone" "close" #'print/wrap-print}
+                 {:requires #{"clone" "close" #'caught/wrap-caught  #'print/wrap-print}
                   :expects #{}
                   :handles {"eval"
                             {:doc "Evaluates code. Note that unlike regular stream-based Clojure REPLs, nREPL's `:eval` short-circuits on first read error and will not try to read and execute the remaining code in the message."

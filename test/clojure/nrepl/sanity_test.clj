@@ -79,39 +79,6 @@
     {:ns "user" :value [nil]}
     '*1))
 
-(deftest read-error-short-circuits-execution
-  (testing "read error prevents the remaining code from being read and executed"
-    (let [{:keys [err] :as resp} (internal-eval "(comment {:a} (println \"BOOM!\"))")]
-      (if (and (= (:major *clojure-version*) 1)
-               (<= (:minor *clojure-version*) 9))
-        (is (re-matches #"(?s)^RuntimeException Map literal must contain an even number of forms[^\n]+\n$" err))
-        (is (re-matches #"(?s)^Syntax error reading source at[^\n]+\nMap literal must contain an even number of forms\n" err)))
-      (is (not (contains? resp :out)))
-      (is (not (contains? resp :value)))))
-
-  (testing "exactly one read error is produced even if there is remaining code in the message"
-    (let [{:keys [err] :as resp} (internal-eval ")]} 42")]
-      (is (re-find #"Unmatched delimiter: \)" err))
-      (is (not (re-find #"Unmatched delimiter: \]" err)))
-      (is (not (re-find #"Unmatched delimiter: \}" err)))
-      (is (not (contains? resp :out)))
-      (is (not (contains? resp :value))))))
-
-(deftest stdout-stderr
-  (are [result expr] (= result (internal-eval expr))
-    {:ns "user" :out "5 6 7 \n 8 9 10\n" :value [nil]}
-    '(println 5 6 7 \newline 8 9 10)
-
-    {:ns "user" :err "user/foo\n" :value [nil]}
-    '(binding [*out* *err*]
-       (prn 'user/foo))
-
-    {:ns "user" :err "problem" :value [:value]}
-    '(do (.write *err* "problem")
-         :value))
-
-  (is (re-seq #"Divide by zero" (:err (internal-eval '(/ 1 0))))))
-
 (deftest repl-out-writer
   (let [[local remote] (piped-transports)
         w (print/replying-PrintWriter :out {:transport remote} {})]

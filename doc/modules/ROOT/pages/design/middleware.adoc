@@ -275,3 +275,40 @@ a middleware descriptor's `:requires` set contains
 * Any requests it handles will contain the key `:nrepl.middleware.print/print-fn`,
   whose value is a function that calls the given printer function with the given
   options – i.e. its signature is `[value writer]`.
+
+== Evaluation Errors
+
+nREPL includes a `caught` middleware which provides a configurable hook for any
+`java.lang.Throwable` that should be conveyed interactively (generally by
+printing to `\*err*`). Like the `print` middleware, any options may be provided
+in either requests or responses (the former taking precedence over the latter if
+any options are specified in both). The following options are supported:
+
+* `:nrepl.middleware.caught/caught`: a fully-qualified symbol naming a var whose
+  function to use to convey interactive errors. Must point to a function that
+  takes a `java.lang.Throwable` as its sole argument. Defaults to
+  `clojure.main/repl-caught`.
+
+* `:nrepl.middleware.caught/print?`: if logical true, the printed value of any
+  interactive errors will be returned in the response (otherwise they will be
+  elided). Delegates to `nrepl.middleware.print` to perform the printing.
+  Defaults to false.
+
+[source,clojure]
+----
+{:op :eval
+ :code "(/ 1 0)"
+ :nrepl.middleware.caught/caught 'my.custom/print-stacktrace
+ :nrepl.middleware.caught/print? true}
+----
+
+The functionality of the `caught` middleware is reusable by other middlewares.
+If a middleware descriptor's `:requires` set contains
+`#'nrepl.middleware.caught/wrap-caught`, then it can expect:
+
+* Any returned responses containing the key `:nrepl.middleware.caught/throwable`
+  will have that key's corresponding value passed to the hook.
+
+* Any handled requests will contain the key
+  `:nrepl.middleware.caught/caught-fn`, whose value is a function that can be
+  called on a `java.lang.Throwable` to convey errors interactively.

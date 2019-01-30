@@ -8,7 +8,7 @@
    [nrepl.misc :refer [uuid response-for]]
    [nrepl.transport :as t])
   (:import
-   (clojure.lang LineNumberingPushbackReader)
+   (clojure.lang Compiler$CompilerException LineNumberingPushbackReader)
    (java.io Reader)
    (java.util.concurrent.atomic AtomicLong)
    (java.util.concurrent BlockingQueue LinkedBlockingQueue SynchronousQueue
@@ -142,6 +142,13 @@
      (binding [*msg* msg]
        (evaluate msg))
      the-session)))
+
+(defn interrupted?
+  "Returns true if the given throwable was ultimately caused by an interrupt."
+  [^Throwable e]
+  (or (instance? ThreadDeath (clojure.main/root-cause e))
+      (and (instance? Compiler$CompilerException e)
+           (instance? ThreadDeath (.getCause e)))))
 
 (defn session-exec
   "Takes a session id and returns a maps of three functions meant for interruptible-eval:
