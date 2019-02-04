@@ -1,7 +1,8 @@
 (ns nrepl.misc
   "Misc utilities used in nREPL's implementation (potentially also
   useful for anyone extending it)."
-  {:author "Chas Emerick"})
+  {:author "Chas Emerick"}
+  (:refer-clojure :exclude [requiring-resolve]))
 
 (defn log
   [ex & msgs]
@@ -48,3 +49,14 @@
                                                (-> session meta :id)
                                                session)}))]
     (merge basis response)))
+
+(defn requiring-resolve
+  "Resolves namespace-qualified sym per 'resolve'. If initial resolve fails,
+  attempts to require sym's namespace and retries. Returns nil if sym could not
+  be resolved."
+  [sym]
+  (or (resolve sym)
+      (try
+        (require (symbol (namespace sym)))
+        (resolve sym)
+        (catch Exception _))))

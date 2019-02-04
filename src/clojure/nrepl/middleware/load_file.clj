@@ -2,7 +2,9 @@
   {:author "Chas Emerick"}
   (:require
    [nrepl.middleware :as middleware :refer [set-descriptor!]]
-   [nrepl.middleware.interruptible-eval :as eval])
+   [nrepl.middleware.caught :as caught]
+   [nrepl.middleware.interruptible-eval :as eval]
+   [nrepl.middleware.print :as print])
   (:import nrepl.transport.Transport))
 
 ; need to hold file contents "out of band" so as to avoid JVM method
@@ -94,13 +96,15 @@ be loaded."} file-contents (atom {}))
                                this)))))))
 
 (set-descriptor! #'wrap-load-file
-                 {:requires #{}
+                 {:requires #{#'caught/wrap-caught #'print/wrap-print}
                   :expects #{"eval"}
                   :handles {"load-file"
                             {:doc "Loads a body of code, using supplied path and filename info to set source file and line number metadata. Delegates to underlying \"eval\" middleware/handler."
                              :requires {"file" "Full contents of a file of code."}
-                             :optional {"file-path" "Source-path-relative path of the source file, e.g. clojure/java/io.clj"
-                                        "file-name" "Name of source file, e.g. io.clj"}
+                             :optional (merge caught/wrap-caught-optional-arguments
+                                              print/wrap-print-optional-arguments
+                                              {"file-path" "Source-path-relative path of the source file, e.g. clojure/java/io.clj"
+                                               "file-name" "Name of source file, e.g. io.clj"})
                              :returns (-> (meta #'eval/interruptible-eval)
                                           ::middleware/descriptor
                                           :handles

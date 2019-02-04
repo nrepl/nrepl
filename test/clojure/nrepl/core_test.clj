@@ -1,5 +1,6 @@
 (ns nrepl.core-test
   (:require
+   [clojure.main]
    [clojure.set :as set]
    [clojure.test :refer [are deftest is testing use-fixtures]]
    [nrepl.core :as nrepl :refer [client
@@ -14,6 +15,7 @@
                                  response-values
                                  url-connect]]
    [nrepl.ack :as ack]
+   [nrepl.middleware.caught :as middleware.caught]
    [nrepl.middleware.print :as middleware.print]
    [nrepl.server :as server]
    [nrepl.transport :as transport])
@@ -855,3 +857,164 @@
     (Thread/sleep 100)
     (is (= #{"done"} (-> session (message {:op :interrupt}) first :status set)))
     (is (= #{"done" "interrupted"} (-> resp combine-responses :status)))))
+
+(def-repl-test stdout-stderr
+  (are [result expr] (= result (-> (repl-eval client expr)
+                                   (combine-responses)
+                                   (select-keys [:ns :out :err :value])))
+    {:ns "user" :out "5 6 7 \n 8 9 10\n" :value ["nil"]}
+    (code (println 5 6 7 \newline 8 9 10))
+
+    {:ns "user" :err "user/foo\n" :value ["nil"]}
+    (code (binding [*out* *err*]
+            (prn 'user/foo)))
+
+    {:ns "user" :err "problem" :value [":value"]}
+    (code (do (.write *err* "problem")
+              :value)))
+
+  (is (re-seq #"Divide by zero" (:err (first (repl-eval client (code (/ 1 0))))))))
+
+(def-repl-test read-error-short-circuits-execution
+  (testing "read error prevents the remaining code from being read and executed"
+    (let [{:keys [err] :as resp} (-> (repl-eval client "(comment {:a} (println \"BOOM!\"))")
+                                     (combine-responses))]
+      (if (and (= (:major *clojure-version*) 1)
+               (<= (:minor *clojure-version*) 9))
+        (is (re-matches #"(?s)^RuntimeException Map literal must contain an even number of forms[^\n]+\n$" err))
+        (is (re-matches #"(?s)^Syntax error reading source at[^\n]+\nMap literal must contain an even number of forms\n" err)))
+      (is (not (contains? resp :out)))
+      (is (not (contains? resp :value)))))
+
+  (testing "exactly one read error is produced even if there is remaining code in the message"
+    (let [{:keys [err] :as resp} (-> (repl-eval client ")]} 42")
+                                     (combine-responses))]
+      (is (re-find #"Unmatched delimiter: \)" err))
+      (is (not (re-find #"Unmatched delimiter: \]" err)))
+      (is (not (re-find #"Unmatched delimiter: \}" err)))
+      (is (not (contains? resp :out)))
+      (is (not (contains? resp :value))))))
+
+(defn custom-repl-caught
+  [^Throwable t]
+  (binding [*out* *err*]
+    (println "foo" (type t))))
+
+(def-repl-test caught-options
+  (testing "bad symbol should fall back to default"
+    (let [[resp1 resp2 resp3 resp4] (->> (message session {:op :eval
+                                                           :code (code (first 1))
+                                                           ::middleware.caught/caught "my.missing.ns/repl-caught"})
+                                         (mapv #(dissoc % :id :session)))]
+      (is (= {::middleware.caught/error "Couldn't resolve var my.missing.ns/repl-caught"
+              :status ["nrepl.middleware.caught/error"]}
+             resp1))
+      (is (re-find #"IllegalArgumentException" (:err resp2)))
+      (is (= {:status ["eval-error"]
+              :ex "class java.lang.IllegalArgumentException"
+              :root-ex "class java.lang.IllegalArgumentException"}
+             resp3))
+      (is (= {:status ["done"]}
+             resp4))))
+
+  (testing "custom symbol should be used"
+    (is (= [{:err "foo java.lang.IllegalArgumentException\n"}
+            {:status ["eval-error"]
+             :ex "class java.lang.IllegalArgumentException"
+             :root-ex "class java.lang.IllegalArgumentException"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (first 1))
+                                  ::middleware.caught/caught `custom-repl-caught})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "::print? option"
+    (let [[resp1 resp2 resp3] (->> (message session {:op :eval
+                                                     :code (code (first 1))
+                                                     ::middleware.caught/print? 1})
+                                   (mapv #(dissoc % :id :session)))]
+      (is (re-find #"IllegalArgumentException" (:err resp1)))
+      (is (re-find #"IllegalArgumentException" (::middleware.caught/throwable resp2)))
+      (is (= {:status ["eval-error"]
+              :ex "class java.lang.IllegalArgumentException"
+              :root-ex "class java.lang.IllegalArgumentException"}
+             (dissoc resp2 ::middleware.caught/throwable)))
+      (is (= {:status ["done"]}
+             resp3)))
+
+    (let [[resp1 resp2 resp3] (->> (message session {:op :eval
+                                                     :code (code (first 1))
+                                                     ::middleware.caught/caught `custom-repl-caught
+                                                     ::middleware.caught/print? 1})
+                                   (mapv #(dissoc % :id :session)))]
+      (is (= {:err "foo java.lang.IllegalArgumentException\n"}
+             resp1))
+      (is (re-find #"IllegalArgumentException" (::middleware.caught/throwable resp2)))
+      (is (= {:status ["eval-error"]
+              :ex "class java.lang.IllegalArgumentException"
+              :root-ex "class java.lang.IllegalArgumentException"}
+             (dissoc resp2 ::middleware.caught/throwable)))
+      (is (= {:status ["done"]}
+             resp3)))))
+
+(defn custom-session-repl-caught
+  [^Throwable t]
+  (binding [*out* *err*]
+    (println "bar" (.getMessage t))))
+
+(def-repl-test session-caught-options
+  (testing "setting *caught-fn* works"
+    (is (= [{:ns "user" :value "#'nrepl.core-test/custom-session-repl-caught"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (set! nrepl.middleware.caught/*caught-fn* (resolve `custom-session-repl-caught)))})
+                (mapv #(dissoc % :id :session)))))
+
+    (is (= [{:err "bar Divide by zero\n"}
+            {:status ["eval-error"]
+             :ex "class java.lang.ArithmeticException"
+             :root-ex "class java.lang.ArithmeticException"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (/ 1 0))})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "request can still override *caught-fn*"
+    (is (= [{:err "foo java.lang.ArithmeticException\n"}
+            {:status ["eval-error"]
+             :ex "class java.lang.ArithmeticException"
+             :root-ex "class java.lang.ArithmeticException"}
+            {:status ["done"]}]
+           (->> (message session {:op :eval
+                                  :code (code (/ 1 0))
+                                  ::middleware.caught/caught `custom-repl-caught})
+                (mapv #(dissoc % :id :session))))))
+
+  (testing "request can still provide ::print? option"
+    (let [[resp1 resp2 resp3] (->> (message session {:op :eval
+                                                     :code (code (/ 1 0))
+                                                     ::middleware.caught/print? 1})
+                                   (mapv #(dissoc % :id :session)))]
+      (is (re-find #"Divide by zero" (:err resp1)))
+      (is (re-find #"Divide by zero" (::middleware.caught/throwable resp2)))
+      (is (= {:status ["eval-error"]
+              :ex "class java.lang.ArithmeticException"
+              :root-ex "class java.lang.ArithmeticException"}
+             (dissoc resp2 ::middleware.caught/throwable)))
+      (is (= {:status ["done"]}
+             resp3)))
+
+    (let [[resp1 resp2 resp3] (->> (message session {:op :eval
+                                                     :code (code (/ 1 0))
+                                                     ::middleware.caught/caught `custom-repl-caught
+                                                     ::middleware.caught/print? 1})
+                                   (mapv #(dissoc % :id :session)))]
+      (is (= {:err "foo java.lang.ArithmeticException\n"}
+             resp1))
+      (is (re-find #"Divide by zero" (::middleware.caught/throwable resp2)))
+      (is (= {:status ["eval-error"]
+              :ex "class java.lang.ArithmeticException"
+              :root-ex "class java.lang.ArithmeticException"}
+             (dissoc resp2 ::middleware.caught/throwable)))
+      (is (= {:status ["done"]}
+             resp3)))))

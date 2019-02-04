@@ -72,6 +72,56 @@ intermingled in the result. See the
 <<../design/middleware#_pretty_printing,print middleware documentation>> for a
 more detailed explanation.
 
+== Evaluation Errors
+
+The dynamic var `nrepl.middleware.caught/\*caught-fn*` can be `set!` at the REPL
+to alter how evaluation errors will be handled. Like the `:caught` option to
+`clojure.main/repl`, this is a function that takes a `java.lang.Throwable`
+(default `clojure.main/repl-caught`) and is called when either read, eval, or
+print throws an exception or error.
+
+For example, to automatically print the stacktrace of each error:
+
+[source,clojure]
+----
+user> (set! nrepl.middleware.caught/*caught-fn* clojure.repl/pst)
+#function[clojure.repl/pst]
+user> (first 1)
+IllegalArgumentException Don't know how to create ISeq from: java.lang.Long
+	clojure.lang.RT.seqFrom (RT.java:542)
+	clojure.lang.RT.seq (RT.java:523)
+	clojure.lang.RT.first (RT.java:668)
+	clojure.core/first--4339 (core.clj:55)
+	clojure.core/first--4339 (core.clj:55)
+	user/eval11339 (form-init6612168545889071220.clj:12)
+	user/eval11339 (form-init6612168545889071220.clj:12)
+	clojure.lang.Compiler.eval (Compiler.java:6927)
+	clojure.lang.Compiler.eval (Compiler.java:6890)
+	clojure.core/eval (core.clj:3105)
+	clojure.core/eval (core.clj:3101)
+	clojure.main/repl/read-eval-print--7408/fn--7411 (main.clj:240)
+
+user=>
+----
+
+Or to use the link:https://github.com/AvisoNovate/pretty[pretty] stacktrace
+printing library to print stacktraces:
+
+[source,clojure]
+----
+user=> (set! nrepl.middleware.caught/*caught-fn* io.aviso.repl/pretty-pst)
+#function[io.aviso.repl/pretty-pst]
+user=> (first 1)
+ clojure.core/eval   core.clj: 3214
+               ...
+     user/eval5945  REPL Input
+clojure.core/first   core.clj:   55
+               ...
+java.lang.IllegalArgumentException: Don't know how to create ISeq from: java.lang.Long
+
+user=>
+----
+
 == Hot-loading dependencies
 
 From time to time you'd want to experiment with some library without
