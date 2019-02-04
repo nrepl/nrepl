@@ -13,6 +13,7 @@
 
 * [#16](https://github.com/nrepl/nrepl/issues/16): Use a single session thread per evaluation.
 * [#107](https://github.com/nrepl/nrepl/issues/107): Stop reading and evaluating code on first read error.
+* [#108](https://github.com/nrepl/nrepl/issues/108): Refactor cmdline functions into a public, reusable API.
 * Restore the `nrepl.bencode` namespace.
 * [#117](https://github.com/nrepl/nrepl/issues/117): Replace
   `nrepl.middleware.pr-values` with `nrepl.middleware.print`.
