@@ -2,6 +2,20 @@
 
 ### master (unreleased)
 
+#### New features
+* [#117](https://github.com/nrepl/nrepl/issues/117): Replace
+  `nrepl.middleware.pr-values` with `nrepl.middleware.print`.
+  * New dynamic vars in `nrepl.middleware.print` for configuring the print
+    middleware at the REPL.
+  * The new middleware provides behaviour that is backwards-compatible with the
+    old one. Existing middleware descriptors whose `:requires` set contains
+    `#'pr-values` should instead use `#'wrap-print`.
+* [#128](https://github.com/nrepl/nrepl/pull/128): New middleware,
+  `nrepl.middleware.caught`, provides a hook called when eval, read, or print
+  throws an exception or error. Defaults to `clojure.main/repl-caught`.
+  Configurable by the dynamic var `nrepl.middleware.caught/*caught-fn*`.
+
+
 #### Bugs fixed
 
 * [CLI] Make sure ack port parameter is converted to integer for command line nREPL initialization.
@@ -15,15 +29,6 @@
 * [#107](https://github.com/nrepl/nrepl/issues/107): Stop reading and evaluating code on first read error.
 * [#108](https://github.com/nrepl/nrepl/issues/108): Refactor cmdline functions into a public, reusable API.
 * Restore the `nrepl.bencode` namespace.
-* [#117](https://github.com/nrepl/nrepl/issues/117): Replace
-  `nrepl.middleware.pr-values` with `nrepl.middleware.print`.
-  * New dynamic vars in `nrepl.middleware.print` for configuring the print
-    middleware at the REPL. See the Misc page in the Usage section of the
-    documentation for more information.
-  * The new middleware provides behaviour that is backwards-compatible with the
-    old one. Existing middleware descriptors whose `:requires` set contains
-    `#'pr-values` should instead use `#'wrap-print`. See the Middleware page in
-    the Design section of the documentation for more information.
 
 ### 0.5.3 (2018-12-12)
 
