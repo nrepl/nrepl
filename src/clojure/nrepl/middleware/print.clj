@@ -236,3 +236,11 @@
 (set-descriptor! #'wrap-print {:requires #{}
                                :expects #{}
                                :handles {}})
+
+(def wrap-print-optional-arguments
+  {"nrepl.middleware.print/print" "A fully-qualified symbol naming a var whose function to use for printing. Must point to a function with signature [value writer options]."
+   "nrepl.middleware.print/options" "A map of options to pass to the printing function. Defaults to `nil`."
+   "nrepl.middleware.print/stream?" "If logical true, the result of printing each value will be streamed to the client over one or more messages."
+   "nrepl.middleware.print/buffer-size" "The size of the buffer to use when streaming results. Defaults to 1024."
+   "nrepl.middleware.print/quota" "A hard limit on the number of bytes printed for each value."
+   "nrepl.middleware.print/keys" "A seq of the keys in the response whose values should be printed."})

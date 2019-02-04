@@ -99,3 +99,7 @@
 (set-descriptor! #'wrap-caught {:requires #{#'print/wrap-print}
                                 :expects #{}
                                 :handles {}})
+
+(def wrap-caught-optional-arguments
+  {"nrepl.middleware.caught/caught" "A fully-qualified symbol naming a var whose function to use to convey interactive errors. Must point to a function that takes a `java.lang.Throwable` as its sole argument."
+   "nrepl.middleware.caught/print?" "If logical true, the printed value of any interactive errors will be returned in the response (otherwise they will be elided). Delegates to `nrepl.middleware.print` to perform the printing. Defaults to false."})

@@ -150,11 +150,13 @@
                             {:doc "Evaluates code. Note that unlike regular stream-based Clojure REPLs, nREPL's `:eval` short-circuits on first read error and will not try to read and execute the remaining code in the message."
                              :requires {"code" "The code to be evaluated."
                                         "session" "The ID of the session within which to evaluate the code."}
-                             :optional {"id" "An opaque message ID that will be included in responses related to the evaluation, and which may be used to restrict the scope of a later \"interrupt\" operation."
-                                        "eval" "A fully-qualified symbol naming a var whose function value will be used to evaluate [code], instead of `clojure.core/eval` (the default)."
-                                        "file" "The path to the file containing [code]. `clojure.core/*file*` will be bound to this."
-                                        "line" "The line number in [file] at which [code] starts."
-                                        "column" "The column number in [file] at which [code] starts."}
+                             :optional (merge caught/wrap-caught-optional-arguments
+                                              print/wrap-print-optional-arguments
+                                              {"id" "An opaque message ID that will be included in responses related to the evaluation, and which may be used to restrict the scope of a later \"interrupt\" operation."
+                                               "eval" "A fully-qualified symbol naming a var whose function value will be used to evaluate [code], instead of `clojure.core/eval` (the default)."
+                                               "file" "The path to the file containing [code]. `clojure.core/*file*` will be bound to this."
+                                               "line" "The line number in [file] at which [code] starts."
+                                               "column" "The column number in [file] at which [code] starts."})
                              :returns {"ns" "*ns*, after successful evaluation of `code`."
                                        "values" "The result of evaluating `code`, often `read`able. This printing is provided by the `print` middleware. Superseded by `ex` and `root-ex` if an exception occurs during evaluation."
                                        "ex" "The type of exception thrown, if any. If present, then `values` will be absent."
