@@ -1,5 +1,7 @@
 ## Changelog
 
+### master (unreleased)
+
 ### 0.6.0 (2019-02-05)
 
 #### New features
