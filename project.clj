@@ -43,6 +43,7 @@
              :sysutils {:plugins [[lein-sysutils "0.2.0"]]}
              :maint {:source-paths ["src/maint"]
                      :dependencies [[org.clojure/tools.cli "0.4.1"]]}
+             :aot {:aot [nrepl.cmdline]}
 
              ;; CI tools
              :cloverage [:test

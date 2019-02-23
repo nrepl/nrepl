@@ -12,7 +12,8 @@
    [nrepl.ack :refer [send-ack]]
    [nrepl.server :as nrepl-server]
    [nrepl.transport :as transport]
-   [nrepl.version :as version]))
+   [nrepl.version :as version])
+  (:gen-class))
 
 (defn- clean-up-and-exit
   "Performs any necessary clean up and calls `(System/exit status)`."
