@@ -58,6 +58,22 @@ jobs:
           command: |
             make cljfmt
 
+  cljdoc_check:
+    executor: openjdk11
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - run:
+          name: Install make
+          command: |
+            sudo apt-get install make
+      - run:
+          name: Verifying cljdoc
+          command: |
+            make verify_cljdoc
+
+
+
   test_code:
     description: Run tests
     parameters:
@@ -107,6 +123,12 @@ workflows:
           requires:
             - checkout_code
       - test_code:
+          name: java8, clj1.7 tests
+          clojure_version: "1.7"
+          jdk_version: openjdk8
+          requires:
+            - checkout_code
+      - test_code:
           name: java8, clj1.8 tests
           clojure_version: "1.8"
           jdk_version: openjdk8
@@ -128,6 +150,12 @@ workflows:
           name: java8, clj master tests
           clojure_version: "master"
           jdk_version: openjdk8
+          requires:
+            - checkout_code
+      - test_code:
+          name: java11, clj1.7 tests
+          clojure_version: "1.7"
+          jdk_version: openjdk11
           requires:
             - checkout_code
       - test_code:
