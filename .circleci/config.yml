@@ -122,6 +122,10 @@ workflows:
           name: Code Linting
           requires:
             - checkout_code
+      - cljdoc_check:
+          name: Checking cljdoc
+          requires:
+            - checkout_code
       - test_code:
           name: java8, clj1.7 tests
           clojure_version: "1.7"
