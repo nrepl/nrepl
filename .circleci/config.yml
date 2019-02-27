@@ -1,0 +1,156 @@
+version: 2.1
+
+defaults: &defaults
+  working_directory: ~/repo
+  environment:
+    LEIN_ROOT: "true"
+    JVM_OPTS: -Xmx3200m
+
+
+executors:
+  openjdk8:
+    docker:
+      - image: circleci/clojure:openjdk-8-lein-2.9.0
+    <<: *defaults
+  openjdk11:
+    docker:
+      - image: circleci/clojure:openjdk-11-lein-2.9.0
+    <<: *defaults
+
+jobs:
+  checkout_code:
+    executor: openjdk11
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v2-dependencies-{{ checksum "project.clj" }}
+            - v2-dependencies-
+      - run:
+          name: Downloading deps
+          command: |
+            lein deps
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: v2-dependencies-{{ checksum "project.clj" }}
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - .m2
+            - repo
+
+  lint_code:
+    executor: openjdk11
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - run:
+          name: Install make
+          command: |
+            sudo apt-get install make
+      - run:
+          name: Running Eastwood
+          command: |
+            make eastwood
+      - run:
+          name: Running cljfmt
+          command: |
+            make cljfmt
+
+  test_code:
+    description: Run tests
+    parameters:
+      jdk_version:
+        description: Version of JDK to test against
+        type: string
+      clojure_version:
+        description: Version of Clojure to test against
+        type: string
+    executor: << parameters.jdk_version >>
+    environment:
+      VERSION: << parameters.clojure_version >>
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - run:
+          name: Install make
+          command: |
+            sudo apt-get install make
+      - run:
+          name: Running tests
+          command: make test
+
+  codecov:
+    executor: openjdk11
+    environment:
+      VERSION: "1.9"
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - run:
+          name: Install make
+          command: |
+            sudo apt-get install make
+      - run:
+          name: Running cloverage
+          command: |
+            make cloverage
+
+workflows:
+  version: 2.1
+  build_and_test:
+    jobs:
+      - checkout_code
+      - lint_code:
+          name: Code Linting
+          requires:
+            - checkout_code
+      - test_code:
+          name: java8, clj1.8 tests
+          clojure_version: "1.8"
+          jdk_version: openjdk8
+          requires:
+            - checkout_code
+      - test_code:
+          name: java8, clj1.9 tests
+          clojure_version: "1.9"
+          jdk_version: openjdk8
+          requires:
+            - checkout_code
+      - test_code:
+          name: java8, clj1.10 tests
+          clojure_version: "1.10"
+          jdk_version: openjdk8
+          requires:
+            - checkout_code
+      - test_code:
+          name: java8, clj master tests
+          clojure_version: "master"
+          jdk_version: openjdk8
+          requires:
+            - checkout_code
+      - test_code:
+          name: java11, clj1.8 tests
+          clojure_version: "1.8"
+          jdk_version: openjdk11
+          requires:
+            - checkout_code
+      - test_code:
+          name: java11, clj1.9 tests
+          clojure_version: "1.9"
+          jdk_version: openjdk11
+          requires:
+            - checkout_code
+      - test_code:
+          name: java11, clj1.10 tests
+          clojure_version: "1.10"
+          jdk_version: openjdk11
+          requires:
+            - checkout_code
+      - test_code:
+          name: java11, clj master tests
+          clojure_version: "master"
+          jdk_version: openjdk11
+          requires:
+            - checkout_code
