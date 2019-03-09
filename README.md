@@ -6,7 +6,7 @@
 [![Build Status](https://travis-ci.org/nrepl/nrepl.svg?branch=master)](https://travis-ci.org/nrepl/nrepl)
  [![Clojars Project](https://img.shields.io/clojars/v/nrepl.svg)](https://clojars.org/nrepl)
 [![cljdoc badge](https://cljdoc.org/badge/nrepl/nrepl)](https://cljdoc.org/d/nrepl/nrepl/CURRENT)
-[![Backers on Open Collective](https://opencollective.com/nrepl/backers/badge.svg)](#backers) 
+[![Backers on Open Collective](https://opencollective.com/nrepl/backers/badge.svg)](#backers)
 [![Sponsors on Open Collective](https://opencollective.com/nrepl/sponsors/badge.svg)](#sponsors)
 
 nREPL is a Clojure *n*etwork REPL that
@@ -49,7 +49,7 @@ You can find nREPL's API documentation on [cljdoc](https://cljdoc.org/d/nrepl/nr
 
 ## Contributors
 
-This project exists thanks to all the people who contribute. 
+This project exists thanks to all the people who contribute.
 <a href="https://github.com/nrepl/nrepl/graphs/contributors"><img src="https://opencollective.com/nrepl/contributors.svg?width=890&button=false" /></a>
 
 
@@ -79,6 +79,6 @@ Support this project by becoming a sponsor. Your logo will show up here with a l
 
 ## License
 
-Copyright © 2010-2018 Chas Emerick, Bozhidar Batsov and contributors.
+Copyright © 2010-2019 Chas Emerick, Bozhidar Batsov and contributors.
 
 Licensed under the EPL. (See the file epl.html.)
