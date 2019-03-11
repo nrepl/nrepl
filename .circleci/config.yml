@@ -83,6 +83,20 @@ commands:
 
 jobs:
 
+  util_job:
+    description: |
+      Running a utility command (linter etc.)
+      Always uses Java11 and Clojure 1.10
+    parameters:
+      steps:
+        type: steps
+    executor: openjdk11
+    environment:
+      VERSION: "1.10"
+    steps:
+      - checkout
+      - steps: << parameters.steps >>
+
   lint_code:
     executor: openjdk11
     environment:
@@ -129,8 +143,6 @@ jobs:
                 command: |
                   make cloverage
 
-
-
   test_code:
     description: Run tests
     parameters:
@@ -157,10 +169,6 @@ workflows:
   version: 2.1
   ci-test-matrix:
     jobs:
-      - lint_code:
-          name: Code Linting
-      - cljdoc_check:
-          name: Checking cljdoc
       - test_code:
           name: Java 8, Clojure 1.7
           clojure_version: "1.7"
@@ -201,3 +209,28 @@ workflows:
           name: Java 11, Clojure master
           clojure_version: "master"
           jdk_version: openjdk11
+      - util_job:
+          name: Code Linting
+          steps:
+            - run:
+                name: Running Eastwood
+                command: |
+                  make eastwood
+            - run:
+                name: Running cljfmt
+                command: |
+                  make cljfmt
+      - util_job:
+          name: Checking Cljdoc
+          steps:
+            - run:
+                name: Verifying Cljdoc
+                command: |
+                  make verify_cljdoc
+      - util_job:
+          name: Code coverage
+          steps:
+            - run:
+                name: Running cloverage
+                command: |
+                  make cloverage
