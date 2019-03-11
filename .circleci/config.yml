@@ -1,76 +1,133 @@
 version: 2.1
 
+######################################################################
+#
+# Start of general purpose config. These can plausibly go into orbs
+#
+######################################################################
+
+# Default settings for executors
+
 defaults: &defaults
   working_directory: ~/repo
   environment:
-    LEIN_ROOT: "true"
-    JVM_OPTS: -Xmx3200m
+    LEIN_ROOT: "true"   # we intended to run lein as root
+    JVM_OPTS: -Xmx3200m # limit the maximum heap size to prevent out of memory errors
 
+# Runners for OpenJDK 8 and 11
 
 executors:
   openjdk8:
     docker:
-      - image: circleci/clojure:openjdk-8-lein-2.9.0
+      - image: circleci/clojure:openjdk-8-lein-2.9.1
     <<: *defaults
   openjdk11:
     docker:
-      - image: circleci/clojure:openjdk-11-lein-2.9.0
+      - image: circleci/clojure:openjdk-11-lein-2.9.1
     <<: *defaults
 
-jobs:
-  checkout_code:
-    executor: openjdk11
+# Runs a given set of steps, with some standard pre- and post-
+# steps, including restoring of cache, saving of cache.
+#
+# we also install `make` here.
+#
+# Adapted from https://github.com/lambdaisland/meta/blob/master/circleci/clojure_orb.yml
+
+commands:
+  with_cache:
+    description: |
+      Run a set of steps with Maven dependencies and Clojure classpath cache
+      files cached.
+      This command restores ~/.m2 and .cpcache if they were previously cached,
+      then runs the provided steps, and finally saves the cache.
+      The cache-key is generated based on the contents of `deps.edn` present in
+      the `working_directory`.
+    parameters:
+      steps:
+        type: steps
+      files:
+        description: Files to consider when creating the cache key
+        type: string
+        default: "deps.edn project.clj build.boot"
+      cache_version:
+        type: string
+        description: "Change this value to force a cache update"
+        default: "1"
     steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - v2-dependencies-{{ checksum "project.clj" }}
-            - v2-dependencies-
       - run:
-          name: Downloading deps
+          name: Install make
           command: |
-            lein deps
+            sudo apt-get install make
+      - run:
+          name: Generate Cache Checksum
+          command: |
+            for file in << parameters.files >>
+            do
+              find . -name $file -exec cat {} +
+            done | shasum | awk '{print $1}' > /tmp/clojure_cache_seed
+      - restore_cache:
+          key: clojure-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
+      - steps: << parameters.steps >>
       - save_cache:
           paths:
             - ~/.m2
-          key: v2-dependencies-{{ checksum "project.clj" }}
-      - persist_to_workspace:
-          root: /home/circleci
-          paths:
-            - .m2
+            - .cpcache
             - repo
+          key: clojure-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
+
+######################################################################
+#
+# End general purpose configs
+#
+######################################################################
+
+jobs:
 
   lint_code:
     executor: openjdk11
+    environment:
+      VERSION: "1.10"
     steps:
-      - attach_workspace:
-          at: /home/circleci
-      - run:
-          name: Install make
-          command: |
-            sudo apt-get install make
-      - run:
-          name: Running Eastwood
-          command: |
-            make eastwood
-      - run:
-          name: Running cljfmt
-          command: |
-            make cljfmt
+      - checkout
+      - with_cache:
+          cache_version: "1.10"
+          steps:
+            - run:
+                name: Running Eastwood
+                command: |
+                  make eastwood
+            - run:
+                name: Running cljfmt
+                command: |
+                  make cljfmt
 
   cljdoc_check:
     executor: openjdk11
+    environment:
+      VERSION: "1.10"
     steps:
-      - attach_workspace:
-          at: /home/circleci
-      - run:
-          name: Install make
-          command: |
-            sudo apt-get install make
-      - run:
-          name: Verifying cljdoc
-          command: |
-            make verify_cljdoc
+      - checkout
+      - with_cache:
+          cache_version: "1.10"
+          steps:
+            - run:
+                name: Verifying cljdoc
+                command: |
+                  make verify_cljdoc
+
+  codecov:
+    executor: openjdk11
+    environment:
+      VERSION: "1.10"
+    steps:
+      - checkout
+      - with_cache:
+          cache_version: "1.10"
+          steps:
+            - run:
+                name: Running cloverage
+                command: |
+                  make cloverage
 
 
 
@@ -87,102 +144,60 @@ jobs:
     environment:
       VERSION: << parameters.clojure_version >>
     steps:
-      - attach_workspace:
-          at: /home/circleci
-      - run:
-          name: Install make
-          command: |
-            sudo apt-get install make
-      - run:
-          name: Running tests
-          command: make test
+      - checkout
+      - with_cache:
+          cache_version: << parameters.clojure_version >>
+          steps:
+            - run:
+                name: Running tests
+                command: make test
 
-  codecov:
-    executor: openjdk11
-    environment:
-      VERSION: "1.9"
-    steps:
-      - attach_workspace:
-          at: /home/circleci
-      - run:
-          name: Install make
-          command: |
-            sudo apt-get install make
-      - run:
-          name: Running cloverage
-          command: |
-            make cloverage
 
 workflows:
   version: 2.1
-  build_and_test:
+  ci-test-matrix:
     jobs:
-      - checkout_code
       - lint_code:
           name: Code Linting
-          requires:
-            - checkout_code
       - cljdoc_check:
           name: Checking cljdoc
-          requires:
-            - checkout_code
       - test_code:
-          name: java8, clj1.7 tests
+          name: Java 8, Clojure 1.7
           clojure_version: "1.7"
           jdk_version: openjdk8
-          requires:
-            - checkout_code
       - test_code:
-          name: java8, clj1.8 tests
+          name: Java 8, Clojure 1.8
           clojure_version: "1.8"
           jdk_version: openjdk8
-          requires:
-            - checkout_code
       - test_code:
-          name: java8, clj1.9 tests
+          name: Java 8, Clojure 1.9
           clojure_version: "1.9"
           jdk_version: openjdk8
-          requires:
-            - checkout_code
       - test_code:
-          name: java8, clj1.10 tests
+          name: Java 8, Clojure 1.10
           clojure_version: "1.10"
           jdk_version: openjdk8
-          requires:
-            - checkout_code
       - test_code:
-          name: java8, clj master tests
+          name: Java 8, Clojure master
           clojure_version: "master"
           jdk_version: openjdk8
-          requires:
-            - checkout_code
       - test_code:
-          name: java11, clj1.7 tests
+          name: Java 11, Clojure 1.7
           clojure_version: "1.7"
           jdk_version: openjdk11
-          requires:
-            - checkout_code
       - test_code:
-          name: java11, clj1.8 tests
+          name: Java 11, Clojure 1.8
           clojure_version: "1.8"
           jdk_version: openjdk11
-          requires:
-            - checkout_code
       - test_code:
-          name: java11, clj1.9 tests
+          name: Java 11, Clojure 1.9
           clojure_version: "1.9"
           jdk_version: openjdk11
-          requires:
-            - checkout_code
       - test_code:
-          name: java11, clj1.10 tests
+          name: Java 11, Clojure 1.10
           clojure_version: "1.10"
           jdk_version: openjdk11
-          requires:
-            - checkout_code
       - test_code:
-          name: java11, clj master tests
+          name: Java 11, Clojure master
           clojure_version: "master"
           jdk_version: openjdk11
-          requires:
-            - checkout_code
