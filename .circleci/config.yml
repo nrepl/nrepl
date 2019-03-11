@@ -1,0 +1,205 @@
+version: 2.1
+
+######################################################################
+#
+# Start of general purpose config. These can plausibly go into orbs
+#
+######################################################################
+
+# Default settings for executors
+
+defaults: &defaults
+  working_directory: ~/repo
+  environment:
+    LEIN_ROOT: "true"   # we intended to run lein as root
+    JVM_OPTS: -Xmx3200m # limit the maximum heap size to prevent out of memory errors
+
+# Runners for OpenJDK 8 and 11
+
+executors:
+  openjdk8:
+    docker:
+      - image: circleci/clojure:openjdk-8-lein-2.9.1
+    <<: *defaults
+  openjdk11:
+    docker:
+      - image: circleci/clojure:openjdk-11-lein-2.9.1
+    <<: *defaults
+
+# Runs a given set of steps, with some standard pre- and post-
+# steps, including restoring of cache, saving of cache.
+#
+# we also install `make` here.
+#
+# Adapted from https://github.com/lambdaisland/meta/blob/master/circleci/clojure_orb.yml
+
+commands:
+  with_cache:
+    description: |
+      Run a set of steps with Maven dependencies and Clojure classpath cache
+      files cached.
+      This command restores ~/.m2 and .cpcache if they were previously cached,
+      then runs the provided steps, and finally saves the cache.
+      The cache-key is generated based on the contents of `deps.edn` present in
+      the `working_directory`.
+    parameters:
+      steps:
+        type: steps
+      files:
+        description: Files to consider when creating the cache key
+        type: string
+        default: "deps.edn project.clj build.boot"
+      cache_version:
+        type: string
+        description: "Change this value to force a cache update"
+        default: "1"
+    steps:
+      - run:
+          name: Install make
+          command: |
+            sudo apt-get install make
+      - run:
+          name: Generate Cache Checksum
+          command: |
+            for file in << parameters.files >>
+            do
+              find . -name $file -exec cat {} +
+            done | shasum | awk '{print $1}' > /tmp/clojure_cache_seed
+      - restore_cache:
+          key: clojure-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
+      - steps: << parameters.steps >>
+      - save_cache:
+          paths:
+            - ~/.m2
+            - .cpcache
+            - repo
+          key: clojure-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
+
+######################################################################
+#
+# End general purpose configs
+#
+######################################################################
+
+# The jobs are relatively simple. One runs utility commands against
+# latest stable JDK + Clojure, the other against specified versions
+
+jobs:
+
+  util_job:
+    description: |
+      Running utility commands/checks (linter etc.)
+      Always uses Java11 and Clojure 1.10
+    parameters:
+      steps:
+        type: steps
+    executor: openjdk11
+    environment:
+      VERSION: "1.10"
+    steps:
+      - checkout
+      - with_cache:
+          cache_version: "1.10"
+          steps: << parameters.steps >>
+
+
+  test_code:
+    description: |
+      Run tests against given version of JDK and Clojure
+    parameters:
+      jdk_version:
+        description: Version of JDK to test against
+        type: string
+      clojure_version:
+        description: Version of Clojure to test against
+        type: string
+    executor: << parameters.jdk_version >>
+    environment:
+      VERSION: << parameters.clojure_version >>
+    steps:
+      - checkout
+      - with_cache:
+          cache_version: << parameters.clojure_version >>
+          steps:
+            - run:
+                name: Running tests
+                command: make test
+
+# The ci-test-matrix does the following:
+#
+# - run tests against the target matrix
+#   - Java 8 and 11
+#   - Clojure 1.7, 1.8, 1.9, 1.10, master
+# - linter, eastwood and cljfmt
+# - verifies cljdoc config
+# - runs code coverage report
+
+workflows:
+  version: 2.1
+  ci-test-matrix:
+    jobs:
+      - test_code:
+          name: Java 8, Clojure 1.7
+          clojure_version: "1.7"
+          jdk_version: openjdk8
+      - test_code:
+          name: Java 8, Clojure 1.8
+          clojure_version: "1.8"
+          jdk_version: openjdk8
+      - test_code:
+          name: Java 8, Clojure 1.9
+          clojure_version: "1.9"
+          jdk_version: openjdk8
+      - test_code:
+          name: Java 8, Clojure 1.10
+          clojure_version: "1.10"
+          jdk_version: openjdk8
+      - test_code:
+          name: Java 8, Clojure master
+          clojure_version: "master"
+          jdk_version: openjdk8
+      - test_code:
+          name: Java 11, Clojure 1.7
+          clojure_version: "1.7"
+          jdk_version: openjdk11
+      - test_code:
+          name: Java 11, Clojure 1.8
+          clojure_version: "1.8"
+          jdk_version: openjdk11
+      - test_code:
+          name: Java 11, Clojure 1.9
+          clojure_version: "1.9"
+          jdk_version: openjdk11
+      - test_code:
+          name: Java 11, Clojure 1.10
+          clojure_version: "1.10"
+          jdk_version: openjdk11
+      - test_code:
+          name: Java 11, Clojure master
+          clojure_version: "master"
+          jdk_version: openjdk11
+      - util_job:
+          name: Code Linting
+          steps:
+            - run:
+                name: Running Eastwood
+                command: |
+                  make eastwood
+            - run:
+                name: Running cljfmt
+                command: |
+                  make cljfmt
+      - util_job:
+          name: Checking Cljdoc
+          steps:
+            - run:
+                name: Verifying Cljdoc
+                command: |
+                  make verify_cljdoc
+      - util_job:
+          name: Code coverage
+          steps:
+            - run:
+                name: Running cloverage
+                command: |
+                  make cloverage
