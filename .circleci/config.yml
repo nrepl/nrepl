@@ -81,11 +81,14 @@ commands:
 #
 ######################################################################
 
+# The jobs are relatively simple. One runs utility commands against
+# latest stable JDK + Clojure, the other against specified versions
+
 jobs:
 
   util_job:
     description: |
-      Running a utility command (linter etc.)
+      Running utility commands/checks (linter etc.)
       Always uses Java11 and Clojure 1.10
     parameters:
       steps:
@@ -99,54 +102,10 @@ jobs:
           cache_version: "1.10"
           steps: << parameters.steps >>
 
-  lint_code:
-    executor: openjdk11
-    environment:
-      VERSION: "1.10"
-    steps:
-      - checkout
-      - with_cache:
-          cache_version: "1.10"
-          steps:
-            - run:
-                name: Running Eastwood
-                command: |
-                  make eastwood
-            - run:
-                name: Running cljfmt
-                command: |
-                  make cljfmt
-
-  cljdoc_check:
-    executor: openjdk11
-    environment:
-      VERSION: "1.10"
-    steps:
-      - checkout
-      - with_cache:
-          cache_version: "1.10"
-          steps:
-            - run:
-                name: Verifying cljdoc
-                command: |
-                  make verify_cljdoc
-
-  codecov:
-    executor: openjdk11
-    environment:
-      VERSION: "1.10"
-    steps:
-      - checkout
-      - with_cache:
-          cache_version: "1.10"
-          steps:
-            - run:
-                name: Running cloverage
-                command: |
-                  make cloverage
 
   test_code:
-    description: Run tests
+    description: |
+      Run tests against given version of JDK and Clojure
     parameters:
       jdk_version:
         description: Version of JDK to test against
@@ -166,6 +125,14 @@ jobs:
                 name: Running tests
                 command: make test
 
+# The ci-test-matrix does the following:
+#
+# - run tests against the target matrix
+#   - Java 8 and 11
+#   - Clojure 1.7, 1.8, 1.9, 1.10, master
+# - linter, eastwood and cljfmt
+# - verifies cljdoc config
+# - runs code coverage report
 
 workflows:
   version: 2.1
