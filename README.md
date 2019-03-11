@@ -3,10 +3,10 @@
 </p>
 
 ----------
-[![Build Status](https://travis-ci.org/nrepl/nrepl.svg?branch=master)](https://travis-ci.org/nrepl/nrepl)
- [![Clojars Project](https://img.shields.io/clojars/v/nrepl.svg)](https://clojars.org/nrepl)
+[![CircleCI](https://circleci.com/gh/nrepl/nrepl/tree/master.svg?style=svg)](https://circleci.com/gh/nrepl/nrepl/tree/master)
+[![Clojars Project](https://img.shields.io/clojars/v/nrepl.svg)](https://clojars.org/nrepl)
 [![cljdoc badge](https://cljdoc.org/badge/nrepl/nrepl)](https://cljdoc.org/d/nrepl/nrepl/CURRENT)
-[![Backers on Open Collective](https://opencollective.com/nrepl/backers/badge.svg)](#backers) 
+[![Backers on Open Collective](https://opencollective.com/nrepl/backers/badge.svg)](#backers)
 [![Sponsors on Open Collective](https://opencollective.com/nrepl/sponsors/badge.svg)](#sponsors)
 
 nREPL is a Clojure *n*etwork REPL that
@@ -49,7 +49,7 @@ You can find nREPL's API documentation on [cljdoc](https://cljdoc.org/d/nrepl/nr
 
 ## Contributors
 
-This project exists thanks to all the people who contribute. 
+This project exists thanks to all the people who contribute.
 <a href="https://github.com/nrepl/nrepl/graphs/contributors"><img src="https://opencollective.com/nrepl/contributors.svg?width=890&button=false" /></a>
 
 
