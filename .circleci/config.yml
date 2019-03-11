@@ -95,7 +95,9 @@ jobs:
       VERSION: "1.10"
     steps:
       - checkout
-      - steps: << parameters.steps >>
+      - with_cache:
+          cache_version: "1.10"
+          steps: << parameters.steps >>
 
   lint_code:
     executor: openjdk11
