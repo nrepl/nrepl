@@ -21,6 +21,7 @@
    ["Team" {:file "doc/modules/ROOT/pages/about/team.adoc"}]
    ["Support" {:file "doc/modules/ROOT/pages/about/support.adoc"}]
    ["Contributing" {:file "doc/modules/ROOT/pages/about/contributing.adoc"}]
+   ["Compatibility" {:file "doc/modules/ROOT/pages/about/compatibility.adoc"}]
    ["Release Policy" {:file "doc/modules/ROOT/pages/about/release_policy.adoc"}]
    ["Changelog" {:file "doc/modules/ROOT/pages/about/changelog.adoc"}]
    ["License" {:file "doc/modules/ROOT/pages/about/license.adoc"}]]]}
