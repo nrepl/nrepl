@@ -7,7 +7,7 @@
   (:import nrepl.transport.Transport))
 
 ;; TODO: dedup with base64 in elisions branch once both are merged 
-(defn base64-encode [^java.io.InputStream in]
+(defn- base64-encode [^java.io.InputStream in]
   (let [table "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
         sb (StringBuilder.)]
     (loop [shift 4 buf 0]
@@ -31,7 +31,7 @@
                   (recur 4 0))
                 (recur shift (bit-shift-left buf 6))))))))))
 
-(defn base64-decode [^String s]
+(defn- base64-decode [^String s]
   (let [table "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
         in (java.io.StringReader. s)
         bos (java.io.ByteArrayOutputStream.)]
