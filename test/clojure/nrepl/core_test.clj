@@ -1034,7 +1034,7 @@
                                  :type type
                                  :name name
                                  :content (-> res (.getBytes "UTF-8") java.io.ByteArrayInputStream.
-                                              nrepl.middleware.sideloader/base64-encode)})))
+                                              (@#'nrepl.middleware.sideloader/base64-encode))})))
                    (not= id eval-id)))
          (reduce (fn [v {:keys [id status value]}]
                    (cond-> (or v value)
