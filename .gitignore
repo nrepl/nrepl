@@ -20,3 +20,5 @@ target
 /.lein*
 /.nrepl-port
 pom.xml
+build.xml
+/test-results

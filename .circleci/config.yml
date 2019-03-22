@@ -124,6 +124,8 @@ jobs:
             - run:
                 name: Running tests
                 command: make test
+            - store_test_results:
+                path: test-results
 
 # The ci-test-matrix does the following:
 #
@@ -196,10 +198,3 @@ workflows:
                 name: Verifying Cljdoc
                 command: |
                   make verify_cljdoc
-      - util_job:
-          name: Code coverage
-          steps:
-            - run:
-                name: Running cloverage
-                command: |
-                  make cloverage

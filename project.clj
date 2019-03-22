@@ -29,7 +29,10 @@
                                     :sign-releases false}]]
 
   :profiles {:fastlane {:dependencies [[nrepl/fastlane "0.1.0"]]}
-             :test {:dependencies [[com.hypirion/io "0.3.1"]]}
+             :test {:dependencies [[com.hypirion/io "0.3.1"]]
+                    :plugins      [[test2junit "1.4.2"]]
+                    :test2junit-output-dir "test-results"
+                    :aliases {"test" "test2junit"}}
              ;; Clojure versions matrix
              :provided {:dependencies [[org.clojure/clojure "1.10.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
