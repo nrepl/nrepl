@@ -124,6 +124,8 @@ jobs:
             - run:
                 name: Running tests
                 command: make test
+            - store_test_results:
+                path: test-results
 
 # The ci-test-matrix does the following:
 #
