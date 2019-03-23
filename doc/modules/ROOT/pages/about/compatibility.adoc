@@ -24,6 +24,38 @@ any release just for the sake of doing it. We'd do it only if
 this would lessen the maintenance burden or open up the possibility for
 big nREPL improvements.
 
+== Compatibility Matrix
+
+Below you can find the official compatibility matrix for nREPL. For a
+very long time the project targeted JDK 5 and Clojure 1.2, but the
+requirements were bumped in nREPL 0.4.
+
+.Compatibility Matrix
+|===
+| nREPL | Required JDK | Required Clojure
+
+| 0.2.x
+| 5
+| 1.2
+
+| 0.3.x
+| 5
+| 1.2
+
+| 0.4.x
+| 8
+| 1.7
+
+| 0.5.x
+| 8
+| 1.7
+
+| 0.6.x
+| 8
+| 1.7
+
+|===
+
 == Backwards Compatibility
 
 IMPORTANT: Given the massive community investment in developing all sorts of
