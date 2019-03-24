@@ -91,6 +91,8 @@
   [^Socket s & body]
   `(try
      ~@body
+     (catch RuntimeException e#
+       (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server")))
      (catch EOFException e#
        (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server")))
      (catch Throwable e#
