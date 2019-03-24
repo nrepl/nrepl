@@ -128,6 +128,15 @@
             (.close in)
             (.close out))))))))
 
+(defn stringify-everything
+  [m]
+  (walk/postwalk (fn [v] (if (keyword? v)
+                           (let [nspace (namespace v)
+                                 name      (name v)]
+                             (str (when nspace (str nspace "/")) name))
+                           v))
+                 m))
+
 (defn nrepl+edn
   "Returns a Transport implementation that serializes messages
    over the given Socket or InputStream/OutputStream using EDN."
@@ -136,11 +145,11 @@
    (let [in (java.io.PushbackReader. (io/reader in))
          out (io/writer out)]
      (fn-transport
-      #(rethrow-on-disconnection s (edn/read in))
+      #(rethrow-on-disconnection s (stringify-everything (edn/read in)))
       #(rethrow-on-disconnection s
                                  (locking out
                                    (doto out
-                                     (.write (str %))
+                                     (.write (str (stringify-everything %)))
                                      .flush)))
       (fn []
         (if s
