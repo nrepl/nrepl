@@ -92,9 +92,13 @@
   `(try
      ~@body
      (catch RuntimeException e#
-       (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server")))
+       (if (= "EOF while reading" (.getMessage e#))
+         (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server"))
+         (throw e#)))
      (catch EOFException e#
-       (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server")))
+       (if (= "Invalid netstring. Unexpected end of input." (.getMessage e#))
+         (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server"))
+         (throw e#)))
      (catch Throwable e#
        (if (and ~s (not (.isConnected ~s)))
          (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server"))
