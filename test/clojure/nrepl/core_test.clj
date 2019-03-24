@@ -73,7 +73,8 @@
 
 (defmacro def-repl-test
   [name & body]
-  `(deftest ~(with-meta name (merge {:private true} (meta name)))
+  ;; TODO: decide what to do with the private tags before merging
+  `(deftest ~(with-meta name (merge #_{:private true} (meta name)))
      (with-open [transport# (connect :port (:port *server*)
                                      :transport-fn *transport-fn*)]
        (let [~'transport transport#
@@ -949,28 +950,28 @@
     (let [[resp1 resp2 resp3 resp4] (->> (message session {:op :eval
                                                            :code (code (first 1))
                                                            ::middleware.caught/caught "my.missing.ns/repl-caught"})
-                                         (mapv #(dissoc % :id :session)))]
+                                         (mapv clean-response))]
       (is (= {::middleware.caught/error "Couldn't resolve var my.missing.ns/repl-caught"
-              :status ["nrepl.middleware.caught/error"]}
+              :status #{:nrepl.middleware.caught/error}}
              resp1))
       (is (re-find #"IllegalArgumentException" (:err resp2)))
-      (is (= {:status ["eval-error"]
+      (is (= {:status #{:eval-error}
               :ex "class java.lang.IllegalArgumentException"
               :root-ex "class java.lang.IllegalArgumentException"}
              resp3))
-      (is (= {:status ["done"]}
+      (is (= {:status #{:done}}
              resp4))))
 
   (testing "custom symbol should be used"
     (is (= [{:err "foo java.lang.IllegalArgumentException\n"}
-            {:status ["eval-error"]
+            {:status #{:eval-error}
              :ex "class java.lang.IllegalArgumentException"
              :root-ex "class java.lang.IllegalArgumentException"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message session {:op :eval
                                   :code (code (first 1))
                                   ::middleware.caught/caught `custom-repl-caught})
-                (mapv #(dissoc % :id :session))))))
+                (mapv clean-response)))))
 
   (testing "::print? option"
     (let [[resp1 resp2 resp3] (->> (message session {:op :eval
