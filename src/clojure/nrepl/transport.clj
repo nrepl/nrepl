@@ -6,7 +6,6 @@
    [clojure.walk :as walk]
    [nrepl.bencode :as bencode]
    [clojure.edn :as edn]
-   clojure.walk
    [nrepl.misc :refer [uuid]]
    nrepl.version)
   (:import
@@ -40,10 +39,7 @@
 (deftype FnTransport [recv-fn send-fn close]
   Transport
   ;; TODO: this keywordization/stringification has no business being in FnTransport
-  (send [this msg] (-> (if (contains? msg :op)
-                         (update msg :op name)
-                         msg)
-                       clojure.walk/stringify-keys send-fn) this)
+  (send [this msg] (-> msg stringify-keys send-fn) this)
   (recv [this] (.recv this Long/MAX_VALUE))
   (recv [this timeout] (walk/keywordize-keys (recv-fn timeout)))
   java.io.Closeable

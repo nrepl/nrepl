@@ -870,7 +870,7 @@
                                :file-path "nrepl/load_file_sample2.clj"
                                :file-name "load_file_sample2.clj"})]
     (Thread/sleep 100)
-    (is (= #{"done"}
+    (is (= #{:done}
            (->> session
                 (#(message % {:op :interrupt}))
                 first
