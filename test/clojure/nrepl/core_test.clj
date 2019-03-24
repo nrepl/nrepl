@@ -231,10 +231,10 @@
                                   "session" sid})
       (is (= [{:out ":foo\n"}
               {:ns "user" :value "nil"}
-              {:status ["done"]}]
+              {:status #{:done}}]
              (->> (repeatedly #(transport/recv transport2 100))
-                  (into [] (comp (take-while identity)
-                                 (map #(dissoc % :session))))))))))
+                  (take-while identity)
+                  (mapv clean-response)))))))
 
 (def-repl-test streaming-out
   (is (= (for [x (range 10)]
@@ -977,29 +977,29 @@
     (let [[resp1 resp2 resp3] (->> (message session {:op :eval
                                                      :code (code (first 1))
                                                      ::middleware.caught/print? 1})
-                                   (mapv #(dissoc % :id :session)))]
+                                   (mapv clean-response))]
       (is (re-find #"IllegalArgumentException" (:err resp1)))
       (is (re-find #"IllegalArgumentException" (::middleware.caught/throwable resp2)))
-      (is (= {:status ["eval-error"]
+      (is (= {:status #{:eval-error}
               :ex "class java.lang.IllegalArgumentException"
               :root-ex "class java.lang.IllegalArgumentException"}
              (dissoc resp2 ::middleware.caught/throwable)))
-      (is (= {:status ["done"]}
+      (is (= {:status #{:done}}
              resp3)))
 
     (let [[resp1 resp2 resp3] (->> (message session {:op :eval
                                                      :code (code (first 1))
                                                      ::middleware.caught/caught `custom-repl-caught
                                                      ::middleware.caught/print? 1})
-                                   (mapv #(dissoc % :id :session)))]
+                                   (mapv clean-response))]
       (is (= {:err "foo java.lang.IllegalArgumentException\n"}
              resp1))
       (is (re-find #"IllegalArgumentException" (::middleware.caught/throwable resp2)))
-      (is (= {:status ["eval-error"]
+      (is (= {:status #{:eval-error}
               :ex "class java.lang.IllegalArgumentException"
               :root-ex "class java.lang.IllegalArgumentException"}
              (dissoc resp2 ::middleware.caught/throwable)))
-      (is (= {:status ["done"]}
+      (is (= {:status #{:done}}
              resp3)))))
 
 (defn custom-session-repl-caught
