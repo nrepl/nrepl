@@ -145,7 +145,7 @@
       #(rethrow-on-disconnection s
                                  (locking out
                                    (doto out
-                                     (.write (str (stringify-everything %)))
+                                     (.write (pr-str (stringify-everything %)))
                                      .flush)))
       (fn []
         (if s
