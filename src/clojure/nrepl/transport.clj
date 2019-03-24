@@ -139,23 +139,19 @@
                            v))
                  m))
 
-(defn #^{:private true :tag "[B"} string>payload
-  [#^String s]
-  (.getBytes s "UTF-8"))
-
 (defn nrepl+edn
   "Returns a Transport implementation that serializes messages
    over the given Socket or InputStream/OutputStream using EDN."
   ([^Socket s] (nrepl+edn s s s))
   ([in out & [^Socket s]]
    (let [in (java.io.PushbackReader. (io/reader in))
-         out (io/output-stream out)]
+         out (io/writer out)]
      (fn-transport
       #(rethrow-on-disconnection s (stringify-everything (edn/read in)))
       #(rethrow-on-disconnection s
                                  (locking out
                                    (binding [*print-readably* true]
-                                     (let [payload (string>payload (pr-str (stringify-everything %)))]
+                                     (let [payload (pr-str (stringify-everything %))]
                                        (doto out
                                          (.write payload)
                                          (.flush))))))
