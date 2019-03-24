@@ -46,7 +46,6 @@
                            meta
                            (select-keys [:file :line])))))))
 
-
 (def-repl-test load-file-with-print-vars
   (set! *print-length* 3)
   (set! *print-level* 3)
