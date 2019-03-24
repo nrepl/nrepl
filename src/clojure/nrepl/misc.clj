@@ -20,12 +20,7 @@
 (defn uuid
   "Returns a new UUID string."
   []
-  ;; HACK!!! don't merge with this!!
-  ;; Somehow, uuids starting with [0-9] are causing issues. Go figure
-  (let [newone (str (java.util.UUID/randomUUID))]
-    (if-not (re-matches #"^\d.*" newone)
-      newone
-      (uuid))))
+  (str (java.util.UUID/randomUUID)))
 
 (defn response-for
   "Returns a map containing the :session and :id from the \"request\" `msg`
