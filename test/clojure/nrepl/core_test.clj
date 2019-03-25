@@ -72,8 +72,7 @@
 
 (defmacro def-repl-test
   [name & body]
-  ;; TODO: decide what to do with the private tags before merging
-  `(deftest ~(with-meta name (merge #_{:private true} (meta name)))
+  `(deftest ~name
      (with-open [transport# (connect :port (:port *server*)
                                      :transport-fn *transport-fn*)]
        (let [~'transport transport#
@@ -95,17 +94,20 @@
   - ensures the status to a set of keywords
   - turn the content of truncated-keys to keywords"
   [resp]
-  (letfn [(de-identify [resp]
-            (dissoc resp :id :session))
-          (normalize-status [resp]
-            (if-let [status (:status resp)]
-              (assoc resp :status (set (map keyword status)))
-              resp))
-          ;; This is a good example of a middleware details that's showing through
-          (keywordize-truncated-keys [resp]
-            (if (contains? resp ::middleware.print/truncated-keys)
-              (update resp ::middleware.print/truncated-keys #(mapv keyword %))
-              resp))]
+  (let [de-identify
+        (fn [resp]
+          (dissoc resp :id :session))
+        normalize-status
+        (fn [resp]
+          (if-let [status (:status resp)]
+            (assoc resp :status (set (map keyword status)))
+            resp))
+        ;; This is a good example of a middleware details that's showing through
+        keywordize-truncated-keys
+        (fn [resp]
+          (if (contains? resp ::middleware.print/truncated-keys)
+            (update resp ::middleware.print/truncated-keys #(mapv keyword %))
+            resp))]
     (-> resp
         de-identify
         normalize-status
