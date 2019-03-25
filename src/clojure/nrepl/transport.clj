@@ -105,7 +105,9 @@
    (let [in (PushbackInputStream. (io/input-stream in))
          out (io/output-stream out)]
      (fn-transport
-      #(let [payload (rethrow-on-disconnection s (bencode/read-bencode in))
+      #(let [payload (rethrow-on-disconnection s
+                                               (locking in
+                                                 (bencode/read-bencode in)))
              unencoded (<bytes (payload "-unencoded"))
              to-decode (apply dissoc payload "-unencoded" unencoded)]
          (merge (dissoc payload "-unencoded")
