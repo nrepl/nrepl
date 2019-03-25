@@ -18,7 +18,6 @@
    [nrepl.ack :as ack]
    [nrepl.middleware.caught :as middleware.caught]
    [nrepl.middleware.print :as middleware.print]
-   [nrepl.misc :as misc]
    [nrepl.server :as server]
    [nrepl.transport :as transport])
   (:import
@@ -96,7 +95,7 @@
             (dissoc resp :id :session))
           (normalize-status [resp]
             (if-let [status (:status resp)]
-              (assoc resp :status (misc/keyworded-set status))
+              (assoc resp :status (set (map keyword status)))
               resp))]
     (-> resp
         de-identify
@@ -163,22 +162,22 @@
   (is (= {:status #{:error :no-code :done}}
          (-> (message timeout-client {:op "eval"})
              combine-responses
-             (select-keys [:status])
-             (update :status misc/keyworded-set)))))
+             clean-response
+             (select-keys [:status])))))
 
 (def-repl-test unknown-op
   (is (= {:op "abc" :status #{:error :unknown-op :done}}
          (-> (message timeout-client {:op :abc})
              combine-responses
-             (select-keys [:op :status])
-             (update :status misc/keyworded-set)))))
+             clean-response
+             (select-keys [:op :status])))))
 
 (def-repl-test session-lifecycle
   (is (= #{:error :unknown-session :done}
          (-> (message timeout-client {:session "abc"})
              combine-responses
-             :status
-             misc/keyworded-set)))
+             clean-response
+             :status)))
   (let [session-id (new-session timeout-client)
         session-alive? #(contains? (-> (message timeout-client {:op :ls-sessions})
                                        combine-responses
@@ -190,8 +189,8 @@
     (is (= #{:done :session-closed}
            (-> (message timeout-client {:op :close :session session-id})
                combine-responses
-               :status
-               misc/keyworded-set)))
+               clean-response
+               :status)))
     (is (not (session-alive?)))))
 
 (def-repl-test separate-value-from-*out*
@@ -636,8 +635,8 @@
   (is (= #{:error :namespace-not-found :done}
          (-> (message timeout-client {:op :eval :code "(+ 1 1)" :ns (name (gensym))})
              combine-responses
-             :status
-             misc/keyworded-set))))
+             clean-response
+             :status))))
 
 (def-repl-test proper-response-ordering
   (is (= [[nil "100\n"] ; printed number
@@ -892,17 +891,13 @@
            (->> session
                 (#(message % {:op :interrupt}))
                 first
-                :status
-                (map name)
-                (into #{})
-                misc/keyworded-set)))
+                clean-response
+                :status)))
     (is (= #{:done :interrupted}
            (->> resp
                 combine-responses
-                :status
-                (map name)
-                (into #{})
-                misc/keyworded-set)))))
+                clean-response
+                :status)))))
 
 (def-repl-test stdout-stderr
   (are [result expr] (= result (-> (repl-eval client expr)
