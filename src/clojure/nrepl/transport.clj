@@ -150,8 +150,10 @@
       #(rethrow-on-disconnection s (stringify-everything (edn/read in)))
       #(rethrow-on-disconnection s
                                  (locking out
-                                   (binding [*print-readably* true]
-                                     (let [payload (pr-str (stringify-everything %))]
+                                   (binding [*print-readably* true
+                                             *print-length*   nil
+                                             *print-level*    nil]
+                                     (let [payload (str (stringify-everything %))]
                                        (doto out
                                          (.write payload)
                                          (.flush))))))
