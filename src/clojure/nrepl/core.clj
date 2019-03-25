@@ -83,7 +83,7 @@
    messages related to the message :id that will terminate upon receipt of a
    \"done\" :status."
   [client {:keys [id] :as msg :or {id (uuid)}}]
-  (let [f (delimited-transport-seq client #{"done"} {:id id})]
+  (let [f (delimited-transport-seq client #{"done" :done} {:id id})]
     (f (assoc msg :id id))))
 
 (defn new-session

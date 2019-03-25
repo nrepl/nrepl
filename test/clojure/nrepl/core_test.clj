@@ -88,18 +88,28 @@
 (defn- clean-response
   "Cleans a response to help testing.
 
-  - de-identifies it
-  - normalises the status to a set of keywords"
+  This manually coerces bencode responses to (close) to what the raw EDN
+  response is, so we can standardise testing around the richer format. It:
+
+  - de-identifies the response
+  - ensures the status to a set of keywords
+  - turn the content of truncated-keys to keywords"
   [resp]
   (letfn [(de-identify [resp]
             (dissoc resp :id :session))
           (normalize-status [resp]
             (if-let [status (:status resp)]
               (assoc resp :status (set (map keyword status)))
+              resp))
+          ;; This is a good example of a middleware details that's showing through
+          (keywordize-truncated-keys [resp]
+            (if (contains? resp ::middleware.print/truncated-keys)
+              (update resp ::middleware.print/truncated-keys #(mapv keyword %))
               resp))]
     (-> resp
         de-identify
-        normalize-status)))
+        normalize-status
+        keywordize-truncated-keys)))
 
 (def-repl-test eval-literals
   (are [literal] (= (binding [*ns* (find-ns 'user)] ; needed for the ::keyword
@@ -160,7 +170,7 @@
 
 (def-repl-test no-code
   (is (= {:status #{:error :no-code :done}}
-         (-> (message timeout-client {:op "eval"})
+         (-> (message timeout-client {:op :eval})
              combine-responses
              clean-response
              (select-keys [:status])))))
@@ -226,7 +236,7 @@
   (let [sid (-> session meta ::nrepl/taking-until :session)]
     (with-open [transport2 (nrepl.core/connect :port (:port *server*)
                                                :transport-fn *transport-fn*)]
-      (transport/send transport2 {"op" "eval" "code" "(println :foo)"
+      (transport/send transport2 {:op :eval :code "(println :foo)"
                                   "session" sid})
       (is (= [{:out ":foo\n"}
               {:ns "user" :value "nil"}
@@ -428,7 +438,7 @@
     (is (= [{:ns "user"
              :value "(0 1 2 3"
              :status #{:nrepl.middleware.print/truncated}
-             ::middleware.print/truncated-keys ["value"]}
+             ::middleware.print/truncated-keys [:value]}
             {:status #{:done}}]
            (->> (message client {:op :eval
                                  :code (code (range 512))
@@ -450,7 +460,7 @@
     (is (= [{:ns "user"
              :value "<foo (0 "
              :status #{:nrepl.middleware.print/truncated}
-             ::middleware.print/truncated-keys ["value"]}
+             ::middleware.print/truncated-keys [:value]}
             {:status #{:done}}]
            (->> (message client {:op :eval
                                  :code (code (range 512))
@@ -585,8 +595,11 @@
   (is (= [["badpath" true]] (repl-values session (code [*compile-path* *warn-on-reflection*])))))
 
 (def-repl-test exceptions
-  (let [{:keys [status err value]} (combine-responses (repl-eval session "(throw (Exception. \"bad, bad code\"))"))]
-    (is (= #{"eval-error" "done"} status))
+  (let [{:keys [status err value]} (-> session
+                                       (repl-eval "(throw (Exception. \"bad, bad code\"))")
+                                       combine-responses
+                                       clean-response)]
+    (is (= #{:eval-error :done} status))
     (is (nil? value))
     (is (.contains err "bad, bad code"))
     (is (= [true] (repl-values session "(.contains (str *e) \"bad, bad code\")")))))
@@ -595,9 +608,9 @@
   (is (= [5 18] (repl-values session "5 (/ 5 0) (+ 5 6 7)"))))
 
 (def-repl-test return-on-incomplete-expr
-  (let [{:keys [out status value]} (combine-responses (repl-eval session "(missing paren"))]
+  (let [{:keys [out status value]} (clean-response (combine-responses (repl-eval session "(missing paren")))]
     (is (nil? value))
-    (is (= #{"done" "eval-error"} status))
+    (is (= #{:done :eval-error} status))
     ;; TODO avoid regex error if there's no exception found. Can be misleading
     (is (re-seq #"EOF while reading" (first (repl-values session "(-> *e Throwable->map :cause)"))))))
 
@@ -647,14 +660,14 @@
 
 (def-repl-test interrupt
   (testing "ephemeral session"
-    (is (= #{"error" "session-ephemeral" "done"}
-           (set (:status (first (message client {:op :interrupt}))))
-           (set (:status (first (message client {:op :interrupt :interrupt-id "foo"})))))))
+    (is (= #{:error :session-ephemeral :done}
+           (:status (clean-response (first (message client {:op :interrupt}))))
+           (:status (clean-response (first (message client {:op :interrupt :interrupt-id "foo"})))))))
 
   (testing "registered session"
-    (is (= #{"done" "session-idle"}
-           (set (:status (first (message session {:op :interrupt}))))
-           (set (:status (first (message session {:op :interrupt :interrupt-id "foo"}))))))
+    (is (= #{:done :session-idle}
+           (:status (clean-response (first (message session {:op :interrupt}))))
+           (:status (clean-response (first (message session {:op :interrupt :interrupt-id "foo"}))))))
 
     (let [resp (message session {:op :eval :code (code (do
                                                          (def halted? true)
@@ -662,10 +675,10 @@
                                                          (Thread/sleep 30000)
                                                          (def halted? false)))})]
       (Thread/sleep 100)
-      (is (= #{"done" "error" "interrupt-id-mismatch"}
-             (set (:status (first (message session {:op :interrupt :interrupt-id "foo"}))))))
-      (is (= #{"done"} (-> session (message {:op :interrupt}) first :status set)))
-      (is (= #{} (reduce disj #{"done" "interrupted"} (-> resp combine-responses :status))))
+      (is (= #{:done :error :interrupt-id-mismatch}
+             (:status (clean-response (first (message session {:op :interrupt :interrupt-id "foo"}))))))
+      (is (= #{:done} (-> session (message {:op :interrupt}) first clean-response :status)))
+      (is (= #{} (reduce disj #{:done :interrupted} (-> resp combine-responses clean-response :status))))
       (is (= [true] (repl-values session "halted?"))))))
 
 ;; NREPL-66: ensure that bindings of implementation vars aren't captured by user sessions
@@ -732,7 +745,7 @@
     (let [server (server/start-server :transport-fn *transport-fn*)
           transport (connect :port (:port server)
                              :transport-fn *transport-fn*)]
-      (transport/send transport {"op" "eval" "code" "(+ 1 1)"})
+      (transport/send transport {:op :eval :code "(+ 1 1)"})
 
       (let [reader (future (while true (transport/recv transport)))]
         (Thread/sleep 100)
@@ -749,10 +762,10 @@
       ;; for some transports that don't throw an exception the first time
       ;; a message is sent after the server is closed.
       (try
-        (transport/send transport {"op" "eval" "code" "(+ 5 1)"})
+        (transport/send transport {:op :eval :code "(+ 5 1)"})
         (catch Throwable t))
       (Thread/sleep 100)
-      (is (thrown? SocketException (transport/send transport {"op" "eval" "code" "(+ 5 1)"}))))))
+      (is (thrown? SocketException (transport/send transport {:op :eval :code "(+ 5 1)"}))))))
 
 (deftest server-starts-with-minimal-configuration
   (testing "Ensure server starts with minimal configuration"
@@ -787,7 +800,7 @@
 (def-repl-test request-*in*
   (is (= '((1 2 3)) (response-values (for [resp (repl-eval session "(read)")]
                                        (do
-                                         (when (-> resp :status set (contains? "need-input"))
+                                         (when (-> resp clean-response :status (contains? :need-input))
                                            (session {:op :stdin :stdin "(1 2 3)"}))
                                          resp)))))
 
@@ -798,14 +811,14 @@
 (def-repl-test request-*in*-eof
   (is (= nil (response-values (for [resp (repl-eval session "(read)")]
                                 (do
-                                  (when (-> resp :status set (contains? "need-input"))
+                                  (when (-> resp clean-response :status (contains? :need-input))
                                     (session {:op :stdin :stdin []}))
                                   resp))))))
 
 (def-repl-test request-multiple-read-newline-*in*
   (is (= '(:ohai) (response-values (for [resp (repl-eval session "(read)")]
                                      (do
-                                       (when (-> resp :status set (contains? "need-input"))
+                                       (when (-> resp clean-response :status (contains? :need-input))
                                          (session {:op :stdin :stdin ":ohai\n"}))
                                        resp)))))
 
@@ -815,7 +828,7 @@
 (def-repl-test request-multiple-read-with-buffered-newline-*in*
   (is (= '(:ohai) (response-values (for [resp (repl-eval session "(read)")]
                                      (do
-                                       (when (-> resp :status set (contains? "need-input"))
+                                       (when (-> resp clean-response :status (contains? :need-input))
                                          (session {:op :stdin :stdin ":ohai\na\n"}))
                                        resp)))))
 
@@ -824,7 +837,7 @@
 (def-repl-test request-multiple-read-objects-*in*
   (is (= '(:ohai) (response-values (for [resp (repl-eval session "(read)")]
                                      (do
-                                       (when (-> resp :status set (contains? "need-input"))
+                                       (when (-> resp clean-response :status (contains? :need-input))
                                          (session {:op :stdin :stdin ":ohai :kthxbai\n"}))
                                        resp)))))
 

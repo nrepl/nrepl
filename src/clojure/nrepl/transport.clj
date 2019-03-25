@@ -38,10 +38,9 @@
 
 (deftype FnTransport [recv-fn send-fn close]
   Transport
-  ;; TODO: this keywordization/stringification has no business being in FnTransport
-  (send [this msg] (-> msg stringify-keys send-fn) this)
+  (send [this msg] (send-fn msg) this)
   (recv [this] (.recv this Long/MAX_VALUE))
-  (recv [this timeout] (walk/keywordize-keys (recv-fn timeout)))
+  (recv [this timeout] (recv-fn timeout))
   java.io.Closeable
   (close [this] (close)))
 
@@ -115,13 +114,13 @@
       #(let [payload (rethrow-on-disconnection s (bencode/read-bencode in))
              unencoded (<bytes (payload "-unencoded"))
              to-decode (apply dissoc payload "-unencoded" unencoded)]
-         (merge (dissoc payload "-unencoded")
-                (when unencoded {"-unencoded" unencoded})
-                (<bytes to-decode)))
+         (walk/keywordize-keys (merge (dissoc payload "-unencoded")
+                                      (when unencoded {"-unencoded" unencoded})
+                                      (<bytes to-decode))))
       #(rethrow-on-disconnection s
                                  (locking out
                                    (doto out
-                                     (bencode/write-bencode %)
+                                     (bencode/write-bencode (stringify-keys %))
                                      .flush)))
       (fn []
         (if s
@@ -130,14 +129,18 @@
             (.close in)
             (.close out))))))))
 
-(defn stringify-everything
-  [m]
-  (walk/postwalk (fn [v] (if (keyword? v)
-                           (let [nspace (namespace v)
-                                 name      (name v)]
-                             (str (when nspace (str nspace "/")) name))
-                           v))
-                 m))
+;; These two functions hide the fact that :op values are implemented as strings
+;; internally, whereas we aspire for them to be keywords
+
+(defn- read-shim
+  [msg]
+  (cond-> msg
+    (contains? msg :op) (update :op name)))
+
+(defn- write-shim
+  [msg]
+  (cond-> msg
+    (contains? msg :ops) (update :ops walk/keywordize-keys)))
 
 (defn edn
   "Returns a Transport implementation that serializes messages
@@ -147,16 +150,15 @@
    (let [in (java.io.PushbackReader. (io/reader in))
          out (io/writer out)]
      (fn-transport
-      #(rethrow-on-disconnection s (stringify-everything (edn/read in)))
+      #(rethrow-on-disconnection s (read-shim (edn/read in)))
       #(rethrow-on-disconnection s
                                  (locking out
                                    (binding [*print-readably* true
                                              *print-length*   nil
                                              *print-level*    nil]
-                                     (let [payload (str (stringify-everything %))]
-                                       (doto out
-                                         (.write payload)
-                                         (.flush))))))
+                                     (doto out
+                                       (.write (str (write-shim %)))
+                                       (.flush)))))
       (fn []
         (if s
           (.close s)
