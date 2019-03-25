@@ -344,7 +344,7 @@
                                                 :code (code (range))
                                                 ::middleware.print/stream? 1})
                               (map #(dissoc % :id :session)))
-          _ (Thread/sleep 500)
+          _ (Thread/sleep 12)
           interrupt-responses (->> (message session {:op :interrupt})
                                    (mapv #(dissoc % :id :session)))]
       ;; check the interrupt succeeded first; otherwise eval-responses will not terminate
