@@ -599,7 +599,8 @@
   (let [{:keys [out status value]} (combine-responses (repl-eval session "(missing paren"))]
     (is (nil? value))
     (is (= #{"done" "eval-error"} status))
-    #_(is (re-seq #"EOF while reading" (first (repl-values session "(.getMessage *e)"))))))
+    ;; TODO avoid regex error if there's no exception found. Can be misleading
+    (is (re-seq #"EOF while reading" (first (repl-values session "(-> *e Throwable->map :cause)"))))))
 
 (def-repl-test switch-ns
   (is (= "otherns" (-> (repl-eval session "(ns otherns) (defn function [] 12)")
