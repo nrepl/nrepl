@@ -35,7 +35,7 @@
 (def transport-fn->protocol
   "Add your transport-fn var here so it can be tested"
   {#'transport/bencode "nrepl"
-   #'transport/nrepl+edn "edn"})
+   #'transport/edn "nrepl+edn"})
 
 ;; There is a profile that adds the fastlane dependency and test
 ;; its transports.

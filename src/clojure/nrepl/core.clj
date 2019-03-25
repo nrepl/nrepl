@@ -221,8 +221,8 @@
                            (merge connect-defaults
                                   (socket-info uri))))))
 
-(add-socket-connect-method! "edn" {:transport-fn transport/nrepl+edn
-                                   :port 7888})
+(add-socket-connect-method! "nrepl+edn" {:transport-fn transport/edn
+                                         :port 7888})
 (add-socket-connect-method! "nrepl" {:transport-fn transport/bencode
                                      :port 7888})
 (add-socket-connect-method! "telnet" {:transport-fn transport/tty})

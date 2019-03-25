@@ -139,10 +139,10 @@
                            v))
                  m))
 
-(defn nrepl+edn
+(defn edn
   "Returns a Transport implementation that serializes messages
    over the given Socket or InputStream/OutputStream using EDN."
-  ([^Socket s] (nrepl+edn s s s))
+  ([^Socket s] (edn s s s))
   ([in out & [^Socket s]]
    (let [in (java.io.PushbackReader. (io/reader in))
          out (io/writer out)]

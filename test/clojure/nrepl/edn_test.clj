@@ -6,8 +6,8 @@
 
 (defn return-evaluation
   [message]
-  (with-open [server (server/start-server :transport-fn transport/nrepl+edn :port 7889)]
-    (with-open [conn (nrepl/url-connect "edn://localhost:7889")]
+  (with-open [server (server/start-server :transport-fn transport/edn :port 7889)]
+    (with-open [conn (nrepl/url-connect "nrepl+edn://localhost:7889")]
       (-> (nrepl/client conn 1000)
           (nrepl/message message)
           nrepl/response-values))))
