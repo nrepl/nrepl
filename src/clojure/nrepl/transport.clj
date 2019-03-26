@@ -225,6 +225,8 @@
 
 (defmethod uri-scheme #'tty [_] "telnet")
 
+(defmethod uri-scheme #'edn [_] "nrepl+edn")
+
 (defmethod uri-scheme :default
   [transport]
   (printf "WARNING: No uri scheme associated with transport %s\n" transport)
