@@ -83,7 +83,7 @@
    messages related to the message :id that will terminate upon receipt of a
    \"done\" :status."
   [client {:keys [id] :as msg :or {id (uuid)}}]
-  (let [f (delimited-transport-seq client #{"done"} {:id id})]
+  (let [f (delimited-transport-seq client #{"done" :done} {:id id})]
     (f (assoc msg :id id))))
 
 (defn new-session
@@ -219,6 +219,8 @@
                            (merge connect-defaults
                                   (socket-info uri))))))
 
+(add-socket-connect-method! "nrepl+edn" {:transport-fn transport/edn
+                                         :port 7888})
 (add-socket-connect-method! "nrepl" {:transport-fn transport/bencode
                                      :port 7888})
 (add-socket-connect-method! "telnet" {:transport-fn transport/tty})

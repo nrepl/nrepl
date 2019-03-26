@@ -2,6 +2,7 @@
   (:require
    [clojure.main]
    [clojure.set :as set]
+   [clojure.string :as str]
    [clojure.test :refer [are deftest is testing use-fixtures]]
    [nrepl.core :as nrepl :refer [client
                                  client-session
@@ -32,7 +33,8 @@
 
 (def transport-fn->protocol
   "Add your transport-fn var here so it can be tested"
-  {#'transport/bencode "nrepl"})
+  {#'transport/bencode "nrepl"
+   #'transport/edn "nrepl+edn"})
 
 ;; There is a profile that adds the fastlane dependency and test
 ;; its transports.
@@ -70,7 +72,7 @@
 
 (defmacro def-repl-test
   [name & body]
-  `(deftest ~(with-meta name (merge {:private true} (meta name)))
+  `(deftest ~name
      (with-open [transport# (connect :port (:port *server*)
                                      :transport-fn *transport-fn*)]
        (let [~'transport transport#
@@ -81,6 +83,35 @@
              ~'repl-eval #(message % {:op :eval :code %2})
              ~'repl-values (comp response-values ~'repl-eval)]
          ~@body))))
+
+(defn- clean-response
+  "Cleans a response to help testing.
+
+  This manually coerces bencode responses to (close) to what the raw EDN
+  response is, so we can standardise testing around the richer format. It:
+
+  - de-identifies the response
+  - ensures the status to a set of keywords
+  - turn the content of truncated-keys to keywords"
+  [resp]
+  (let [de-identify
+        (fn [resp]
+          (dissoc resp :id :session))
+        normalize-status
+        (fn [resp]
+          (if-let [status (:status resp)]
+            (assoc resp :status (set (map keyword status)))
+            resp))
+        ;; This is a good example of a middleware details that's showing through
+        keywordize-truncated-keys
+        (fn [resp]
+          (if (contains? resp ::middleware.print/truncated-keys)
+            (update resp ::middleware.print/truncated-keys #(mapv keyword %))
+            resp))]
+    (-> resp
+        de-identify
+        normalize-status
+        keywordize-truncated-keys)))
 
 (def-repl-test eval-literals
   (are [literal] (= (binding [*ns* (find-ns 'user)] ; needed for the ::keyword
@@ -140,16 +171,25 @@
     (is (= (:column meta) 10))))
 
 (def-repl-test no-code
-  (is (= {:status #{"error" "no-code" "done"}}
-         (-> (message timeout-client {:op "eval"}) combine-responses (select-keys [:status])))))
+  (is (= {:status #{:error :no-code :done}}
+         (-> (message timeout-client {:op :eval})
+             combine-responses
+             clean-response
+             (select-keys [:status])))))
 
 (def-repl-test unknown-op
-  (is (= {:op "abc" :status #{"error" "unknown-op" "done"}}
-         (-> (message timeout-client {:op :abc}) combine-responses (select-keys [:op :status])))))
+  (is (= {:op "abc" :status #{:error :unknown-op :done}}
+         (-> (message timeout-client {:op :abc})
+             combine-responses
+             clean-response
+             (select-keys [:op :status])))))
 
 (def-repl-test session-lifecycle
-  (is (= #{"error" "unknown-session" "done"}
-         (-> (message timeout-client {:session "abc"}) combine-responses :status)))
+  (is (= #{:error :unknown-session :done}
+         (-> (message timeout-client {:session "abc"})
+             combine-responses
+             clean-response
+             :status)))
   (let [session-id (new-session timeout-client)
         session-alive? #(contains? (-> (message timeout-client {:op :ls-sessions})
                                        combine-responses
@@ -158,9 +198,11 @@
                                    session-id)]
     (is session-id)
     (is (session-alive?))
-    (is (= #{"done" "session-closed"} (-> (message timeout-client {:op :close :session session-id})
-                                          combine-responses
-                                          :status)))
+    (is (= #{:done :session-closed}
+           (-> (message timeout-client {:op :close :session session-id})
+               combine-responses
+               clean-response
+               :status)))
     (is (not (session-alive?)))))
 
 (def-repl-test separate-value-from-*out*
@@ -196,14 +238,14 @@
   (let [sid (-> session meta ::nrepl/taking-until :session)]
     (with-open [transport2 (nrepl.core/connect :port (:port *server*)
                                                :transport-fn *transport-fn*)]
-      (transport/send transport2 {"op" "eval" "code" "(println :foo)"
+      (transport/send transport2 {:op :eval :code "(println :foo)"
                                   "session" sid})
       (is (= [{:out ":foo\n"}
               {:ns "user" :value "nil"}
-              {:status ["done"]}]
+              {:status #{:done}}]
              (->> (repeatedly #(transport/recv transport2 100))
-                  (into [] (comp (take-while identity)
-                                 (map #(dissoc % :session))))))))))
+                  (take-while identity)
+                  (mapv clean-response)))))))
 
 (def-repl-test streaming-out
   (is (= (for [x (range 10)]
@@ -247,13 +289,13 @@
 (def-repl-test value-printing
   (testing "bad symbol should fall back to default printer"
     (is (= [{::middleware.print/error "Couldn't resolve var my.missing.ns/printer"
-             :status ["nrepl.middleware.print/error"]}
+             :status #{:nrepl.middleware.print/error}}
             {:ns "user" :value "42"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message client {:op :eval
                                  :code "(+ 34 8)"
                                  ::middleware.print/print "my.missing.ns/printer"})
-                (mapv #(dissoc % :id :session))))))
+                (mapv clean-response)))))
 
   (testing "custom printing function symbol should be used"
     (is (= ["<foo true ...>"]
@@ -284,21 +326,21 @@
 (def-repl-test override-value-printing
   (testing "custom ::print/keys"
     (is (= [{:ns "user" :value [1 2 3 4 5]}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message session {:op :eval
                                   :code "[1 2 3 4 5]"
                                   ::middleware.print/keys []})
-                (mapv #(dissoc % :id :session)))))))
+                (mapv clean-response))))))
 
 (def-repl-test streamed-printing
   (testing "value response arrives before ns response"
     (let [responses (->> (message client {:op :eval
                                           :code (code (range 10))
                                           ::middleware.print/stream? 1})
-                         (mapv #(dissoc % :id :session)))]
+                         (mapv clean-response))]
       (is (= [{:value "(0 1 2 3 4 5 6 7 8 9)"}
               {:ns "user"}
-              {:status ["done"]}]
+              {:status #{:done}}]
              responses))))
 
   (testing "multiple forms"
@@ -306,12 +348,12 @@
                                           :code (code (range 10)
                                                       (range 10))
                                           ::middleware.print/stream? 1})
-                         (mapv #(dissoc % :id :session)))]
+                         (mapv clean-response))]
       (is (= [{:value "(0 1 2 3 4 5 6 7 8 9)"}
               {:ns "user"}
               {:value "(0 1 2 3 4 5 6 7 8 9)"}
               {:ns "user"}
-              {:status ["done"]}]
+              {:status #{:done}}]
              responses))))
 
   (testing "*out* still handled correctly"
@@ -319,38 +361,38 @@
                                           :code (code (->> (range 2)
                                                            (map println)))
                                           ::middleware.print/stream? 1})
-                         (mapv #(dissoc % :id :session)))]
+                         (mapv clean-response))]
       (is (= [{:out "0\n"}
               {:out "1\n"}
               {:value "(nil nil)"}
               {:ns "user"}
-              {:status ["done"]}]
+              {:status #{:done}}]
              responses))))
 
   (testing "large output should be streamed"
     (let [[resp1 resp2 resp3 resp4] (->> (message client {:op :eval
                                                           :code (code (range 512))
                                                           ::middleware.print/stream? 1})
-                                         (mapv #(dissoc % :id :session)))]
+                                         (mapv clean-response))]
       (is (.startsWith (:value resp1) "(0 1 2 3"))
       (is (= {} (dissoc resp1 :value)))
       (is (.endsWith (:value resp2) "510 511)"))
       (is (= {} (dissoc resp2 :value)))
       (is (= {:ns "user"} resp3))
-      (is (= {:status ["done"]} resp4))))
+      (is (= {:status #{:done}} resp4))))
 
   (testing "interruptible"
     (let [eval-responses (->> (message session {:op :eval
                                                 :code (code (range))
                                                 ::middleware.print/stream? 1})
-                              (map #(dissoc % :id :session)))
+                              (map clean-response))
           _ (Thread/sleep 100)
           interrupt-responses (->> (message session {:op :interrupt})
-                                   (mapv #(dissoc % :id :session)))]
+                                   (mapv clean-response))]
       ;; check the interrupt succeeded first; otherwise eval-responses will not terminate
-      (is (= [{:status ["done"]}] interrupt-responses))
+      (is (= [{:status #{:done}}] interrupt-responses))
       (is (.startsWith (:value (first eval-responses)) "(0 1 2 3"))
-      (is (= {:status ["done" "interrupted"]} (last eval-responses)))))
+      (is (= {:status #{:done :interrupted}} (last eval-responses)))))
 
   (testing "respects buffer-size option"
     (is (= [{:value "(0 1 2 3"}
@@ -359,25 +401,25 @@
             {:value "11 12 13"}
             {:value " 14 15)"}
             {:ns "user"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message client {:op :eval
                                  :code (code (range 16))
                                  ::middleware.print/stream? 1
                                  ::middleware.print/buffer-size 8})
-                (mapv #(dissoc % :id :session))))))
+                (mapv clean-response)))))
 
   (testing "works with custom printer"
     (let [[resp1 resp2 resp3 resp4] (->> (message client {:op :eval
                                                           :code (code (range 512))
                                                           ::middleware.print/stream? 1
                                                           ::middleware.print/print `custom-printer})
-                                         (mapv #(dissoc % :id :session)))]
+                                         (mapv clean-response))]
       (is (.startsWith (:value resp1) "<foo (0 1 2 3"))
       (is (= {} (dissoc resp1 :value)))
       (is (.endsWith (:value resp2) "510 511) ...>"))
       (is (= {} (dissoc resp2 :value)))
       (is (= {:ns "user"} resp3))
-      (is (= {:status ["done"]} resp4))))
+      (is (= {:status #{:done}} resp4))))
 
   (testing "works with custom printer and print-options"
     (let [[resp1 resp2 resp3 resp4] (->> (message client {:op :eval
@@ -385,60 +427,60 @@
                                                           ::middleware.print/stream? 1
                                                           ::middleware.print/print `custom-printer
                                                           ::middleware.print/options {:sub "bar"}})
-                                         (mapv #(dissoc % :id :session)))]
+                                         (mapv clean-response))]
       (is (.startsWith (:value resp1) "<foo (0 1 2 3"))
       (is (= {} (dissoc resp1 :value)))
       (is (.endsWith (:value resp2) "510 511) bar>"))
       (is (= {} (dissoc resp2 :value)))
       (is (= {:ns "user"} resp3))
-      (is (= {:status ["done"]} resp4)))))
+      (is (= {:status #{:done}} resp4)))))
 
 (def-repl-test print-quota
   (testing "quota option respected"
     (is (= [{:ns "user"
              :value "(0 1 2 3"
-             :status ["nrepl.middleware.print/truncated"]
-             ::middleware.print/truncated-keys ["value"]}
-            {:status ["done"]}]
+             :status #{:nrepl.middleware.print/truncated}
+             ::middleware.print/truncated-keys [:value]}
+            {:status #{:done}}]
            (->> (message client {:op :eval
                                  :code (code (range 512))
                                  ::middleware.print/quota 8})
-                (mapv #(dissoc % :id :session))))))
+                (mapv clean-response)))))
 
   (testing "works with streamed printing"
     (is (= [{:value "(0 1 2 3"}
-            {:status ["nrepl.middleware.print/truncated"]}
+            {:status #{:nrepl.middleware.print/truncated}}
             {:ns "user"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message client {:op :eval
                                  :code (code (range 512))
                                  ::middleware.print/stream? 1
                                  ::middleware.print/quota 8})
-                (mapv #(dissoc % :id :session))))))
+                (mapv clean-response)))))
 
   (testing "works with custom printer"
     (is (= [{:ns "user"
              :value "<foo (0 "
-             :status ["nrepl.middleware.print/truncated"]
-             ::middleware.print/truncated-keys ["value"]}
-            {:status ["done"]}]
+             :status #{:nrepl.middleware.print/truncated}
+             ::middleware.print/truncated-keys [:value]}
+            {:status #{:done}}]
            (->> (message client {:op :eval
                                  :code (code (range 512))
                                  ::middleware.print/print `custom-printer
                                  ::middleware.print/quota 8})
-                (mapv #(dissoc % :id :session))))))
+                (mapv clean-response)))))
 
   (testing "works with custom printer and streamed printing"
     (is (= [{:value "<foo (0 "}
-            {:status ["nrepl.middleware.print/truncated"]}
+            {:status #{:nrepl.middleware.print/truncated}}
             {:ns "user"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message client {:op :eval
                                  :code (code (range 512))
                                  ::middleware.print/print `custom-printer
                                  ::middleware.print/stream? 1
                                  ::middleware.print/quota 8})
-                (mapv #(dissoc % :id :session)))))))
+                (mapv clean-response))))))
 
 (defn custom-session-printer
   [value ^Writer writer]
@@ -447,87 +489,87 @@
 (def-repl-test session-print-configuration
   (testing "setting *print-fn* works"
     (is (= [{:ns "user" :value "<bar #'nrepl.core-test/custom-session-printer>"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message session {:op :eval
                                   :code (code (set! nrepl.middleware.print/*print-fn* (resolve `custom-session-printer)))})
-                (mapv #(dissoc % :id :session)))))
+                (mapv clean-response))))
 
     (is (= [{:ns "user" :value "<bar (0 1 2 3 4 5 6 7 8 9)>"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message session {:op :eval
                                   :code (code (range 10))})
-                (mapv #(dissoc % :id :session))))))
+                (mapv clean-response)))))
 
   (testing "request can still override *print-fn*"
     (is (= [{:ns "user" :value "<foo (0 1 2 3 4 5 6 7 8 9) ...>"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message session {:op :eval
                                   :code (code (range 10))
                                   ::middleware.print/print `custom-printer})
-                (mapv #(dissoc % :id :session))))))
+                (mapv clean-response)))))
 
   (testing "setting stream options works"
     (is (= [{:value "<bar true>"}
             {:ns "user"}
             {:value "<bar 8>"}
             {:ns "user"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message session {:op :eval
                                   :code (code (set! nrepl.middleware.print/*stream?* true)
                                               (set! nrepl.middleware.print/*buffer-size* 8))})
-                (mapv #(dissoc % :id :session)))))
+                (mapv clean-response))))
 
     (is (= [{:value "<bar (0 "}
             {:value "1 2 3 4 "}
             {:value "5 6 7 8 "}
             {:value "9)>"}
             {:ns "user"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message session {:op :eval
                                   :code (code (range 10))})
-                (mapv #(dissoc % :id :session))))))
+                (mapv clean-response)))))
 
   (testing "request can still override stream options"
     (is (= [{:ns "user" :value "<bar (0 1 2 3 4 5 6 7 8 9)>"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message session {:op :eval
                                   :code (code (range 10))
                                   ::middleware.print/stream? nil})
-                (mapv #(dissoc % :id :session)))))
+                (mapv clean-response))))
 
     (is (= [{:value "<bar (0 1 2 3 4 "}
             {:value "5 6 7 8 9)>"}
             {:ns "user"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message session {:op :eval
                                   :code (code (range 10))
                                   ::middleware.print/buffer-size 16})
-                (mapv #(dissoc % :id :session))))))
+                (mapv clean-response)))))
 
   (testing "setting *quota* works"
     (is (= [{:value "<bar 8>"}
             {:ns "user"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message session {:op :eval
                                   :code (code (set! nrepl.middleware.print/*quota* 8))})
-                (mapv #(dissoc % :id :session)))))
+                (mapv clean-response))))
     (is (= [{:value "<bar (0 "}
-            {:status ["nrepl.middleware.print/truncated"]}
+            {:status #{:nrepl.middleware.print/truncated}}
             {:ns "user"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message session {:op :eval
                                   :code (code (range 512))})
-                (mapv #(dissoc % :id :session))))))
+                (mapv clean-response)))))
 
   (testing "request can still override *quota*"
     (is (= [{:value "<bar (0 1 2 3 4 "}
-            {:status ["nrepl.middleware.print/truncated"]}
+            {:status #{:nrepl.middleware.print/truncated}}
             {:ns "user"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message session {:op :eval
                                   :code (code (range 512))
                                   ::middleware.print/quota 16})
-                (mapv #(dissoc % :id :session)))))))
+                (mapv clean-response))))))
 
 (def-repl-test session-return-recall
   (testing "sessions persist across connections"
@@ -555,8 +597,11 @@
   (is (= [["badpath" true]] (repl-values session (code [*compile-path* *warn-on-reflection*])))))
 
 (def-repl-test exceptions
-  (let [{:keys [status err value]} (combine-responses (repl-eval session "(throw (Exception. \"bad, bad code\"))"))]
-    (is (= #{"eval-error" "done"} status))
+  (let [{:keys [status err value]} (-> session
+                                       (repl-eval "(throw (Exception. \"bad, bad code\"))")
+                                       combine-responses
+                                       clean-response)]
+    (is (= #{:eval-error :done} status))
     (is (nil? value))
     (is (.contains err "bad, bad code"))
     (is (= [true] (repl-values session "(.contains (str *e) \"bad, bad code\")")))))
@@ -565,9 +610,10 @@
   (is (= [5 18] (repl-values session "5 (/ 5 0) (+ 5 6 7)"))))
 
 (def-repl-test return-on-incomplete-expr
-  (let [{:keys [out status value]} (combine-responses (repl-eval session "(missing paren"))]
+  (let [{:keys [out status value]} (clean-response (combine-responses (repl-eval session "(missing paren")))]
     (is (nil? value))
-    (is (= #{"done" "eval-error"} status))
+    (is (= #{:done :eval-error} status))
+    ;; TODO avoid regex error if there's no exception found. Can be misleading
     (is (re-seq #"EOF while reading" (first (repl-values session "(-> *e Throwable->map :cause)"))))))
 
 (def-repl-test switch-ns
@@ -601,9 +647,10 @@
   (is (= "baz" (-> (repl-eval session "5") combine-responses :ns))))
 
 (def-repl-test error-on-nonexistent-ns
-  (is (= #{"error" "namespace-not-found" "done"}
+  (is (= #{:error :namespace-not-found :done}
          (-> (message timeout-client {:op :eval :code "(+ 1 1)" :ns (name (gensym))})
              combine-responses
+             clean-response
              :status))))
 
 (def-repl-test proper-response-ordering
@@ -615,14 +662,14 @@
 
 (def-repl-test interrupt
   (testing "ephemeral session"
-    (is (= #{"error" "session-ephemeral" "done"}
-           (set (:status (first (message client {:op :interrupt}))))
-           (set (:status (first (message client {:op :interrupt :interrupt-id "foo"})))))))
+    (is (= #{:error :session-ephemeral :done}
+           (:status (clean-response (first (message client {:op :interrupt}))))
+           (:status (clean-response (first (message client {:op :interrupt :interrupt-id "foo"})))))))
 
   (testing "registered session"
-    (is (= #{"done" "session-idle"}
-           (set (:status (first (message session {:op :interrupt}))))
-           (set (:status (first (message session {:op :interrupt :interrupt-id "foo"}))))))
+    (is (= #{:done :session-idle}
+           (:status (clean-response (first (message session {:op :interrupt}))))
+           (:status (clean-response (first (message session {:op :interrupt :interrupt-id "foo"}))))))
 
     (let [resp (message session {:op :eval :code (code (do
                                                          (def halted? true)
@@ -630,10 +677,10 @@
                                                          (Thread/sleep 30000)
                                                          (def halted? false)))})]
       (Thread/sleep 100)
-      (is (= #{"done" "error" "interrupt-id-mismatch"}
-             (set (:status (first (message session {:op :interrupt :interrupt-id "foo"}))))))
-      (is (= #{"done"} (-> session (message {:op :interrupt}) first :status set)))
-      (is (= #{} (reduce disj #{"done" "interrupted"} (-> resp combine-responses :status))))
+      (is (= #{:done :error :interrupt-id-mismatch}
+             (:status (clean-response (first (message session {:op :interrupt :interrupt-id "foo"}))))))
+      (is (= #{:done} (-> session (message {:op :interrupt}) first clean-response :status)))
+      (is (= #{} (reduce disj #{:done :interrupted} (-> resp combine-responses clean-response :status))))
       (is (= [true] (repl-values session "halted?"))))))
 
 ;; NREPL-66: ensure that bindings of implementation vars aren't captured by user sessions
@@ -700,7 +747,7 @@
     (let [server (server/start-server :transport-fn *transport-fn*)
           transport (connect :port (:port server)
                              :transport-fn *transport-fn*)]
-      (transport/send transport {"op" "eval" "code" "(+ 1 1)"})
+      (transport/send transport {:op :eval :code "(+ 1 1)"})
 
       (let [reader (future (while true (transport/recv transport)))]
         (Thread/sleep 100)
@@ -717,10 +764,10 @@
       ;; for some transports that don't throw an exception the first time
       ;; a message is sent after the server is closed.
       (try
-        (transport/send transport {"op" "eval" "code" "(+ 5 1)"})
+        (transport/send transport {:op :eval :code "(+ 5 1)"})
         (catch Throwable t))
       (Thread/sleep 100)
-      (is (thrown? SocketException (transport/send transport {"op" "eval" "code" "(+ 5 1)"}))))))
+      (is (thrown? SocketException (transport/send transport {:op :eval :code "(+ 5 1)"}))))))
 
 (deftest server-starts-with-minimal-configuration
   (testing "Ensure server starts with minimal configuration"
@@ -755,7 +802,7 @@
 (def-repl-test request-*in*
   (is (= '((1 2 3)) (response-values (for [resp (repl-eval session "(read)")]
                                        (do
-                                         (when (-> resp :status set (contains? "need-input"))
+                                         (when (-> resp clean-response :status (contains? :need-input))
                                            (session {:op :stdin :stdin "(1 2 3)"}))
                                          resp)))))
 
@@ -766,14 +813,14 @@
 (def-repl-test request-*in*-eof
   (is (= nil (response-values (for [resp (repl-eval session "(read)")]
                                 (do
-                                  (when (-> resp :status set (contains? "need-input"))
+                                  (when (-> resp clean-response :status (contains? :need-input))
                                     (session {:op :stdin :stdin []}))
                                   resp))))))
 
 (def-repl-test request-multiple-read-newline-*in*
   (is (= '(:ohai) (response-values (for [resp (repl-eval session "(read)")]
                                      (do
-                                       (when (-> resp :status set (contains? "need-input"))
+                                       (when (-> resp clean-response :status (contains? :need-input))
                                          (session {:op :stdin :stdin ":ohai\n"}))
                                        resp)))))
 
@@ -783,7 +830,7 @@
 (def-repl-test request-multiple-read-with-buffered-newline-*in*
   (is (= '(:ohai) (response-values (for [resp (repl-eval session "(read)")]
                                      (do
-                                       (when (-> resp :status set (contains? "need-input"))
+                                       (when (-> resp clean-response :status (contains? :need-input))
                                          (session {:op :stdin :stdin ":ohai\na\n"}))
                                        resp)))))
 
@@ -792,7 +839,7 @@
 (def-repl-test request-multiple-read-objects-*in*
   (is (= '(:ohai) (response-values (for [resp (repl-eval session "(read)")]
                                      (do
-                                       (when (-> resp :status set (contains? "need-input"))
+                                       (when (-> resp clean-response :status (contains? :need-input))
                                          (session {:op :stdin :stdin ":ohai :kthxbai\n"}))
                                        resp)))))
 
@@ -855,8 +902,17 @@
                                :file-path "nrepl/load_file_sample2.clj"
                                :file-name "load_file_sample2.clj"})]
     (Thread/sleep 100)
-    (is (= #{"done"} (-> session (message {:op :interrupt}) first :status set)))
-    (is (= #{"done" "interrupted"} (-> resp combine-responses :status)))))
+    (is (= #{:done}
+           (->> session
+                (#(message % {:op :interrupt}))
+                first
+                clean-response
+                :status)))
+    (is (= #{:done :interrupted}
+           (->> resp
+                combine-responses
+                clean-response
+                :status)))))
 
 (def-repl-test stdout-stderr
   (are [result expr] (= result (-> (repl-eval client expr)
@@ -905,56 +961,56 @@
     (let [[resp1 resp2 resp3 resp4] (->> (message session {:op :eval
                                                            :code (code (first 1))
                                                            ::middleware.caught/caught "my.missing.ns/repl-caught"})
-                                         (mapv #(dissoc % :id :session)))]
+                                         (mapv clean-response))]
       (is (= {::middleware.caught/error "Couldn't resolve var my.missing.ns/repl-caught"
-              :status ["nrepl.middleware.caught/error"]}
+              :status #{:nrepl.middleware.caught/error}}
              resp1))
       (is (re-find #"IllegalArgumentException" (:err resp2)))
-      (is (= {:status ["eval-error"]
+      (is (= {:status #{:eval-error}
               :ex "class java.lang.IllegalArgumentException"
               :root-ex "class java.lang.IllegalArgumentException"}
              resp3))
-      (is (= {:status ["done"]}
+      (is (= {:status #{:done}}
              resp4))))
 
   (testing "custom symbol should be used"
     (is (= [{:err "foo java.lang.IllegalArgumentException\n"}
-            {:status ["eval-error"]
+            {:status #{:eval-error}
              :ex "class java.lang.IllegalArgumentException"
              :root-ex "class java.lang.IllegalArgumentException"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message session {:op :eval
                                   :code (code (first 1))
                                   ::middleware.caught/caught `custom-repl-caught})
-                (mapv #(dissoc % :id :session))))))
+                (mapv clean-response)))))
 
   (testing "::print? option"
     (let [[resp1 resp2 resp3] (->> (message session {:op :eval
                                                      :code (code (first 1))
                                                      ::middleware.caught/print? 1})
-                                   (mapv #(dissoc % :id :session)))]
+                                   (mapv clean-response))]
       (is (re-find #"IllegalArgumentException" (:err resp1)))
       (is (re-find #"IllegalArgumentException" (::middleware.caught/throwable resp2)))
-      (is (= {:status ["eval-error"]
+      (is (= {:status #{:eval-error}
               :ex "class java.lang.IllegalArgumentException"
               :root-ex "class java.lang.IllegalArgumentException"}
              (dissoc resp2 ::middleware.caught/throwable)))
-      (is (= {:status ["done"]}
+      (is (= {:status #{:done}}
              resp3)))
 
     (let [[resp1 resp2 resp3] (->> (message session {:op :eval
                                                      :code (code (first 1))
                                                      ::middleware.caught/caught `custom-repl-caught
                                                      ::middleware.caught/print? 1})
-                                   (mapv #(dissoc % :id :session)))]
+                                   (mapv clean-response))]
       (is (= {:err "foo java.lang.IllegalArgumentException\n"}
              resp1))
       (is (re-find #"IllegalArgumentException" (::middleware.caught/throwable resp2)))
-      (is (= {:status ["eval-error"]
+      (is (= {:status #{:eval-error}
               :ex "class java.lang.IllegalArgumentException"
               :root-ex "class java.lang.IllegalArgumentException"}
              (dissoc resp2 ::middleware.caught/throwable)))
-      (is (= {:status ["done"]}
+      (is (= {:status #{:done}}
              resp3)))))
 
 (defn custom-session-repl-caught
@@ -965,56 +1021,56 @@
 (def-repl-test session-caught-options
   (testing "setting *caught-fn* works"
     (is (= [{:ns "user" :value "#'nrepl.core-test/custom-session-repl-caught"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message session {:op :eval
                                   :code (code (set! nrepl.middleware.caught/*caught-fn* (resolve `custom-session-repl-caught)))})
-                (mapv #(dissoc % :id :session)))))
+                (mapv clean-response))))
 
     (is (= [{:err "bar Divide by zero\n"}
-            {:status ["eval-error"]
+            {:status #{:eval-error}
              :ex "class java.lang.ArithmeticException"
              :root-ex "class java.lang.ArithmeticException"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message session {:op :eval
                                   :code (code (/ 1 0))})
-                (mapv #(dissoc % :id :session))))))
+                (mapv clean-response)))))
 
   (testing "request can still override *caught-fn*"
     (is (= [{:err "foo java.lang.ArithmeticException\n"}
-            {:status ["eval-error"]
+            {:status #{:eval-error}
              :ex "class java.lang.ArithmeticException"
              :root-ex "class java.lang.ArithmeticException"}
-            {:status ["done"]}]
+            {:status #{:done}}]
            (->> (message session {:op :eval
                                   :code (code (/ 1 0))
                                   ::middleware.caught/caught `custom-repl-caught})
-                (mapv #(dissoc % :id :session))))))
+                (mapv clean-response)))))
 
   (testing "request can still provide ::print? option"
     (let [[resp1 resp2 resp3] (->> (message session {:op :eval
                                                      :code (code (/ 1 0))
                                                      ::middleware.caught/print? 1})
-                                   (mapv #(dissoc % :id :session)))]
+                                   (mapv clean-response))]
       (is (re-find #"Divide by zero" (:err resp1)))
       (is (re-find #"Divide by zero" (::middleware.caught/throwable resp2)))
-      (is (= {:status ["eval-error"]
+      (is (= {:status #{:eval-error}
               :ex "class java.lang.ArithmeticException"
               :root-ex "class java.lang.ArithmeticException"}
              (dissoc resp2 ::middleware.caught/throwable)))
-      (is (= {:status ["done"]}
+      (is (= {:status #{:done}}
              resp3)))
 
     (let [[resp1 resp2 resp3] (->> (message session {:op :eval
                                                      :code (code (/ 1 0))
                                                      ::middleware.caught/caught `custom-repl-caught
                                                      ::middleware.caught/print? 1})
-                                   (mapv #(dissoc % :id :session)))]
+                                   (mapv clean-response))]
       (is (= {:err "foo java.lang.ArithmeticException\n"}
              resp1))
       (is (re-find #"Divide by zero" (::middleware.caught/throwable resp2)))
-      (is (= {:status ["eval-error"]
+      (is (= {:status #{:eval-error}
               :ex "class java.lang.ArithmeticException"
               :root-ex "class java.lang.ArithmeticException"}
              (dissoc resp2 ::middleware.caught/throwable)))
-      (is (= {:status ["done"]}
+      (is (= {:status #{:done}}
              resp3)))))

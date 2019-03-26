@@ -5,6 +5,7 @@
    [clojure.java.io :as io]
    [clojure.walk :as walk]
    [nrepl.bencode :as bencode]
+   [clojure.edn :as edn]
    [nrepl.misc :refer [uuid]]
    nrepl.version)
   (:import
@@ -37,10 +38,9 @@
 
 (deftype FnTransport [recv-fn send-fn close]
   Transport
-  ;; TODO: this keywordization/stringification has no business being in FnTransport
-  (send [this msg] (-> msg stringify-keys send-fn) this)
+  (send [this msg] (send-fn msg) this)
   (recv [this] (.recv this Long/MAX_VALUE))
-  (recv [this timeout] (walk/keywordize-keys (recv-fn timeout)))
+  (recv [this timeout] (recv-fn timeout))
   java.io.Closeable
   (close [this] (close)))
 
@@ -90,8 +90,14 @@
   [^Socket s & body]
   `(try
      ~@body
+     (catch RuntimeException e#
+       (if (= "EOF while reading" (.getMessage e#))
+         (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server"))
+         (throw e#)))
      (catch EOFException e#
-       (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server")))
+       (if (= "Invalid netstring. Unexpected end of input." (.getMessage e#))
+         (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server"))
+         (throw e#)))
      (catch Throwable e#
        (if (and ~s (not (.isConnected ~s)))
          (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server"))
@@ -108,14 +114,54 @@
       #(let [payload (rethrow-on-disconnection s (bencode/read-bencode in))
              unencoded (<bytes (payload "-unencoded"))
              to-decode (apply dissoc payload "-unencoded" unencoded)]
-         (merge (dissoc payload "-unencoded")
-                (when unencoded {"-unencoded" unencoded})
-                (<bytes to-decode)))
+         (walk/keywordize-keys (merge (dissoc payload "-unencoded")
+                                      (when unencoded {"-unencoded" unencoded})
+                                      (<bytes to-decode))))
       #(rethrow-on-disconnection s
                                  (locking out
                                    (doto out
-                                     (bencode/write-bencode %)
+                                     (bencode/write-bencode (stringify-keys %))
                                      .flush)))
+      (fn []
+        (if s
+          (.close s)
+          (do
+            (.close in)
+            (.close out))))))))
+
+;; These two functions hide the fact that :op values are implemented as strings
+;; internally, whereas we aspire for them to be keywords
+
+(defn- read-shim
+  [msg]
+  (cond-> msg
+    (contains? msg :op) (update :op name)))
+
+(defn- write-shim
+  [msg]
+  (cond-> msg
+    (contains? msg :ops) (update :ops walk/keywordize-keys)))
+
+(defn edn
+  "Returns a Transport implementation that serializes messages
+   over the given Socket or InputStream/OutputStream using EDN."
+  ([^Socket s] (edn s s s))
+  ([in out & [^Socket s]]
+   (let [in (java.io.PushbackReader. (io/reader in))
+         out (io/writer out)]
+     (fn-transport
+      #(rethrow-on-disconnection s (read-shim (edn/read in)))
+      #(rethrow-on-disconnection s
+                                 (locking out
+                                   ;; TODO: The transport doesn't seem to work
+                                   ;; without these bindings. Worth investigating
+                                   ;; why
+                                   (binding [*print-readably* true
+                                             *print-length*   nil
+                                             *print-level*    nil]
+                                     (doto out
+                                       (.write (str (write-shim %)))
+                                       (.flush)))))
       (fn []
         (if s
           (.close s)
