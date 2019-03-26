@@ -153,6 +153,9 @@
       #(rethrow-on-disconnection s (read-shim (edn/read in)))
       #(rethrow-on-disconnection s
                                  (locking out
+                                   ;; TODO: The transport doesn't seem to work
+                                   ;; without these bindings. Worth investigating
+                                   ;; why
                                    (binding [*print-readably* true
                                              *print-length*   nil
                                              *print-level*    nil]
