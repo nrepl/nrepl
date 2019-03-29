@@ -2,11 +2,14 @@
 
 ### master (unreleased)
 
-* [#60](https://github.com/nrepl/nrepl/issues/60): Implemented EDN transport
+#### New features
+
+* [#60](https://github.com/nrepl/nrepl/issues/60): Implemented EDN transport.
 
 ### 0.6.0 (2019-02-05)
 
 #### New features
+
 * [#117](https://github.com/nrepl/nrepl/issues/117): Replace
   `nrepl.middleware.pr-values` with `nrepl.middleware.print`.
   * New dynamic vars in `nrepl.middleware.print` for configuring the print
@@ -18,7 +21,6 @@
   `nrepl.middleware.caught`, provides a hook called when eval, read, or print
   throws an exception or error. Defaults to `clojure.main/repl-caught`.
   Configurable by the dynamic var `nrepl.middleware.caught/*caught-fn*`.
-
 
 #### Bugs fixed
 
