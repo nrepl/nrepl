@@ -1,14 +1,14 @@
-## Changelog
+# Changelog
 
-### master (unreleased)
+## master (unreleased)
 
-#### New features
+### New features
 
 * [#60](https://github.com/nrepl/nrepl/issues/60): Implemented EDN transport.
 
-### 0.6.0 (2019-02-05)
+## 0.6.0 (2019-02-05)
 
-#### New features
+### New features
 
 * [#117](https://github.com/nrepl/nrepl/issues/117): Replace
   `nrepl.middleware.pr-values` with `nrepl.middleware.print`.
@@ -22,48 +22,48 @@
   throws an exception or error. Defaults to `clojure.main/repl-caught`.
   Configurable by the dynamic var `nrepl.middleware.caught/*caught-fn*`.
 
-#### Bugs fixed
+### Bugs fixed
 
 * [CLI] Make sure ack port parameter is converted to integer for command line nREPL initialization.
 * [CLI] When starting the REPL, make sure the transport option is used correctly.
 * [CLI] Make sure calling `send-ack` at `cmdline` ns works with the correct transport.
 * [#8](https://github.com/nrepl/nrepl/issues/8): Clean up context classloader after eval.
 
-#### Changes
+### Changes
 
 * [#16](https://github.com/nrepl/nrepl/issues/16): Use a single session thread per evaluation.
 * [#107](https://github.com/nrepl/nrepl/issues/107): Stop reading and evaluating code on first read error.
 * [#108](https://github.com/nrepl/nrepl/issues/108): Refactor cmdline functions into a public, reusable API.
 * Restore the `nrepl.bencode` namespace.
 
-### 0.5.3 (2018-12-12)
+## 0.5.3 (2018-12-12)
 
-#### Bugs fixed
+### Bugs fixed
 
 * Make sure we never send a nil transport to via `send-ack`.
 
-### 0.5.2 (2018-12-10)
+## 0.5.2 (2018-12-10)
 
-#### Bugs fixed
+### Bugs fixed
 
 * [CLI] [#90](https://github.com/nrepl/nrepl/issues/90): Doesn't display properly URLs if using a 3rd-party transport.
 
-### 0.5.1 (2018-11-30)
+## 0.5.1 (2018-11-30)
 
-#### Changes
+### Changes
 
 * [#89](https://github.com/nrepl/nrepl/issues/89): Remove `tools.logging` dependency.
 
-### 0.5.0 (2018-11-28)
+## 0.5.0 (2018-11-28)
 
-#### New features
+### New features
 
 * [#12](https://github.com/nrepl/nrepl/issues/12): Support custom printing
   function in `pr-values`, enabling pretty-printed REPL results.
 * [#66](https://github.com/nrepl/nrepl/pull/66): Add support for a global and local configuration file.
 * [CLI] [#63](https://github.com/nrepl/nrepl/issues/63): Make it possible to specify the transport via the command-line client (`--transport/-t`).
 
-#### Bugs fixed
+### Bugs fixed
 
 * [#10](https://github.com/nrepl/nrepl/issues/10): Bind `*1`, `*2`, `*3` and `*e` in cloned session.
 * [#33](https://github.com/nrepl/nrepl/issues/33): Add ability to change value of `*print-namespace-maps*`.
@@ -71,7 +71,7 @@
 * [CLI] [#77](https://github.com/nrepl/nrepl/issues/77): Exit cleanly after pressing `ctrl-d` in an interactive REPL.
 * [#13](https://github.com/nrepl/nrepl/issues/13): Catch ThreadDeath exception thrown by interrupt.
 
-#### Changes
+### Changes
 
 * [#56](https://github.com/nrepl/nrepl/issues/56): Bind the server by default to `127.0.0.1` instead of to `::` (this turned out to be a security risk).
 * [#76](https://github.com/nrepl/nrepl/pull/76): Move version-related logic to a dedicated namespace (`nrepl.version`).
@@ -79,9 +79,9 @@
 * Deprecate `nrepl.core/version-string`.
 * [CLI] [#81](https://github.com/nrepl/nrepl/pull/81): Handle interrupt in interactive session.
 
-### 0.4.5 (2018-09-02)
+## 0.4.5 (2018-09-02)
 
-#### New features
+### New features
 
 * [CLI] The built-in the CLI generates an `.nrepl-port` file on server startup.
 * [CLI] [#39](https://github.com/nrepl/nrepl/issues/39): Add a `--connect` command-line option allowing you to connect.
@@ -89,17 +89,17 @@ with the built-in client to an already running nREPL server.
 * [CLI] Add shorthand names for most command-line options.
 * [CLI] Add a `-v/--version` command-line option.
 
-#### Changes
+### Changes
 
 * [#32](https://github.com/nrepl/nrepl/issues/32): Extract the bencode logic in a [separate library](https://github.com/nrepl/bencode).
 
-#### Bugs fixed
+### Bugs fixed
 
 * [#38](https://github.com/nrepl/nrepl/issues/38): Remove extra newline in REPL output.
 
-### 0.4.4 (2018-07-31)
+## 0.4.4 (2018-07-31)
 
-#### New features
+### New features
 
 * [CLI] Added `--help` command-line option.
 * [CLI] Added `--bind` command-line option.
@@ -107,26 +107,26 @@ with the built-in client to an already running nREPL server.
 `clj` and `tools.deps`, as this allows you to inject middleware trivially without the need for
 something like `lein` or `boot`.
 
-#### Bugs fixed
+### Bugs fixed
 
 * [CLI] Add missing newline after colorized values displayed in the REPL.
 
-### 0.4.3 (2018-07-26)
+## 0.4.3 (2018-07-26)
 
-#### New features
+### New features
 
 * [CLI] Display connection info when starting the built-in cmd client. This makes it possible
 for clients like CIDER to parse it and auto-connect to the server. Pretty handy if you're
 using `clj` to start your server.
 
-#### Bugs fixed
+### Bugs fixed
 
 * [#16](https://github.com/nrepl/nrepl/issues/16): Don't change the
   thread used for form evaluation over time. See
   [#36](https://github.com/nrepl/nrepl/pull/36) for a discussion of
   the fix. **(partial fix)**
 
-#### Changes
+### Changes
 
 * The result of `nrepl.server/start-server` no longer contains the
 legacy key `:ss` from the days of nREPL 0.0.x. If someone was using it
@@ -135,38 +135,38 @@ they should switch to `:server-socket` instead.
 ns during eval (previously you'd only get an error that a ns is missing,
 but no mention of the name of that namespace).
 
-### 0.4.2 (2018-07-18)
+## 0.4.2 (2018-07-18)
 
-#### Changes
+### Changes
 
 * [#35](https://github.com/nrepl/nrepl/pull/35): Add constant DCL
 across evaluations (which means you can now easily hot-load
 dependencies).
 
-#### Bugs fixed
+### Bugs fixed
 
 * [#34](https://github.com/nrepl/nrepl/pull/34): Treat `nil` port as 0
   (which assigns a random port).
 
-### 0.4.1 (2018-05-23)
+## 0.4.1 (2018-05-23)
 
-#### Bugs fixed
+### Bugs fixed
 
 * [#11](https://github.com/nrepl/nrepl/issues/11): Don't read the version string
 from a resource file (`version.txt`).
 
-### 0.4.0 (2018-05-21)
+## 0.4.0 (2018-05-21)
 
-#### Changes
+### Changes
 
 * [#4](https://github.com/nrepl/nrepl/issues/4): Change the project's
   namespaces. (**breaking**) `clojure.tools.nrepl` is now `nrepl.core`,
   the rest of the namespaces were renamed following the pattern
   `clojure.tools.nrepl.*` -> `nrepl.*`.
 
-### 0.3.1 (2018-05-19)
+## 0.3.1 (2018-05-19)
 
-#### Bugs fixed
+### Bugs fixed
 
 * [#15](https://github.com/nrepl/nrepl/issues/15) Fix for
   `clojure.tools.nrepl.middleware.session` for `:unknown-session`
@@ -176,9 +176,9 @@ from a resource file (`version.txt`).
 * [#26](https://github.com/nrepl/nrepl/issues/26): Recompile the Java classes
 for Java 8.
 
-### 0.3.0 (2018-05-18)
+## 0.3.0 (2018-05-18)
 
-#### Changes
+### Changes
 
 * [#1](https://github.com/nrepl/nrepl/issues/1): Materially identical
   to `[org.clojure/tools.nrepl "0.2.13"]`, but released under
@@ -187,7 +187,7 @@ for Java 8.
 * `clojure.tools/logging` is now a normal dependency (it used to be an
   optional dependency).
 
-#### Bugs fixed
+### Bugs fixed
 
 * [#20](https://github.com/nrepl/nrepl/issues/20): If `start-server` is not provided with a `:bind` hostname, nREPL will default
   to binding to the ipv6 `::` (as before), but will now _always_ fall back to
