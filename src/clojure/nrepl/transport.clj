@@ -23,19 +23,6 @@
      ms or if the underlying channel has been closed.")
   (send [this msg] "Sends msg. Implementations should return the transport."))
 
-;; adapted from clojure.walk to support namespaced keywords
-(defn- stringify-key
-  [k]
-  (cond
-    (and (keyword? k) (namespace k)) (str (namespace k) "/" (name k))
-    (keyword? k) (name k)
-    :else k))
-
-(defn- stringify-keys
-  [m]
-  (let [f (fn [[k v]] [(stringify-key k) v])]
-    (walk/postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) m)))
-
 (deftype FnTransport [recv-fn send-fn close]
   Transport
   (send [this msg] (send-fn msg) this)
@@ -120,7 +107,7 @@
       #(rethrow-on-disconnection s
                                  (locking out
                                    (doto out
-                                     (bencode/write-bencode (stringify-keys %))
+                                     (bencode/write-bencode %)
                                      .flush)))
       (fn []
         (if s

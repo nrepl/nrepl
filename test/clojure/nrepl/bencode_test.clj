@@ -159,7 +159,10 @@
 (deftest test-map-writing
   (are [x y] (= (>output x :writer write-bencode) y)
     {}             "de"
-    {"ham" "eggs"} "d3:ham4:eggse"))
+    {"ham" "eggs"} "d3:ham4:eggse"
+    {:ham "eggs"}  "d3:ham4:eggse"
+    {'ham "eggs"}  "d3:ham4:eggse"
+    {:h/am "eggs"} "d4:h/am4:eggse"))
 
 (deftest test-nested-writing
   (are [x y] (= (>output x :writer write-bencode) y)

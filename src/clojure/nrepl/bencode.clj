@@ -389,9 +389,23 @@
 
 (declare lexicographically)
 
+(defn #^{:private true} thing>string
+  [thing]
+  (cond
+    (string? thing)
+    thing
+    (or (keyword? thing)
+        (symbol? thing))
+    (let [nspace (namespace thing)
+          name   (name thing)]
+      (str (when nspace (str nspace "/")) name))))
+
 (defmethod write-bencode :map
   [#^OutputStream output m]
-  (let [translation (into {} (map (juxt string>payload identity) (keys m)))
+  (let [translation (into {} (map (juxt (comp string>payload
+                                              thing>string)
+                                        identity)
+                                  (keys m)))
         key-strings (sort lexicographically (keys translation))
         >value      (comp m translation)]
     (.write output (int d))
