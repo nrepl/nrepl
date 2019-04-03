@@ -20,5 +20,5 @@
     (is (= (return-evaluation {:op :eval :code "(+ 2 3)"})
            [5])))
   (testing "simple expressions"
-    (is (= (return-evaluation {:op :eval :code "(range 40)"})
+    (is (= (return-evaluation {:op "eval" :code "(range 40)"})
            [(eval '(range 40))]))))

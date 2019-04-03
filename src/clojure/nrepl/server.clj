@@ -19,11 +19,17 @@
     (catch Throwable t
       (log t "Unhandled REPL handler exception processing message" msg))))
 
+(defn- liberally-accept
+  "Accept messages that are not quite in spec"
+  [msg]
+  (cond-> msg
+    (keyword? (:op msg)) (update :op name)))
+
 (defn handle
   "Handles requests received via [transport] using [handler].
    Returns nil when [recv] returns nil for the given transport."
   [handler transport]
-  (when-let [msg (t/recv transport)]
+  (when-let [msg (liberally-accept (t/recv transport))]
     (future (handle* msg handler transport))
     (recur handler transport)))
 

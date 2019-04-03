@@ -116,19 +116,6 @@
             (.close in)
             (.close out))))))))
 
-;; These two functions hide the fact that :op values are implemented as strings
-;; internally, whereas we aspire for them to be keywords
-
-(defn- read-shim
-  [msg]
-  (cond-> msg
-    (contains? msg :op) (update :op name)))
-
-(defn- write-shim
-  [msg]
-  (cond-> msg
-    (contains? msg :ops) (update :ops walk/keywordize-keys)))
-
 (defn edn
   "Returns a Transport implementation that serializes messages
    over the given Socket or InputStream/OutputStream using EDN."
@@ -137,7 +124,7 @@
    (let [in (java.io.PushbackReader. (io/reader in))
          out (io/writer out)]
      (fn-transport
-      #(rethrow-on-disconnection s (read-shim (edn/read in)))
+      #(rethrow-on-disconnection s (edn/read in))
       #(rethrow-on-disconnection s
                                  (locking out
                                    ;; TODO: The transport doesn't seem to work
@@ -147,7 +134,7 @@
                                              *print-length*   nil
                                              *print-level*    nil]
                                      (doto out
-                                       (.write (str (write-shim %)))
+                                       (.write (str %))
                                        (.flush)))))
       (fn []
         (if s

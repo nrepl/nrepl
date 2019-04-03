@@ -10,8 +10,8 @@
 (use-fixtures :once repl-server-fixture)
 
 (def ^{:private true} op-names
-  #{:load-file :ls-sessions :interrupt :stdin
-    :describe :eval :close :clone})
+  #{"load-file" "ls-sessions" "interrupt" "stdin"
+    "describe" "eval" "close" "clone"})
 
 (def-repl-test simple-describe
   (let [{{:keys [nrepl clojure java]} :versions
@@ -26,13 +26,13 @@
       (is (= (clojure-version) (:version-string clojure)))
       (is (= (System/getProperty "java.version") (:version-string java))))
 
-    (is (= op-names (set (keys ops))))
+    (is (= op-names (set (map name (keys ops)))))
     (is (every? empty? (map val ops)))))
 
 (def-repl-test verbose-describe
   (let [{:keys [ops aux]} (nrepl/combine-responses
                            (nrepl/message timeout-client
                                           {:op "describe" :verbose? "true"}))]
-    (is (= op-names (set (keys ops))))
+    (is (= op-names (set (map name (keys ops)))))
     (is (every? seq (map (comp :doc val) ops)))
     (is (= {:current-ns "user"} aux))))
