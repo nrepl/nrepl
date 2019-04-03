@@ -84,11 +84,16 @@
              ~'repl-values (comp response-values ~'repl-eval)]
          ~@body))))
 
+(defn- strict-transport? []
+  ;; TODO: add transit here.
+  (= *transport-fn* #'transport/edn))
+
 (defn- clean-response
   "Cleans a response to help testing.
 
   This manually coerces bencode responses to (close) to what the raw EDN
-  response is, so we can standardise testing around the richer format. It:
+  response is, so we can standardise testing around the richer format. It
+  retains strictness on EDN transports.
 
   - de-identifies the response
   - ensures the status to a set of keywords
@@ -108,10 +113,10 @@
           (if (contains? resp ::middleware.print/truncated-keys)
             (update resp ::middleware.print/truncated-keys #(mapv keyword %))
             resp))]
-    (-> resp
-        de-identify
-        normalize-status
-        keywordize-truncated-keys)))
+    (cond-> resp
+      true                      de-identify
+      (not (strict-transport?)) normalize-status
+      (not (strict-transport?)) keywordize-truncated-keys)))
 
 (def-repl-test eval-literals
   (are [literal] (= (binding [*ns* (find-ns 'user)] ; needed for the ::keyword

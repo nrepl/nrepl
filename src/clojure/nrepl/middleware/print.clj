@@ -156,7 +156,7 @@
         resp (transduce (map print-key) rf resp keys)]
     (transport/send transport (cond-> resp
                                 (::truncated-keys resp)
-                                (update :status conj ::truncated)))))
+                                (update :status #(set (conj % ::truncated)))))))
 
 (defn- printing-transport
   [{:keys [transport] :as msg} opts]

@@ -20,7 +20,9 @@
       (log t "Unhandled REPL handler exception processing message" msg))))
 
 (defn- liberally-accept
-  "Accept messages that are not quite in spec"
+  "Accept messages that are not quite in spec. This comes into effect with
+   The EDN transport, and other transports that allow more types/data structures
+   than bencode, as there's more oppertunity to be out of specification."
   [msg]
   (cond-> msg
     (keyword? (:op msg)) (update :op name)))
