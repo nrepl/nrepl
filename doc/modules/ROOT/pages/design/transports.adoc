@@ -91,6 +91,8 @@ $ clj -R:nrepl -m nrepl.cmdline -t nrepl.transport/edn
 nREPL server started on port 63266 on host localhost - nrepl+edn://localhost:63266
 ----
 
-The main difference between the bencode transport and the EDN one is that instead of sending and receiving
-bencode dictionaries you'd be sending and receiving EDN maps. The structures of the messages is identical, only
-the data format changes.
+The main difference between the bencode transport and the EDN one is that instead of sending and receiving bencode dictionaries and lists, and being limited to integer and byte types, you'd be sending and receiving full EDN structures and types, including maps, vectors, lists, sets, strings, keywords and symbols. The structures of the messages is similar, only the data format changes.
+
+This may be useful in a couple of usecases: In some clients, including ClojureScript ones, where EDN is easier to handle than bencode. Furthermore, because this transport exposes more of the richer data types in the internals of nREPL and its middlewares, it may support more complex usecases.
+
+The introduction of the EDN transport does require more specification of the message format, whereby some vagueness was allowed for by the limitatioms of bencode. For example, `:op` values are strings, and `:status` is either a keyword, or a set of keywords. This may cause some surprised, unintended consequences. Thus tweaks to the EDN message format may be possible until the transport is declared mature. Documentation of this using `clojure.spec` is planned.
