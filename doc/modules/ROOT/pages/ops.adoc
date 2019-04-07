@@ -8,7 +8,7 @@ This file is _generated_ by #'nrepl.impl.docs/-main
 
 == Operations
 
-=== `"clone"`
+=== `clone`
 
 Clones the current session, returning the ID of the newly-created session.
 
@@ -24,7 +24,7 @@ Returns::
 
 
 
-=== `"close"`
+=== `close`
 
 Closes the specified session.
 
@@ -39,7 +39,7 @@ Returns::
 {blank}
 
 
-=== `"describe"`
+=== `describe`
 
 Produce a machine- and human-readable directory and documentation for the operations supported by an nREPL endpoint.
 
@@ -57,7 +57,7 @@ Returns::
 
 
 
-=== `"eval"`
+=== `eval`
 
 Evaluates code. Note that unlike regular stream-based Clojure REPLs, nREPL's ``"eval"`` short-circuits on first read error and will not try to read and execute the remaining code in the message.
 
@@ -90,7 +90,7 @@ Returns::
 
 
 
-=== `"interrupt"`
+=== `interrupt`
 
 Attempts to interrupt some executing request. When interruption succeeds, the thread used for execution is killed, and a new thread spawned for the session. While the session middleware ensures that Clojure dynamic bindings are preserved, other ThreadLocals are not. Hence, when running code intimately tied to the current thread identity, it is best to avoid interruptions.
 
@@ -110,7 +110,7 @@ Returns::
 
 
 
-=== `"load-file"`
+=== `load-file`
 
 Loads a body of code, using supplied path and filename info to set source file and line number metadata. Delegates to underlying "eval" middleware/handler.
 
@@ -139,7 +139,7 @@ Returns::
 
 
 
-=== `"ls-sessions"`
+=== `ls-sessions`
 
 Lists the IDs of all active sessions.
 
@@ -154,7 +154,7 @@ Returns::
 
 
 
-=== `"stdin"`
+=== `stdin`
 
 Add content from the value of "stdin" to \*in* in the current session.
 

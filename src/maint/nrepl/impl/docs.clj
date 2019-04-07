@@ -92,7 +92,7 @@ use in e.g. wiki pages, github, etc."
          (:version-string version/version)
          ")#\n\n== Operations"
          (for [[op {:keys [doc optional requires returns]}] (sort ops)]
-           (str "\n\n=== `" (pr-str (name op)) "`\n\n"
+           (str "\n\n=== `" (name op) "`\n\n"
                 (adoc-escape doc) "\n\n"
                 "Required parameters::\n"
                 (message-slot-adoc (sort requires))
