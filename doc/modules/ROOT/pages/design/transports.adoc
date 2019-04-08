@@ -22,41 +22,37 @@ NOTE: It's the bencode transport that is used by default by
 
 link:https://github.com/nrepl/nrepl/wiki/Extensions[Other nREPL transports are provided by the community].
 
-== TTY Transport
+== Bencode Transport
 
-Using the TTY transport is pretty simple. You just need to start an nREPL server with TTY transport and you're good to go:
+Bencode is a relatively simple format, and comprises of of two scalar types (byte strings and integer) and two collection types (dictionaries and lists).
+
+A simple nREPL message, to run the operation `eval` on the code `(+ 2 2)` would look like this in bencode (linebreaks added for clarity):
+
+----
+d
+4:code
+7:(+ 2 2)
+2:op
+4:eval
+e
+----
+
+In documentation, this message would typically be expressed in EDN format:
 
 [source,clojure]
 ----
-(require
- '[nrepl.server :as server]
- '[nrepl.transport :as transport])
-
-(server/start-server :port 12345 :transport-fn transport/tty :greeting-fn transport/tty-greeting)
+{:op "eval" :code "(+ 2 2)"}
 ----
 
-NOTE: The `:greeting-fn` is responsible for printing the initial message you'll see
-upon connecting.
+which, once encoded, would yield the above bencode message. Since bencode does not have a keyword type, Clojure keywords are encoded and transmitted as strings. nREPL server performs a `keywordize-keys` operation on the decoded map. Thus, the use of keywords in writing nREPL message is mainly for clarity. The following messages, when encoded using nREPL's bencode encoder and received by nREPL, are eqivalent:
 
-Afterwards you can simply connect to the server with some TTY client like `telnet`, `nc` or `inf-clojure`.
-
-[source,shell]
+[source,clojure]
 ----
-$ nc localhost 12345
-
-;; Clojure 1.9.0
-user=>
+ {:op "eval"  ...}
+ {:op :eval ...}
+ {"op" "eval" ...}
+ {"op" :eval ...}
 ----
-
-Starting with nREPL 0.5 you can also start an nREPL with a TTY transport using `clj`:
-
-[source,shell]
-----
-$ clj -R:nrepl -m nrepl.cmdline -t nrepl.transport/tty
-nREPL server started on port 63266 on host localhost - telnet://localhost:63266
-----
-
-== Bencode Transport
 
 There's nothing special you have to do to use the bencode transport,
 as it's the default transport for `nrepl.server/start-server`.
@@ -91,8 +87,54 @@ $ clj -R:nrepl -m nrepl.cmdline -t nrepl.transport/edn
 nREPL server started on port 63266 on host localhost - nrepl+edn://localhost:63266
 ----
 
-The main difference between the bencode transport and the EDN one is that instead of sending and receiving bencode dictionaries and lists, and being limited to integer and byte types, you'd be sending and receiving full EDN structures and types, including maps, vectors, lists, sets, strings, keywords and symbols. The structures of the messages is similar, only the data format changes.
+The main difference between the bencode transport and the EDN one is that instead of bencode dictionaries and lists, and being limited to integer and byte string types, you'd be sending and receiving full EDN structures and types, including maps, vectors, lists, sets, strings, keywords and symbols. The structures of the messages is similar, only the data format changes.
 
 This may be useful in a couple of usecases: In some clients, including ClojureScript ones, where EDN is easier to handle than bencode. Furthermore, because this transport exposes more of the richer data types in the internals of nREPL and its middlewares, it may support more complex usecases.
 
 The introduction of the EDN transport does require more specification of the message format, whereby some vagueness was allowed for by the limitatioms of bencode. For example, `:op` values are strings, and `:status` is either a keyword, or a set of keywords. This may cause some surprised, unintended consequences. Thus tweaks to the EDN message format may be possible until the transport is declared mature. Documentation of this using `clojure.spec` is planned.
+
+For example, of the (same) four messages
+
+[source,clojure]
+----
+ {:op "eval"  ...}
+ {:op :eval ...}
+ {"op" "eval" ...}
+ {"op" :eval ...}
+----
+
+the first one is considered canonical, though nREPL will accept the second one as well. The third and fourth one will not work.
+
+== TTY Transport
+
+Using the TTY transport is pretty simple. You just need to start an nREPL server with TTY transport and you're good to go:
+
+[source,clojure]
+----
+(require
+ '[nrepl.server :as server]
+ '[nrepl.transport :as transport])
+
+(server/start-server :port 12345 :transport-fn transport/tty :greeting-fn transport/tty-greeting)
+----
+
+NOTE: The `:greeting-fn` is responsible for printing the initial message you'll see
+upon connecting.
+
+Afterwards you can simply connect to the server with some TTY client like `telnet`, `nc` or `inf-clojure`.
+
+[source,shell]
+----
+$ nc localhost 12345
+
+;; Clojure 1.9.0
+user=>
+----
+
+Starting with nREPL 0.5 you can also start an nREPL with a TTY transport using `clj`:
+
+[source,shell]
+----
+$ clj -R:nrepl -m nrepl.cmdline -t nrepl.transport/tty
+nREPL server started on port 63266 on host localhost - telnet://localhost:63266
+----
