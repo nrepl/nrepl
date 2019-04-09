@@ -19,10 +19,10 @@
     (catch Throwable t
       (log t "Unhandled REPL handler exception processing message" msg))))
 
-(defn- liberally-accept
-  "Accept messages that are not quite in spec. This comes into effect with
+(defn- normalize-msg
+  "Normalize messages that are not quite in spec. This comes into effect with
    The EDN transport, and other transports that allow more types/data structures
-   than bencode, as there's more oppertunity to be out of specification."
+   than bencode, as there's more opportunity to be out of specification."
   [msg]
   (cond-> msg
     (keyword? (:op msg)) (update :op name)))
@@ -31,7 +31,7 @@
   "Handles requests received via [transport] using [handler].
    Returns nil when [recv] returns nil for the given transport."
   [handler transport]
-  (when-let [msg (liberally-accept (t/recv transport))]
+  (when-let [msg (normalize-msg (t/recv transport))]
     (future (handle* msg handler transport))
     (recur handler transport)))
 
