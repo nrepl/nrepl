@@ -10,22 +10,19 @@ provided by e.g.  terminals).
 
 == Messages
 
-nREPL messages are maps.  The keys and values that may be included in messages
-depends upon the transport being used; different transports may encode messages
-differently, and therefore may or may not be able to represent certain data
-types.
+It is convention to express nREPL messages as EDN maps. For most purposes, it's sufficient to imagine that we communicate with nREPL via EDN, much the same way as we send and receive JSON to and from a REST endpoint. This is typically not what actually happens, and the details are discussed in <<design/transports.adoc,the transport section>>, however, this conceptual simplification serves us well.
 
 === Requests
 
 Each message sent to an nREPL endpoint constitutes a "request" to perform a
-particular operation, which is indicated by a `"op"` entry.  Each operation may
+particular operation, which is indicated by a `:op` entry.  Each operation may
 further require the incoming message to contain other data.  Which data an
 operation requires or may accept varies; for example, a message to evaluate
 some code might look like this:
 
 [source,clojure]
 ----
-{"op" "eval" "code" "(+ 1 2 3)"}
+{:op "eval" :code "(+ 1 2 3)"}
 ----
 
 The result(s) of performing each operation may be sent back to the nREPL client
@@ -38,9 +35,9 @@ The server may produce multiple messages in response to each client message (req
 The structure of the response is unique per each message type, but there are a few
 fundamental properties that will always be around in the responses:
 
-- `id` The ID of the request for which the response was generated.
-- `session` The ID of the session for which the response was generated.
-- `status` The status of the response. Here there would either be something like "done"
+- `:id` The ID of the request for which the response was generated.
+- `:session` The ID of the session for which the response was generated.
+- `:status` The status of the response. Here there would either be something like "done"
 if a request has been fully processed or the reason for a failure (e.g. "namespace-not-found"). Not every
 response message would have the status key. If some request generated multiple response messages only the
 final one would have the status attached to it.
@@ -48,19 +45,19 @@ final one would have the status attached to it.
 As mentioned earlier each op would produce different response messages. Here's what you can expect
 to see in responses generated as a result of an `eval` op invocation.
 
-- `ns` The stringified value of `*ns*` at the time of the response message's
+- `:ns` The stringified value of `*ns*` at the time of the response message's
   generation.
-- `out` Contains content written to `*out*` while the request's code was being evaluated.  Messages containing `*out*` content may be sent at the discretion
+- `:out` Contains content written to `*out*` while the request's code was being evaluated.  Messages containing `*out*` content may be sent at the discretion
 of the server, though at minimum corresponding with flushes of the underlying
 stream/writer.
-- `err` Same as `out`, but for `*err*`.
-- `value` The result of printing a result of evaluating a form in the code sent
+- `:err` Same as `:out`, but for `*err*`.
+- `:value` The result of printing a result of evaluating a form in the code sent
   in the corresponding request.  More than one value may be sent, if more than
 one form can be read from the request's code string.  In contrast to the output
 written to `*out*` and `*err*`, this may be usefully/reliably read and utilized
 by the client, e.g. in tooling contexts, assuming the evaluated code returns a
 printable and readable value.  Interactive clients will likely want to simply
-stream `value`'s content to their UI's primary output / log.
+stream `:value`'s content to their UI's primary output / log.
 
 Note that evaluations that are interrupted may nevertheless result
 in multiple response messages being sent prior to the interrupt

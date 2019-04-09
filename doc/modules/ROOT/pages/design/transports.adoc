@@ -24,7 +24,7 @@ link:https://github.com/nrepl/nrepl/wiki/Extensions[Other nREPL transports are p
 
 == Bencode Transport
 
-Bencode is a relatively simple format, and comprises of of two scalar types (byte strings and integer) and two collection types (dictionaries and lists).
+This is, and will mostly likely remain, nREPL's default and primary transport. It is pronounced B-Encode, and is a relatively simple format, comprising of only two scalar types (byte strings and integer) and two collection types (dictionaries and lists).
 
 A simple nREPL message, to run the operation `eval` on the code `(+ 2 2)` would look like this in bencode (linebreaks added for clarity):
 
@@ -44,11 +44,29 @@ In documentation, this message would typically be expressed in EDN format:
 {:op "eval" :code "(+ 2 2)"}
 ----
 
-which, once encoded, would yield the above bencode message. Since bencode does not have a keyword type, Clojure keywords are encoded and transmitted as strings. nREPL server performs a `keywordize-keys` operation on the decoded map. Thus, the use of keywords in writing nREPL message is mainly for clarity. The following messages, when encoded using nREPL's bencode encoder and received by nREPL, are eqivalent:
+Given that many, if not most, nREPL client do not use EDN as their native data formats, it's best to think of this as the format of a message once received by nREPL. Correpondingly, responses are in the form they take just before being sent through the transport.
+
+nREPL's bencode encoder/decoder performs the following type conversions:
+
+.How nrepl.bencode handles types
+|=======================================
+| EDN type > | Bencode type > | EDN type
+
+| String     | String         | String
+| Keyword    | String         | String
+| Symbol     | String         | String
+| Integer    | Integer        | Integer
+| Map        | Dictionary     | Map
+| Vector     | List           | Vector 
+| List       | List           | Vector
+| Set        | List           | Vector
+|=======================================
+
+In addition, nREPL server performs a `keywordize-keys` operation on the recieved map, restoring the likes of `:op` and `:code` to keywords. Thus, the use of keywords in writing nREPL message is mainly for clarity. The following messages, when encoded using nREPL's bencode encoder and received by nREPL, are eqivalent:
 
 [source,clojure]
 ----
- {:op "eval"  ...}
+ {:op "eval"  ...} ;; this is also the internal representation
  {:op :eval ...}
  {"op" "eval" ...}
  {"op" :eval ...}
@@ -68,6 +86,24 @@ in the future.
 
 NOTE: The EDN transport was introduced in nREPL 0.7.
 
+The main difference between the bencode transport and the EDN one is that instead of bencode dictionaries and lists, and being limited to integer and byte string types, you'd be sending and receiving full EDN structures and types, including maps, vectors, lists, sets, strings, keywords and symbols. The structures of the messages is similar, only the data format changes.
+
+This may be useful in a couple of usecases: In some clients, including ClojureScript ones, where EDN is easier to handle than bencode. Furthermore, because this transport exposes more of the richer data types in the internals of nREPL and its middlewares, it may support more complex usecases.
+
+The introduction of the EDN transport does require more specification of the message format, whereby some vagueness was allowed for by the limitatioms of bencode. For example, `:op` values are strings, and `:status` is either a keyword, or a set of keywords. This may cause some surprised, unintended consequences. Thus tweaks to the EDN message format may be possible until the transport is declared mature. Documentation of this using `clojure.spec` is planned.
+
+For example, of the (same as before) four messages
+
+[source,clojure]
+----
+ {:op "eval"  ...}
+ {:op :eval ...}
+ {"op" "eval" ...}
+ {"op" :eval ...}
+----
+
+the first one is considered canonical, though nREPL will accept the second one as well. The third and fourth one will not work.
+
 Using the EDN transport is pretty simple. You just need to start an nREPL server with EDN transport and you're good to go:
 
 [source,clojure]
@@ -86,24 +122,6 @@ You can also start an nREPL with a EDN transport using `clj`:
 $ clj -R:nrepl -m nrepl.cmdline -t nrepl.transport/edn
 nREPL server started on port 63266 on host localhost - nrepl+edn://localhost:63266
 ----
-
-The main difference between the bencode transport and the EDN one is that instead of bencode dictionaries and lists, and being limited to integer and byte string types, you'd be sending and receiving full EDN structures and types, including maps, vectors, lists, sets, strings, keywords and symbols. The structures of the messages is similar, only the data format changes.
-
-This may be useful in a couple of usecases: In some clients, including ClojureScript ones, where EDN is easier to handle than bencode. Furthermore, because this transport exposes more of the richer data types in the internals of nREPL and its middlewares, it may support more complex usecases.
-
-The introduction of the EDN transport does require more specification of the message format, whereby some vagueness was allowed for by the limitatioms of bencode. For example, `:op` values are strings, and `:status` is either a keyword, or a set of keywords. This may cause some surprised, unintended consequences. Thus tweaks to the EDN message format may be possible until the transport is declared mature. Documentation of this using `clojure.spec` is planned.
-
-For example, of the (same) four messages
-
-[source,clojure]
-----
- {:op "eval"  ...}
- {:op :eval ...}
- {"op" "eval" ...}
- {"op" :eval ...}
-----
-
-the first one is considered canonical, though nREPL will accept the second one as well. The third and fourth one will not work.
 
 == TTY Transport
 
