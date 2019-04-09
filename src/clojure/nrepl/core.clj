@@ -137,9 +137,9 @@
 (defmacro code
   "Expands into a string consisting of the macro's body's forms
    (literally, no interpolation/quasiquoting of locals or other
-   references), suitable for use in an :eval message, e.g.:
+   references), suitable for use in an `\"eval\"` message, e.g.:
 
-   {:op :eval, :code (code (+ 1 1) (slurp \"foo.txt\"))}"
+   {:op \"eval\", :code (code (+ 1 1) (slurp \"foo.txt\"))}"
   [& body]
   (apply code* body))
 

@@ -202,7 +202,7 @@ Exit:      Control+D or (exit) or (quit)"
   (let [transport (:transport @running-repl)
         client (:client @running-repl)]
     (if (and transport client)
-      (doseq [res (nrepl/message client {:op :interrupt})]
+      (doseq [res (nrepl/message client {:op "interrupt"})]
         (when (= ["done" "session-idle"] (:status res))
           (System/exit 0)))
       (System/exit 0))))

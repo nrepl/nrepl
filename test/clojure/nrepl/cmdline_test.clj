@@ -139,7 +139,7 @@
           (let [client (nrepl/client transport-2 1000)]
             ;; just a sanity check
             (is (= "y"
-                   (-> (nrepl/message client {:op :eval
+                   (-> (nrepl/message client {:op "eval"
                                               :code "(System/getProperty \"nreplacktest\")"})
                        first
                        nrepl/read-response-value

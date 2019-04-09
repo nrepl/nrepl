@@ -245,7 +245,7 @@ specified in both). The following options are supported:
 
 [source,clojure]
 ----
-{:op :eval
+{:op "eval"
  :code "(+ 1 1)"
  :nrepl.middleware.print/print 'my.custom/print-value
  :nrepl.middleware.print/options {:print-width 120}
@@ -296,7 +296,7 @@ any options are specified in both). The following options are supported:
 
 [source,clojure]
 ----
-{:op :eval
+{:op "eval"
  :code "(/ 1 0)"
  :nrepl.middleware.caught/caught 'my.custom/print-stacktrace
  :nrepl.middleware.caught/print? true}

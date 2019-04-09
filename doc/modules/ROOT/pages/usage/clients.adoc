@@ -101,7 +101,7 @@ the full content of message responses easily:
 ----
 => (with-open [conn (nrepl/connect :port 59258)]
      (-> (nrepl/client conn 1000)
-         (nrepl/message {:op :eval :code "(time (reduce + (range 1e6)))"})
+         (nrepl/message {:op "eval" :code "(time (reduce + (range 1e6)))"})
          doall      ;; `message` and `client-session` all return lazy seqs
          pprint))
 nil

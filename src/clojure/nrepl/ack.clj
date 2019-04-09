@@ -48,4 +48,4 @@
        ;; consume response from the server, solely to let that side
        ;; finish cleanly without (by default) spewing a SocketException when
        ;; the ack client goes away suddenly
-       (dorun (nrepl/message client {:op :ack :port my-port}))))))
+       (dorun (nrepl/message client {:op "ack" :port my-port}))))))
