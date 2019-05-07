@@ -51,6 +51,7 @@ hosted outside the nREPL GitHub organization.
 * link:https://github.com/clojure-emacs/cider-nrepl[cider-nrepl]: A collection of nREPL middleware designed to enhance CIDER (and Clojure editors in general).
 * link:https://github.com/clojure-emacs/refactor-nrepl[refactor-nrepl]: A collection of functionality designed to support editor refactoring features.
 * link:https://github.com/liquidz/iced-nrepl[iced-nrepl]: nREPL middleware to support vim-iced.
+* link:https://github.com/nubank/midje-nrepl[midje-nrepl]: nREPL middleware to run Midje tests.
 
 ==== Debugging
 
