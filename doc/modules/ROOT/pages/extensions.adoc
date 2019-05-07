@@ -22,7 +22,7 @@ hosted under the nREPL GitHub organization.
 The following ClojureScript REPLs are leveraging piggieback internally to provide
 nREPL support.
 
-* link:https://github.com/tomjakubowski/weasel[Weasel]
+* link:https://github.com/nrepl/weasel[Weasel]
 * link:https://github.com/bhauman/lein-figwheel[figwheel]
 * link:https://github.com/bhauman/figwheel-main[figwheel-main]
 * link:https://github.com/thheller/shadow-cljs[shadow-cljs] (it actually
