@@ -214,7 +214,7 @@ will take precedence over a setting in `.nrepl/nrepl.edn`.
 
 Here's an example global configuration file:
 
-.nrepl/nrepl.edn
+..nrepl/nrepl.edn
 [source,clojure]
 ----
 {:bind         "::"
