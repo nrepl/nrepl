@@ -25,23 +25,47 @@ Consider improving and extending this manual.
 
 === Working on the Manual
 
-The manual is generated from the asciidoc files in the link:https://github.com/nrepl/nrepl/tree/master/doc[doc] folder of nREPL's GitHub repo and is published to https://nrepl.org.
+The manual is generated from the AsciiDoc files in the link:https://github.com/nrepl/nrepl/tree/master/doc[doc] folder of nREPL's GitHub repo and is published to https://nrepl.org.
 link:https://antora.org[Antora] is used to convert the manual into HTML.
-The filesystem layout is described at https://docs.antora.org/antora/1.1/component-structure/
+The filesystem layout is described at https://docs.antora.org/antora/2.0/component-structure/.
 
 To make changes to the manual you simply have to change the files under `doc`.
 The manual will be regenerated manually periodically.
 
-You can build the documentation locally from the link:https://github.com/nrepl/nrepl.org[nrepl.org] repo.
+==== Installing Antora
 
-[source,shell]
+NOTE: The instructions here assume you already have (the right version of) node.js installed.
+
+Installing the Antora is super simple:
+
+[source]
 ----
-$ cd nREPL.org
-$ npm install
-$ ./antora site.yml
+$ npm i -g @antora/cli@2.0 @antora/site-generator-default@2.0
 ----
 
-TIP: If `npm install` fails, see link:https://docs.antora.org/antora/1.1/install/troubleshoot-nodegit/[Antora's troubleshooting documentation].
+Check out https://docs.antora.org/antora/2.0/install/install-antora/[the detailed installation instructions]
+if you run into any problems.
+
+==== Building the Site
+
+You can build the documentation locally from this repo.
+
+[source]
+----
+$ cd nrepl.org
+$ antora --pull site.yml
+----
+
+After you're done with the initial setup you can use the `deploy` script to push changes to the site:
+
+[source]
+----
+./deploy
+----
+
+NOTE: You'll need commit access to the repository for this to work.
+
+To check the generated site you can simply open `docs/index.html` in your favourite browser.
 
 If you want to make changes to the manual's page structure you'll have to edit
 link:https://github.com/nrepl/nrepl/blob/master/doc/modules/ROOT/nav.adoc[nav.adoc].
