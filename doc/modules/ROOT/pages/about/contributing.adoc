@@ -48,7 +48,7 @@ if you run into any problems.
 
 ==== Building the Site
 
-You can build the documentation locally from this repo.
+You can build the documentation locally from the link:https://github.com/nrepl/nrepl.org[nrepl.org] repo.
 
 [source]
 ----
