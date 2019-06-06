@@ -92,5 +92,5 @@ link:https://www.paypal.me/bbatsov[PayPal].
 
 === Open Collective
 
-* [link:https://opencollective.com/nrepl#backer[Become a backer]] (for individuals)
-* [link:https://opencollective.com/nrepl#sponsor[Become a sponsor]] (for companies)
+* link:https://opencollective.com/nrepl#backer[Become a backer] (for individuals)
+* link:https://opencollective.com/nrepl#sponsor[Become a sponsor] (for companies)
