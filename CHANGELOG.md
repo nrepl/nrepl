@@ -4,12 +4,12 @@
 
 ### New features
 
-* [#60](https://github.com/nrepl/nrepl/issues/60): Implemented EDN transport
+* [#60](https://github.com/nrepl/nrepl/issues/60): Implemented EDN transport.
 
 ### Changes
 
 * [#137](https://github.com/nrepl/nrepl/pull/137): Expanded Bencode writer to work with
-  maps that has keywords or symbols as keys. This allowed a simplification of the
+  maps that have keywords or symbols as keys. This allowed a simplification of the
   Bencode transport itself.
 
 ## 0.6.0 (2019-02-05)
