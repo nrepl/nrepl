@@ -62,7 +62,7 @@
    The submitted task is made of:
    * an id (typically the message id),
    * thunk, a Runnable, the task itself,
-   * ack, another Runnable, ran to notify of succesful execution of thunk.
+   * ack, another Runnable, ran to notify of successful execution of thunk.
    The thunk/ack split is meaningful for interruptible eval: only the thunk can be interrupted."
   [id ^Runnable thunk ^Runnable ack]
   (let [^Runnable f #(do (.run thunk) (.run ack))]
@@ -157,7 +157,7 @@
    * :interrupt, takes an id and tries to interrupt the matching execution (submitted with :exec above).
      A nil id is meant to match the currently running execution. The return value can be either:
      :idle (no running execution), the interrupted id, or nil when the running id doesn't match the id argument.
-     Upon succesful interruption the backing thread is replaced.
+     Upon successful interruption the backing thread is replaced.
    * :close, terminates the backing thread."
   [id]
   (let [cl (clojure.lang.DynamicClassLoader.
@@ -184,7 +184,7 @@
                   (let [current @running]
                     (cond
                       (nil? current) :idle
-                      (and (or (nil? exec-id) (= current exec-id)) ; cas only checks identity, so check equality first 
+                      (and (or (nil? exec-id) (= current exec-id)) ; cas only checks identity, so check equality first
                            (compare-and-set! running current nil))
                       (do
                         (doto ^Thread @thread .interrupt .stop)

@@ -57,12 +57,12 @@ nREPL's bencode encoder/decoder performs the following type conversions:
 | Symbol     | String         | String
 | Integer    | Integer        | Integer
 | Map        | Dictionary     | Map
-| Vector     | List           | Vector 
+| Vector     | List           | Vector
 | List       | List           | Vector
 | Set        | List           | Vector
 |=======================================
 
-In addition, nREPL server performs a `keywordize-keys` operation on the recieved map, restoring the likes of `:op` and `:code` to keywords. Thus, the use of keywords in writing nREPL message is mainly for clarity. The following messages, when encoded using nREPL's bencode encoder and received by nREPL, are eqivalent:
+In addition, nREPL server performs a `keywordize-keys` operation on the received map, restoring the likes of `:op` and `:code` to keywords. Thus, the use of keywords in writing nREPL message is mainly for clarity. The following messages, when encoded using nREPL's bencode encoder and received by nREPL, are eqivalent:
 
 [source,clojure]
 ----

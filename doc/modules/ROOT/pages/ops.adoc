@@ -51,7 +51,7 @@ Optional parameters::
 
 
 Returns::
-* `:aux` Map of auxilliary data contributed by all of the active nREPL middleware via :describe-fn functions in their descriptors.
+* `:aux` Map of auxiliary data contributed by all of the active nREPL middleware via :describe-fn functions in their descriptors.
 * `:ops` Map of "op"erations supported by this nREPL endpoint
 * `:versions` Map containing version maps (like \*clojure-version*, e.g. major, minor, incremental, and qualifier keys) for values, component names as keys. Common keys include "nrepl" and "clojure".
 
@@ -167,4 +167,3 @@ Optional parameters::
 
 Returns::
 * `:status` A status of "need-input" will be sent if a session's \*in* requires content in order to satisfy an attempted read operation.
-

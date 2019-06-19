@@ -74,7 +74,7 @@
                              :optional {"verbose?" "Include informational detail for each \"op\"eration in the return message."}
                              :returns {"ops" "Map of \"op\"erations supported by this nREPL endpoint"
                                        "versions" "Map containing version maps (like *clojure-version*, e.g. major, minor, incremental, and qualifier keys) for values, component names as keys. Common keys include \"nrepl\" and \"clojure\"."
-                                       "aux" "Map of auxilliary data contributed by all of the active nREPL middleware via :describe-fn functions in their descriptors."}}}})
+                                       "aux" "Map of auxiliary data contributed by all of the active nREPL middleware via :describe-fn functions in their descriptors."}}}})
 ;; eliminate implicit expectation of "describe" handler; this is the only
 ;; special case introduced by the conj'ing of :expects "describe" by set-descriptor!
 (alter-meta! #'wrap-describe update-in [::descriptor :expects] disj "describe")

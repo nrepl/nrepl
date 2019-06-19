@@ -136,7 +136,7 @@ $ boot repl -s wait
 
 All the above options are typically used during the development of an application.
 It can also be extremely useful to have your application host a REPL
-server whereever it might be deployed; this can greatly simplify debugging,
+server wherever it might be deployed; this can greatly simplify debugging,
 sanity-checking, panicked code patching, and so on.
 
 WARNING: You should think long and hard before hot-patching code in
