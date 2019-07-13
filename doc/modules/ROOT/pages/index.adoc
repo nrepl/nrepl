@@ -46,7 +46,7 @@ nature to the link:https://langserver.org/[Language Server Protocol]. nREPL is n
 ambitious as LSP, but on the other hand it's also much simpler and it's trivial to
 create nREPL clients in any language.
 
-TIP: You can find some alternative nREPL implementations and more on the subject <<beyond_clojure.adoc,here>>.
+TIP: You can find some alternative nREPL implementations and more on the subject xref:beyond_clojure.adoc[here].
 
 == Community-Driven
 
@@ -57,7 +57,7 @@ reasons why we decided to leave the "Clojure Contrib" umbrella.
 
 Everyone's welcome to get involved in the project, so we can take it to the next level!
 
-TIP: Check out the how you can help nREPL <<about/contributing.adoc,here>>.
+TIP: Check out the how you can help nREPL xref:about/contributing.adoc[here].
 
 == Status
 
@@ -74,4 +74,4 @@ a responsible manner and backwards-compatible ways.
 NOTE: The migration of nREPL out of Clojure Contrib is probably the
 only case where we were forced to make breaking changes.footnote:[Apart
 from removing deprecated code that is.] Those are detailed in great
-detail <<installation.adoc#upgrading,here>>.
+detail xref:installation.adoc#upgrading[here].

@@ -2,7 +2,7 @@
 
 == What's the difference between contrib's nREPL and this one?
 
-See <<about/history.adoc#,our history>>.
+See xref:about/history.adoc[our history].
 Very simply put - this project is the continuation of the contrib project.
 
 == Does nREPL support ClojureScript?
@@ -27,15 +27,15 @@ important tickets from our backlog.
 
 == Are there any interesting nREPL extensions worth checking out?
 
-Sure! See <<third_party_middleware.adoc#,third party middleware>> for details.
+Sure! See xref:extensions.adoc[Extensions] for details.
 
 == Where can I get help regarding nREPL?
 
-See the <<about/support.adoc#,Support>> section of the manual.
+See the xref:about/support.adoc[Support] section of the manual.
 
 == What should I do if I run into some issues with nREPL?
 
-Don't panic! Next step - visit the <<troubleshooting.adoc#,Troubleshooting>> section of
+Don't panic! Next step - visit the xref:troubleshooting.adoc[Troubleshooting] section of
 the manual.
 
 == How can I help the project?

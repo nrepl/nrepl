@@ -36,7 +36,7 @@ merge works, we'll first need to talk about middleware "descriptors".
 
 link:https://github.com/nrepl/nrepl/wiki/Extensions[Other nREPL middlewares are provided by the community].
 
-(See <<ops.adoc, this documentation listing>> for
+(See xref:ops.adoc[this documentation listing] for
 details as to the operations implemented by nREPL's default middleware stack,
 what each operation expects in request messages, and what they emit for
 responses.)
@@ -105,7 +105,7 @@ The values in the `:handles` map are used to support the `"describe"` operation,
 which provides "a machine- and human-readable directory and documentation for
 the operations supported by an nREPL endpoint" (see
 `nrepl.impl.docs/generate-ops-info` and the results of
-`lein with-profile +maint run nrepl.impl.docs` <<ops.adoc,here>>).
+`lein with-profile +maint run nrepl.impl.docs` xref:ops.adoc[here]).
 
 TIP: There's also `lein with-profile +maint run nrepl.impl.docs --output md` if you'd like to
 generate an ops listing in Markdown format.

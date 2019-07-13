@@ -1,7 +1,6 @@
 = Overview
 
-nREPL largely consists of three abstractions: <<design/handlers.adoc,handlers>>,
-<<design/middleware.adoc,middleware>>, and  <<design/transports.adoc,transports>>.
+nREPL largely consists of three abstractions: xref:design/handlers.adoc[handlers], xref:design/middleware.adoc[middleware], and xref:design/transports.adoc[transports].
 These are roughly analogous to the handlers, middleware, and
 adapters of link:https://github.com/ring-clojure/ring[Ring], though there are some
 important semantic differences. Finally, nREPL is fundamentally message-oriented
@@ -10,7 +9,7 @@ provided by e.g.  terminals).
 
 == Messages
 
-It is convention to express nREPL messages as EDN maps. For most purposes, it's sufficient to imagine that we communicate with nREPL via EDN, much the same way as we send and receive JSON to and from a REST endpoint. This is typically not what actually happens, and the details are discussed in <<design/transports.adoc,the transport section>>, however, this conceptual simplification serves us well.
+It is convention to express nREPL messages as EDN maps. For most purposes, it's sufficient to imagine that we communicate with nREPL via EDN, much the same way as we send and receive JSON to and from a REST endpoint. This is typically not what actually happens, and the details are discussed in xref:design/transports.adoc[the transport section], however, this conceptual simplification serves us well.
 
 === Requests
 
