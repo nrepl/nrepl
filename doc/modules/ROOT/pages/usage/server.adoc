@@ -143,7 +143,7 @@ WARNING: You should think long and hard before hot-patching code in
 production, but that's a subject for an unrelated discussion.
 
 nREPL provides a socket-based server that you can trivially start from your
-application.  <<installation.adoc#,Add it to your project's dependencies>>, and add code
+application.  xref:installation.adoc[Add it to your project's dependencies], and add code
 like this to your app:
 
 [source,clojure]
@@ -177,7 +177,7 @@ able to easily restart the server, etc., you might want to put the value
 `start-server` returns into an atom or somesuch.  Anyway, once your app is
 running an nREPL server, you can connect to it from a tool like Leiningen or
 Counterclockwise or REPL-y, or from another Clojure process, as shown
- <<usage/clients.adoc,here>>.
+ xref:usage/clients.adoc[here].
 
 You can stop the server with `(stop-server server)`.
 
@@ -187,7 +187,7 @@ Note that nREPL is not limited to its default messaging protocol, nor to its
 default use of sockets.  nREPL provides a _transport_ abstraction for
 implementing support for alternative protocols and connection methods.
 Alternative transport implementations are available, and implementing your own
-is not difficult; read more about transports <<design/transports.adoc,here>>.
+is not difficult; read more about transports xref:design/transports.adoc[here].
 
 === Server Configuration
 
