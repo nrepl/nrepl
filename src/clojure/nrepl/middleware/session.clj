@@ -165,15 +165,18 @@
         queue (LinkedBlockingQueue.)
         running (atom nil)
         thread (atom nil)
-        main-loop #(let [[exec-id ^Runnable r ^Runnable ack] (.take queue)]
-                     (reset! running exec-id)
-                     (when (try
-                             (.run r)
-                             (compare-and-set! running exec-id nil)
-                             (finally
-                               (compare-and-set! running exec-id nil)))
-                       (some-> ack .run)
-                       (recur)))
+        main-loop #(try
+                     (loop []
+                       (let [[exec-id ^Runnable r ^Runnable ack] (.take queue)]
+                         (reset! running exec-id)
+                         (when (try
+                                 (.run r)
+                                 (compare-and-set! running exec-id nil)
+                                 (finally
+                                   (compare-and-set! running exec-id nil)))
+                           (some-> ack .run)
+                           (recur))))
+                     (catch InterruptedException e))
         spawn-thread #(doto (Thread. main-loop (str "nRepl-session-" id))
                         (.setDaemon true)
                         (.setContextClassLoader cl)
@@ -228,8 +231,10 @@
 (defn- close-session
   "Drops the session associated with the given message."
   [{:keys [session transport] :as msg}]
-  (swap! sessions dissoc (-> session meta :id))
-  (t/send transport (response-for msg :status #{:done :session-closed})))
+  (let [{:keys [close] session-id :id} (meta session)]
+    (close)
+    (swap! sessions dissoc session-id)
+    (t/send transport (response-for msg :status #{:done :session-closed}))))
 
 (defn session
   "Session middleware.  Returns a handler which supports these :op-erations:

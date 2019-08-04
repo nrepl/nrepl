@@ -4,6 +4,7 @@
 
 ### New features
 
+* [#152](https://github.com/nrepl/nrepl/issues/60): Bug fix for 'close' operation to kill session thread
 * [#60](https://github.com/nrepl/nrepl/issues/60): Implemented EDN transport.
 
 ### Changes
