@@ -182,12 +182,15 @@
                         (.setContextClassLoader cl)
                         .start)]
     (reset! thread (spawn-thread))
-    {:interrupt (fn [exec-id] ; nil means interrupt whatever is running
-                  ; returns :idle, interrupted id or nil
+    ;; This map is added to the meta of the session object by `register-session`,
+    ;; it contains functions that are accessed by `interrupt-session` and `close-session`.
+    {:interrupt (fn [exec-id]
+                  ;; nil means interrupt whatever is running
+                  ;; returns :idle, interrupted id or nil
                   (let [current @running]
                     (cond
                       (nil? current) :idle
-                      (and (or (nil? exec-id) (= current exec-id)) ; cas only checks identity, so check equality first
+                      (and (or (nil? exec-id) (= current exec-id)) ;; cas only checks identity, so check equality first
                            (compare-and-set! running current nil))
                       (do
                         (doto ^Thread @thread .interrupt .stop)
