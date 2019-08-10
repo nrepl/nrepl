@@ -2,15 +2,8 @@
 
 VERSION ?= 1.10
 
-# Some tests need to be filtered based on JVM version.  This selector
-# will be mapped to a function in project.clj, and that function
-# determines which `deftest` to run based on their metadata.
-JAVA_VERSION := $(shell lein with-profile +sysutils \
-                        sysutils :java-version-simple | cut -d " " -f 2)
-TEST_SELECTOR := :java$(JAVA_VERSION)
-
 test:
-	lein with-profile +$(VERSION),+test test $(TEST_SELECTOR)
+	lein with-profile +$(VERSION),+test test
 
 eastwood:
 	lein with-profile +$(VERSION),+eastwood eastwood
