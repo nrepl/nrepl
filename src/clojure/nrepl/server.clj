@@ -79,6 +79,9 @@
   (t/send transport (response-for msg :status #{:error :unknown-op :done} :op op)))
 
 (def default-middlewares
+  "Middleware vars that are implicitly merged with any additional
+   middlewares provided to nrepl.server/default-handler."
+
   [#'nrepl.middleware/wrap-describe
    #'nrepl.middleware.interruptible-eval/interruptible-eval
    #'nrepl.middleware.load-file/wrap-load-file
