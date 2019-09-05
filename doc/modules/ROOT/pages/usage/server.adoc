@@ -208,7 +208,7 @@ via the environment variable `NREPL_CONFIG_DIR`.
 
 The local configuration file should be placed in the directory from
 which you're starting the server (normally the root directory of your
-project). Its purpose it to set project-specific settings (e.g. a common port
+project). Its purpose is to set project-specific settings (e.g. a common port
 you always want to use with a particular project). Any setting in `.nrepl.edn`
 will take precedence over a setting in `.nrepl/nrepl.edn`.
 
