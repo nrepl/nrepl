@@ -165,22 +165,28 @@
         queue (LinkedBlockingQueue.)
         running (atom nil)
         thread (atom nil)
-        main-loop #(let [[exec-id ^Runnable r ^Runnable ack] (.take queue)]
-                     (reset! running exec-id)
-                     (when (try
-                             (.run r)
-                             (compare-and-set! running exec-id nil)
-                             (finally
-                               (compare-and-set! running exec-id nil)))
-                       (some-> ack .run)
-                       (recur)))
+        main-loop #(try
+                     (loop []
+                       (let [[exec-id ^Runnable r ^Runnable ack] (.take queue)]
+                         (reset! running exec-id)
+                         (when (try
+                                 (.run r)
+                                 (compare-and-set! running exec-id nil)
+                                 (finally
+                                   (compare-and-set! running exec-id nil)))
+                           (some-> ack .run)
+                           (recur))))
+                     (catch InterruptedException e))
         spawn-thread #(doto (Thread. main-loop (str "nRepl-session-" id))
                         (.setDaemon true)
                         (.setContextClassLoader cl)
                         .start)]
     (reset! thread (spawn-thread))
-    {:interrupt (fn [exec-id] ; nil means interrupt whatever is running
-                  ; returns :idle, interrupted id or nil
+    ;; This map is added to the meta of the session object by `register-session`,
+    ;; it contains functions that are accessed by `interrupt-session` and `close-session`.
+    {:interrupt (fn [exec-id]
+                  ;; nil means interrupt whatever is running
+                  ;; returns :idle, interrupted id or nil
                   (let [current @running]
                     (cond
                       (nil? current) :idle
@@ -228,8 +234,10 @@
 (defn- close-session
   "Drops the session associated with the given message."
   [{:keys [session transport] :as msg}]
-  (swap! sessions dissoc (-> session meta :id))
-  (t/send transport (response-for msg :status #{:done :session-closed})))
+  (let [{:keys [close] session-id :id} (meta session)]
+    (close)
+    (swap! sessions dissoc session-id)
+    (t/send transport (response-for msg :status #{:done :session-closed}))))
 
 (defn session
   "Session middleware.  Returns a handler which supports these :op-erations:

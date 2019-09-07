@@ -6,6 +6,10 @@
 
 * [#60](https://github.com/nrepl/nrepl/issues/60): Implemented EDN transport.
 
+### Bugs fixed
+
+* [#152](https://github.com/nrepl/nrepl/issues/152): Bug fix to kill session threads when closing sessions
+
 ### Changes
 
 * [#137](https://github.com/nrepl/nrepl/pull/137): Expanded Bencode writer to work with
