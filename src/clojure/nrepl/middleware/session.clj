@@ -190,7 +190,7 @@
                   (let [current @running]
                     (cond
                       (nil? current) :idle
-                      (and (or (nil? exec-id) (= current exec-id)) ;; cas only checks identity, so check equality first
+                      (and (or (nil? exec-id) (= current exec-id)) ; cas only checks identity, so check equality first
                            (compare-and-set! running current nil))
                       (do
                         (doto ^Thread @thread .interrupt .stop)

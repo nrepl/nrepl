@@ -8,7 +8,7 @@
 
 ### Bugs fixed
 
-* [#152](https://github.com/nrepl/nrepl/issues/152): Bug fix for 'close' operation to kill session thread
+* [#152](https://github.com/nrepl/nrepl/issues/152): Bug fix to kill session threads when closing sessions
 
 ### Changes
 
