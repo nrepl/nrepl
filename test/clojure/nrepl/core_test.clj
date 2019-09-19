@@ -88,6 +88,19 @@
   ;; TODO: add transit here.
   (= *transport-fn* #'transport/edn))
 
+(defn- check-response-format
+  "Stub fn to check response format. Declared here, so that we can re-defn
+  it to do a spec check later"
+  [resp]
+  resp)
+
+(when-require 'nrepl.spec
+              (defn- check-response-format
+                [resp]
+                (if (clojure.spec.alpha/valid? :nrepl.spec/message resp)
+                  resp
+                  (throw (Exception. (clojure.spec.alpha/explain-str :nrepl.spec/message resp))))))
+
 (defn- clean-response
   "Cleans a response to help testing.
 
@@ -114,6 +127,7 @@
             (update resp ::middleware.print/truncated-keys #(mapv keyword %))
             resp))]
     (cond-> resp
+      (strict-transport?)       check-response-format
       true                      de-identify
       (not (strict-transport?)) normalize-status
       (not (strict-transport?)) keywordize-truncated-keys)))
@@ -191,7 +205,7 @@
 
 (def-repl-test session-lifecycle
   (is (= #{:error :unknown-session :done}
-         (-> (message timeout-client {:session "abc"})
+         (-> (message timeout-client {:session "00000000-0000-0000-0000-000000000000"})
              combine-responses
              clean-response
              :status)))
