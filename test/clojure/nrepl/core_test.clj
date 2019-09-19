@@ -92,14 +92,10 @@
   "Stub fn to check response format. Declared here, so that we can re-defn
   it to do a spec check later"
   [resp]
+  (when-require 'nrepl.spec
+                (when-not (#'clojure.spec.alpha/valid? :nrepl.spec/message resp)
+                  (throw (Exception. (#'clojure.spec.alpha/explain-str :nrepl.spec/message resp)))))
   resp)
-
-(when-require 'nrepl.spec
-              (defn- check-response-format
-                [resp]
-                (if (clojure.spec.alpha/valid? :nrepl.spec/message resp)
-                  resp
-                  (throw (Exception. (clojure.spec.alpha/explain-str :nrepl.spec/message resp))))))
 
 (defn- clean-response
   "Cleans a response to help testing.
