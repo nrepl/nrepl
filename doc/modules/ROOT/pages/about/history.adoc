@@ -23,8 +23,6 @@ by nREPL could participate in its development as easily as possible.
 Cheers, +
 Chas
 
-'''
-
 == To Infinity and Beyond
 
 In the spring of 2018 Chas decided to hand over the development of
