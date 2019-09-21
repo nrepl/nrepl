@@ -86,11 +86,14 @@
 
 (defn- strict-transport? []
   ;; TODO: add transit here.
-  (= *transport-fn* #'transport/edn))
+  (or (= *transport-fn* #'transport/edn)
+      (when-require 'fastlane.core
+                    (or (= *transport-fn* #'fastlane.core/transit+msgpack)
+                        (= *transport-fn* #'fastlane.core/transit+json)
+                        (= *transport-fn* #'fastlane.core/transit+json-verbose)))))
 
 (defn- check-response-format
-  "Stub fn to check response format. Declared here, so that we can re-defn
-  it to do a spec check later"
+  "checks response against spec, if available it to do a spec check later"
   [resp]
   (when-require 'nrepl.spec
                 (when-not (#'clojure.spec.alpha/valid? :nrepl.spec/message resp)
@@ -123,10 +126,10 @@
             (update resp ::middleware.print/truncated-keys #(mapv keyword %))
             resp))]
     (cond-> resp
-      (strict-transport?)       check-response-format
       true                      de-identify
       (not (strict-transport?)) normalize-status
-      (not (strict-transport?)) keywordize-truncated-keys)))
+      (not (strict-transport?)) keywordize-truncated-keys
+      (strict-transport?)       check-response-format)))
 
 (def-repl-test eval-literals
   (are [literal] (= (binding [*ns* (find-ns 'user)] ; needed for the ::keyword
