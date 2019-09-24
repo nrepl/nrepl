@@ -93,10 +93,23 @@
             ;; TODO: new options: out-quota | err-quota
             opts {::print/buffer-size (or out-limit (get (meta session) :out-limit))}
             out (print/replying-PrintWriter :out msg opts)
-            err (print/replying-PrintWriter :err msg opts)]
+            err (print/replying-PrintWriter :err msg opts)
+            cl (when (:sideloader/resolve (meta session))
+                 (classloader (.getContextClassLoader (Thread/currentThread))
+                              (fn [type name]
+                                (when-some [f (:sideloader/resolve (meta session))]
+                                  (f type name)))))]
+        (when cl
+          (.setContextClassLoader (Thread/currentThread) cl))
         (try
           (clojure.main/repl
-           :eval (if eval (find-var (symbol eval)) clojure.core/eval)
+           :eval (let [eval-fn (if eval (find-var (symbol eval)) clojure.core/eval)]
+                   (fn [form]
+                     (if cl
+                       (with-bindings
+                         {clojure.lang.Compiler/LOADER cl}
+                         (eval-fn form))
+                       (eval-fn form))))
            :init #(let [bindings
                         (-> (get-thread-bindings)
                             (into caught/default-bindings)
@@ -110,14 +123,9 @@
                                    ;; specific hack reasonable?
                                    #'clojure.test/*test-out* out})
                             (cond-> explicit-ns (assoc #'*ns* explicit-ns)
-                                    file (assoc #'*file* file)))
-                        cl (classloader (.getContextClassLoader (Thread/currentThread))
-                                        (fn [type name]
-                                          (when-some [f (:sideloader/resolve (meta session))]
-                                            (f type name))))]
+                                    file (assoc #'*file* file)))]
                     (pop-thread-bindings)
-                    (push-thread-bindings bindings)
-                    (.setContextClassLoader (Thread/currentThread) cl))
+                    (push-thread-bindings bindings))
            :read (if (string? code)
                    (let [reader (source-logging-pushback-reader code line column)]
                      #(try (read {:read-cond :allow :eof %2} reader)

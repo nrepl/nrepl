@@ -1141,9 +1141,7 @@
                                    code-snippet
                                    {"hello" "Hello nREPL"} {})))))
   (let [code-snippet (code
-                      (with-bindings
-                        {clojure.lang.Compiler/LOADER (.getContextClassLoader (Thread/currentThread))}
-                        (require '[foo.bar :as bar]))
+                      (require '[foo.bar :as bar])
                       (bar/hello))]
     (testing "Loading source as resource (clj)"
       (is (= "Hello nREPL"
@@ -1159,11 +1157,9 @@
                                    {})))))
   (testing "Loading class"
     (let [code-snippet (code
-                        (with-bindings
-                          {clojure.lang.Compiler/LOADER (.getContextClassLoader (Thread/currentThread))}
-                          (do
-                            (import 'nrepl.HelloFactory)
-                            nil))
+                        (do
+                          (import 'nrepl.HelloFactory)
+                          nil)
                         (nrepl.HelloFactory/hello))]
       (is (= "Hello nREPL"
              (eval-with-sideloader session
