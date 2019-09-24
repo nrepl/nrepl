@@ -1,5 +1,6 @@
 (ns nrepl.core-test
   (:require
+   [clojure.java.io :as io]
    [clojure.main]
    [clojure.set :as set]
    [clojure.string :as str]
@@ -1097,31 +1098,85 @@
       (is (= {:status #{:done}}
              resp3)))))
 
-(defn eval-with [session code resources classes]
-  (let [eval-id (uuid)
+(defn- sideloader-client
+  [session resources classes]
+  (fn [{:keys [type name]}]
+    (case type
+      "resource"
+      (session {:id      (uuid)
+                :op      "sideloader-provide"
+                :type    type
+                :name    name
+                :content (if-some [^String res (resources name)]
+                           (-> res
+                               (.getBytes "UTF-8")
+                               java.io.ByteArrayInputStream.
+                               sideloader/base64-encode)
+                           "")})
+
+      "class"
+      (session {:id      (uuid)
+                :op      "sideloader-provide"
+                :type    type
+                :name    name
+                :content (if-some [^File file (classes name)]
+                           (-> file
+                               io/input-stream
+                               sideloader/base64-encode)
+                           "")}))))
+
+(defn- eval-with-sideloader [session code resources classes]
+  (let [eval-id   (uuid)
         loader-id (uuid)
-        _ (session {:id loader-id :op "sideloader-start"})
-        msgs (session {:id eval-id :op "eval" :code (pr-str code)})]
+        _         (session {:id loader-id :op "sideloader-start"})
+        msgs      (session {:id eval-id :op "eval" :code code})
+        slc       (sideloader-client session resources classes)]
     (->> msgs
-         (remove (fn [{:keys [id status type name] :as msg}]
-                   (when (and (= id loader-id) (some #{"sideloader-lookup" :sideloader-lookup} status))
-                     (when-some [^String res (when (= type "resource")
-                                               (resources name))]
-                       (session {:id (uuid)
-                                 :op "sideloader-provide"
-                                 :type type
-                                 :name name
-                                 :content (-> res (.getBytes "UTF-8") java.io.ByteArrayInputStream.
-                                              sideloader/base64-encode)})))
+         (remove (fn [{:keys [id status] :as msg}]
+                   (when (and (= id loader-id)
+                              (some #{"sideloader-lookup" :sideloader-lookup} status))
+                     (slc msg))
                    (not= id eval-id)))
-         (reduce (fn [v {:keys [id status value]}]
+         (map read-response-value)
+         (reduce (fn [v {:keys [id status value] :as msg}]
                    (cond-> (or v value)
-                     (some #{:done "done"} status) reduced)) nil)
-         read-string)))
+                     (some #{:done "done"} status) reduced)) nil))))
 
 (def-repl-test sideloader
-  ; resources
-  (is (= "Hello nREPL" (eval-with
-                        session
-                        '(slurp (.getResourceAsStream (.getContextClassLoader (Thread/currentThread)) "hello"))
-                        {"hello" "Hello nREPL"} {}))))
+  (testing "Loading resources"
+    (let [code-snippet (code (slurp (.getResourceAsStream (.getContextClassLoader (Thread/currentThread)) "hello")))]
+      (is (= "Hello nREPL"
+             (eval-with-sideloader session
+                                   code-snippet
+                                   {"hello" "Hello nREPL"} {})))))
+  (let [code-snippet (code
+                      (with-bindings
+                        {clojure.lang.Compiler/LOADER (.getContextClassLoader (Thread/currentThread))}
+                        (require '[foo.bar :as bar]))
+                      (bar/hello))]
+    (testing "Loading source as resource (clj)"
+      (is (= "Hello nREPL"
+             (eval-with-sideloader session
+                                   code-snippet
+                                   {"foo/bar.clj" "(ns foo.bar) (defn hello [] \"Hello nREPL\")"}
+                                   {}))))
+    (testing "Loading source as resource (cljc)"
+      (is (= "Hello nREPL"
+             (eval-with-sideloader session
+                                   code-snippet
+                                   {"foo/bar.cljc" "(ns foo.bar) (defn hello [] \"Hello nREPL\")"}
+                                   {})))))
+  (testing "Loading class"
+    (let [code-snippet (code
+                        (with-bindings
+                          {clojure.lang.Compiler/LOADER (.getContextClassLoader (Thread/currentThread))}
+                          (do
+                            (import 'nrepl.HelloFactory)
+                            nil))
+                        (nrepl.HelloFactory/hello))]
+      (is (= "Hello nREPL"
+             (eval-with-sideloader session
+                                   code-snippet
+                                   {}
+                                   {"nrepl.HelloFactory"
+                                    (File. project-base-dir "test-resources/HelloFactory.class")}))))))

@@ -67,7 +67,9 @@
         "sideloader-provide"
         (if-some [p (@pending [type name])]
           (do
-            (deliver p (base64-decode content))
+            (deliver p (let [bytes (base64-decode content)]
+                         (when (pos? (count bytes))
+                           bytes)))
             (swap! pending dissoc [type name])
             (t/send transport (response-for msg {:status :done})))
           (do
