@@ -70,3 +70,6 @@ monitor the exchange of messages between the client and nREPL
 requests and responses). That's a great way to get a better understanding
 of nREPL server responses.
 ====
+
+A partial `clojure.spec` for nREPL messages in provided as `nrepl.spec`. This covers
+most messages/responses supported by the default middlewares.

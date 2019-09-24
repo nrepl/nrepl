@@ -5,7 +5,7 @@
 ### New features
 
 * [#60](https://github.com/nrepl/nrepl/issues/60): Implemented EDN transport.
-
+* [#140](https://github.com/nrepl/nrepl/issues/140): Added initial version of spec for message responses. These are used during Clojure 1.10 tests.
 ### Bugs fixed
 
 * [#152](https://github.com/nrepl/nrepl/issues/152): Bug fix to kill session threads when closing sessions
