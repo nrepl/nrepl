@@ -54,15 +54,17 @@
     (fn [{:keys [op type name content transport session] :as msg}]
       (case op
         "sideloader-start"
-        (alter-meta! session assoc :sideloader/resolve
-                     (fn [type name]
-                       (t/send transport (response-for msg
-                                                       {:status :sideloader-lookup
-                                                        :type type
-                                                        :name name}))
-                       (let [p (promise)]
-                         (swap! pending assoc [(clojure.core/name type) name] p)
-                         @p)))
+        (do
+          (alter-meta! session assoc :sideloader/resolve
+                       (fn [type name]
+                         (t/send transport (response-for msg
+                                                         {:status :sideloader-lookup
+                                                          :type type
+                                                          :name name}))
+                         (let [p (promise)]
+                           (swap! pending assoc [(clojure.core/name type) name] p)
+                           @p)))
+          (t/send transport (response-for msg {:status :done})))
 
         "sideloader-provide"
         (if-some [p (@pending [type name])]
