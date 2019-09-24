@@ -11,7 +11,8 @@
 
 (def ^{:private true} op-names
   #{"load-file" "ls-sessions" "interrupt" "stdin"
-    "describe" "eval" "close" "clone"})
+    "describe" "eval" "close" "clone"
+    "sideloader-start" "sideloader-provide"})
 
 (def-repl-test simple-describe
   (let [{{:keys [nrepl clojure java]} :versions

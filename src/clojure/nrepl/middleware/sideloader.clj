@@ -6,7 +6,7 @@
    [nrepl.misc :refer [response-for]])
   (:import nrepl.transport.Transport))
 
-;; TODO: dedup with base64 in elisions branch once both are merged 
+;; TODO: dedup with base64 in elisions branch once both are merged
 (defn base64-encode [^java.io.InputStream in]
   (let [table "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
         sb (StringBuilder.)]
