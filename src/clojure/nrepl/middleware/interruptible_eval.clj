@@ -61,13 +61,13 @@
   [parent f]
   (proxy [clojure.lang.DynamicClassLoader] [parent]
     (findResource [name]
-      (when-some  [bytes (f :resource name)]
+      (when-some  [bytes (f "resource" name)]
         (let [file (doto (java.io.File/createTempFile "unrepl-sideload-" (str "-" (re-find #"[^/]*$" name)))
                      .deleteOnExit)]
           (io/copy bytes file)
           (-> file .toURI .toURL))))
     (findClass [name]
-      (if-some  [bytes (f :class name)]
+      (if-some  [bytes (f "class" name)]
         (.defineClass ^clojure.lang.DynamicClassLoader this name bytes nil)
         (throw (ClassNotFoundException. name))))))
 
