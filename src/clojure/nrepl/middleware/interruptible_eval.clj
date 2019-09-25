@@ -62,7 +62,7 @@
   (proxy [clojure.lang.DynamicClassLoader] [parent]
     (findResource [name]
       (when-some  [bytes (f "resource" name)]
-        (let [file (doto (java.io.File/createTempFile "unrepl-sideload-" (str "-" (re-find #"[^/]*$" name)))
+        (let [file (doto (java.io.File/createTempFile "nrepl-sideload-" (str "-" (re-find #"[^/]*$" name)))
                      .deleteOnExit)]
           (io/copy bytes file)
           (-> file .toURI .toURL))))
