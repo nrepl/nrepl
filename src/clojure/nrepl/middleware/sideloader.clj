@@ -1,5 +1,9 @@
 (ns nrepl.middleware.sideloader
-  {:author "Christophe Grand"}
+  "Support the ability to interactively load resources (including Clojure source
+  files) and classes from the client. This can be used to add dependencies to
+  the nREPL environment after initial startup."
+  {:author "Christophe Grand"
+   :added  "0.7.0"}
   (:require
    [nrepl.middleware :as middleware :refer [set-descriptor!]]
    [nrepl.transport :as t]
@@ -89,7 +93,7 @@
                             {:doc "Starts a sideloading session."
                              :requires {"session" "the id of the session"}
                              :optional {}
-                             :returns {"status" "\"sideloader-lookup\", never ever returns \"done\"."}}
+                             :returns {"status" "\"done\", then \"sideloader-lookup\" as it occurs"}}
                             "sideloader-provide"
                             {:doc "Provides a requested class or resource."
                              :requires {"session" "the id of the session"
