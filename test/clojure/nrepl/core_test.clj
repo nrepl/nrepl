@@ -704,7 +704,29 @@
              (:status (clean-response (first (message session {:op "interrupt" :interrupt-id "foo"}))))))
       (is (= #{:done} (-> session (message {:op "interrupt"}) first clean-response :status)))
       (is (= #{} (reduce disj #{:done :interrupted} (-> resp combine-responses clean-response :status))))
-      (is (= [true] (repl-values session "halted?"))))))
+      (is (= [true] (repl-values session "halted?")))))
+  (testing "interrupt then stop"
+    (let [resp (message session {:op "eval"
+                                 :code (code
+                                        (defn run []
+                                          (if (.isInterrupted (Thread/currentThread))
+                                            "Clean stop!"
+                                            (recur)))
+                                        (run))})]
+      (Thread/sleep 100)
+      (is (= #{:done}
+             (->> session
+                  (#(message % {:op "interrupt"}))
+                  first
+                  clean-response
+                  :status)))
+      (let [r (->> resp
+                   combine-responses
+                   clean-response)]
+        (is (= #{:done :interrupted}
+               (:status r)))
+        (is (= "Clean stop!"
+               (read-string (last (:value r)))))))))
 
 ;; NREPL-66: ensure that bindings of implementation vars aren't captured by user sessions
 ;; (https://github.com/clojure-emacs/cider/issues/785)
@@ -931,7 +953,7 @@
                 first
                 clean-response
                 :status)))
-    (is (= #{:done :interrupted}
+    (is (= #{:done :eval-error :interrupted}
            (->> resp
                 combine-responses
                 clean-response

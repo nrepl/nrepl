@@ -192,8 +192,14 @@
                       (nil? current) :idle
                       (and (or (nil? exec-id) (= current exec-id)) ; cas only checks identity, so check equality first
                            (compare-and-set! running current nil))
-                      (do
-                        (doto ^Thread @thread .interrupt .stop)
+                      (let [t ^Thread @thread]
+                        ;; First try interrup. Allow a timeout
+                        ;; then if not terminated, stop
+                        (.interrupt t)
+                        (Thread/sleep 100)
+                        (when-not (= (Thread$State/TERMINATED)
+                                     (.getState t))
+                          (.stop t))
                         (reset! thread (spawn-thread))
                         current))))
      :close #(.interrupt ^Thread @thread)
