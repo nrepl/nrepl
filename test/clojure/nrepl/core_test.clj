@@ -953,7 +953,7 @@
                 first
                 clean-response
                 :status)))
-    (is (= #{:done :eval-error :interrupted}
+    (is (= #{:done :interrupted}
            (->> resp
                 combine-responses
                 clean-response

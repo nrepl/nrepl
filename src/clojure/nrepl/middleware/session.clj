@@ -193,13 +193,14 @@
                       (and (or (nil? exec-id) (= current exec-id)) ; cas only checks identity, so check equality first
                            (compare-and-set! running current nil))
                       (let [t ^Thread @thread]
-                        ;; First try interrup. Allow a timeout
-                        ;; then if not terminated, stop
+                        ;; First interrupt the thread. Then wait for a timeout
+                        ;; if not terminated, do a hard stop
                         (.interrupt t)
-                        (Thread/sleep 100)
-                        (when-not (= (Thread$State/TERMINATED)
-                                     (.getState t))
-                          (.stop t))
+                        (future
+                          (Thread/sleep 5000)
+                          (when-not (= (Thread$State/TERMINATED)
+                                       (.getState t))
+                            (.stop t)))
                         (reset! thread (spawn-thread))
                         current))))
      :close #(.interrupt ^Thread @thread)
