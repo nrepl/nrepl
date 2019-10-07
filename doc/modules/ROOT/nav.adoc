@@ -12,6 +12,7 @@
 * xref:ops.adoc[Built-in Ops]
 * xref:extensions.adoc[Extensions]
 * xref:hacking_on_nrepl.adoc[Hacking on nREPL]
+* xref:building_clients.adoc[Building Clients]
 * xref:beyond_clojure.adoc[Beyond Clojure]
 * xref:faq.adoc[FAQ]
 * xref:troubleshooting.adoc[Troubleshooting]
