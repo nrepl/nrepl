@@ -184,7 +184,7 @@ Optional parameters::
 {blank}
 
 Returns::
-* `:status` "done", then "sideloader-lookup" as it occurs
+* `:status` "sideloader-lookup", never ever returns "done".
 
 
 

@@ -1143,10 +1143,6 @@
                      (some #{:done "done"} status) reduced)) nil))))
 
 (def-repl-test sideloader
-  (testing "Starting sideloader"
-    (is (= [{:status #{:done}}]
-           (->> (message session {:op "sideloader-start"})
-                (mapv clean-response)))))
   (testing "Loading resources"
     (let [code-snippet (code (slurp (.getResourceAsStream (.getContextClassLoader (Thread/currentThread)) "hello")))]
       (is (= "Hello nREPL"

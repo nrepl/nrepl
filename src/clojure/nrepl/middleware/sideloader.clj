@@ -67,8 +67,7 @@
                                                           :name name}))
                          (let [p (promise)]
                            (swap! pending assoc [(clojure.core/name type) name] p)
-                           @p)))
-          (t/send transport (response-for msg {:status :done})))
+                           @p))))
 
         "sideloader-provide"
         (if-some [p (@pending [type name])]
@@ -93,7 +92,7 @@
                             {:doc "Starts a sideloading session."
                              :requires {"session" "the id of the session"}
                              :optional {}
-                             :returns {"status" "\"done\", then \"sideloader-lookup\" as it occurs"}}
+                             :returns {"status" "\"sideloader-lookup\", never ever returns \"done\"."}}
                             "sideloader-provide"
                             {:doc "Provides a requested class or resource."
                              :requires {"session" "the id of the session"
