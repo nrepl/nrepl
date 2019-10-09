@@ -705,14 +705,35 @@
       (is (= #{:done} (-> session (message {:op "interrupt"}) first clean-response :status)))
       (is (= #{} (reduce disj #{:done :interrupted} (-> resp combine-responses clean-response :status))))
       (is (= [true] (repl-values session "halted?")))))
-  (testing "interrupt then stop"
+  (testing "interrupting a sleep"
     (let [resp (message session {:op "eval"
                                  :code (code
-                                        (defn run []
-                                          (if (.isInterrupted (Thread/currentThread))
-                                            "Clean stop!"
-                                            (recur)))
-                                        (run))})]
+                                        (do
+                                          (Thread/sleep 10000)
+                                          "Done"))})]
+      (Thread/sleep 100)
+      (is (= #{:done}
+             (->> session
+                  (#(message % {:op "interrupt"}))
+                  first
+                  clean-response
+                  :status)))
+      (let [r (->> resp
+                   combine-responses
+                   clean-response)]
+        (is (= #{:done :eval-error :interrupted}
+               (:status r)))
+        (is (= "class java.lang.InterruptedException"
+               (:ex r))))))
+  (testing "interruptable code"
+    (let [resp (message session {:op "eval"
+                                 :code (code
+                                        (do
+                                          (defn run []
+                                            (if (.isInterrupted (Thread/currentThread))
+                                              "Clean stop!"
+                                              (recur)))
+                                          (run)))})]
       (Thread/sleep 100)
       (is (= #{:done}
              (->> session
@@ -953,7 +974,7 @@
                 first
                 clean-response
                 :status)))
-    (is (= #{:done :interrupted}
+    (is (= #{:done :eval-error :interrupted}
            (->> resp
                 combine-responses
                 clean-response

@@ -196,6 +196,7 @@
                         ;; First interrupt the thread. Then wait for a timeout
                         ;; if not terminated, do a hard stop
                         (.interrupt t)
+                        (Thread/sleep 100)
                         (future
                           (Thread/sleep 5000)
                           (when-not (= (Thread$State/TERMINATED)
