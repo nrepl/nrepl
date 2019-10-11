@@ -402,20 +402,21 @@
       (is (= {:ns "user"} resp3))
       (is (= {:status #{:done}} resp4))))
 
-  ;; This test currently fails intermittently on CI.
-  ;; See https://github.com/nrepl/nrepl/issues/132
-  #_(testing "interruptible"
-      (let [eval-responses (->> (message session {:op "eval"
-                                                  :code (code (range))
-                                                  ::middleware.print/stream? 1})
-                                (map clean-response))
-            _ (Thread/sleep 100)
-            interrupt-responses (->> (message session {:op "interrupt"})
-                                     (mapv clean-response))]
+  ;; Making the buffer size large expose the odd of interrupting half way through
+  ;; a message being written, which was the cause of https://github.com/nrepl/nrepl/issues/132
+  (testing "interruptible"
+    (let [eval-responses (->> (message session {:op "eval"
+                                                :code (code (range))
+                                                ::middleware.print/stream? 1
+                                                ::middleware.print/buffer-size 100000})
+                              (map clean-response))
+          _ (Thread/sleep 100)
+          interrupt-responses (->> (message session {:op "interrupt"})
+                                   (mapv clean-response))]
       ;; check the interrupt succeeded first; otherwise eval-responses will not terminate
-        (is (= [{:status #{:done}}] interrupt-responses))
-        (is (.startsWith (:value (first eval-responses)) "(0 1 2 3"))
-        (is (= {:status #{:done :interrupted}} (last eval-responses)))))
+      (is (= [{:status #{:done}}] interrupt-responses))
+      (is (.startsWith (:value (first eval-responses)) "(0 1 2 3"))
+      (is (= {:status #{:done :interrupted}} (last eval-responses)))))
 
   (testing "respects buffer-size option"
     (is (= [{:value "(0 1 2 3"}
