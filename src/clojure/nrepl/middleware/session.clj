@@ -150,6 +150,30 @@
       (and (instance? Compiler$CompilerException e)
            (instance? ThreadDeath (.getCause e)))))
 
+(defn- interrupt-stop
+  "This works as follows
+
+  1. Calls interrupt
+  2. Wait 100ms. This is mainly to allow thread that respond quickly to
+     interrupts to send a message back in response to the interrupt. Significantly,
+     this includes an exception thrown by `Thread/sleep`.
+  3. Asynchronously: wait another 5000ms for the thread to cleanly terminate.
+     Only calls `.stop` if it fails to do so (and risk state corruption)
+
+  This set of behaviours strikes a balance between allowing a thread to respond
+  to an interrupt, but also ensuring we actually kill runaway processes.
+
+  If required, a future feature could make both timeouts configurable, either
+  as a server config or parameters provided by the `interrupt` message."
+  [^Thread t]
+  (.interrupt t)
+  (Thread/sleep 100)
+  (future
+    (Thread/sleep 5000)
+    (when-not (= (Thread$State/TERMINATED)
+                 (.getState t))
+      (.stop t))))
+
 (defn session-exec
   "Takes a session id and returns a maps of three functions meant for interruptible-eval:
    * :exec, takes an id (typically a msg-id), a thunk and an ack runnables (see #'default-exec for ampler
@@ -193,10 +217,10 @@
                       (and (or (nil? exec-id) (= current exec-id)) ; cas only checks identity, so check equality first
                            (compare-and-set! running current nil))
                       (do
-                        (doto ^Thread @thread .interrupt .stop)
+                        (interrupt-stop @thread)
                         (reset! thread (spawn-thread))
                         current))))
-     :close #(.interrupt ^Thread @thread)
+     :close #(interrupt-stop @thread)
      :exec (fn [exec-id r ack]
              (.put queue [exec-id r ack]))}))
 
