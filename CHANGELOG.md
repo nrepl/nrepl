@@ -11,6 +11,7 @@
 ### Bugs fixed
 
 * [#152](https://github.com/nrepl/nrepl/issues/152): Bug fix to kill session threads when closing sessions
+* [#132](https://github.com/nrepl/nrepl/issues/132): Bug fix to avoid malformed bencode messages during interrutps, mainly affecting streamed printing
 
 ### Changes
 
