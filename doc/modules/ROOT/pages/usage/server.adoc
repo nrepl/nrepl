@@ -181,6 +181,47 @@ Counterclockwise or REPL-y, or from another Clojure process, as shown
 
 You can stop the server with `(stop-server server)`.
 
+=== Embedding in a Java application
+
+Embedding nREPL in an existing Java application can also be useful - if your Java code allows for it you can still introspect values and call methods while the app is running. Since nREPL currently does not have a Java API, you'll need to use Clojure's interop features.
+
+[source,java]
+----
+import clojure.java.api.Clojure;
+import clojure.lang.IFn;
+
+public class App {
+    public static void main(String[] args) {
+        IFn require = Clojure.var("clojure.core", "require");
+        require.invoke(Clojure.read("nrepl.server"));
+        IFn start = Clojure.var("nrepl.server", "start-server");
+        int port = 7888;
+        start.invoke(Clojure.read(":port"), Clojure.read(Integer.toString(port)));
+        System.out.println("nrepl server started on port " + port);
+    }
+}
+----
+
+You can pull in the needed dependencies by adding this to your pom.xml:
+
+[source,xml]
+----
+<dependencies>
+    <dependency>
+        <groupId>nrepl</groupId>
+        <artifactId>nrepl</artifactId>
+        <version>0.7.0-alpha2</version>
+    </dependency>
+    <dependency>
+        <groupId>org.clojure</groupId>
+        <artifactId>clojure</artifactId>
+        <version>1.10.0</version>
+    </dependency>
+</dependencies>
+----
+
+A more complete example, including the use of custom middleware, can be found link:https://github.com/nrepl/nrepl-java-example[here].
+
 == Server options
 
 Note that nREPL is not limited to its default messaging protocol, nor to its
