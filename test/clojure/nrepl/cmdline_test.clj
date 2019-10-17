@@ -50,16 +50,6 @@
             pump-in (ClosingPipe. System/in in)]
         proc))))
 
-(defmacro with-err-str
-  "Evaluates exprs in a context in which *err* is bound to a fresh
-  StringWriter.  Returns the string created by any nested printing
-  calls."
-  [& body]
-  `(let [s# (new java.io.StringWriter)]
-     (binding [*err* s#]
-       ~@body
-       (str s#))))
-
 (deftest repl-intro
   (is (re-find #"nREPL" (cmd/repl-intro))))
 
@@ -107,12 +97,18 @@
 
 (deftest ack-server
   (with-redefs [ack/send-ack (fn [_ _ _] true)]
-    (let [output (with-err-str
+    (let [output (with-out-str
+                   (cmd/ack-server {:port 6000}
+                                   {:ack-port 8000
+                                    :transport #'transport/bencode
+                                    :verbose true}))]
+      (is (= "ack'ing my port 6000 to other server running on port 8000\n"
+             output)))
+    (let [output (with-out-str
                    (cmd/ack-server {:port 6000}
                                    {:ack-port 8000
                                     :transport #'transport/bencode}))]
-      (is (= "ack'ing my port 6000 to other server running on port 8000 true\n"
-             output)))))
+      (is (= "" output)))))
 
 (deftest server-started-message
   (with-open [server (server/start-server

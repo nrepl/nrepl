@@ -19,6 +19,7 @@
   maps that have keywords or symbols as keys. This allowed a simplification of the
   Bencode transport itself.
 * [#158](https://github.com/nrepl/nrepl/issues/158): Interrupt now runs in three stages: calls `interrupt` on the thread, waits 100ms for the thread to respond and return messages, then waits 5000ms for the thread to terminate itself. A hard `.stop` is only called if it fails to do so.
+* [#167](https://github.com/nrepl/nrepl/issues/167): Allow suppressing ack message when using nrepl.cmdline
 
 ## 0.6.0 (2019-02-05)
 
