@@ -128,7 +128,8 @@ Exit:      Control+D or (exit) or (quit)"
     "--connect"
     "--color"
     "--help"
-    "--version"})
+    "--version"
+    "--verbose"})
 
 (defn- expand-shorthands
   "Expand shorthand options into their full forms."
@@ -171,7 +172,8 @@ Exit:      Control+D or (exit) or (quit)"
   -m/--middleware MIDDLEWARE  A sequence of vars, representing middleware you wish to mix in to the nREPL handler.
   -t/--transport TRANSPORT    The transport to use. By default that's nrepl.transport/bencode.
   --help                      Show this help message.
-  -v/--version                Display the nREPL version."))
+  -v/--version                Display the nREPL version.
+  --verbose                   Show verbose output."))
 
 (defn- require-and-resolve
   "Attempts to resolve the config `key`'s `value` as a namespaced symbol
@@ -378,10 +380,10 @@ Exit:      Control+D or (exit) or (quit)"
   (when-let [ack-port (:ack-port options)]
     (let [port (:port server)
           transport (:transport options)]
-      (binding [*out* *err*]
+      (when (:verbose options)
         (println (format "ack'ing my port %d to other server running on port %d"
-                         port ack-port)
-                 (send-ack port ack-port transport))))))
+                         port ack-port)))
+      (send-ack port ack-port transport))))
 
 (defn server-started-message
   "Returns nREPL server started message that some tools rely on to parse the
