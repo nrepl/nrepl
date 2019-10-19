@@ -259,7 +259,7 @@
   "Drops the session associated with the given message."
   [{:keys [session transport] :as msg}]
   (let [{:keys [close] session-id :id} (meta session)]
-    (close)
+    (when close (close))
     (swap! sessions dissoc session-id)
     (t/send transport (response-for msg :status #{:done :session-closed}))))
 
