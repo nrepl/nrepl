@@ -160,3 +160,31 @@
       (finally
         (Thread/sleep 2000)
         (.destroy server-process)))))
+
+;; This ignores *transport-fn*, as it tests the TTY transport
+(deftest tty-server
+  (let [free-port      (with-open [ss (java.net.ServerSocket.)]
+                         (.bind ss nil)
+                         (.getLocalPort ss))
+        ack-port       (:port *server*)
+        server-process (apply sh ["java" "-Dnreplacktest=y"
+                                  "-cp" (System/getProperty "java.class.path")
+                                  "nrepl.main"
+                                  "--port" (str free-port)
+                                  "--ack" (str ack-port)
+                                  "--transport" "nrepl.transport/tty"])
+        acked-port     (ack/wait-for-ack 10000)]
+    (try
+      (let [c    (org.apache.commons.net.telnet.TelnetClient.)
+            _    (.connect c "localhost" free-port)
+            out  (java.io.PrintStream. (.getOutputStream c))
+            br   (java.io.BufferedReader. (java.io.InputStreamReader. (.getInputStream c)))
+            _    (doto out
+                   (.println "(System/getProperty \"nreplacktest\")")
+                   (.flush))
+            resp (doall (repeatedly 3 #(.readLine br)))
+            _    (.disconnect c)]
+        (is (= "user=> \"y\""
+               (last resp))))
+      (finally
+        (.destroy server-process)))))
