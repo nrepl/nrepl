@@ -29,7 +29,8 @@
                                     :sign-releases false}]]
 
   :profiles {:fastlane {:dependencies [[nrepl/fastlane "0.1.0"]]}
-             :test {:dependencies [[com.hypirion/io "0.3.1"]]
+             :test {:dependencies [[com.hypirion/io "0.3.1"]
+                                   [commons-net/commons-net "3.6"]]
                     :plugins      [[test2junit "1.4.2"]]
                     :test2junit-output-dir "test-results"
                     :aliases {"test" "test2junit"}}
