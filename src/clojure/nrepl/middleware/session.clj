@@ -201,7 +201,7 @@
                            (some-> ack .run)
                            (recur))))
                      (catch InterruptedException e))
-        spawn-thread #(doto (Thread. main-loop (str "nRepl-session-" id))
+        spawn-thread #(doto (Thread. main-loop (str "nREPL-session-" id))
                         (.setDaemon true)
                         (.setContextClassLoader cl)
                         .start)]
