@@ -142,21 +142,27 @@ should do the same, or use a similar alternative base handler.
 
 == Sessions
 
-There are two types of sessions: ephemeral sessions and long-lived sessions
-(or registered sessions).
+Each nREPL message is evaluated within a session. There are two types of sessions:
+_ephemeral sessions_ and _long-lived sessions_ (or registered sessions).
 
-When a message arrives without a session id, an ephemeral session is created
-and assigned to it. Ephemeral sessions are bound to the processing of a single message.
-
-The only way to create a long-lived session is to clone an existing session (even an
-ephemeral one). Cloning a session creates a new session that initially shares the link:https://clojure.org/reference/vars[dynamic bindings] of the original session.
-
-Sessions (long-lived ones since they are the useful ones) serialize evaluations
-and make dynamic bindings available for inspection to other ops.
-
-All other ops have no serialization guarantee (they are serialized in the current
+*Ephemeral sessions* are used for once off processing of a single message. If a message
+arrives without a session id, one is created and assigned to it. This is discarded
+after processing the message. There's no serialisation guarantee with processing
+of messages in ephemeral sessions (though they are serialized in the current
 implementation since they run on the server IO thread). However evals run on a
 dedicated thread so a running eval can't block another op.
+
+*Long-lived sessions* provide two things, persistence of values between
+messages, and a guarantee for serial execution of messages. The only way to
+create a long-lived session is to clone an existing session (even an
+ephemeral one).
+
+Sessions persist link:https://clojure.org/reference/vars[dynamic vars]
+(collected by `get-thread-bindings`) against a unique lookup. This allows
+you to have a different value for `*e` from different REPL clients
+(e.g. two separate REPL-y instances). An existing session can be cloned
+to create a new one, which then can be modified. This allows for copying
+of existing preferences into new environments.
 
 Sessions become even more useful when different nREPL extensions start
 taking advantage of
@@ -166,6 +172,14 @@ debugging of two things
 separately. link:https://github.com/nrepl/piggieback[piggieback] uses
 sessions to allow host a ClojureScript REPL alongside an existing
 Clojure one.
+
+TIP: An easy mistake is to confuse a `session` with an `id`. The difference
+between a session and id, is that an `id` is for tracking a single
+message, and sessions are for tracking remote state. They're
+fundamental to allowing simultaneous activities in the same nREPL.
+For instance - if you want to evaluate two expressions simultaneously
+you'll have to do this in separate session, as all requests within the
+same session are serialized.
 
 == Pretty Printing
 
