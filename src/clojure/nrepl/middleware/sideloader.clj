@@ -5,9 +5,10 @@
   {:author "Christophe Grand"
    :added  "0.7.0"}
   (:require
+   [clojure.java.io :as io]
    [nrepl.middleware :as middleware :refer [set-descriptor!]]
-   [nrepl.transport :as t]
-   [nrepl.misc :refer [response-for]])
+   [nrepl.misc :refer [response-for]]
+   [nrepl.transport :as t])
   (:import nrepl.transport.Transport))
 
 ;; TODO: dedup with base64 in elisions branch once both are merged
@@ -41,7 +42,7 @@
         bos (java.io.ByteArrayOutputStream.)]
     (loop [bits 0 buf 0]
       (let [got (.read in)]
-        (when-not (or (neg? got) (= 61 #_\= got))
+        (when-not (or (neg? got) (= 61 got))
           (let [buf (bit-or (.indexOf table got) (bit-shift-left buf 6))
                 bits (+ bits 6)]
             (if (<= 8 bits)
@@ -51,23 +52,40 @@
               (recur bits buf))))))
     (.toByteArray bos)))
 
-(defn sideloader
+(defn- sideloader
+  "Creates a classloader that obey standard delegating policy."
+  [{:keys [session id transport] :as msg} pending]
+  (fn []
+    (let [resolve-fn
+          (fn [type name]
+            (t/send transport (response-for msg
+                                            {:status :sideloader-lookup
+                                             :type type
+                                             :name name}))
+            (let [p (promise)]
+              (swap! pending assoc [(clojure.core/name type) name] p)
+              @p))]
+      (proxy [clojure.lang.DynamicClassLoader] [(.getContextClassLoader (Thread/currentThread))]
+        (findResource [name]
+          (when-some  [bytes (resolve-fn "resource" name)]
+            (let [file (doto (java.io.File/createTempFile "nrepl-sideload-" (str "-" (re-find #"[^/]*$" name)))
+                         .deleteOnExit)]
+              (io/copy bytes file)
+              (-> file .toURI .toURL))))
+        (findClass [name]
+          (if-some  [bytes (resolve-fn "class" name)]
+            (.defineClass ^clojure.lang.DynamicClassLoader this name bytes nil)
+            (throw (ClassNotFoundException. name))))))))
+
+(defn wrap-sideloader
   "Middleware that enables the client to serve resources and classes to the server."
   [h]
   (let [pending (atom {})]
     (fn [{:keys [op type name content transport session] :as msg}]
       (case op
         "sideloader-start"
-        (do
-          (alter-meta! session assoc :sideloader/resolve
-                       (fn [type name]
-                         (t/send transport (response-for msg
-                                                         {:status :sideloader-lookup
-                                                          :type type
-                                                          :name name}))
-                         (let [p (promise)]
-                           (swap! pending assoc [(clojure.core/name type) name] p)
-                           @p))))
+        (alter-meta! session assoc :classloader
+                     (sideloader msg pending))
 
         "sideloader-provide"
         (if-some [p (@pending [type name])]
@@ -77,15 +95,13 @@
                            bytes)))
             (swap! pending dissoc [type name])
             (t/send transport (response-for msg {:status :done})))
-          (do
-            (println (pr-str 'RECV type name))
-            (t/send transport (response-for msg {:status #{:done :unexpected-provide}
-                                                 :type type
-                                                 :name name}))))
+          (t/send transport (response-for msg {:status #{:done :unexpected-provide}
+                                               :type type
+                                               :name name})))
 
         (h msg)))))
 
-(set-descriptor! #'sideloader
+(set-descriptor! #'wrap-sideloader
                  {:requires #{"clone"}
                   :expects #{"eval"}
                   :handles {"sideloader-start"
