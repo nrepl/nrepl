@@ -1,9 +1,11 @@
 (ns nrepl.middleware.interruptible-eval
+  "Supports the ability to evaluation code. The name of the middleware is
+  slightly misleading, as interrupt is currently supported at a session level
+  but the name is retained for backwards compatibility."
   {:author "Chas Emerick"}
   (:require
    clojure.main
    clojure.test
-   [clojure.java.io :as io]
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.caught :as caught]
    [nrepl.middleware.print :as print]
@@ -44,32 +46,12 @@
     (when column (set-column! reader (int column)))
     reader))
 
-;; TODO: use `nrepl.middleware.session/interrupted?` – currently introduces a
-;; circular dependency
 (defn- interrupted?
   "Returns true if the given throwable was ultimately caused by an interrupt."
   [^Throwable e]
   (or (instance? ThreadDeath (clojure.main/root-cause e))
       (and (instance? Compiler$CompilerException e)
            (instance? ThreadDeath (.getCause e)))))
-
-(defn classloader
-  "Creates a classloader that obey standard delegating policy.
-   Takes two arguments: a parent classloader and a function which
-   takes a keyword (:resource or :class) and a string (a resource or a class name) and returns an array of bytes
-   or nil."
-  [parent f]
-  (proxy [clojure.lang.DynamicClassLoader] [parent]
-    (findResource [name]
-      (when-some  [bytes (f "resource" name)]
-        (let [file (doto (java.io.File/createTempFile "nrepl-sideload-" (str "-" (re-find #"[^/]*$" name)))
-                     .deleteOnExit)]
-          (io/copy bytes file)
-          (-> file .toURI .toURL))))
-    (findClass [name]
-      (if-some  [bytes (f "class" name)]
-        (.defineClass ^clojure.lang.DynamicClassLoader this name bytes nil)
-        (throw (ClassNotFoundException. name))))))
 
 (defn evaluate
   "Evaluates a msg's code within the dynamic context of its session.
@@ -94,11 +76,8 @@
             opts {::print/buffer-size (or out-limit (get (meta session) :out-limit))}
             out (print/replying-PrintWriter :out msg opts)
             err (print/replying-PrintWriter :err msg opts)
-            cl (when (:sideloader/resolve (meta session))
-                 (classloader (.getContextClassLoader (Thread/currentThread))
-                              (fn [type name]
-                                (when-some [f (:sideloader/resolve (meta session))]
-                                  (f type name)))))]
+            cl (when-let [classloader (:classloader (meta session))]
+                 (classloader))]
         (when cl
           (.setContextClassLoader (Thread/currentThread) cl))
         (try
@@ -163,8 +142,8 @@
    \"eval\" and \"interrupt\" :op-erations that delegates to the given handler
    otherwise."
   [h & configuration]
-  (fn [{:keys [op session interrupt-id id transport] :as msg}]
-    (let [{:keys [interrupt exec] session-id :id} (meta session)]
+  (fn [{:keys [op session id transport] :as msg}]
+    (let [{:keys [exec] session-id :id} (meta session)]
       (case op
         "eval"
         (if-not (:code msg)

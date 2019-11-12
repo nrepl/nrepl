@@ -143,13 +143,6 @@
        (evaluate msg))
      the-session)))
 
-(defn interrupted?
-  "Returns true if the given throwable was ultimately caused by an interrupt."
-  [^Throwable e]
-  (or (instance? ThreadDeath (clojure.main/root-cause e))
-      (and (instance? Compiler$CompilerException e)
-           (instance? ThreadDeath (.getCause e)))))
-
 (defn- interrupt-stop
   "This works as follows
 

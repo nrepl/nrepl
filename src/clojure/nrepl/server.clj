@@ -88,7 +88,7 @@
    #'nrepl.middleware.load-file/wrap-load-file
    #'nrepl.middleware.session/add-stdin
    #'nrepl.middleware.session/session
-   #'nrepl.middleware.sideloader/sideloader])
+   #'nrepl.middleware.sideloader/wrap-sideloader])
 
 (defn default-handler
   "A default handler supporting interruptible evaluation, stdin, sessions, and
