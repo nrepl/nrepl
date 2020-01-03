@@ -119,10 +119,11 @@
    * :ack-port — if specified, the port of an already-running server
        that will be connected to inform of the new server's port.
        Useful only by Clojure tooling implementations.
-  * :greeting-fn - called after a client connects, receives a nrepl.transport/Transport.
-       Usually, Clojure-aware client-side tooling would provide this greeting upon connecting
-       to the server, but telnet et al. isn't that. See `nrepl.transport/tty-greeting`
-       for an example of such a function.
+   * :greeting-fn - called after a client connects, receives
+       a nrepl.transport/Transport. Usually, Clojure-aware client-side tooling
+       would provide this greeting upon connecting to the server, but telnet et
+       al. isn't that. See `nrepl.transport/tty-greeting` for an example of such
+       a function.
 
    Returns a (record) handle to the server that is started, which may be stopped
    either via `stop-server`, (.close server), or automatically via `with-open`.
