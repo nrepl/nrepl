@@ -69,7 +69,7 @@ user=>
 However, note well that `clojure.pprint/pprint` rebinds `\*out*` internally, and
 so if anything else prints to `\*out*` while evaluating, that output will end up
 intermingled in the result. See the
-<<../design/middleware#_pretty_printing,print middleware documentation>> for a
+xref:../design/middleware#_pretty_printing[print middleware documentation] for a
 more detailed explanation.
 
 == Evaluation Errors
