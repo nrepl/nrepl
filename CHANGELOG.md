@@ -6,12 +6,12 @@
 
 * [#60](https://github.com/nrepl/nrepl/issues/60): Implemented EDN transport.
 * [#140](https://github.com/nrepl/nrepl/issues/140): Added initial version of spec for message responses. These are used during Clojure 1.10 tests.
-* [#97](https://github.com/nrepl/nrepl/issues/97): Added a sideloader, a network classloader that allows dependencies to be added even the source/class files are not available on the server JVM's classpath.
+* [#97](https://github.com/nrepl/nrepl/issues/97): Added a sideloader, a network classloader that allows dependencies to be added even when the source/class files are not available on the server JVM's classpath (e.g. supplied by the client).
 
 ### Bugs fixed
 
-* [#152](https://github.com/nrepl/nrepl/issues/152): Bug fix to kill session threads when closing sessions
-* [#132](https://github.com/nrepl/nrepl/issues/132): Bug fix to avoid malformed bencode messages during interrutps, mainly affecting streamed printing
+* [#152](https://github.com/nrepl/nrepl/issues/152): Kill session threads when closing sessions.
+* [#132](https://github.com/nrepl/nrepl/issues/132): Avoid malformed bencode messages during interrupts, mainly affecting streamed printing.
 
 ### Changes
 
@@ -19,7 +19,7 @@
   maps that have keywords or symbols as keys. This allowed a simplification of the
   Bencode transport itself.
 * [#158](https://github.com/nrepl/nrepl/issues/158): Interrupt now runs in three stages: calls `interrupt` on the thread, waits 100ms for the thread to respond and return messages, then waits 5000ms for the thread to terminate itself. A hard `.stop` is only called if it fails to do so.
-* [#167](https://github.com/nrepl/nrepl/issues/167): Allow suppressing ack message when using nrepl.cmdline
+* [#167](https://github.com/nrepl/nrepl/issues/167): Allow suppressing ack message when using `nrepl.cmdline`.
 
 ## 0.6.0 (2019-02-05)
 
