@@ -107,7 +107,8 @@
                     (push-thread-bindings bindings))
            :read (if (string? code)
                    (let [reader (source-logging-pushback-reader code line column)
-                         read-cond (or (:read-cond msg) :allow)]
+                         read-cond (or (-> msg :read-cond keyword)
+                                       :allow)]
                      #(try (read {:read-cond read-cond :eof %2} reader)
                            (catch RuntimeException e
                              ;; If error happens during reading the string, we
