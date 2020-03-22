@@ -57,7 +57,7 @@ a different deployment artifact - `org.clojure/clojure.tools.nrepl`.
 ====
 
 [[upgrading]]
-== Upgrading from nREPL 0.2.x to 0.4.x
+== Upgrading from nREPL 0.2.x
 
 A few major changes happened since nREPL 0.2.x:
 
