@@ -298,8 +298,8 @@
               (map :out)
               (remove nil?)))))
 
-(def-repl-test reader-conditional-option 
-  (is (= ["#?(:clj (+ 1 2) :cljs (+ 2 3))"]  
+(def-repl-test reader-conditional-option
+  (is (= ["#?(:clj (+ 1 2) :cljs (+ 2 3))"]
          (->> (message client {:op "eval" :read-cond :preserve
                                :code "#?(:clj (+ 1 2) :cljs (+ 2 3))"})
               combine-responses
