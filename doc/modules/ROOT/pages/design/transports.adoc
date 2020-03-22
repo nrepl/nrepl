@@ -79,7 +79,7 @@ You'll need a bencode capable client to connect to an nREPL server that transpor
 
 TIP: nREPL's bencode implementation is available as a https://github.com/nrepl/bencode[standalone library].
 Keep in mind that nREPL itself doesn't use this library, as it's committed to having 0 runtime dependencies.
-The code in the library and in nREPL `nrepl.bencode` namespace in identical, though, and will be kept in sync
+The code in the library and in nREPL `nrepl.bencode` namespace is identical, though, and will be kept in sync
 in the future.
 
 == EDN Transport
