@@ -298,6 +298,17 @@
               (map :out)
               (remove nil?)))))
 
+(def-repl-test reader-conditional-option
+  (is (= ["#?(:clj (+ 1 2) :cljs (+ 2 3))"]
+         (->> (message client {:op "eval" :read-cond :preserve
+                               :code "#?(:clj (+ 1 2) :cljs (+ 2 3))"})
+              combine-responses
+              :value)))
+  (is (= ["3"]
+         (->> (message client {:op "eval" :code "#?(:clj (+ 1 2) :cljs (+ 2 3))"})
+              combine-responses
+              :value))))
+
 (def-repl-test ensure-whitespace-prints
   (is (= " \t \n \f \n" (->> (repl-eval client "(println \" \t \n \f \")")
                              combine-responses
