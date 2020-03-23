@@ -28,7 +28,7 @@ Nothing more, nothing less.
 
 ;;;; Handling of output
 ;; request
-(println "Hello, world”)
+(println "Hello, world")
 
 ;; response (the output and the result are intermixed)
 Hello, world!
@@ -91,11 +91,11 @@ NOTE: `unrepl`'s author Christophe Grand has been collaborating with nREPL's tea
 
 ;;;; Handling of output
 ;; request
-(println "Hello, world”)
+(println "Hello, world")
 
 ;; response
 {:tag :out,
- :val "Hello, world\n”}
+ :val "Hello, world\n"}
 {:tag :ret,
  :val "nil",
  :ns "user",
