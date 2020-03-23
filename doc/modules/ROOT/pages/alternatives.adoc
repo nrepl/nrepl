@@ -124,7 +124,7 @@ references and alike into the tool.
 With LSP you'd end up with a server similar to nREPL providing common editing operations.
 The communication between an LSP client and a server is done via JSON.
 
-Currently there's a single implementation of an LSP server for Clojure - namely [clojure-lsp].
+Currently there's a single implementation of an LSP server for Clojure - namely https://github.com/snoe/clojure-lsp[clojure-lsp].
 It's functionality is powered internally by static code analysis, one can easily imagine
 an LSP server implementation that's powered by a REPL.
 
