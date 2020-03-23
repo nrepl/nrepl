@@ -151,7 +151,7 @@ infinitely extensible when it comes to supported operations, data formats and co
 
 .Comparison Table
 |===
-| Name | Input/Output | Data Format | Clojure-agnostic Protocol | Optimized for Tooling |
+| Name | Input/Output | Data Format | Clojure-agnostic Protocol | Optimized for Tooling
 
 | nREPL
 | Structured Input/Output
