@@ -93,7 +93,7 @@ Here's a typical exchange between a client and a `prepl` server:
  :val "20",
  :ns "user",
  :ms 23,
- :form "(+ 10 10)”}
+ :form "(+ 10 10)"}
 
 ;;;; Handling of output
 ;; request
