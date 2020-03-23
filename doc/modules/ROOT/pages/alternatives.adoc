@@ -3,7 +3,7 @@
 NOTE: This page is work in progress.
 
 nREPL is certainly not the only project that aims to provide a common foundation for (Clojure) development tooling.
-.footnote:[nREPL was the first such effort in the Clojure community, though.]
+footnote:[nREPL was the first such effort in the Clojure community, though.]
 Here we'll mostly focus on alternatives in the realm of Clojure, and we'll briefly go over
 some (subjective) pros and cons they offer.
 
@@ -16,6 +16,8 @@ depending on your requirements and use-cases.
 A https://clojure.org/reference/repl_and_main#_launching_a_socket_server[socket REPL server] was added in Clojure 1.8.
 In essence it's just a socket version of the standard REPL - the input in text (code) and the output is text.
 Nothing more, nothing less.
+
+Here's a typical exchange between a client and a socket REPL server:
 
 [source,clojure]
 ----
@@ -43,6 +45,7 @@ Still, I think it's fair to say that the main purpose of the socket REPL server 
 
 * Very simple
 * Bundled with Clojure and ClojureScript
+* Easy to leverage from Clojure(Script)/Java(Script) clients
 
 === Cons
 
@@ -65,6 +68,7 @@ NOTE: `unrepl`'s author Christophe Grand has been collaborating with nREPL's tea
 * Allows clients to inject dependencies
 * Has great provisions for printing big data structures
 * External project that's independent of Clojure's development cycle
+* Easy to leverage from Clojure(Script)/Java(Script) clients
 
 === Cons
 
@@ -75,6 +79,8 @@ NOTE: `unrepl`'s author Christophe Grand has been collaborating with nREPL's tea
 == prepl
 
 `prepl` is pretty similar to `unrepl` in terms of the way it operates (streaming input, framed output). Its main advantage is that it's part of Clojure since 1.10. `prepl` is rather spartan compared to `unrepl`, but as a result it's simpler.
+
+Here's a typical exchange between a client and a `prepl` server:
 
 [source,clojure]
 ----
@@ -107,6 +113,7 @@ NOTE: `unrepl`'s author Christophe Grand has been collaborating with nREPL's tea
 
 * Very simple
 * Bundled with Clojure and ClojureScript
+* Easy to leverage from Clojure(Script)/Java(Script) clients
 
 === Cons
 
@@ -151,17 +158,19 @@ infinitely extensible when it comes to supported operations, data formats and co
 
 .Comparison Table
 |===
-| Name | Input/Output | Data Format | Clojure-agnostic Protocol | Optimized for Tooling
+| Name | Input/Output | Data Format | ClojureScript Support | Clojure-agnostic Protocol | Optimized for Tooling
 
 | nREPL
 | Structured Input/Output
-| Bencode/EDN (other formats supported by extensions)
+| Bencode/EDNfootnote:[Other data formats (e.g. JSON) are supported via extensions.]
+| Requires extension (Piggieback)
 | Yes
 | Yes
 
 | Socket REPL
 | Streaming Input/Output
 | EDN
+| Yes
 | No
 | No
 
@@ -169,17 +178,20 @@ infinitely extensible when it comes to supported operations, data formats and co
 | Streaming Input/Structured Output
 | EDN
 | No
+| No
 | Yes
 
 | prepl
 | Streaming Input/Structured Output
 | EDN
+| Yes
 | No
 | Yes
 
 | LSP
 | Structured Input/Output
 | JSON
+| n/a
 | Yes
 | Yes
 
