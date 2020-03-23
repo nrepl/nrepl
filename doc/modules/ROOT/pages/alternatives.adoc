@@ -1,0 +1,186 @@
+= Alternatives
+
+NOTE: This page is work in progress.
+
+nREPL is certainly not the only project that aims to provide a common foundation for (Clojure) development tooling.
+.footnote:[nREPL was the first such effort in the Clojure community, though.]
+Here we'll mostly focus on alternatives in the realm of Clojure, and we'll briefly go over
+some (subjective) pros and cons they offer.
+
+It's always hard to be objective when comparing your project with alternatives, but we'll do our best.
+Keep in mind that there's no universally best solution for every problem, so your mileage might vary
+depending on your requirements and use-cases.
+
+== Socket REPL
+
+A https://clojure.org/reference/repl_and_main#_launching_a_socket_server[socket REPL server] was added in Clojure 1.8.
+In essence it's just a socket version of the standard REPL - the input in text (code) and the output is text.
+Nothing more, nothing less.
+
+[source,clojure]
+----
+;;;; Basic evaluation
+;; request (plain text)
+(+ 10 10)
+
+;; result (plain text)
+20
+
+;;;; Handling of output
+;; request
+(println "Hello, world”)
+
+;; response (the output and the result are intermixed)
+Hello, world!
+nil
+----
+
+As you can see the main issue with the socket REPL is that it's hard to tell apart values from output in the evaluation
+responses. That's fine when you're interacting with a REPL directly, but is a big issue if you're using it programatically.
+Still, I think it's fair to say that the main purpose of the socket REPL server is to give you a basic REPL, not building development tools on top of it.
+
+=== Pros
+
+* Very simple
+* Bundled with Clojure and ClojureScript
+
+=== Cons
+
+* Streaming input means tooling has to be built on top of `eval`
+* Streaming output makes it hard to tell apart output from results
+* Updates are constrained to Clojure's development cycle
+* Clients have to support EDN, which is a problem in certain environments
+
+== unrepl
+
+https://github.com/Unrepl/unrepl[unrepl] builds on top of the built-socket REPL to provide framed responses. Clients feed `unrepl` text to be evaluated
+and receive the result as a map. That makes it much easier to use the REPL from development tools. It also includes provisions
+for upgrading a plain socket REPL to `unrepl`, injecting dependencies straight from the clients and printing huge data structures in an incremental manner.
+
+NOTE: `unrepl`'s author Christophe Grand has been collaborating with nREPL's team to bring some of those advanced features to nREPL.
+
+=== Pros
+
+* Builds on top of the Socket REPL
+* Allows clients to inject dependencies
+* Has great provisions for printing big data structures
+* External project that's independent of Clojure's development cycle
+
+=== Cons
+
+* Streaming input means tooling has to be built on top of `eval`
+* Clients have to support EDN, which is a problem in certain environments
+* Clojure-only
+
+== prepl
+
+`prepl` is pretty similar to `unrepl` in terms of the way it operates (streaming input, framed output). Its main advantage is that it's part of Clojure since 1.10. `prepl` is rather spartan compared to `unrepl`, but as a result it's simpler.
+
+[source,clojure]
+----
+;;;; Basic evaluation
+;; prepl request (plain text)
+(+ 10 10)
+
+;; prepl response (map)
+{:tag :ret,
+ :val "20",
+ :ns "user",
+ :ms 23,
+ :form "(+ 10 10)”}
+
+;;;; Handling of output
+;; request
+(println "Hello, world”)
+
+;; response
+{:tag :out,
+ :val "Hello, world\n”}
+{:tag :ret,
+ :val "nil",
+ :ns "user",
+ :ms 8,
+ :form "(println \"Hello, world\")"}
+----
+
+=== Pros
+
+* Very simple
+* Bundled with Clojure and ClojureScript
+
+=== Cons
+
+* Streaming input means tooling has to be built on top of `eval`
+* Updates are constrained to Clojure's development cycle
+* Clients have to support EDN, which is a problem in certain environments
+
+== Language Server Protocol
+
+https://langserver.org/[The Language Server protocol] is used between
+a tool (the client) and a language smartness provider (the server) to
+integrate features like auto complete, go to definition, find all
+references and alike into the tool.
+
+With LSP you'd end up with a server similar to nREPL providing common editing operations.
+The communication between an LSP client and a server is done via JSON.
+
+Currently there's a single implementation of an LSP server for Clojure - namely [clojure-lsp].
+It's functionality is powered internally by static code analysis, one can easily imagine
+an LSP server implementation that's powered by a REPL.
+
+=== Pros
+
+* Language-agnostic protocol
+* Wide support in editors
+* Different implementations for the same language
+
+=== Cons
+
+* The protocol is controlled by a single company
+* Clients have to support JSON, which is a problem in certain environments
+* You still need some REPL server for code evaluation
+
+== Comparison
+
+It's important to understand that while the socket REPL, unrepl and prepl are pure REPLs (meaning their
+soul focus is reading, evaluating and printing), nREPL is both a REPL and a development tooling
+protocol. In this sense it sits somewhere between all other REPL servers and LSP.
+
+nREPL was designed to be used programmatically and build tools on top of it. It was designed to be
+infinitely extensible when it comes to supported operations, data formats and communication channels.
+
+.Comparison Table
+|===
+| Name | Input/Output | Data Format | Clojure-agnostic Protocol | Optimized for Tooling |
+
+| nREPL
+| Structured Input/Output
+| Bencode/EDN (other formats supported by extensions)
+| Yes
+| Yes
+
+| Socket REPL
+| Streaming Input/Output
+| EDN
+| No
+| No
+
+| unrepl
+| Streaming Input/Structured Output
+| EDN
+| No
+| Yes
+
+| prepl
+| Streaming Input/Structured Output
+| EDN
+| No
+| Yes
+
+| LSP
+| Structured Input/Output
+| JSON
+| Yes
+| Yes
+
+|===
