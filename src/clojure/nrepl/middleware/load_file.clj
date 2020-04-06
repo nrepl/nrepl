@@ -7,12 +7,12 @@
    [nrepl.middleware.print :as print])
   (:import nrepl.transport.Transport))
 
-; need to hold file contents "out of band" so as to avoid JVM method
-; size limitations (cannot eval an expression larger than some size
-; [64k?]), so the naive approach of just interpolating file contents
-; into an expression to be evaluated doesn't work
-; see http://code.google.com/p/counterclockwise/issues/detail?id=429
-; and http://groups.google.com/group/clojure/browse_thread/thread/f54044da06b9939f
+;; need to hold file contents "out of band" so as to avoid JVM method
+;; size limitations (cannot eval an expression larger than some size
+;; [64k?]), so the naive approach of just interpolating file contents
+;; into an expression to be evaluated doesn't work
+;; see http://code.google.com/p/counterclockwise/issues/detail?id=429
+;; and http://groups.google.com/group/clojure/browse_thread/thread/f54044da06b9939f
 (defonce ^{:private true
            :doc "An atom that temporarily holds the contents of files to
 be loaded."} file-contents (atom {}))
