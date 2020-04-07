@@ -45,6 +45,11 @@
                                       "https://oss.sonatype.org/content/repositories/snapshots"]]
                       :dependencies [[org.clojure/clojure "1.11.0-master-SNAPSHOT"]]}
 
+             ;;; Maintenance profile
+             ;;
+             ;; It contains the small CLI utility (aliased to "lein docs") that
+             ;; generates the nREPL ops documentation from their descriptor
+             ;; metadata.
              :maint {:source-paths ["src/maint"]
                      :dependencies [[org.clojure/tools.cli "1.0.194"]]}
 
