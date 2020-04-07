@@ -35,23 +35,23 @@
                     :test2junit-output-dir "test-results"
                     :aliases {"test" "test2junit"}}
              ;; Clojure versions matrix
-             :provided {:dependencies [[org.clojure/clojure "1.10.0"]]}
+             :provided {:dependencies [[org.clojure/clojure "1.10.1"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
-             :1.10 {:dependencies [[org.clojure/clojure "1.10.0"]]
+             :1.10 {:dependencies [[org.clojure/clojure "1.10.1"]]
                     :source-paths ["src/spec"]}
              :master {:repositories [["snapshots"
                                       "https://oss.sonatype.org/content/repositories/snapshots"]]
                       :dependencies [[org.clojure/clojure "1.11.0-master-SNAPSHOT"]]}
 
              :maint {:source-paths ["src/maint"]
-                     :dependencies [[org.clojure/tools.cli "0.4.1"]]}
+                     :dependencies [[org.clojure/tools.cli "1.0.194"]]}
 
              ;; CI tools
              :cloverage [:test
-                         {:plugins [[lein-cloverage "1.0.12-SNAPSHOT"]]
-                          :dependencies [[cloverage "1.0.12-SNAPSHOT"]]
+                         {:plugins [[lein-cloverage "1.1.2"]]
+                          :dependencies [[cloverage "1.1.2"]]
                           :cloverage {:codecov? true
                                       ;; Cloverage can't handle some of the code
                                       ;; in this project
