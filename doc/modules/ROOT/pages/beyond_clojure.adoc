@@ -29,8 +29,14 @@ documentation which clients are known to work well with them.
 
 * link:https://github.com/vspinu/R-nREPL[R-nREPL] - an nREPL server for R
 
-* link:https://github.com/clojure/clr.tools.nrepl[nREPL CLR] - an nREPL server for ClojureCLR
+* link:https://github.com/clojure/clr.tools.nrepl[nREPL CLR] - an nREPL server for ClojureCLR. A 1:1 port of the reference Clojure nREPL. Unfortunately it has been abandoned a long time ago.
 
-* link:https://github.com/arcadia-unity/Arcadia/blob/master/Editor/NRepl.cs[Arcadia nREPL] - an nREPL server implemented in C# for Arcadia.
+* link:https://github.com/arcadia-unity/Arcadia/blob/master/Editor/NRepl.cs[Arcadia nREPL] - an nREPL server implemented in C# for Arcadia. An actively maintained alternative of nREPL CLR.
+
+* https://github.com/borkdude/nrepl-server[nREPL Prototype] - a simple nREPL implementation in Clojure. Used as the basis of the `babashka` implementation.
+
+* https://github.com/borkdude/babashka/blob/master/src/babashka/impl/nrepl_server.clj[Babashka nREPL] - an nREPL server bundled with https://github.com/borkdude/babashka[babashka]
+
+* https://github.com/djblue/nrepl-cljs[nrepl-cljs] - a native ClojureScript nREPL server implementation
 
 As you can see nREPL has implementations for many popular Lisp dialects, but it's certainly not limited to Lisp dialects.
