@@ -56,7 +56,7 @@ one form can be read from the request's code string.  In contrast to the output
 written to `*out*` and `*err*`, this may be usefully/reliably read and utilized
 by the client, e.g. in tooling contexts, assuming the evaluated code returns a
 printable and readable value.  Interactive clients will likely want to simply
-stream `:value`'s content to their UI's primary output / log.
+stream ``:value``'s content to their UI's primary output / log.
 
 Note that evaluations that are interrupted may nevertheless result
 in multiple response messages being sent prior to the interrupt

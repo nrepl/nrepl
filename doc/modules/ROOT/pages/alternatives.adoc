@@ -60,7 +60,7 @@ https://github.com/Unrepl/unrepl[unrepl] builds on top of the built-socket REPL 
 and receive the result as a map. That makes it much easier to use the REPL from development tools. It also includes provisions
 for upgrading a plain socket REPL to `unrepl`, injecting dependencies straight from the clients and printing huge data structures in an incremental manner.
 
-NOTE: `unrepl`'s author Christophe Grand has been collaborating with nREPL's team to bring some of those advanced features to nREPL.
+NOTE: ``unrepl``'s author Christophe Grand has been collaborating with nREPL's team to bring some of those advanced features to nREPL.
 
 === Pros
 

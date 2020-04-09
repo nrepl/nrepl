@@ -116,7 +116,7 @@ that middleware will be applied after any middleware that handles the `"eval"`
 operation, but before the `nrepl.middleware.session/session`
 middleware.  In the case of `add-stdin`, this ensures that incoming messages
 hit the session middleware (thus ensuring that the user's dynamic scope —
-including `*in*` — has been added to the message) before the `add-stdin`'s
+including `*in*` — has been added to the message) before the ``add-stdin``'s
 handler sees them, so that it may append the provided `stdin` content to the
 buffer underlying `*in*`.  Additionally, `add-stdin` must be "above" any `eval`
 middleware, as it takes responsibility for calling `clojure.main/skip-if-eol`
