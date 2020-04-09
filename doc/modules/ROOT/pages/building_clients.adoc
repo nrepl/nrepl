@@ -2,7 +2,73 @@
 
 NOTE: This page is very incomplete and a work in progress.
 
+== Overview
+
+This part of the documentation is mostly intended for people who are
+working on nREPL clients (e.g. command-line tools and editors).
+We'll go over the basics of building an nREPL client and some of the best
+practices that might not be obvious to people who are not familiar with the process.
+
+We'll try to keep the conversation mostly focused on building clients for the nREPL protocol
+in general, but we'll also highlight some specifics of nREPL's Clojure implementation.
+
+== Basics
+
+At the very least a client should be able to connect to an nREPL server and
+support code evaluation (the `eval` op). Ideally, the client should be able to make use of all
+the ops that are part of the nREPL protocol.
+
+While, the reference nREPL server for Clojure supports multiple data exchange
+formats, it's important for clients to support `bencode`, as that is the only format
+embraced the nREPL protocol. If a client is focused only on Clojure(Script) nREPL
+servers they can safely opt for EDN, or ideally support both `bencode` and EDN.
+
+A typical message exchange between a client and a server would be:
+
+* Client sends `clone` to create a new session.
+* Server responds with the session id.
+* Client sends `describe` to check the server's capabilities and version/runtime information.
+* Server responds with a map of the relevant data.
+* Clients starts sending `eval` messages using the session id that it obtained earlier.
+* Server responds with the appropriate messages (e.g. `value` and `out`). Eventually a message with
+status `done` signals that the `eval` message has been fully processed.
+
+NOTE: If you don't pass a session explicitly to some op, the server is supposed to create
+a transient (one-off) session on the fly. That's fine for most ops, as they don't interact
+with the session state, but it's generally a bad idea for user evaluations.
+
+The reference nREPL implementation bundles a
+https://github.com/nrepl/nrepl/blob/master/src/clojure/nrepl/cmdline.clj[simple command-line client implementation]
+that should give a pretty good overview of how to build a client.
+There are a few other simple clients that you can explore for inspiration:
+
+* https://github.com/eraserhd/rep[rep]
+* https://github.com/clojure-vim/nrepl-python-client[nrepl-python-client]
+
+It might also be a good idea to see the message exchange between some nREPL and client.
+CIDER provides a https://docs.cider.mx/cider/troubleshooting.html#_debugging_the_communication_with_nrepl[convenient solution] for this.
+
+== Best Practices
+
+Bellow is a listing of best practices when it comes to building nREPL clients. A
+common problem with clients is that they typically assume they are talking to a
+Clojure server. While this is OK in some cases (e.g. if you're building a
+Clojure IDE), it's always better to build clients that can work with any nREPL
+server. Note that some of the suggestions here might not apply to all servers.
+
+* Keep user evaluations in one sessions and tooling-related evaluations (e.g. for code completion) in another.
+This will ensure that vars like `*1` and `*e` are not messed up.
+* Don't assume too much about the server. Infer the capabilities of the server using `describe`. Try to make
+your client Clojure-agnostic.
+* Leverage streaming of values and output, when supported by the server. This improves a lot the performance when you're dealing with huge results.
+* Leverage data cut-off limits when supported by the server.
+* Match requests and responses based on their ID, if you need to assign different callbacks to messages of the same type (this is a common situation in programming editors).
+* Use sequential message ids in the scope of a session - this makes it easier to track the flow of messages.
+* Provide some debug mode where you can see a dump of the requests and the responses.
+
 == Implementing sideloading
+
+NOTE: Sideloading is a feature specific to the reference Clojure nREPL server.
 
 Let's start by looking at an exchange of messages while using sideloading:
 
@@ -49,3 +115,7 @@ Note that between sending the `eval` op in message `2` and receiving the result,
 This unblocks the `eval` command, which returns the value `Qaz` in the final message.
 
 It's thus important, once sideloading has started, to asynchronously handle lookup requests, without these being blocked by waiting on a response from another message.
+
+== Additional Resources
+
+* https://mauricio.szabo.link/blog/2020/04/04/implementing-a-nrepl-client/
