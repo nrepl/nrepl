@@ -1,0 +1,69 @@
+= Building Servers
+
+NOTE: This page is very incomplete and a work in progress.
+
+== Overview
+
+This part of the documentation aims to guide you in the process of implementing
+an nREPL server. The focus is going to be on implementing the language-agnostic nREPL protocol,
+not on specifics of the references nREPL server implementation for Clojure.
+
+== Basics
+
+To build a server compatible with the nREPL protocol all you need to do is build a solution
+that handles the xref:ops.adoc[protocol ops] and uses `bencode` as the default data exchange format.
+
+You can completely ignore concepts like middleware, handles and so on - those are just
+implementation details from the references implementation. If you want to leverage them that'd be great,
+but if you don't - it's not a big deal.
+
+It's important to understand that clients only care whether some op is there,
+that it behaves as expected, and that the data format is the right one. The
+implementation details are transparent to them.
+
+The basic requirements for a server would be:
+
+* Uses `bencode` (by default)
+* Has a notion of sessions
+* Provides all xref:ops.adoc[ops defined by the protocol]
+* Messages are processed asynchronously
+
+Obviously most clients would work fairly well if messages like `interrupt` are missing, but your users
+will probably appreciate having those.
+
+[NOTE]
+====
+Some clients (e.g. CIDER) might be relying on the server startup message to extract connection
+information from it. That's why it's a good to provide the same message for your own server implementation.
+Here's the message in question:
+
+  nREPL server started on port 58567 on host 127.0.0.1 - nrepl://127.0.0.1:58567
+====
+
+Here are a few simple nREPL implementations that you can peruse for inspiration:
+
+* https://github.com/borkdude/nrepl-server[A basic nREPL server written in Clojure]
+* https://gitlab.com/technomancy/ogion[Ogion, nREPL server for Racket]
+
+It might also be a good idea to see the message exchange between some nREPL server and client.
+CIDER provides a https://docs.cider.mx/cider/troubleshooting.html#_debugging_the_communication_with_nrepl[convenient solution] for this.
+
+== Best Practices
+
+* Write an `.nrepl-port` file on server startup.
+* Add support for `.nrepl.edn` (at least if you're working with a language than can easily handle EDN).
+* Avoid adding runtime dependencies, unless you can somehow isolate them. You don't want your server
+to mess up dependencies in the user space.
+* Provide some information in the `describe` op that makes it easy for clients to recognize your server.
+* Provide streaming results to the clients (e.g. values and output), as an option. This generally means that
+results are split over several message, so that clients would get feedback faster.
+* Provide some means for the clients to configure (pretty-)printing of results.
+
+== Extending the Core Protocol
+
+`cider-nrepl` defines a bunch of ops that are supported by many Clojure nREPL clients (e.g. `info` and `complete`).
+You can add those ops to your server implementation as well.
+
+== Additional Resources
+
+* https://github.com/borkdude/nrepl-server/blob/master/README.md[Notes on implementing a basic nREPL server]
