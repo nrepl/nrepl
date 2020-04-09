@@ -53,7 +53,7 @@ You can build the documentation locally from the link:https://github.com/nrepl/n
 [source]
 ----
 $ cd nrepl.org
-$ antora --pull site.yml
+$ antora --pull antora-playbook.yml
 ----
 
 After you're done with the initial setup you can use the `deploy` script to push changes to the site:
