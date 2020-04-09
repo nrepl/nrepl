@@ -73,5 +73,5 @@ a responsible manner and backwards-compatible ways.
 
 NOTE: The migration of nREPL out of Clojure Contrib is probably the
 only case where we were forced to make breaking changes.footnote:[Apart
-from removing deprecated code that is.] Those are detailed in great
+from removing deprecated code that is.] Those are documented in great
 detail xref:installation.adoc#upgrading[here].
