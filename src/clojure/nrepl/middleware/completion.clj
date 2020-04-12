@@ -1,5 +1,12 @@
 (ns nrepl.middleware.completion
-  "Code completion middleware."
+  "Code completion middleware.
+
+  The middleware is a simple wrapper around the
+  functionality in `nrepl.completion`. Its
+  API is inspired by cider-nrepl's \"complete\" middleware.
+
+  The functionality here is experimental and
+  the API is subject to changes. "
   {:author "Bozhidar Batsov"
    :added "0.8"}
   (:require
