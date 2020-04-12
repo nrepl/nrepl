@@ -139,4 +139,4 @@
   ([prefix]
    (completions prefix *ns*))
   ([^String prefix ns]
-    (sort-by :candidate (filter #(.startsWith (:candidate %) prefix) (potential-completions prefix ns)))))
+   (sort-by :candidate (filter #(.startsWith (:candidate %) prefix) (potential-completions prefix ns)))))

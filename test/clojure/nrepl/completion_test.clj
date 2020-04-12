@@ -21,7 +21,7 @@
          (candidates "clojure.core/alt" 'clojure.core)))
 
   #_(is (= '("clojure.core" "clojure.core.ArrayChunk" "clojure.core.ArrayManager" "clojure.core.IVecImpl" "clojure.core.Vec" "clojure.core.VecNode" "clojure.core.VecSeq" "clojure.core.protocols" "clojure.core.protocols.InternalReduce")
-         (candidates "clojure.co")))
+           (candidates "clojure.co")))
 
   (is (= '("nrepl.completion" "nrepl.completion-test")
          (candidates "nrepl.completion")))
