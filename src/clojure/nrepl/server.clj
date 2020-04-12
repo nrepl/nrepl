@@ -4,6 +4,7 @@
   (:require
    [nrepl.ack :as ack]
    [nrepl.middleware :as middleware]
+   nrepl.middleware.completion
    nrepl.middleware.interruptible-eval
    nrepl.middleware.load-file
    nrepl.middleware.session
@@ -84,6 +85,7 @@
    middlewares provided to nrepl.server/default-handler."
 
   [#'nrepl.middleware/wrap-describe
+   #'nrepl.middleware.completion/wrap-completion
    #'nrepl.middleware.interruptible-eval/interruptible-eval
    #'nrepl.middleware.load-file/wrap-load-file
    #'nrepl.middleware.session/add-stdin

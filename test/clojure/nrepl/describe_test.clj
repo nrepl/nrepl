@@ -11,7 +11,7 @@
 
 (def ^{:private true} op-names
   #{"load-file" "ls-sessions" "interrupt" "stdin"
-    "describe" "eval" "close" "clone"
+    "describe" "eval" "close" "clone" "completions"
     "sideloader-start" "sideloader-provide"})
 
 (def-repl-test simple-describe
