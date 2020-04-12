@@ -9,7 +9,7 @@
   any local config file (.nrepl.edn) if present.
   The values in the local config file take precedence."
   {:author "Bozhidar Batsov"
-   :added  "0.5.0"}
+   :added  "0.5"}
   (:require
    [clojure.java.io :as io]
    [clojure.edn :as edn]))

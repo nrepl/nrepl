@@ -3,7 +3,7 @@
   files) and classes from the client. This can be used to add dependencies to
   the nREPL environment after initial startup."
   {:author "Christophe Grand"
-   :added  "0.7.0"}
+   :added  "0.7"}
   (:require
    [clojure.java.io :as io]
    [nrepl.middleware :as middleware :refer [set-descriptor!]]

@@ -2,7 +2,7 @@
   "Support for configurable printing. See the docstring of `wrap-print` and the
   Pretty Printing section of the Middleware documentation for more information."
   {:author "Michael Griffiths"
-   :added  "0.6.0"}
+   :added  "0.6"}
   (:refer-clojure :exclude [print])
   (:require
    [nrepl.middleware :refer [set-descriptor!]]

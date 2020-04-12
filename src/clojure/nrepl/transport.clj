@@ -119,7 +119,7 @@
 (defn edn
   "Returns a Transport implementation that serializes messages
    over the given Socket or InputStream/OutputStream using EDN."
-  {:added "0.7.0"}
+  {:added "0.7"}
   ([^Socket s] (edn s s s))
   ([in out & [^Socket s]]
    (let [in (java.io.PushbackReader. (io/reader in))

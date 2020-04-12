@@ -4,7 +4,7 @@
   Evaluation Errors section of the Middleware documentation for more
   information."
   {:author "Michael Griffiths"
-   :added  "0.6.0"}
+   :added  "0.6"}
   (:require
    [clojure.main]
    [nrepl.middleware :refer [set-descriptor!]]

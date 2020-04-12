@@ -1,6 +1,6 @@
 (ns nrepl.version
   {:author "Colin Jones"
-   :added  "0.5.0"}
+   :added  "0.5"}
   (:import java.util.Properties))
 
 (defn- map-from-property-filepath [file]
