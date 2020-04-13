@@ -44,7 +44,7 @@ how you can easily start a ClojureScript capable nREPL:
 :aliases {:nREPL
           {:extra-deps
            {nrepl/nrepl {:mvn/version "0.7.0"}
-            cider/piggieback {:mvn/version "0.4.0"}}}}
+            cider/piggieback {:mvn/version "0.4.2"}}}}
 }
 ----
 
