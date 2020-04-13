@@ -210,7 +210,7 @@ You can pull in the needed dependencies by adding this to your pom.xml:
     <dependency>
         <groupId>nrepl</groupId>
         <artifactId>nrepl</artifactId>
-        <version>0.7.0-alpha2</version>
+        <version>0.7.0</version>
     </dependency>
     <dependency>
         <groupId>org.clojure</groupId>
