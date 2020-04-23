@@ -171,6 +171,6 @@
                                                "line" "The line number in [file] at which [code] starts."
                                                "column" "The column number in [file] at which [code] starts."})
                              :returns {"ns" "*ns*, after successful evaluation of `code`."
-                                       "values" "The result of evaluating `code`, often `read`able. This printing is provided by the `print` middleware. Superseded by `ex` and `root-ex` if an exception occurs during evaluation."
-                                       "ex" "The type of exception thrown, if any. If present, then `values` will be absent."
-                                       "root-ex" "The type of the root exception thrown, if any. If present, then `values` will be absent."}}}})
+                                       "value" "The result of evaluating `code`, often `read`able. This printing is provided by the `print` middleware. Superseded by `ex` and `root-ex` if an exception occurs during evaluation."
+                                       "ex" "The type of exception thrown, if any. If present, then `:value` will be absent."
+                                       "root-ex" "The type of the root exception thrown, if any. If present, then `:value` will be absent."}}}})
