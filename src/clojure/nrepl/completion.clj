@@ -44,10 +44,11 @@
   (java.lang.reflect.Modifier/isStatic (.getModifiers member)))
 
 (defn ns-java-methods
-  "Returns a list of potential java method name completions for a given namespace"
+  "Returns a list of Java method names for a given namespace."
   [ns]
-  (for [class (vals (ns-imports ns)) method (.getMethods ^Class class) :when (static? method)]
-    (str "." (.getName ^Member method))))
+  (distinct ; some methods might exist in multiple classes
+   (for [class (vals (ns-imports ns)) method (.getMethods ^Class class) :when (static? method)]
+     (str "." (.getName ^Member method)))))
 
 (defn static-members
   "Returns a list of potential static members for a given class"
@@ -130,7 +131,7 @@
 (defn ns-java-method-candidates
   [ns]
   (for [method (ns-java-methods ns)]
-    {:candidates method :type :method}))
+    {:candidate method :type :method}))
 
 (defn static-member-candidates
   [class]
