@@ -16,7 +16,7 @@
            (candidates "al" 'clojure.core)))
 
     (is (= '("jio/make-input-stream" "jio/make-output-stream" "jio/make-parents" "jio/make-reader" "jio/make-writer")
-         (candidates "jio/make" 'clojure.core)))
+           (candidates "jio/make" 'clojure.core)))
 
     (is (= '("clojure.core/alter" "clojure.core/alter-meta!" "clojure.core/alter-var-root")
            (candidates "clojure.core/alt" 'clojure.core)))
