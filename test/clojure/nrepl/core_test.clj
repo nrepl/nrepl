@@ -3,7 +3,6 @@
    [clojure.java.io :as io]
    [clojure.main]
    [clojure.set :as set]
-   [clojure.string :as str]
    [clojure.test :refer [are deftest is testing use-fixtures]]
    [nrepl.core :as nrepl :refer [client
                                  client-session
@@ -874,7 +873,8 @@
 
     ;; TODO: as noted in transports-fail-on-disconnects, *sometimes* two sends are needed
     ;; to trigger an exception on send to an unavailable server
-    (try (repl-eval session "(+ 1 1)") (catch Throwable t))
+    (try (repl-eval session "(+ 1 1)") (catch Throwable _))
+    (Thread/sleep 100)
     (is (thrown? SocketException (repl-eval session "(+ 1 1)")))))
 
 (def-repl-test request-*in*
@@ -1153,81 +1153,118 @@
       (is (= {:status #{:done}}
              resp3)))))
 
-(defn- sideloader-client
-  [session resources classes]
-  (fn [{:keys [type name]}]
-    (case type
-      "resource"
-      (session {:id      (uuid)
-                :op      "sideloader-provide"
-                :type    type
-                :name    name
-                :content (if-some [^String res (resources name)]
-                           (-> res
-                               (.getBytes "UTF-8")
-                               java.io.ByteArrayInputStream.
-                               sideloader/base64-encode)
-                           "")})
+(def sideloader-tests-lookup
+  {["resource" "hello"]
+   "Hello nREPL"
 
-      "class"
-      (session {:id      (uuid)
-                :op      "sideloader-provide"
-                :type    type
-                :name    name
-                :content (if-some [^File file (classes name)]
-                           (-> file
-                               io/input-stream
-                               sideloader/base64-encode)
-                           "")}))))
+   ["resource" "foo/bar.clj"]
+   "(ns foo.bar) (defn hello [] \"Hello nREPL\")"
 
-(defn- eval-with-sideloader [session code resources classes]
-  (let [eval-id   (uuid)
-        loader-id (uuid)
-        _         (session {:id loader-id :op "sideloader-start"})
-        msgs      (session {:id eval-id :op "eval" :code code})
-        slc       (sideloader-client session resources classes)]
-    (->> msgs
-         (remove (fn [{:keys [id status] :as msg}]
-                   (when (and (= id loader-id)
-                              (some #{"sideloader-lookup" :sideloader-lookup} status))
-                     (slc msg))
-                   (not= id eval-id)))
-         (map read-response-value)
-         (reduce (fn [v {:keys [id status value] :as msg}]
-                   (cond-> (or v value)
-                     (some #{:done "done"} status) reduced)) nil))))
+   ["class" "nrepl.HelloFactory"]
+   (File. project-base-dir "test-resources/HelloFactory.class")})
 
-(def-repl-test sideloader
+(defn string->content
+  [str]
+  (if str
+    (-> str
+        (.getBytes "UTF-8")
+        java.io.ByteArrayInputStream.
+        sideloader/base64-encode)
+    ""))
+
+(defn file->content
+  [file]
+  (if file
+    (-> file
+        io/input-stream
+        sideloader/base64-encode)
+    ""))
+
+(defn message-with-sideloader
+  [a-client msg sl-lookup]
+  (let [session-id    (new-session a-client)
+        sideloader-id (uuid)]
+    (future (->> (a-client {:id      sideloader-id
+                            :session session-id
+                            :op      "sideloader-start"})
+                 (filter #(= (:id %) sideloader-id))
+                 (run! (fn [{:keys [status type name]}]
+                         (when (contains? (set (map keyword status))
+                                          :sideloader-lookup)
+                           (a-client {:session session-id
+                                      :id      sideloader-id
+                                      :op      "sideloader-provide"
+                                      :content (case type
+                                                 "resource"
+                                                 (string->content (get sl-lookup [type name]))
+                                                 "class"
+                                                 (file->content (get sl-lookup [type name])))
+                                      :type    type
+                                      :name    name}))))))
+    (Thread/sleep 100)
+    (message a-client (assoc msg :session session-id))))
+
+(defn eval-with-sideloader
+  [a-client code sideloader-lookup]
+  (->> (message-with-sideloader a-client
+                                {:op "eval" :code code}
+                                sideloader-lookup)
+       (map clean-response)
+       (map read-response-value)
+       combine-responses))
+
+(def-repl-test sideloader-test
   (testing "Loading resources"
-    (let [code-snippet (code (slurp (.getResourceAsStream (.getContextClassLoader (Thread/currentThread)) "hello")))]
-      (is (= "Hello nREPL"
-             (eval-with-sideloader session
-                                   code-snippet
-                                   {"hello" "Hello nREPL"} {})))))
-  (let [code-snippet (code
-                      (require '[foo.bar :as bar])
-                      (bar/hello))]
-    (testing "Loading source as resource (clj)"
-      (is (= "Hello nREPL"
-             (eval-with-sideloader session
-                                   code-snippet
-                                   {"foo/bar.clj" "(ns foo.bar) (defn hello [] \"Hello nREPL\")"}
-                                   {}))))
-    (testing "Loading source as resource (cljc)"
-      (is (= "Hello nREPL"
-             (eval-with-sideloader session
-                                   code-snippet
-                                   {"foo/bar.cljc" "(ns foo.bar) (defn hello [] \"Hello nREPL\")"}
-                                   {})))))
+    (let [code-snippet (code (slurp (.getResourceAsStream (.getContextClassLoader (Thread/currentThread)) "hello")))
+          rsp          (eval-with-sideloader timeout-client
+                                             code-snippet
+                                             sideloader-tests-lookup)]
+      (is (= ["Hello nREPL"]
+             (:value rsp)))))
+  (testing "Loading source as resource (clj)"
+    (let [code-snippet (code
+                        (require '[foo.bar :as bar])
+                        (bar/hello))
+          rsp          (eval-with-sideloader timeout-client
+                                             code-snippet
+                                             sideloader-tests-lookup)]
+      (is (= [nil "Hello nREPL"]
+             (:value rsp)))))
   (testing "Loading class"
     (let [code-snippet (code
                         (do
                           (import 'nrepl.HelloFactory)
                           nil)
-                        (nrepl.HelloFactory/hello))]
-      (is (= "Hello nREPL"
-             (eval-with-sideloader session
-                                   code-snippet
-                                   {}
-                                   {"nrepl.HelloFactory"
-                                    (File. project-base-dir "test-resources/HelloFactory.class")}))))))
+                        (nrepl.HelloFactory/hello))
+          rsp          (eval-with-sideloader timeout-client
+                                             code-snippet
+                                             sideloader-tests-lookup)]
+      (is (= [nil "Hello nREPL"]
+             (:value rsp))))))
+
+(def dynamic-test-lookup
+  {["resource" "foo.clj"]
+   "(ns foo) (def bar :bar)"
+   ["resource" "ping.clj"]
+   (slurp
+    (File. project-base-dir "test-resources/ping.clj"))})
+
+(def-repl-test dynamic-middleware-test
+  (let [rsp (->> (message client {:op "ls-middleware"})
+                 (map clean-response)
+                 combine-responses)]
+    (is (contains? (set (:middleware rsp))
+                   "#'nrepl.middleware.session/session"))))
+
+(def-repl-test dynamic-middleware+sideloading
+  (let [rsp1 (->> (message-with-sideloader client
+                                           {:op         "add-middleware"
+                                            :middleware ["ping/wrap-ping"]}
+                                           dynamic-test-lookup)
+                  (map clean-response)
+                  combine-responses)
+        rsp2 (->> (message client {:op "ping"})
+                  (map clean-response)
+                  combine-responses)]
+    (is (= {:status #{:done}} rsp1))
+    (is (= {:status #{:done} :pong "pong"} rsp2))))
