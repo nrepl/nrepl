@@ -3,6 +3,7 @@
   {:author "Chas Emerick"}
   (:require
    [nrepl.ack :as ack]
+   [nrepl.middleware.dynamic-loader :as dynamic-loader]
    [nrepl.middleware :as middleware]
    nrepl.middleware.completion
    nrepl.middleware.interruptible-eval
@@ -12,7 +13,7 @@
    [nrepl.misc :refer [log response-for returning]]
    [nrepl.transport :as t])
   (:import
-   [java.net InetAddress InetSocketAddress ServerSocket Socket SocketException]))
+   [java.net InetSocketAddress ServerSocket]))
 
 (defn handle*
   [msg handler transport]
@@ -90,7 +91,8 @@
    #'nrepl.middleware.load-file/wrap-load-file
    #'nrepl.middleware.session/add-stdin
    #'nrepl.middleware.session/session
-   #'nrepl.middleware.sideloader/wrap-sideloader])
+   #'nrepl.middleware.sideloader/wrap-sideloader
+   #'nrepl.middleware.dynamic-loader/wrap-dynamic-loader])
 
 (defn default-handler
   "A default handler supporting interruptible evaluation, stdin, sessions, and
@@ -99,10 +101,17 @@
    Additional middlewares to mix into the default stack may be provided; these
    should all be values (usually vars) that have an nREPL middleware descriptor
    in their metadata (see `nrepl.middleware/set-descriptor!`)."
-  [& additional-middlewares]
-  (let [stack (middleware/linearize-middleware-stack (concat default-middlewares
-                                                             additional-middlewares))]
-    ((apply comp (reverse stack)) unknown-op)))
+  [& additional-middleware]
+  (let [initial-handler (dynamic-loader/wrap-dynamic-loader unknown-op)
+        state           (atom {:handler initial-handler
+                               :stack   [#'nrepl.middleware.dynamic-loader/wrap-dynamic-loader]})]
+    (binding [dynamic-loader/*state* state]
+      (initial-handler {:op          "swap-middleware"
+                        :state       state
+                        :middleware (concat default-middlewares additional-middleware)}))
+    (fn [msg]
+      (binding [dynamic-loader/*state* state]
+        ((:handler @state) msg)))))
 
 (defrecord Server [server-socket port open-transports transport greeting handler]
   java.io.Closeable
