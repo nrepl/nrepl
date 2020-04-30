@@ -167,6 +167,7 @@
                                               print/wrap-print-optional-arguments
                                               {"id" "An opaque message ID that will be included in responses related to the evaluation, and which may be used to restrict the scope of a later \"interrupt\" operation."
                                                "eval" "A fully-qualified symbol naming a var whose function value will be used to evaluate [code], instead of `clojure.core/eval` (the default)."
+                                               "ns" "The namespace in which to perform the evaluation. The supplied namespace must exist already (e.g. be loaded). If no namespace is specified the evaluation falls back to `*ns*` for the session in question."
                                                "file" "The path to the file containing [code]. `clojure.core/*file*` will be bound to this."
                                                "line" "The line number in [file] at which [code] starts."
                                                "column" "The column number in [file] at which [code] starts."})
