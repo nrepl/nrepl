@@ -122,6 +122,41 @@ java.lang.IllegalArgumentException: Don't know how to create ISeq from: java.lan
 user=>
 ----
 
+== Code Completion
+
+NOTE: Code completion support was added in nREPL 0.8 and the API is still
+considered experimental.
+
+nREPL bundles a completion middleware with a flexible interface. By default it will use nREPL own
+code completion in `nrepl.completion`, but you can instruct nREPL to use
+another completion function (e.g. one based on `compliment`).
+
+The completion function should accept 3 parameters:
+
+* `prefix`: The completion prefix.
+* `ns`: The namespace in which to look for completion candidates.
+* `options`: A map of additional options.
+
+The function should ideally return results in the following format:
+
+[source,clojure]
+----
+[{:candidate "map", :ns "clojure.core", :type :var}
+ {:candidate "map-entry?", :ns "clojure.core", :type :var}
+ {:candidate "map-indexed", :ns "clojure.core", :type :var}
+ {:candidate "map?", :ns "clojure.core", :type :var}
+ {:candidate "mapcat", :ns "clojure.core", :type :var}
+ {:candidate "mapv", :ns "clojure.core", :type :var}]
+----
+
+You can either specify a custom completion function in the requests (via the `complete` key) or by
+setting `nrepl.middleware.completion/*complete-fn*`.
+
+[source,clojure]
+----
+user=> (set! nrepl.middleware.completion/*complete-fn* my.namespace/my-completion)
+----
+
 == Hot-loading dependencies
 
 From time to time you'd want to experiment with some library without

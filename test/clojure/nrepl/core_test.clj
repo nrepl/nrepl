@@ -103,7 +103,7 @@
                   (throw (Exception. (#'clojure.spec.alpha/explain-str :nrepl.spec/message resp)))))
   resp)
 
-(defn- clean-response
+(defn clean-response
   "Cleans a response to help testing.
 
   This manually coerces bencode responses to (close) to what the raw EDN
