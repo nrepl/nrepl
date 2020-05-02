@@ -1,4 +1,4 @@
-(ns nrepl.load-file-test
+(ns nrepl.middleware.load-file-test
   {:author "Chas Emerick"}
   (:require
    [clojure.test :refer :all]
