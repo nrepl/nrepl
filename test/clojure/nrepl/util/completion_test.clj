@@ -1,6 +1,6 @@
-(ns nrepl.completion-test
+(ns nrepl.util.completion-test
   (:require [clojure.test :refer :all]
-            [nrepl.completion :as completion :refer [completions]]))
+            [nrepl.util.completion :as completion :refer [completions]]))
 
 (defn- candidates
   "Return only the candidate names without any additional
@@ -29,8 +29,8 @@
            (candidates "clojure.co")))
 
   (testing "namespace completion"
-    (is (= '("nrepl.completion" "nrepl.completion-test")
-           (candidates "nrepl.completion"))))
+    (is (= '("nrepl.util.completion" "nrepl.util.completion-test")
+           (candidates "nrepl.util.comp"))))
 
   (testing "Java instance methods completion"
     (is (= '(".toUpperCase")

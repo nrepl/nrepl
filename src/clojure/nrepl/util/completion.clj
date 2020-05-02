@@ -1,4 +1,4 @@
-(ns nrepl.completion
+(ns nrepl.util.completion
   "Code completion functionality.
 
   The functionality here is experimental and

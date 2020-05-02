@@ -13,7 +13,7 @@
   {:author "Bozhidar Batsov"
    :added "0.8"}
   (:require
-   [nrepl.completion :as complete]
+   [nrepl.util.completion :as complete]
    [nrepl.middleware :as middleware :refer [set-descriptor!]]
    [nrepl.misc :refer [response-for] :as misc]
    [nrepl.transport :as t])
