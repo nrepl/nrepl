@@ -72,6 +72,24 @@ intermingled in the result. See the
 xref:../design/middleware#_pretty_printing[print middleware documentation] for a
 more detailed explanation.
 
+TIP: For that reason nREPL provides a simple alternative to Clojure's `pprint`,
+that plays well with the print middleware - `nrepl.util.print/pprint`.
+
+You can also easily leverage more powerful pretty-printers like `fipp` or `zprint` with nREPL. Here's an example
+`zprint` wrapper compatible with nREPL's print middleware:
+
+[source,clojure]
+----
+(require 'zprint.core :as z)
+
+(defn zprint-pprint
+  ([value writer]
+   (zprint-pprint value writer {}))
+  ([value writer options]
+   (binding [*out* writer]
+     (z/zprint value options))))
+----
+
 == Evaluation Errors
 
 The dynamic var `nrepl.middleware.caught/\*caught-fn*` can be `set!` at the REPL

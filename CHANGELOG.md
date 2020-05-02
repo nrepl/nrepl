@@ -2,6 +2,10 @@
 
 ## master (unreleased)
 
+### New features
+
+* Bundle a couple of print functions compatible with the print middleware (see `nrepl.util.print`).
+
 ## 0.7.0 (2020-03-28)
 
 ### New features
