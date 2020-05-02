@@ -5,6 +5,7 @@
 ### New features
 
 * Bundle a couple of print functions compatible with the print middleware (see `nrepl.util.print`).
+* [#174](https://github.com/nrepl/nrepl/issues/174): Provide a built-in `completions` op.
 
 ## 0.7.0 (2020-03-28)
 
