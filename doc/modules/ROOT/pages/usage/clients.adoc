@@ -24,7 +24,7 @@ client/tool.  Tools that support nREPL include:
 * link:https://github.com/Saikyun/miracle[miracle] (fork of `monroe` targeting Arcadia)
 * link:https://github.com/clojure-vim/acid.nvim[Acid.nvim] (Asynchronous Clojure Interactive Development for Neovim)
 * https://github.com/mauricioszabo/atom-chlorine[Chrorine] (Atom plugin for Clojure Development)
-* https://github.com/Olical/conjure-sourcery[Conjure] (Clojure(Script) plugin for Neovim)
+* https://github.com/Olical/conjure[Conjure] (Clojure(Script) plugin for Neovim)
 
 Some of these clients will only work with Clojure nREPL servers, while
 others are built with language-agnosticism and can connect to nREPL
