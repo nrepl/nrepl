@@ -1245,9 +1245,13 @@
 (def dynamic-test-lookup
   {["resource" "foo.clj"]
    "(ns foo) (def bar :bar)"
+
    ["resource" "ping.clj"]
    (slurp
-    (File. project-base-dir "test-resources/ping.clj"))})
+    (File. project-base-dir "test-resources/ping.clj"))
+
+   ["resource" "ping_imp.clj"]
+   "(ns ping-imp) (defn pong [] \"pong-deferred\")"})
 
 (def-repl-test dynamic-middleware-test
   (let [rsp (->> (message client {:op "ls-middleware"})
@@ -1268,3 +1272,17 @@
                   combine-responses)]
     (is (= {:status #{:done}} rsp1))
     (is (= {:status #{:done} :pong "pong"} rsp2))))
+
+(def-repl-test dynamic-middleware+deferred+sideloading
+  (let [rsp1 (->> (message-with-sideloader client
+                                           {:op               "add-middleware"
+                                            :middleware       ["ping/wrap-ping"]
+                                            :extra-namespaces ["ping-imp"]}
+                                           dynamic-test-lookup)
+                  (map clean-response)
+                  combine-responses)
+        rsp2 (->> (message client {:op "deferred-ping"})
+                  (map clean-response)
+                  combine-responses)]
+    (is (= {:status #{:done}} rsp1))
+    (is (= {:status #{:done} :pong "pong-deferred"} rsp2))))
