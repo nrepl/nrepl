@@ -60,3 +60,20 @@
         (require (symbol (namespace sym)))
         (resolve sym)
         (catch Exception _))))
+
+(defmacro with-session-classloader
+  "If the session has a classloader set, then execute the body using that.
+  `clojure.lang.Compiler/LOADER also need to be binded to this.
+
+  This is typically used to trigger the sideloader, when set."
+  [session & body]
+  `(let [ctxcl#  (.getContextClassLoader (Thread/currentThread))
+         alt-cl# (when-let [classloader# (:classloader (meta ~session))]
+                   (classloader#))
+         cl#     (or alt-cl# ctxcl#)]
+    (.setContextClassLoader (Thread/currentThread) cl#)
+    (try
+      (with-bindings {clojure.lang.Compiler/LOADER cl#}
+        ~@body)
+      (finally
+        (.setContextClassLoader (Thread/currentThread) ctxcl#)))))

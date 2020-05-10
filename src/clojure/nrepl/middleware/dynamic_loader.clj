@@ -9,27 +9,10 @@
   (:require [clojure.string :as str]
             [nrepl.middleware :refer [linearize-middleware-stack set-descriptor!]]
             [nrepl.middleware.session :as middleware.session]
-            [nrepl.misc :as misc :refer [response-for]]
+            [nrepl.misc :as misc :refer [response-for with-session-classloader]]
             [nrepl.transport :as t]))
 
 (def ^:dynamic *state* nil)
-
-(defn wrap-ping
-  [h]
-  (fn [{:keys [op transport] :as msg}]
-    (case op
-      "ping"
-      (t/send transport (response-for msg {:pong "pong"
-                                           :status :done}))
-      (h msg))))
-
-(set-descriptor! #'wrap-ping
-                 {:require #{}
-                  :expects #{}
-                  :handles {"ping"
-                            {:doc "Ping"
-                             :require {}
-                             :returns {"status" "done"}}}})
 
 (defn unknown-op
   "Sends an :unknown-op :error for the given message."
@@ -38,31 +21,22 @@
 
 (defn- update-stack!
   [session middleware]
-  (let [ctxcl  (.getContextClassLoader (Thread/currentThread))
-        alt-cl (when-let [classloader (:classloader (meta session))]
-                 (classloader))
-        cl     (or alt-cl
-                   ctxcl)]
-    (.setContextClassLoader (Thread/currentThread) cl)
+  (with-session-classloader session
     (try
-      (with-bindings {clojure.lang.Compiler/LOADER cl}
-        (let [stack (->> middleware
-                         (map (fn [middleware-str-or-var]
-                                (if (var? middleware-str-or-var)
-                                  middleware-str-or-var
-                                  (-> middleware-str-or-var
-                                      (str/replace "#'" "")
-                                      symbol
-                                      misc/requiring-resolve))))
-                         linearize-middleware-stack)]
-          (reset! *state* {:handler ((apply comp (reverse stack)) unknown-op)
-                           :stack   stack})))
+      (let [stack (->> middleware
+                       (map (fn [middleware-str-or-var]
+                              (if (var? middleware-str-or-var)
+                                middleware-str-or-var
+                                (-> middleware-str-or-var
+                                    (str/replace "#'" "")
+                                    symbol
+                                    misc/requiring-resolve))))
+                       linearize-middleware-stack)]
+        (reset! *state* {:handler ((apply comp (reverse stack)) unknown-op)
+                         :stack   stack}))
       (catch Throwable t
         {:error        t
-         :alt-cl?      (boolean alt-cl)
-         :before-stack (map str (:stack @*state*))})
-      (finally
-        (.setContextClassLoader (Thread/currentThread) ctxcl)))))
+         :before-stack (map str (:stack @*state*))}))))
 
 (defn wrap-dynamic-loader
   [h]
