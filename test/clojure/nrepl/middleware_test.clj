@@ -1,12 +1,8 @@
 (ns nrepl.middleware-test
   (:require
-   [clojure.test :refer :all]
+   [clojure.test :refer [deftest is are]]
    [nrepl.middleware :as middleware :refer [linearize-middleware-stack]]
-   nrepl.middleware.interruptible-eval
-   nrepl.middleware.load-file
-   nrepl.middleware.print
-   nrepl.middleware.session
-   [nrepl.server :refer [default-middlewares]]))
+   [nrepl.server :refer [default-middleware]]))
 
 (defn- wonky-resolve [s] (if (symbol? s) (resolve s) s))
 
@@ -23,7 +19,7 @@
        (into {})))
 
 (deftest sanity
-  (let [stack (indexed-stack default-middlewares)]
+  (let [stack (indexed-stack default-middleware)]
     (is (stack 'wrap-print))
     (are [before after] (< (stack before) (stack after))
       'interruptible-eval 'wrap-load-file
@@ -38,7 +34,7 @@
         {:dummy :middleware}
         q ^{::middleware/descriptor
             {:expects #{} :requires #{"describe" "eval"}}} {:dummy :middleware3}
-        stack (indexed-stack (concat default-middlewares [m q n]))]
+        stack (indexed-stack (concat default-middleware [m q n]))]
     ;(->> stack clojure.set/map-invert (into (sorted-map)) vals println)
     (are [before after] (< (stack before) (stack after))
       'interruptible-eval m
@@ -56,7 +52,7 @@
   (let [m ^{::middleware/descriptor
             {:expects #{} :requires #{}}} {:dummy :middleware}
         n {:dummy "This not-middleware is supposed to be sans-descriptor, don't panic!"}
-        stack (->> (concat default-middlewares [m n])
+        stack (->> (concat default-middleware [m n])
                    shuffle
                    linearize-middleware-stack)]
     (is (= #{n m} (set (take-last 2 stack))))))
@@ -65,7 +61,7 @@
   (is (.contains
        (with-out-str
          (binding [*err* *out*]
-           (indexed-stack (conj default-middlewares {:dummy :middleware}))))
+           (indexed-stack (conj default-middleware {:dummy :middleware}))))
        "No nREPL middleware descriptor in metadata of {:dummy :middleware}")))
 
 (deftest NREPL-53-regression

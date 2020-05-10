@@ -1,4 +1,7 @@
 (ns ping
+  "This provides an example of a middleware, including a deferred handler
+  that's not loaded until called. This is representative of how cider-nrepl
+  and refactor-nrepl handles deferred loading"
   (:require [nrepl.middleware :as middleware :refer [set-descriptor!]]
             [nrepl.misc :as misc :refer [response-for]]
             [nrepl.transport :as t]))

@@ -6,6 +6,7 @@
 
 * Bundle a couple of print functions compatible with the print middleware (see `nrepl.util.print`).
 * [#174](https://github.com/nrepl/nrepl/issues/174): Provide a built-in `completions` op.
+* [#143](https://github.com/nrepl/nrepl/issues/143): Added a middleware that allows dynamic loading/unloading of middlewares while the server is running.
 
 ## 0.7.0 (2020-03-28)
 

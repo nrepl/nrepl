@@ -3,9 +3,14 @@
   nREPL server. This can be used by tools to configure an existing instance of
   an environment after connection.
 
+  It can also be used to load extra namespaces, in addition to the ones that new
+  middleware are defined in, to handle existing middleware that performs
+  deferred loading.
+
   When combined with the sideloader, this could be used to inject middleware
   that are unknown to the server prior to connection."
-  {:author "Shen Tian", :added "0.8"}
+  {:author "Shen Tian"
+   :added  "0.8"}
   (:require [clojure.string :as str]
             [nrepl.middleware :refer [linearize-middleware-stack set-descriptor!]]
             [nrepl.middleware.session :as middleware.session]
@@ -34,8 +39,7 @@
       (if (every? some? resolved)
         (reset! *state* {:handler ((apply comp (reverse stack)) unknown-op)
                          :stack   stack})
-        {:error      "Unable to resolve all middleware"
-         :unresolved (keep (fn [[m resolved]]
+        {:unresolved (keep (fn [[m resolved]]
                              (when (nil? resolved) m))
                            (zipmap middleware resolved))}))))
 
@@ -63,36 +67,40 @@
   [h]
   (fn [{:keys [op transport session middleware extra-namespaces] :as msg}]
     (when-not (instance? clojure.lang.IAtom *state*)
-      (throw (ex-info "dynamic-loader/*state* is not bond to an atom. This is likely a mistake" nil)))
+      (throw (ex-info "dynamic-loader/*state* is not bond to an atom. This is likely a bug" nil)))
     (case op
       "add-middleware"
       (do
         (require-namespaces session extra-namespaces)
-        (let [{:keys [error unresolved]}
+        (let [{:keys [unresolved]}
               (update-stack! session (concat middleware (:stack @*state*)))]
-          (if-not error
+          (if-not unresolved
             (t/send transport (response-for msg {:status :done}))
             (t/send transport (response-for msg {:status                #{:done :error}
-                                                 :error                 error
                                                  :unresolved-middleware unresolved})))))
 
       "swap-middleware"
       (do
         (require-namespaces session extra-namespaces)
-        (let [{:keys [error unresolved]} (update-stack! session middleware)]
+        (let [{:keys [unresolved]} (update-stack! session middleware)]
           (when transport
-            (if-not error
+            (if-not unresolved
               (t/send transport (response-for msg {:status :done}))
               (t/send transport (response-for msg {:status                #{:done :error}
-                                                   :error                 error
                                                    :unresolved-middleware unresolved}))))))
 
       "ls-middleware"
-      (do
-        (t/send transport (response-for msg :middleware (mapv str (:stack @*state*))))
-        (t/send transport (response-for msg {:status :done})))
+      (t/send transport (response-for msg
+                                      :middleware (mapv str (:stack @*state*))
+                                      :status :done))
 
       (h msg))))
+
+(def ^{:private true} add-swap-ops
+  {:requires {"middleware" "a list of middleware"}
+   :optional {"extra-namespaces" "a list of extra namespaces to load. This is useful when the new middleware feature deferred loading"}
+   :returns  {"status"                "`done`, once done, and `error`, if there's any problems in loading a middleware"
+              "unresolved-middleware" "List of middleware that could not be resolved"}})
 
 (set-descriptor! #'wrap-dynamic-loader
                  {:requires #{#'middleware.session/session}
@@ -102,16 +110,8 @@
                               :requires {}
                               :returns  {"middleware" "list of vars representing loaded middleware, from inside out"}}
                              "add-middleware"
-                             {:doc      "Adding some middleware"
-                              :requires {"middleware" "a list of middleware"}
-                              :optional {"extra-namespaces" "a list of extra namespaces to load"}
-                              :returns  {"status"                "done, once done, and error, if there's any problems in loading a middleware"
-                                         "error"                 "error message"
-                                         "unresolved-middleware" "List of middleware that could not be resolved"}}
+                             (merge add-swap-ops
+                                    {:doc "Adding some middleware"})
                              "swap-middleware"
-                             {:doc      "Replace the whole middleware stack"
-                              :requires {"middleware" "a list of middleware"}
-                              :optional {"extra-namespaces" "a list of extra namespaces to load"}
-                              :returns  {"status"                "done, once done, and error, if there's any problems in loading a middleware"
-                                         "error"                 "error message"
-                                         "unresolved-middleware" "List of middleware that could not be resolved"}}}})
+                             (merge add-swap-ops
+                                    {:doc "Replace the whole middleware stack"})}})

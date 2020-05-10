@@ -116,6 +116,58 @@ This unblocks the `eval` command, which returns the value `Qaz` in the final mes
 
 It's thus important, once sideloading has started, to asynchronously handle lookup requests, without these being blocked by waiting on a response from another message.
 
+== Modifying middleware
+
+To add a middleware that's already available on the server's classpath, it's as
+simple as sending the message
+
+[source,clojure]
+----
+{:op "add-middleware"
+ :middleware ["cider.nrepl.middleware/wrap-version"]}
+----
+
+However, if the middleware is loaded, it's very likely that it hasn't been included
+as a dependency on the server, and thus unavailable on its classpath. Furthermore.
+In this case, we can use the `dynamic-loader` in conjunction with the `sideloader`:
+
+[source,clojure]
+----
+{:op "sideloader-start"}
+;; handle sideloading separatedly...
+;; now we add the middleware
+{:op "add-middleware"
+ :middleware ["cider.nrepl.middleware/wrap-version"]}
+;; confirm it's being loaded..
+{:op "ls-middleware"}
+;; and we should get something like...
+{:status #{:done}
+ :middleware [... "#'cider.nrepl.middleware/wrap-version" ...]}
+----
+
+However, if we tried to use the middleware with an `cider-version` op, we'd get an
+error, because the middleware is implemented in a different namespace, which is
+only loaded on the first use of the `cider-version` op. This is a practice in
+many middleware to improve startup performance. One method of getting around this
+is to request the extra namespace to be loaded at `add-middleware` time too:
+
+[source,clojure]
+----
+;; after starting the sideloader...
+{:op "add-middleware"
+ :middleware ["cider.nrepl.middleware/wrap-version"]
+ :extra-namespaces ["cider.nrepl.middleware.version"]}
+ ;; now, the following shoud work
+ {:op "cider-version"}
+----
+
+There is no operation to remove a single middleware, but it's possible to reset
+the stack to a baseline with the `swap-middleware` operation. If the goal is to
+simply reset the middleware stack, use this in conjuction with
+`nrepl.server/default-middleware`.
+
+Also note that updating the middleware stack may also destroy/re-create middleware state. As an example, sideloading would need to be re-started. The impact on each middleware differs, however, as some of them, e.g. `session` holds their state globally.
+
 == Additional Resources
 
 * https://mauricio.szabo.link/blog/2020/04/04/implementing-a-nrepl-client/

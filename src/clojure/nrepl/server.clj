@@ -81,10 +81,9 @@
   [{:keys [op transport] :as msg}]
   (t/send transport (response-for msg :status #{:error :unknown-op :done} :op op)))
 
-(def default-middlewares
+(def default-middleware
   "Middleware vars that are implicitly merged with any additional
-   middlewares provided to nrepl.server/default-handler."
-
+   middleware provided to nrepl.server/default-handler."
   [#'nrepl.middleware/wrap-describe
    #'nrepl.middleware.completion/wrap-completion
    #'nrepl.middleware.interruptible-eval/interruptible-eval
@@ -94,12 +93,23 @@
    #'nrepl.middleware.sideloader/wrap-sideloader
    #'nrepl.middleware.dynamic-loader/wrap-dynamic-loader])
 
+(def built-in-ops
+  "Get all the op names from default middleware automatically"
+  (->> default-middleware
+       (map #(-> % meta :nrepl.middleware/descriptor :handles keys))
+       (reduce concat)
+       set))
+
+(def ^{:deprecated "0.8.0"} default-middlewares
+  "Use `nrepl.server/default-middleware` instead. Middleware"
+  default-middleware)
+
 (defn default-handler
   "A default handler supporting interruptible evaluation, stdin, sessions,
    readable representations of evaluated expressions via `pr`, sideloading, and
-   dynamic loading of middlewares.
+   dynamic loading of middleware.
 
-   Additional middlewares to mix into the default stack may be provided; these
+   Additional middleware to mix into the default stack may be provided; these
    should all be values (usually vars) that have an nREPL middleware descriptor
    in their metadata (see `nrepl.middleware/set-descriptor!`).
 
@@ -112,7 +122,7 @@
     (binding [dynamic-loader/*state* state]
       (initial-handler {:op          "swap-middleware"
                         :state       state
-                        :middleware (concat default-middlewares additional-middleware)}))
+                        :middleware (concat default-middleware additional-middleware)}))
     (fn [msg]
       (binding [dynamic-loader/*state* state]
         ((:handler @state) msg)))))
