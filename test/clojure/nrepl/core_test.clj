@@ -1251,7 +1251,8 @@
     (File. project-base-dir "test-resources/ping.clj"))
 
    ["resource" "ping_imp.clj"]
-   "(ns ping-imp) (defn pong [] \"pong-deferred\")"})
+   (slurp
+    (File. project-base-dir "test-resources/ping_imp.clj"))})
 
 (def-repl-test dynamic-middleware-test
   (let [rsp (->> (message client {:op "ls-middleware"})

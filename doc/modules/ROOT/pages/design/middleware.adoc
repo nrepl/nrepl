@@ -28,13 +28,13 @@ All of nREPL's provided default functionality is implemented in terms of
 middleware, even foundational bits like session and eval support.  This default
 middleware "stack" aims to match and exceed the functionality offered by the
 standard Clojure REPL, and is available at
-`nrepl.server/default-middlewares`.  Concretely, it consists of a
+`nrepl.server/default-middleware`.  Concretely, it consists of a
 number of middleware functions' vars that are implicitly merged with any
 user-specified middleware provided to
 `nrepl.server/default-handler`.  To understand how that implicit
 merge works, we'll first need to talk about middleware "descriptors".
 
-link:https://github.com/nrepl/nrepl/wiki/Extensions[Other nREPL middlewares are provided by the community].
+link:https://github.com/nrepl/nrepl/wiki/Extensions[Other nREPL middleware are provided by the community].
 
 (See xref:ops.adoc[this documentation listing] for
 details as to the operations implemented by nREPL's default middleware stack,
@@ -125,7 +125,7 @@ Clojure's default stream-based REPL implementation).
 
 The specific contents of a middleware's descriptor depends entirely on its
 objectives: which operations it is to implement/define, how it is to modify
-incoming request messages, and which higher- and lower-level middlewares are to
+incoming request messages, and which higher- and lower-level middleware are to
 aid in accomplishing its aims.
 
 nREPL uses the dependency information in descriptors in order to produce a
@@ -268,7 +268,7 @@ specified in both). The following options are supported:
  :nrepl.middleware.print/quota 8096}
 ----
 
-The functionality of the `print` middleware is reusable by other middlewares. If
+The functionality of the `print` middleware is reusable by other middleware. If
 a middleware descriptor's `:requires` set contains
 `#'nrepl.middleware.print/wrap-print`, then it can expect:
 
@@ -316,7 +316,7 @@ any options are specified in both). The following options are supported:
  :nrepl.middleware.caught/print? true}
 ----
 
-The functionality of the `caught` middleware is reusable by other middlewares.
+The functionality of the `caught` middleware is reusable by other middleware.
 If a middleware descriptor's `:requires` set contains
 `#'nrepl.middleware.caught/wrap-caught`, then it can expect:
 
@@ -359,3 +359,19 @@ See link:../building_clients.html[Building Clients] on how to implement the serv
 Once the sideloader has been started, it can be triggered by an ordinary `eval` or `load-file` operation. The nREPL server will first try to find a resource/class on the classpath of its own JVM. Failing this, it will attempt to request it from the nREPL client by the above described mechanism. Should this still fail, expect a `ClassNotFoundException` as usual.
 
 TIP: Once a class has been loaded, it will become available to all sessions on nREPL server.
+
+== Dynamic middleware loading
+
+NOTE: Dynamic middleware loading support was added in nREPL 0.8 and the API is still
+considered experimental, and may change.
+
+nREPL includes a `dynamic-loader` middleware, which can be used, at runtime,
+query and change the middleware stack the nREPL server is using. This is especially
+powerful when combined with sideloading, as it allows a client to configure the
+server after connecting, and provides an alternative to having to specify the middleware required by the client as startup time.
+
+This introduces three new operations:
+
+* `ls-middleware`, to return a list of active middleware, ordered from inside outwards.
+* `add-middleware`, which adds a middleware to the stack. Optionally, a list of `extra-namespaces` could be provided for loading. This is useful when adding middleware that implement some form of deferred loading. Examples include `cider-nrepl` and `refactor-nrepl`. In these cases, some of the required namespaces might only be loaded upon first use, which may occur outside of a sideloading session, and thus fail. This feature allows us to pre-load namespaces when we add a middleware. If loading of any particular middleware fails, the stack will be unchanged.
+* `swap-middleware`, similar to `add-`, but replaces all existing middleware. Note that this _may_ remove the `dynamic-loader` itself.

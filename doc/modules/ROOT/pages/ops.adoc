@@ -8,6 +8,24 @@ This file is _generated_ by #'nrepl.impl.docs/-main
 
 == Operations
 
+=== `add-middleware`
+
+Adding some middleware
+
+Required parameters::
+* `:middleware` a list of middleware
+
+
+Optional parameters::
+* `:extra-namespaces` a list of extra namespaces to load. This is useful when the new middleware feature deferred loading
+
+
+Returns::
+* `:status` ``done``, once done, and ``error``, if there's any problems in loading a middleware
+* `:unresolved-middleware` List of middleware that could not be resolved
+
+
+
 === `clone`
 
 Clones the current session, returning the ID of the newly-created session.
@@ -159,6 +177,21 @@ Returns::
 
 
 
+=== `ls-middleware`
+
+List of current middleware
+
+Required parameters::
+{blank}
+
+Optional parameters::
+{blank}
+
+Returns::
+* `:middleware` list of vars representing loaded middleware, from inside out
+
+
+
 === `ls-sessions`
 
 Lists the IDs of all active sessions.
@@ -221,4 +254,22 @@ Optional parameters::
 
 Returns::
 * `:status` A status of "need-input" will be sent if a session's \*in* requires content in order to satisfy an attempted read operation.
+
+
+
+=== `swap-middleware`
+
+Replace the whole middleware stack
+
+Required parameters::
+* `:middleware` a list of middleware
+
+
+Optional parameters::
+* `:extra-namespaces` a list of extra namespaces to load. This is useful when the new middleware feature deferred loading
+
+
+Returns::
+* `:status` ``done``, once done, and ``error``, if there's any problems in loading a middleware
+* `:unresolved-middleware` List of middleware that could not be resolved
 

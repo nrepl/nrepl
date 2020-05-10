@@ -65,15 +65,17 @@
   "If the session has a classloader set, then execute the body using that.
   `clojure.lang.Compiler/LOADER also need to be binded to this.
 
-  This is typically used to trigger the sideloader, when set."
+  This is typically used to trigger the sideloader, when active."
   [session & body]
   `(let [ctxcl#  (.getContextClassLoader (Thread/currentThread))
          alt-cl# (when-let [classloader# (:classloader (meta ~session))]
-                   (classloader#))
-         cl#     (or alt-cl# ctxcl#)]
-     (.setContextClassLoader (Thread/currentThread) cl#)
-     (try
-       (with-bindings {clojure.lang.Compiler/LOADER cl#}
-         ~@body)
-       (finally
-         (.setContextClassLoader (Thread/currentThread) ctxcl#)))))
+                   (classloader#))]
+     (if alt-cl#
+       (do
+         (.setContextClassLoader (Thread/currentThread) alt-cl#)
+         (try
+           (with-bindings {clojure.lang.Compiler/LOADER alt-cl#}
+             ~@body)
+           (finally
+             (.setContextClassLoader (Thread/currentThread) ctxcl#))))
+       (do ~@body))))
