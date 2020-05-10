@@ -22,20 +22,22 @@
 (defn- update-stack!
   [session middleware]
   (with-session-classloader session
-    (try
-      (let [stack (->> middleware
-                       (map (fn [middleware-str-or-var]
-                              (if (var? middleware-str-or-var)
-                                middleware-str-or-var
-                                (-> middleware-str-or-var
-                                    (str/replace "#'" "")
-                                    symbol
-                                    misc/requiring-resolve))))
-                       linearize-middleware-stack)]
+    (let [resolved (map (fn [middleware-str-or-var]
+                          (if (var? middleware-str-or-var)
+                            middleware-str-or-var
+                            (-> middleware-str-or-var
+                                (str/replace "#'" "")
+                                symbol
+                                misc/requiring-resolve)))
+                        middleware)
+          stack    (linearize-middleware-stack resolved)]
+      (if (every? some? resolved)
         (reset! *state* {:handler ((apply comp (reverse stack)) unknown-op)
-                         :stack   stack}))
-      (catch Throwable t
-        {:error t}))))
+                         :stack   stack})
+        {:error      "Unable to resolve all middleware"
+         :unresolved (keep (fn [[m resolved]]
+                             (when (nil? resolved) m))
+                           (zipmap middleware resolved))}))))
 
 (defn wrap-dynamic-loader
   "The dynamic loader is both part of the middleware stack, but is also able to
@@ -55,21 +57,22 @@
       (throw (ex-info "dynamic-loader/*state* is not bond to an atom. This is likely a mistake" nil)))
     (case op
       "add-middleware"
-      (do
-        (let [{:keys [error alt-cl? before-stack]}
-              (update-stack! session (concat middleware (:stack @*state*)))]
-          (when error
-            (t/send transport (response-for msg {:error        (str error)
-                                                 :sideloading  (str alt-cl?)
-                                                 :before-stack before-stack}))))
-        (t/send transport (response-for msg {:status :done})))
+      (let [{:keys [error unresolved]}
+            (update-stack! session (concat middleware (:stack @*state*)))]
+        (if-not error
+          (t/send transport (response-for msg {:status :done}))
+          (t/send transport (response-for msg {:status                #{:done :error}
+                                               :error                 error
+                                               :unresolved-middleware unresolved}))))
 
       "swap-middleware"
-      (do
-        (update-stack! session middleware)
-        (when transport ;; transport is likely nil during bootstrapping
-          (t/send transport (response-for msg :middleware (mapv str (:stack @*state*))))
-          (t/send transport (response-for msg {:status :done}))))
+      (let [{:keys [error unresolved]} (update-stack! session middleware)]
+        (when transport
+          (if-not error
+            (t/send transport (response-for msg {:status :done}))
+            (t/send transport (response-for msg {:status                #{:done :error}
+                                                 :error                 error
+                                                 :unresolved-middleware unresolved})))))
 
       "ls-middleware"
       (do
@@ -81,7 +84,19 @@
 (set-descriptor! #'wrap-dynamic-loader
                  {:requires #{#'middleware.session/session}
                   :expects  #{}
-                  :handles  {"add-middleware"
-                             {:doc     "Adding some middleware, dynamically"
+                  :handles  {"ls-middleware"
+                             {:doc "List of current middleware"
+                              :require {}
+                              :returns {"middleware" "list of vars representing loaded middleware, from inside out"}}
+                             "add-middleware"
+                             {:doc     "Adding some middleware"
                               :require {"middleware" "a list of middleware"}
-                              :returns {"status" "done, once done"}}}})
+                              :returns {"status" "done, once done, and error, if there's any problems in loading a middleware"
+                                        "error" "error message"
+                                        "unresolved-middleware" "List of middleware that could not be resolved"}}
+                             "swap-middleware"
+                             {:doc     "Replace the whole middleware stack"
+                              :require {"middleware" "a list of middleware"}
+                              :returns {"status" "done, once done, and error, if there's any problems in loading a middleware"
+                                        "error" "error message"
+                                        "unresolved-middleware" "List of middleware that could not be resolved"}}}})
