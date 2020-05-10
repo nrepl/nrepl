@@ -9,7 +9,7 @@
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.caught :as caught]
    [nrepl.middleware.print :as print]
-   [nrepl.misc :refer [response-for]]
+   [nrepl.misc :refer [response-for with-session-classloader]]
    [nrepl.transport :as t])
   (:import
    (clojure.lang Compiler$CompilerException LineNumberingPushbackReader)
@@ -70,25 +70,16 @@
     (if (and ns (not explicit-ns))
       (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}
                                            :ns ns}))
-      (let [ctxcl (.getContextClassLoader (Thread/currentThread))
-            ;; TODO: out-limit -> out-buffer-size | err-buffer-size
+      (let [;; TODO: out-limit -> out-buffer-size | err-buffer-size
             ;; TODO: new options: out-quota | err-quota
             opts {::print/buffer-size (or out-limit (get (meta session) :out-limit))}
             out (print/replying-PrintWriter :out msg opts)
-            err (print/replying-PrintWriter :err msg opts)
-            cl (when-let [classloader (:classloader (meta session))]
-                 (classloader))]
-        (when cl
-          (.setContextClassLoader (Thread/currentThread) cl))
+            err (print/replying-PrintWriter :err msg opts)]
         (try
           (clojure.main/repl
            :eval (let [eval-fn (if eval (find-var (symbol eval)) clojure.core/eval)]
                    (fn [form]
-                     (if cl
-                       (with-bindings
-                         {clojure.lang.Compiler/LOADER cl}
-                         (eval-fn form))
-                       (eval-fn form))))
+                     (with-session-classloader session (eval-fn form))))
            :init #(let [bindings
                         (-> (get-thread-bindings)
                             (into caught/default-bindings)
@@ -135,7 +126,6 @@
                                    :root-ex (str (class (clojure.main/root-cause e)))}]
                          (t/send transport (response-for msg resp))))))
           (finally
-            (.setContextClassLoader (Thread/currentThread) ctxcl)
             (.flush err)
             (.flush out)))))))
 
