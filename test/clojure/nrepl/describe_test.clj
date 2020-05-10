@@ -1,19 +1,20 @@
 (ns nrepl.describe-test
   {:author "Chas Emerick"}
-  (:require
-   [clojure.test :refer :all]
-   [nrepl.core :as nrepl]
-   [nrepl.core-test :refer [def-repl-test repl-server-fixture project-base-dir]]
-   [nrepl.middleware :as middleware]
-   [nrepl.version :as version]))
+  (:require [clojure.test :refer [is testing use-fixtures]]
+            [nrepl.core :as nrepl]
+            [nrepl.core-test :refer [def-repl-test repl-server-fixture]]
+            [nrepl.middleware :as middleware]
+            [nrepl.server :as server]
+            [nrepl.version :as version]))
 
 (use-fixtures :once repl-server-fixture)
 
 (def ^{:private true} op-names
-  #{"load-file" "ls-sessions" "interrupt" "stdin"
-    "describe" "eval" "close" "clone" "completions"
-    "sideloader-start" "sideloader-provide"
-    "add-middleware"})
+  "Get all the op names from default middlewares automatically"
+  (->> server/default-middlewares
+       (map #(-> % meta :nrepl.middleware/descriptor :handles keys))
+       (reduce concat)
+       set))
 
 (def-repl-test simple-describe
   (let [{{:keys [nrepl clojure java]} :versions
