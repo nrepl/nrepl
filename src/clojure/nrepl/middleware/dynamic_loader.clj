@@ -35,12 +35,24 @@
         (reset! *state* {:handler ((apply comp (reverse stack)) unknown-op)
                          :stack   stack}))
       (catch Throwable t
-        {:error        t
-         :before-stack (map str (:stack @*state*))}))))
+        {:error t}))))
 
 (defn wrap-dynamic-loader
+  "The dynamic loader is both part of the middleware stack, but is also able to
+  modify the stack. To further complicate things, the middleware architecture
+  works best when each middleware is a var, resolving to an 1-arity function.
+
+  The state of the external world is thus passed to this middleware by rebinding
+  the `*state*` var, and we expect this to have two keys:
+
+  - `:handler`, the current active handler
+  - `:stack`, a col of vars that represent the current middleware stack.
+
+  Note that if `*state*` is not rebound, this middleware will not work."
   [h]
   (fn [{:keys [op transport session middleware] :as msg}]
+    (when-not (instance? clojure.lang.IAtom *state*)
+      (throw (ex-info "dynamic-loader/*state* is not bond to an atom. This is likely a mistake" nil)))
     (case op
       "add-middleware"
       (do
@@ -55,7 +67,7 @@
       "swap-middleware"
       (do
         (update-stack! session middleware)
-        (when transport
+        (when transport ;; transport is likely nil during bootstrapping
           (t/send transport (response-for msg :middleware (mapv str (:stack @*state*))))
           (t/send transport (response-for msg {:status :done}))))
 

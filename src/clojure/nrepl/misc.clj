@@ -71,9 +71,9 @@
          alt-cl# (when-let [classloader# (:classloader (meta ~session))]
                    (classloader#))
          cl#     (or alt-cl# ctxcl#)]
-    (.setContextClassLoader (Thread/currentThread) cl#)
-    (try
-      (with-bindings {clojure.lang.Compiler/LOADER cl#}
-        ~@body)
-      (finally
-        (.setContextClassLoader (Thread/currentThread) ctxcl#)))))
+     (.setContextClassLoader (Thread/currentThread) cl#)
+     (try
+       (with-bindings {clojure.lang.Compiler/LOADER cl#}
+         ~@body)
+       (finally
+         (.setContextClassLoader (Thread/currentThread) ctxcl#)))))

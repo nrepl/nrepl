@@ -95,14 +95,18 @@
    #'nrepl.middleware.dynamic-loader/wrap-dynamic-loader])
 
 (defn default-handler
-  "A default handler supporting interruptible evaluation, stdin, sessions, and
-   readable representations of evaluated expressions via `pr`.
+  "A default handler supporting interruptible evaluation, stdin, sessions,
+   readable representations of evaluated expressions via `pr`, sideloading, and
+   dynamic loading of middlewares.
 
    Additional middlewares to mix into the default stack may be provided; these
    should all be values (usually vars) that have an nREPL middleware descriptor
-   in their metadata (see `nrepl.middleware/set-descriptor!`)."
+   in their metadata (see `nrepl.middleware/set-descriptor!`).
+
+   This handler bootstraps by initiating with just the dynamic loader, then
+   using that to load the other middleware."
   [& additional-middleware]
-  (let [initial-handler (dynamic-loader/wrap-dynamic-loader unknown-op)
+  (let [initial-handler (dynamic-loader/wrap-dynamic-loader nil)
         state           (atom {:handler initial-handler
                                :stack   [#'nrepl.middleware.dynamic-loader/wrap-dynamic-loader]})]
     (binding [dynamic-loader/*state* state]
