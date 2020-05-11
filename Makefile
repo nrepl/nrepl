@@ -3,7 +3,11 @@
 VERSION ?= 1.10
 
 test:
+ifeq ($(VERSION),$(filter $(VERSION),1.9 1.10 master))
+	lein with-profile +$(VERSION),+test run -m kaocha.runner
+else
 	lein with-profile +$(VERSION),+test test
+endif
 
 eastwood:
 	lein with-profile +$(VERSION),+eastwood eastwood
