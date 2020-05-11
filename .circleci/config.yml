@@ -25,9 +25,9 @@ executors:
     docker:
       - image: circleci/clojure:openjdk-11-lein-2.9.1
     <<: *defaults
-  openjdk13:
+  openjdk14:
     docker:
-      - image: circleci/clojure:openjdk-13-lein-2.9.1-buster
+      - image: circleci/clojure:openjdk-14-lein-2.9.1-buster
     <<: *defaults
 
 # Runs a given set of steps, with some standard pre- and post-
@@ -134,7 +134,7 @@ jobs:
 # The ci-test-matrix does the following:
 #
 # - run tests against the target matrix
-#   - Java 8, 11 and 13
+#   - Java 8, 11 and 14
 #   - Clojure 1.7, 1.8, 1.9, 1.10, master
 # - linter, eastwood and cljfmt
 # - verifies cljdoc config
@@ -185,25 +185,25 @@ workflows:
           clojure_version: "master"
           jdk_version: openjdk11
       - test_code:
-          name: Java 13, Clojure 1.7
+          name: Java 14, Clojure 1.7
           clojure_version: "1.7"
-          jdk_version: openjdk13
+          jdk_version: openjdk14
       - test_code:
-          name: Java 13, Clojure 1.8
+          name: Java 14, Clojure 1.8
           clojure_version: "1.8"
-          jdk_version: openjdk13
+          jdk_version: openjdk14
       - test_code:
-          name: Java 13, Clojure 1.9
+          name: Java 14, Clojure 1.9
           clojure_version: "1.9"
-          jdk_version: openjdk13
+          jdk_version: openjdk14
       - test_code:
-          name: Java 13, Clojure 1.10
+          name: Java 14, Clojure 1.10
           clojure_version: "1.10"
-          jdk_version: openjdk13
+          jdk_version: openjdk14
       - test_code:
-          name: Java 13, Clojure master
+          name: Java 14, Clojure master
           clojure_version: "master"
-          jdk_version: openjdk13
+          jdk_version: openjdk14
       - util_job:
           name: Code Linting
           steps:
