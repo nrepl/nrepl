@@ -14,7 +14,8 @@
             "test-all" ["with-profile" "+1.7:+1.8:+1.9:+fastlane" "test"]
             "docs" ["with-profile" "+maint" "run" "-m" "nrepl.impl.docs" "--file"
                     ~(clojure.java.io/as-relative-path
-                      (clojure.java.io/file "doc" "modules" "ROOT" "pages" "ops.adoc"))]}
+                      (clojure.java.io/file "doc" "modules" "ROOT" "pages" "ops.adoc"))]
+            "kaocha" ["with-profile" "+test" "run" "-m" "kaocha.runner"]}
 
   :release-tasks [["vcs" "assert-committed"]
                   ["bump-version" "release"]
@@ -30,7 +31,9 @@
 
   :profiles {:fastlane {:dependencies [[nrepl/fastlane "0.1.0"]]}
              :test {:dependencies [[com.hypirion/io "0.3.1"]
-                                   [commons-net/commons-net "3.6"]]
+                                   [commons-net/commons-net "3.6"]
+                                   [lambdaisland/kaocha "1.0-612"]
+                                   [lambdaisland/kaocha-junit-xml "0.0-70"]]
                     :plugins      [[test2junit "1.4.2"]]
                     :test2junit-output-dir "test-results"
                     :aliases {"test" "test2junit"}}

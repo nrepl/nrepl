@@ -1,0 +1,9 @@
+#kaocha/v1
+{:tests                               [{:source-paths ["src/clojure"]
+                                        :test-paths   ["test/clojure"]}]
+ :reporter                            #profile {:ci      kaocha.report/documentation
+                                                :default kaocha.report/dots}
+ :plugins                             [:kaocha.plugin/profiling
+                                       :kaocha.plugin/junit-xml]
+ :kaocha.plugin.randomize/randomize?  false
+ :kaocha.plugin.junit-xml/target-file "test-results/junit.xml"}
