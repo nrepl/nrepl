@@ -46,7 +46,7 @@
   [h]
   (fn [{:keys [op ^Transport transport] :as msg}]
     (if (= op "completions")
-      (h (t/send transport (completion-reply msg)))
+      (t/send transport (completion-reply msg))
       (h msg))))
 
 (set-descriptor! #'wrap-completion
