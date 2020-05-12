@@ -357,6 +357,8 @@ Exit:      Control+D or (exit) or (quit)"
         repl-fn (:repl-fn options)
         host (:host server)
         port (:port server)]
+    (when (= transport #'transport/tty)
+      (die "The built-in client does not support the tty transport. Consider using `nc` or `telnet`.\n"))
     (repl-fn host port (merge (when (:color options) colored-output)
                               {:transport transport}))))
 

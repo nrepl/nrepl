@@ -161,7 +161,9 @@
         (Thread/sleep 2000)
         (.destroy server-process)))))
 
-;; This ignores *transport-fn*, as it tests the TTY transport
+;; The following tests ignore the server started in the fixture, as they only test
+;; the TTY transport.
+
 (deftest ^:slow tty-server
   (let [free-port      (with-open [ss (java.net.ServerSocket.)]
                          (.bind ss nil)
@@ -188,3 +190,12 @@
                (last resp))))
       (finally
         (.destroy server-process)))))
+
+(deftest no-tty-client
+  (testing "Trying to connect with the tty transport should fail."
+    (with-open [server (server/start-server :transport-fn #'transport/tty)]
+      (let [options (cmd/connection-opts {:port      (:port server)
+                                          :host      "localhost"
+                                          :transport 'nrepl.transport/tty})]
+        (is (thrown? clojure.lang.ExceptionInfo
+                     (cmd/interactive-repl server options)))))))
