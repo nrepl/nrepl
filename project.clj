@@ -11,7 +11,7 @@
   :javac-options ["-target" "8" "-source" "8"]
 
   :aliases {"bump-version" ["change" "version" "leiningen.release/bump-version"]
-            "test-all" ["with-profile" "+1.7:+1.8:+1.9:+fastlane" "test"]
+            "test-all" ["with-profile" "+1.7:+1.8:+1.9:+1.10:+fastlane" "test"]
             "docs" ["with-profile" "+maint" "run" "-m" "nrepl.impl.docs" "--file"
                     ~(clojure.java.io/as-relative-path
                       (clojure.java.io/file "doc" "modules" "ROOT" "pages" "ops.adoc"))]

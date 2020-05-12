@@ -3,6 +3,10 @@
 VERSION ?= 1.10
 
 test:
+
+# We use kaocha on Clojure 1.9+, but revert to lein's built in
+# runner with Clojure 1.7 and 1.8.
+
 ifeq ($(VERSION),$(filter $(VERSION),1.9 1.10 master))
 	lein with-profile +$(VERSION),+test run -m kaocha.runner
 else

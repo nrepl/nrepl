@@ -18,6 +18,18 @@
 
 (def ^{:private true} sessions (atom {}))
 
+(defn close-all-sessions!
+  "Use this fn to manually shut down all sessions. Since each new session spanws
+   a new thread, and sessions need to be otherwise explicitly closed, we can
+   accumulate too many active sessions for the JVM. This occurs when we are
+   running tests in watch mode."
+  []
+  (run! (fn [[id session]]
+          (when-let [close (:close (meta session))]
+            (close))
+          (swap! sessions dissoc id))
+        @sessions))
+
 ;; TODO: the way this is currently, :out and :err will continue to be
 ;; associated with a particular *msg* (and session) even when produced from a future,
 ;; agent, etc. due to binding conveyance.  This may or may not be desirable
