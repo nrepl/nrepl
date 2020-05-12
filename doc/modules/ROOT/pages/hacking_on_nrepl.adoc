@@ -75,21 +75,53 @@ the REPL you're using.
 
 == Running the tests
 
-The easiest way to run the tests is with the following command:
+The primary way to run tests is using Kaocha. The following command runs
+the test suite on Clojure 1.10:
+
+[source,shell]
+----
+$ bin/kaocha
+----
+
+The following command is useful while actively working on the codebase:
+
+[source,shell]
+----
+$ bin/kaocha --watch --skip-meta :slow
+----
+
+as it will re-run tests on changes, but also skip a handful of slower tests.
+
+=== Running test for Clojure 1.7 and 1.8
+
+Kaocha only supports Clojure 1.9 and up. For earlier versions, we can still use
+Leiningen's test runner. To run the tests only for a specific version of Clojure,
+use a command like this:
+
+[source,shell]
+----
+$ lein with-profile 1.8 test
+----
+
+To run tests for all Clojure versions from 1.7 to 1.10.
 
 [source,shell]
 ----
 $ lein test-all
 ----
 
-This will automatically run the tests for every supported Clojure
-profile (e.g. 1.7, 1.8, 1.9, 1.10). You can run only the tests for a
-specific version of Clojure like this:
+=== Running tests on CI
+
+For ease of use/consistency with other nREPL projects, tests are ran on CI
+environments using a `Makefile`, with the command:
 
 [source,shell]
 ----
-$ lein with-profile 1.9 test
+$ make test
 ----
+
+this will check the `VERSION` environmental variable, and switch between Kaocha
+and Leiningen tests based on which is available.
 
 == Running cljfmt
 

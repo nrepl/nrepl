@@ -119,7 +119,7 @@
                   server
                   {:transport #'transport/bencode})))))
 
-(deftest ack
+(deftest ^:slow ack
   (let [ack-port (:port *server*)
         server-process (apply sh ["java" "-Dnreplacktest=y"
                                   "-cp" (System/getProperty "java.class.path")
@@ -143,7 +143,7 @@
       (finally
         (.destroy server-process)))))
 
-(deftest explicit-port-argument
+(deftest ^:slow explicit-port-argument
   (let [ack-port (:port *server*)
         free-port (with-open [ss (java.net.ServerSocket.)]
                     (.bind ss nil)
@@ -162,7 +162,7 @@
         (.destroy server-process)))))
 
 ;; This ignores *transport-fn*, as it tests the TTY transport
-(deftest tty-server
+(deftest ^:slow tty-server
   (let [free-port      (with-open [ss (java.net.ServerSocket.)]
                          (.bind ss nil)
                          (.getLocalPort ss))

@@ -18,6 +18,7 @@
    [nrepl.ack :as ack]
    [nrepl.middleware.caught :as middleware.caught]
    [nrepl.middleware.print :as middleware.print]
+   [nrepl.middleware.session :as session]
    [nrepl.middleware.sideloader :as sideloader]
    [nrepl.misc :refer [uuid]]
    [nrepl.server :as server]
@@ -66,9 +67,12 @@
   (keys transport-fn->protocol))
 
 (defn repl-server-fixture
+  "This iterates through each transport being tested, starts a server,
+   runs the test against that server, then cleans up all sessions."
   [f]
   (doseq [transport-fn transport-fns]
-    (start-server-for-transport-fn transport-fn f)))
+    (start-server-for-transport-fn transport-fn f)
+    (session/close-all-sessions!)))
 
 (use-fixtures :each repl-server-fixture)
 
