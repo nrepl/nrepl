@@ -8,6 +8,11 @@
 * [#174](https://github.com/nrepl/nrepl/issues/174): Provide a built-in `completions` op.
 * [#143](https://github.com/nrepl/nrepl/issues/143): Added a middleware that allows dynamic loading/unloading of middlewares while the server is running.
 
+### Bugs fixed
+
+* [#125](https://github.com/nrepl/nrepl/issues/125): The built-in client supports `greeting-fn`.
+* [#126](https://github.com/nrepl/nrepl/issues/126): The built-in client exits with an error message when the tty transport is selected. It used to fail silently. This was never supported.
+
 ## 0.7.0 (2020-03-28)
 
 ### New features
