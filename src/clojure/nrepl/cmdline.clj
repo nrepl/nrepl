@@ -92,23 +92,30 @@ Exit:      Control+D or (exit) or (quit)"
                     value println
                     transport #'transport/bencode}}]
    (let [transport (nrepl/connect :host host :port port :transport-fn transport)
-         client (nrepl/client-session (nrepl/client transport Long/MAX_VALUE))
-         ns (atom "user")]
-     (swap! running-repl assoc :transport transport)
-     (swap! running-repl assoc :client client)
+         client (nrepl/client transport Long/MAX_VALUE)]
      (println (repl-intro))
-     (loop []
-       (prompt @ns)
-       (flush)
-       (let [input (read *in* false 'exit)]
-         (if (done? input)
-           (System/exit 0)
-           (do (doseq [res (nrepl/message client {:op "eval" :code (pr-str input)})]
-                 (when (:value res) (value (:value res)))
-                 (when (:out res) (out (:out res)))
-                 (when (:err res) (err (:err res)))
-                 (when (:ns res) (reset! ns (:ns res))))
-               (recur))))))))
+     ;; We take 50ms to listen to any greeting messages, and display the value
+     ;; in the `:out` slot.
+     (future (->> (client)
+                  (take-while #(nil? (:id %)))
+                  (run! #(when-let [msg (:out %)] (print msg)))))
+     (Thread/sleep 50)
+     (let [session (nrepl/client-session client)
+           ns (atom "user")]
+       (swap! running-repl assoc :transport transport)
+       (swap! running-repl assoc :client session)
+       (loop []
+         (prompt @ns)
+         (flush)
+         (let [input (read *in* false 'exit)]
+           (if (done? input)
+             (System/exit 0)
+             (do (doseq [res (nrepl/message session {:op "eval" :code (pr-str input)})]
+                   (when (:value res) (value (:value res)))
+                   (when (:out res) (out (:out res)))
+                   (when (:err res) (err (:err res)))
+                   (when (:ns res) (reset! ns (:ns res))))
+                 (recur)))))))))
 
 (def #^{:private true} option-shorthands
   {"-i" "--interactive"
