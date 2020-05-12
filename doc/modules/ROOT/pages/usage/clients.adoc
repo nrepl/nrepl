@@ -72,6 +72,8 @@ user=> (+ 1 2)
 3
 ----
 
+The built in client does not support the tty transport. Use `nc` or `telnet` instead.
+
 Most users, however, are advised to use REPL-y or their favourite
 editor instead for optimal results.
 
