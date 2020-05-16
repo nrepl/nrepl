@@ -160,7 +160,8 @@
                                                "ns" "The namespace in which to perform the evaluation. The supplied namespace must exist already (e.g. be loaded). If no namespace is specified the evaluation falls back to `*ns*` for the session in question."
                                                "file" "The path to the file containing [code]. `clojure.core/*file*` will be bound to this."
                                                "line" "The line number in [file] at which [code] starts."
-                                               "column" "The column number in [file] at which [code] starts."})
+                                               "column" "The column number in [file] at which [code] starts."
+                                               "read-cond" "The options passed to the reader before the evaluation. Useful when middleware in a higher layer wants to process reader conditionals."})
                              :returns {"ns" "*ns*, after successful evaluation of `code`."
                                        "value" "The result of evaluating `code`, often `read`able. This printing is provided by the `print` middleware. Superseded by `ex` and `root-ex` if an exception occurs during evaluation."
                                        "ex" "The type of exception thrown, if any. If present, then `:value` will be absent."
