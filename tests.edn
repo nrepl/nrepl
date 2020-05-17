@@ -6,4 +6,12 @@
  :plugins                             [:kaocha.plugin/profiling
                                        :kaocha.plugin/junit-xml]
  :kaocha.plugin.randomize/randomize?  false
- :kaocha.plugin.junit-xml/target-file "test-results/junit.xml"}
+ :kaocha.plugin.junit-xml/target-file "test-results/junit.xml"
+ :bindings {kaocha.stacktrace/*stacktrace-filters* ["clojure.core"
+                                                    "clojure.lang."
+                                                    "clojure.main"
+                                                    "clojure.test$"
+                                                    "java.lang."
+                                                    "kaocha."
+                                                    "lambdaisland."
+                                                    "orchestra."]}}

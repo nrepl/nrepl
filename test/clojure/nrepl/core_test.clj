@@ -1219,7 +1219,9 @@
 
 (def-repl-test sideloader-test
   (testing "Loading resources"
-    (let [code-snippet (code (slurp (.getResourceAsStream (.getContextClassLoader (Thread/currentThread)) "hello")))
+    (let [code-snippet (code (slurp (.. (Thread/currentThread)
+                                        (getContextClassLoader)
+                                        (getResourceAsStream "hello"))))
           rsp          (eval-with-sideloader timeout-client
                                              code-snippet
                                              sideloader-tests-lookup)]
@@ -1291,3 +1293,36 @@
                   combine-responses)]
     (is (= {:status #{:done}} rsp1))
     (is (= {:status #{:done} :pong "pong-deferred"} rsp2))))
+
+;; This test checks if, within the same session, the ContextClassLoader and
+;; RT/baseLoader have a common DynamicClassLoader ancestor. This is what
+;; pomegranate (and other classpath modifying libs?) target to enable hotloading
+
+;; This is from pomegranate
+(defn classloader-hierarchy
+  "Returns a seq of classloaders, with the tip of the hierarchy first.
+   Uses the current thread context ClassLoader as the tip ClassLoader
+   if one is not provided."
+  ([] (classloader-hierarchy (.. Thread currentThread getContextClassLoader)))
+  ([tip]
+   (->> tip
+        (iterate #(.getParent %))
+        (take-while boolean))))
+
+(def-repl-test hotloading-common-classloader-test
+  (testing "Check if RT/baseLoader and ContexClassLoader have a common DCL ancestor"
+    (let [dcls (fn [str] ;; parses the string output of classloader-hierarch
+                 (set (map (fn [[_ id]] id)
+                           (re-seq #"DynamicClassLoader@([0-9a-f]{8})" (or str "")))))]
+      (let [resp1 (->> (message session {:op   "eval"
+                                         :code "(#'nrepl.core-test/classloader-hierarchy (clojure.lang.RT/baseLoader))"})
+                       (map clean-response)
+                       combine-responses)
+            resp2 (->> (message session {:op   "eval"
+                                         :code "(#'nrepl.core-test/classloader-hierarchy (.. Thread currentThread getContextClassLoader))"})
+                       (map clean-response)
+                       combine-responses)]
+        (is (not-empty
+             (set/intersection
+              (dcls (first (:value resp2)))
+              (dcls (first (:value resp1))))))))))

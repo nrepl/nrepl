@@ -12,6 +12,7 @@
 
 * [#125](https://github.com/nrepl/nrepl/issues/125): The built-in client supports `greeting-fn`.
 * [#126](https://github.com/nrepl/nrepl/issues/126): The built-in client exits with an error message when the tty transport is selected. It used to fail silently. This was never supported.
+* [#113](https://github.com/nrepl/nrepl/issues/113): Fix an issue with hotloading using Pomegranate in Leiningen.
 
 ## 0.7.0 (2020-03-28)
 
