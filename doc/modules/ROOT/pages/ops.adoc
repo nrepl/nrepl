@@ -110,6 +110,7 @@ Optional parameters::
 * `:id` An opaque message ID that will be included in responses related to the evaluation, and which may be used to restrict the scope of a later "interrupt" operation.
 * `:line` The line number in [file] at which [code] starts.
 * `:ns` The namespace in which to perform the evaluation. The supplied namespace must exist already (e.g. be loaded). If no namespace is specified the evaluation falls back to ``\*ns*`` for the session in question.
+* `:read-cond` The options passed to the reader before the evaluation. Useful when middleware in a higher layer wants to process reader conditionals.
 * `:nrepl.middleware.caught/caught` A fully-qualified symbol naming a var whose function to use to convey interactive errors. Must point to a function that takes a ``java.lang.Throwable`` as its sole argument.
 * `:nrepl.middleware.caught/print?` If logical true, the printed value of any interactive errors will be returned in the response (otherwise they will be elided). Delegates to ``nrepl.middleware.print`` to perform the printing. Defaults to false.
 * `:nrepl.middleware.print/buffer-size` The size of the buffer to use when streaming results. Defaults to 1024.
