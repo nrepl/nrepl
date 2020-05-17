@@ -62,20 +62,22 @@
         (catch Exception _))))
 
 (defmacro with-session-classloader
-  "If the session has a classloader set, then execute the body using that.
-  `clojure.lang.Compiler/LOADER also need to be binded to this.
+  "This macro does two things:
 
-  This is typically used to trigger the sideloader, when active."
+   1. If the session has a classloader set, then execute the body using that.
+      This is typically used to trigger the sideloader, when active.
+
+   2. Bind `clojure.lang.Compiler/LOADER` to the context classloader, which
+      might also be the sideloader. This is required to get hotloading with
+      pomegranate working under certain conditions."
   [session & body]
   `(let [ctxcl#  (.getContextClassLoader (Thread/currentThread))
          alt-cl# (when-let [classloader# (:classloader (meta ~session))]
-                   (classloader#))]
-     (if alt-cl#
-       (do
-         (.setContextClassLoader (Thread/currentThread) alt-cl#)
-         (try
-           (with-bindings {clojure.lang.Compiler/LOADER alt-cl#}
-             ~@body)
-           (finally
-             (.setContextClassLoader (Thread/currentThread) ctxcl#))))
-       (do ~@body))))
+                   (classloader#))
+         cl#     (or alt-cl# ctxcl#)]
+     (.setContextClassLoader (Thread/currentThread) cl#)
+     (try
+       (with-bindings {clojure.lang.Compiler/LOADER cl#}
+         ~@body)
+       (finally
+         (.setContextClassLoader (Thread/currentThread) ctxcl#)))))
