@@ -10,7 +10,7 @@
    nrepl.version)
   (:import
    clojure.lang.RT
-   [java.io EOFException PushbackInputStream PushbackReader]
+   [java.io ByteArrayOutputStream EOFException PushbackInputStream PushbackReader]
    [java.net Socket SocketException]
    [java.util.concurrent BlockingQueue LinkedBlockingQueue SynchronousQueue TimeUnit]))
 
@@ -90,6 +90,18 @@
          (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server"))
          (throw e#)))))
 
+(defn ^{:private true} safe-write-bencode
+  "Similar to `bencode/write-bencode`, except it will only writes to the output
+   stream if the whole `thing` is writable. In practice, it avoids sending partial
+    messages down the transport, which is almost always bad news for the client.
+
+   This will still throw an exception if called with something unencodable."
+  [output thing]
+  (let [buffer (ByteArrayOutputStream.)]
+    (try
+      (bencode/write-bencode buffer thing))
+    (.write output (.toByteArray buffer))))
+
 (defn bencode
   "Returns a Transport implementation that serializes messages
    over the given Socket or InputStream/OutputStream using bencode."
@@ -107,7 +119,7 @@
       #(rethrow-on-disconnection s
                                  (locking out
                                    (doto out
-                                     (bencode/write-bencode %)
+                                     (safe-write-bencode %)
                                      .flush)))
       (fn []
         (if s

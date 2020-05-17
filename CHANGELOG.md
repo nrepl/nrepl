@@ -13,6 +13,7 @@
 * [#125](https://github.com/nrepl/nrepl/issues/125): The built-in client supports `greeting-fn`.
 * [#126](https://github.com/nrepl/nrepl/issues/126): The built-in client exits with an error message when the tty transport is selected. It used to fail silently. This was never supported.
 * [#113](https://github.com/nrepl/nrepl/issues/113): Fix an issue with hotloading using Pomegranate in Leiningen.
+* [#17](https://github.com/nrepl/nrepl/issues/17): It was possible for the bencode transport to write partial messages if a middleware tries to write something unencodable. This could cause the client or server to hang.
 
 ## 0.7.0 (2020-03-28)
 
