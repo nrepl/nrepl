@@ -8,7 +8,7 @@
 
 
 (ns nrepl.bencode-test
-  (:require [clojure.test :refer [are deftest is]]
+  (:require [clojure.test :refer [are deftest is testing]]
             [nrepl.bencode :as bencode :refer [read-bencode
                                                read-netstring
                                                write-bencode
@@ -196,3 +196,10 @@
                (decode :reader read-bencode)
                (get "data")
                seq)))))
+
+(deftest unwritable-values
+  (testing "write-bencode writes eagerly"
+    (let [out (ByteArrayOutputStream.)]
+      (is (thrown? IllegalArgumentException
+                   (write-bencode out {"obj" (Object.)})))
+      (is (= "d3:obj" (String. (.toByteArray out)))))))
