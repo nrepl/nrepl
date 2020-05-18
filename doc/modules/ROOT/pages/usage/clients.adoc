@@ -41,6 +41,7 @@ Use it or connect to an existing nREPL endpoint, and you're done.
 == Libraries
 
 * link:https://github.com/rksm/node-nrepl-client[node-nrepl-client] (An nREPL client for programmatic use from node.js written in Javascript)
+* link:https://github.com/clojure-vim/nrepl-python-client[nrepl-python-client] (nREPL client library for Python)
 * link:https://github.com/vspinu/R-nREPL[R-nREPL] (nREPL client for R)
 
 == Using the built-in client
