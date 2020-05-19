@@ -34,6 +34,7 @@ NOTE: Both Leiningen and Boot use internally REPL-y, as their command-line nREPL
 * link:https://github.com/liquidz/vim-iced[vim-iced] (Clojure Interactive Development Environment for Vim8/Neovim)
 * link:https://github.com/jasongilman/proto-repl[Proto REPL] (Clojure development environment and REPL for Atom)
 * link:https://github.com/BetterThanTomorrow/calva[Calva] (Clojure & ClojureScript support for VS Code)
+* link:https://github.com/eerohele/tutkain[Tutkain] (Clojure plugin for Sublime Text)
 
 If your preferred Clojure development environment supports nREPL, you're done.
 Use it or connect to an existing nREPL endpoint, and you're done.
