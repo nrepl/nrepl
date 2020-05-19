@@ -25,13 +25,13 @@ NOTE: Both Leiningen and Boot use internally REPL-y, as their command-line nREPL
 * link:https://github.com/ccw-ide/ccw[Counterclockwise] (Clojure IDE/plugin
   for Eclipse)
 * link:https://github.com/sanel/monroe[monroe] (nREPL client for Emacs, works with non-Clojure servers)
+* link:https://github.com/Saikyun/miracle[miracle] (fork of `monroe` targeting Arcadia)
 * link:https://github.com/tpope/vim-fireplace[fireplace.vim] (Clojure + nREPL
   support for vim)
-* link:https://github.com/Saikyun/miracle[miracle] (fork of `monroe` targeting Arcadia)
-* link:https://github.com/clojure-vim/acid.nvim[Acid.nvim] (Asynchronous Clojure Interactive Development for Neovim)
-* https://github.com/mauricioszabo/atom-chlorine[Chrorine] (Atom plugin for Clojure Development)
 * https://github.com/Olical/conjure[Conjure] (Clojure(Script) plugin for Neovim)
 * link:https://github.com/liquidz/vim-iced[vim-iced] (Clojure Interactive Development Environment for Vim8/Neovim)
+* link:https://github.com/clojure-vim/acid.nvim[Acid.nvim] (Asynchronous Clojure Interactive Development for Neovim)
+* https://github.com/mauricioszabo/atom-chlorine[Chrorine] (Atom plugin for Clojure Development)
 * link:https://github.com/jasongilman/proto-repl[Proto REPL] (Clojure development environment and REPL for Atom)
 * link:https://github.com/BetterThanTomorrow/calva[Calva] (Clojure & ClojureScript support for VS Code)
 * link:https://github.com/eerohele/tutkain[Tutkain] (Clojure plugin for Sublime Text)
