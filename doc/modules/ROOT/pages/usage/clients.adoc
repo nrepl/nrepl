@@ -36,8 +36,13 @@ NOTE: Both Leiningen and Boot use internally REPL-y, as their command-line nREPL
 * link:https://github.com/BetterThanTomorrow/calva[Calva] (Clojure & ClojureScript support for VS Code)
 * link:https://github.com/eerohele/tutkain[Tutkain] (Clojure plugin for Sublime Text)
 
-If your preferred Clojure development environment supports nREPL, you're done.
-Use it or connect to an existing nREPL endpoint, and you're done.
+If your preferred Clojure development environment supports nREPL, you're in luck.
+Just use it or connect to an existing nREPL endpoint and start hacking.
+
+TIP: Most Clojure editors/IDEs can start an nREPL server themselves and connect
+to it automatically (e.g. CIDER would do this when you're using the
+`cider-jack-in` family of commands), so you'll rarely need to start a server
+externally for local development purposes.
 
 == Libraries
 
