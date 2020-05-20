@@ -58,7 +58,7 @@
   (with-open [server (server/start-server :transport-fn transport-fn)]
     (binding [*server* server
               *transport-fn* transport-fn]
-      (testing (str (-> transport-fn meta :name) " transport\n")
+      (testing (str (-> transport-fn meta :name) " transport")
         (f))
       (set! *print-length* nil)
       (set! *print-level* nil))))

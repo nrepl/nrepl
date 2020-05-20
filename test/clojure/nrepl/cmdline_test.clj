@@ -18,7 +18,7 @@
                       :handler (ack/handle-ack (server/default-handler)))]
     (binding [*server* server
               *transport-fn* transport-fn]
-      (testing (str (-> transport-fn meta :name) " transport\n")
+      (testing (str (-> transport-fn meta :name) " transport")
         (ack/reset-ack-port!)
         (f))
       (set! *print-length* nil)
