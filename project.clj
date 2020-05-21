@@ -69,7 +69,8 @@
                       :cljfmt {:indents {as-> [[:inner 0]]
                                          with-debug-bindings [[:inner 0]]
                                          merge-meta [[:inner 0]]
-                                         testing-dynamic [[:inner 0]]}}}
+                                         testing-dynamic [[:inner 0]]
+                                         testing-print [[:inner 0]]}}}
 
              :eastwood [:test
                         {:plugins [[jonase/eastwood "0.3.4"]]
