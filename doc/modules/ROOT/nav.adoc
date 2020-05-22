@@ -13,6 +13,7 @@
 * xref:extensions.adoc[Extensions]
 * xref:beyond_clojure.adoc[Beyond Clojure]
 * xref:hacking_on_nrepl.adoc[Hacking on nREPL]
+* xref:building_middleware.adoc[Building Middleware]
 * xref:building_servers.adoc[Building Servers]
 * xref:building_clients.adoc[Building Clients]
 * xref:troubleshooting.adoc[Troubleshooting]

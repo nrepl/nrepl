@@ -1,0 +1,18 @@
+= Building Middleware
+
+NOTE: This page is very incomplete and a work in progress.
+
+== Overview
+
+This part of the documentation aims to guide you in the process of implementing
+nREPL middleware. We'll cover the basics, the best practices and some of the common pitfalls you might
+encounter.
+
+NOTE: This page complements xref:design/middleware.adoc[the middleware design documentation]. Make sure you're
+familiar with it before proceeding to implement any middleware.
+
+== Basics
+
+== Best Practices
+
+== Additional Resources
