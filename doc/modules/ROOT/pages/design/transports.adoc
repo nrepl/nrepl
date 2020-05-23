@@ -24,9 +24,13 @@ link:https://github.com/nrepl/nrepl/wiki/Extensions[Other nREPL transports are p
 
 == Bencode Transport
 
-This is, and will mostly likely remain, nREPL's default and primary transport. It is pronounced B-Encode, and is a relatively simple format, comprising of only two scalar types (byte strings and integer) and two collection types (dictionaries and lists).
+This is, and will mostly likely remain, nREPL's default and primary
+transport. It is pronounced B-Encode, and is a relatively simple format,
+comprising of only two scalar types (byte strings and integer) and two
+collection types (dictionaries and lists).
 
-A simple nREPL message, to run the operation `eval` on the code `(+ 2 2)` would look like this in bencode (linebreaks added for clarity):
+A simple nREPL message, to run the operation `eval` on the code `(+ 2 2)` would
+look like this in bencode (linebreaks added for clarity):
 
 ----
 d
@@ -44,7 +48,10 @@ In documentation, this message would typically be expressed in EDN format:
 {:op "eval" :code "(+ 2 2)"}
 ----
 
-Given that many, if not most, nREPL client do not use EDN as their native data formats, it's best to think of this as the format of a message once received by nREPL. Correpondingly, responses are in the form they take just before being sent through the transport.
+Given that many, if not most, nREPL clients do not use EDN as their native data
+format, it's best to think of this as the format of a message once received by
+nREPL. Correspondingly, responses are in the form they take just before being
+sent through the transport.
 
 nREPL's bencode encoder/decoder performs the following type conversions:
 
@@ -62,7 +69,10 @@ nREPL's bencode encoder/decoder performs the following type conversions:
 | Set        | List           | Vector
 |=======================================
 
-In addition, nREPL server performs a `keywordize-keys` operation on the received map, restoring the likes of `:op` and `:code` to keywords. Thus, the use of keywords in writing nREPL message is mainly for clarity. The following messages, when encoded using nREPL's bencode encoder and received by nREPL, are eqivalent:
+In addition, nREPL server performs a `keywordize-keys` operation on the received
+map, restoring the likes of `:op` and `:code` to keywords. Thus, the use of
+keywords in writing nREPL message is mainly for clarity. The following messages,
+when encoded using nREPL's bencode encoder and received by nREPL, are equivalent:
 
 [source,clojure]
 ----
