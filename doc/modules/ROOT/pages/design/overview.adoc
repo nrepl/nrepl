@@ -9,7 +9,12 @@ provided by e.g.  terminals).
 
 == Messages
 
-It is convention to express nREPL messages as EDN maps. For most purposes, it's sufficient to imagine that we communicate with nREPL via EDN, much the same way as we send and receive JSON to and from a REST endpoint. This is typically not what actually happens, and the details are discussed in xref:design/transports.adoc[the transport section], however, this conceptual simplification serves us well.
+It is convention to express nREPL messages as EDN (Clojure) maps. For most purposes, it's
+sufficient to imagine that we communicate with nREPL via EDN, much the same way
+as we send and receive JSON to and from a REST endpoint. This is typically not
+what actually happens, and the details are discussed in
+xref:design/transports.adoc[the transport section], however, this conceptual
+simplification serves us well.
 
 === Requests
 
