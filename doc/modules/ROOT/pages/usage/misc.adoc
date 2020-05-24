@@ -146,7 +146,7 @@ NOTE: Code completion support was added in nREPL 0.8 and the API is still
 considered experimental.
 
 nREPL bundles a completion middleware with a flexible interface. By default it will use nREPL own
-code completion in `nrepl.completion`, but you can instruct nREPL to use
+code completion in `nrepl.util.completion`, but you can instruct nREPL to use
 another completion function (e.g. one based on `compliment`).
 
 The completion function should accept 3 parameters:
@@ -167,7 +167,7 @@ The function should ideally return results in the following format:
  {:candidate "mapv", :ns "clojure.core", :type :var}]
 ----
 
-You can either specify a custom completion function in the requests (via the `complete` key) or by
+You can either specify a custom completion function in the requests (via the `complete-fn` key) or by
 setting `nrepl.middleware.completion/*complete-fn*`.
 
 [source,clojure]

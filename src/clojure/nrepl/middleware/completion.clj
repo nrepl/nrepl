@@ -26,9 +26,9 @@
   complete/completions)
 
 (defn completion-reply
-  [{:keys [session prefix ns complete options] :as msg}]
+  [{:keys [session prefix ns complete-fn options] :as msg}]
   (let [ns (if ns (symbol ns) (symbol (str (@session #'*ns*))))
-        completion-fn (or (and complete (misc/requiring-resolve (symbol complete))) *complete-fn*)]
+        completion-fn (or (and complete-fn (misc/requiring-resolve (symbol complete-fn))) *complete-fn*)]
     (try
       (response-for msg {:status :done :completions (completion-fn prefix ns options)})
       (catch Exception e
@@ -40,7 +40,7 @@
 
   * `prefix` - the prefix which to complete.
   * `ns`- the namespace in which to do completion. Defaults to `*ns*`.
-  * `complete` – a fully-qualified symbol naming a var whose function to use for
+  * `complete-fn` – a fully-qualified symbol naming a var whose function to use for
   completion. Must point to a function with signature [prefix ns options].
   * `options` – a map of options to pass to the completion function."
   [h]
@@ -56,6 +56,6 @@
                             {:doc "Provides a list of completion candidates."
                              :requires {"prefix" "The prefix to complete."}
                              :optional {"ns" "The namespace in which we want to obtain completion candidates. Defaults to `*ns*`."
-                                        "complete" "The fully qualified name of a completion function to use instead of the default one (e.g. `my.ns/completion`)."
+                                        "complete-fn" "The fully qualified name of a completion function to use instead of the default one (e.g. `my.ns/completion`)."
                                         "options" "A map of options supported by the completion function."}
                              :returns {"candidates" "A list of completion candidates. Each candidate is a map with `:candidate` and `:type` keys. Vars also have a `:ns` key."}}}})

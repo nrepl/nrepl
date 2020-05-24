@@ -28,7 +28,7 @@
     (is (= #{:done :completion-error} (:status result)))))
 
 (def-repl-test completions-op-custom-fn
-  (let [result (-> (nrepl/message session {:op "completions" :prefix "map" :ns "clojure.core" :complete "nrepl.middleware.completion-test/dummy-completion"})
+  (let [result (-> (nrepl/message session {:op "completions" :prefix "map" :ns "clojure.core" :complete-fn "nrepl.middleware.completion-test/dummy-completion"})
                    nrepl/combine-responses
                    clean-response
                    (select-keys [:completions :status]))]
