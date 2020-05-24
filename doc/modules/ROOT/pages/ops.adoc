@@ -178,6 +178,24 @@ Returns::
 
 
 
+=== `lookup`
+
+Lookup symbol info.
+
+Required parameters::
+* `:sym` The symbol to lookup.
+
+
+Optional parameters::
+* `:lookup-fn` The fully qualified name of a lookup function to use instead of the default one (e.g. ``my.ns/lookup``).
+* `:ns` The namespace in which we want to do lookup. Defaults to ``\*ns*``.
+
+
+Returns::
+* `:info` A map of the symbol's info.
+
+
+
 === `ls-middleware`
 
 List of current middleware

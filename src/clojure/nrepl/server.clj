@@ -8,6 +8,7 @@
    nrepl.middleware.completion
    nrepl.middleware.interruptible-eval
    nrepl.middleware.load-file
+   nrepl.middleware.lookup
    nrepl.middleware.session
    nrepl.middleware.sideloader
    [nrepl.misc :refer [log response-for returning]]
@@ -88,6 +89,7 @@
    #'nrepl.middleware.completion/wrap-completion
    #'nrepl.middleware.interruptible-eval/interruptible-eval
    #'nrepl.middleware.load-file/wrap-load-file
+   #'nrepl.middleware.lookup/wrap-lookup
    #'nrepl.middleware.session/add-stdin
    #'nrepl.middleware.session/session
    #'nrepl.middleware.sideloader/wrap-sideloader

@@ -175,6 +175,49 @@ setting `nrepl.middleware.completion/*complete-fn*`.
 user=> (set! nrepl.middleware.completion/*complete-fn* my.namespace/my-completion)
 ----
 
+== Symbol Lookup
+
+NOTE: Symbol look support was added in nREPL 0.8 and the API is still
+considered experimental.
+
+nREPL bundles a lookup middleware with a flexible interface. By default it will use nREPL own
+lookup logic in `nrepl.util.lookup`, but you can instruct nREPL to use
+another lookup function (e.g. `info` from `orchard`).
+
+The lookup function should accept 2 parameters:
+
+* `ns`: The namespace in which to look for completion candidates.
+* `sym`: The symbol to lookup.
+
+The function should ideally return results in the following format:
+
+[source,clojure]
+----
+{:added "1.0",
+ :ns "clojure.core",
+ :name "map",
+ :file
+ "jar:file:/Users/bozhidar/.m2/repository/org/clojure/clojure/1.10.1/clojure-1.10.1.jar!/clojure/core.clj",
+ :static true,
+ :arglists-str "([f] [f coll] [f c1 c2] [f c1 c2 c3] [f c1 c2 c3 & colls])",
+ :column 1,
+ :line 2727,
+ :arglists ([f] [f coll] [f c1 c2] [f c1 c2 c3] [f c1 c2 c3 & colls]),
+ :doc
+ "Returns a lazy sequence consisting of the result of applying f to\n  the set of first items of each coll, followed by applying f to the\n  set of second items in each coll, until any one of the colls is\n  exhausted.  Any remaining items in other colls are ignored. Function\n  f should accept number-of-colls arguments. Returns a transducer when\n  no collection is provided."}
+----
+
+NOTE: nREPL's default lookup function is pretty basic and it can only handle symbols that resolve to special
+forms and vars.
+
+You can either specify a custom lookup function in the requests (via the `lookup-fn` key) or by
+setting `nrepl.middleware.lookup/*lookup-fn*`.
+
+[source,clojure]
+----
+user=> (set! nrepl.middleware.lookup/*lookup-fn* my.namespace/my-lookup)
+----
+
 == Hot-loading dependencies
 
 From time to time you'd want to experiment with some library without
