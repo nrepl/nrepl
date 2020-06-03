@@ -11,7 +11,7 @@
     (is (not-empty (lookup 'whatever 'clojure.core/map))))
 
   #_(testing "aliased sym lookup"
-    (is (not-empty (lookup 'whatever 'str/upper-case))))
+      (is (not-empty (lookup 'whatever 'str/upper-case))))
 
   (testing "non-qualified lookup"
     (is (not-empty (lookup 'clojure.core 'map))))
