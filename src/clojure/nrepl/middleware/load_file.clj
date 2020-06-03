@@ -109,4 +109,5 @@ be loaded."} file-contents (atom {}))
                                           ::middleware/descriptor
                                           :handles
                                           (get "eval")
-                                          :returns)}}})
+                                          :returns
+                                          (dissoc "ns"))}}})
