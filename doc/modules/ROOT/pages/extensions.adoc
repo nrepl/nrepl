@@ -4,7 +4,7 @@ Here's a list of notable nREPL extensions (middleware or transports) you might e
 
 [WARNING]
 ====
-Make sure you're using the latest versions of those middlewares, as
+Make sure you're using the latest versions of those middleware, as
 all of them added support for nREPL 0.4+ fairly recently.
 ====
 
@@ -60,7 +60,7 @@ hosted outside the nREPL GitHub organization.
 
 ==== Deprecated
 
-This section lists middlewares that were somewhat prominent in the
+This section lists middleware that were somewhat prominent in the
 past, but were replaced by alternatives down the road.
 
 * link:https://github.com/pallet/ritz/tree/develop/nrepl-middleware[nrepl-middleware],
@@ -76,6 +76,6 @@ which was eventually integrated into `cider-nrepl`.
 
 [NOTE]
 ====
-This list doesn't aim to be complete. You can find more 3rd-party middlewares listed
+This list doesn't aim to be complete. You can find more 3rd-party middleware listed
 link:https://github.com/nrepl/nrepl/wiki/Extensions[here].
 ====

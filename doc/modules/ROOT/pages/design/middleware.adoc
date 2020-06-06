@@ -1,5 +1,7 @@
 = Middleware
 
+NOTE: Keep in mind that the plural form of "middleware" is also "middleware".
+
 _Middleware_ are higher-order functions that accept a handler and return a new
 handler that may compose additional functionality onto or around the original.
 For example, some middleware that handles a hypothetical `"time?"` `:op` by

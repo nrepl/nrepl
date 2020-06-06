@@ -32,11 +32,11 @@ When it comes to ops, ideally their names should be verbs - e.g. `complete`, `lo
 Related ops can be grouped under some common prefix - e.g. `test-var`, `test-ns`, `test-all`.
 
 It's also prudent to prefix op names with some "namespace"-like prefix to avoid conflicts between
-different middlewares - e.g. `project-name/op-name`.
+different middleware - e.g. `project-name/op-name`.
 
 NOTE: That's the reason why nREPL's completion op is named `completion` instead of `complete`.
 `cider-nrepl` already has an op named `complete` and adding such an op to nREPL would have introduced
-some non-deterministic behaviour when it comes to the ordering of the two competing completion middlewares.
+some non-deterministic behaviour when it comes to the ordering of the two competing completion middleware.
 As a result, in some cases you'd be invoking nREPL's op and in other cases `cider-nrepl`'s op.
 If `cider-nrepl` had named the op `cider/complete` instead, that would have prevented this unfortunate
 situation.

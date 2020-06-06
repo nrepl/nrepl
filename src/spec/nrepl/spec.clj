@@ -1,6 +1,6 @@
 (ns nrepl.spec
-  "This serves as a reference for messages as implemented by the default nrepl
-  middlewares. This is not a formal specification."
+  "This serves as a reference for messages as implemented by the default nREPL
+  middleware. This is not a formal specification."
   (:require [clojure.spec.alpha :as s]
             [clojure.string :as str]))
 
