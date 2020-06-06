@@ -54,16 +54,16 @@
            :special-form "true")))
 
 (defn qualified-sym-meta
-  [sym]
-  (if-let [var (resolve sym)]
+  [ns sym]
+  (if-let [var (ns-resolve ns sym)]
     (meta var)))
 
 (defn sym-meta
   [ns sym]
   (cond
     (special-symbol? sym) (special-sym-meta sym)
-    (qualified-symbol? sym) (qualified-sym-meta sym)
-    :else (qualified-sym-meta (qualify-sym ns sym))))
+    (qualified-symbol? sym) (qualified-sym-meta ns sym)
+    :else (qualified-sym-meta ns (qualify-sym ns sym))))
 
 (defn normalize-meta
   [m]

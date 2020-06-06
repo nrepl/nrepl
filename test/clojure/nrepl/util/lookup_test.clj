@@ -8,10 +8,10 @@
     (is (not-empty (lookup 'clojure.core 'if))))
 
   (testing "fully qualified sym lookup"
-    (is (not-empty (lookup 'whatever 'clojure.core/map))))
+    (is (not-empty (lookup 'nrepl.util.lookup 'clojure.core/map))))
 
-  #_(testing "aliased sym lookup"
-      (is (not-empty (lookup 'whatever 'str/upper-case))))
+  (testing "aliased sym lookup"
+    (is (not-empty (lookup 'nrepl.util.lookup 'str/upper-case))))
 
   (testing "non-qualified lookup"
     (is (not-empty (lookup 'clojure.core 'map))))
