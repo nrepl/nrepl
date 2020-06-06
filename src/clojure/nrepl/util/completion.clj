@@ -102,8 +102,15 @@
 
 ;;; Candidates
 
+(defn var-type [var]
+  (let [m (meta var)]
+    (cond
+      (:macro m) :macro
+      (:arglists m) :function
+      :else :var)))
+
 (defn annotate-var [var]
-  {:candidate (name var) :type :var})
+  {:candidate (name var) :type (var-type var)})
 
 (defn annotate-class
   [cname]
