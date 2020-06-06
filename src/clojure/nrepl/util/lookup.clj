@@ -44,6 +44,7 @@
    :protocol :line :column :added :deprecated :resource])
 
 (defn special-sym-meta
+  "Returns the metadata for the special symbol `sym`."
   [sym]
   ;; clojure.repl/special-doc is private, so we need to work a
   ;; bit to be able to invoke it
@@ -53,19 +54,40 @@
            :file "clojure/core.clj"
            :special-form "true")))
 
-(defn qualified-sym-meta
+(defn fully-qualified-sym-meta
+  "Returns the metadata for the fully-qualified symbol `sym` (e.g. `clojure.core/str`)."
   [sym]
   (if-let [var (resolve sym)]
     (meta var)))
 
+(defn ns-alias
+  "Resolves the namespace alias for `sym` (e.g. `str/split` in the context of `ns` (if any)."
+  [ns sym]
+  (if-let [qualifier (first (str/split (str sym) #"/"))]
+    (get (ns-aliases (symbol ns)) (symbol qualifier))))
+
+(defn aliased-sym-meta
+  "Returns the metadata for a symbol `sym` aliased in `ns` (e.g. `str/split`)."
+  [ns sym]
+  (if-let [ns-alias (ns-alias ns sym)]
+    (let [unqualified-sym (second (str/split (str sym) #"/"))
+          fully-qualified-sym (symbol (str ns-alias "/" unqualified-sym))]
+      (fully-qualified-sym-meta fully-qualified-sym))))
+
 (defn sym-meta
+  "Returns the metadata for symbol `sym` in the context of `ns`."
   [ns sym]
   (cond
     (special-symbol? sym) (special-sym-meta sym)
-    (qualified-symbol? sym) (qualified-sym-meta sym)
-    :else (qualified-sym-meta (qualify-sym ns sym))))
+    ;; handles symbols like str/split
+    (and (qualified-symbol? sym) (ns-alias ns sym)) (aliased-sym-meta ns sym)
+    ;; handles fully qualified symbols like clojure.core/str
+    (qualified-symbol? sym) (fully-qualified-sym-meta sym)
+    ;; handles unqualified symbols like foo
+    :else (fully-qualified-sym-meta (qualify-sym ns sym))))
 
 (defn normalize-meta
+  "Ensures that the metadata `m` is in a format that's bencode compatible."
   [m]
   (-> m
       (select-keys var-meta-whitelist)
