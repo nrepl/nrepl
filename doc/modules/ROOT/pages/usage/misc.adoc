@@ -159,12 +159,12 @@ The function should ideally return results in the following format:
 
 [source,clojure]
 ----
-[{:candidate "map", :ns "clojure.core", :type :var}
- {:candidate "map-entry?", :ns "clojure.core", :type :var}
- {:candidate "map-indexed", :ns "clojure.core", :type :var}
- {:candidate "map?", :ns "clojure.core", :type :var}
- {:candidate "mapcat", :ns "clojure.core", :type :var}
- {:candidate "mapv", :ns "clojure.core", :type :var}]
+[{:candidate "map", :ns "clojure.core", :type :function}
+ {:candidate "map-entry?", :ns "clojure.core", :type :function}
+ {:candidate "map-indexed", :ns "clojure.core", :type :function}
+ {:candidate "map?", :ns "clojure.core", :type :function}
+ {:candidate "mapcat", :ns "clojure.core", :type :function}
+ {:candidate "mapv", :ns "clojure.core", :type :function}]
 ----
 
 You can either specify a custom completion function in the requests (via the `complete-fn` key) or by
