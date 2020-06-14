@@ -58,4 +58,4 @@
                              :optional {"ns" "The namespace in which we want to obtain completion candidates. Defaults to `*ns*`."
                                         "complete-fn" "The fully qualified name of a completion function to use instead of the default one (e.g. `my.ns/completion`)."
                                         "options" "A map of options supported by the completion function."}
-                             :returns {"candidates" "A list of completion candidates. Each candidate is a map with `:candidate` and `:type` keys. Vars also have a `:ns` key."}}}})
+                             :returns {"completions" "A list of completion candidates. Each candidate is a map with `:candidate` and `:type` keys. Vars also have a `:ns` key."}}}})
