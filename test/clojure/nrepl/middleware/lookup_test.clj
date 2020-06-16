@@ -15,7 +15,8 @@
 
 (def-repl-test lookup-op
   (doseq [op [{:op "lookup" :sym "map" :ns "clojure.core"}
-              {:op "lookup" :sym "map" :ns "nrepl.core"}]]
+              {:op "lookup" :sym "map" :ns "nrepl.core"}
+              {:op "lookup" :sym "future" :ns "nrepl.core"}]]
     (let [result (-> (nrepl/message session op)
                      nrepl/combine-responses
                      clean-response)]

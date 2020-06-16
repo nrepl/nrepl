@@ -17,5 +17,11 @@
     (is (not-empty (lookup 'clojure.core 'map)))
     (is (not-empty (lookup 'nrepl.util.lookup 'map))))
 
+  (testing "macro lookup"
+    (is (= {:ns "clojure.core"
+            :name "future"
+            :macro "true"}
+           (select-keys (lookup 'clojure.core 'future) [:ns :name :macro]))))
+
   (testing "Java sym lookup"
     (is (empty? (lookup 'clojure.core 'String)))))
