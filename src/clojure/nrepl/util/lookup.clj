@@ -50,6 +50,7 @@
       (update :ns str)
       (update :name str)
       (update :file (comp str io/resource))
+      (cond-> (:macro m) (update :macro str))
       (assoc :arglists-str (str (:arglists m)))))
 
 (defn lookup
