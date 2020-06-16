@@ -14,7 +14,8 @@
     (is (not-empty (lookup 'nrepl.util.lookup 'str/upper-case))))
 
   (testing "non-qualified lookup"
-    (is (not-empty (lookup 'clojure.core 'map))))
+    (is (not-empty (lookup 'clojure.core 'map)))
+    (is (not-empty (lookup 'nrepl.util.lookup 'map))))
 
   (testing "Java sym lookup"
     (is (empty? (lookup 'clojure.core 'String)))))
