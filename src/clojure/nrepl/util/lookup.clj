@@ -43,13 +43,19 @@
     (special-sym-meta sym)
     (normal-sym-meta ns sym)))
 
+(defn resolve-file
+  [path]
+  (if-let [resource (io/resource path)]
+    (str resource)
+    path))
+
 (defn normalize-meta
   [m]
   (-> m
       (select-keys var-meta-whitelist)
       (update :ns str)
       (update :name str)
-      (update :file (comp str io/resource))
+      (update :file resolve-file)
       (cond-> (:macro m) (update :macro str))
       (assoc :arglists-str (str (:arglists m)))))
 
