@@ -14,11 +14,13 @@
    :bar 2})
 
 (def-repl-test lookup-op
-  (let [result (-> (nrepl/message session {:op "lookup" :sym "map" :ns "clojure.core"})
-                   nrepl/combine-responses
-                   clean-response)]
-    (is (= #{:done} (:status result)))
-    (is (not-empty (:info result)))))
+  (doseq [op [{:op "lookup" :sym "map" :ns "clojure.core"}
+              {:op "lookup" :sym "map" :ns "nrepl.core"}]]
+    (let [result (-> (nrepl/message session op)
+                     nrepl/combine-responses
+                     clean-response)]
+      (is (= #{:done} (:status result)))
+      (is (not-empty (:info result))))))
 
 (def-repl-test lookup-op-error
   (let [result (-> (nrepl/message session {:op "lookup"})

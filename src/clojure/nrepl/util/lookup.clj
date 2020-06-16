@@ -8,31 +8,10 @@
   the API is subject to changes."
   {:author "Bozhidar Batsov"
    :added "0.8"}
-  (:refer-clojure :exclude [qualified-symbol?])
   (:require
    [clojure.java.io :as io]
    [clojure.string :as str]
    [nrepl.misc :as misc]))
-
-;;; Utility functions for dealing with symbols
-(defn qualify-sym
-  "Qualify a symbol, if any in `sym`, with `ns`.
-
-  Return nil if `sym` is nil, attempting to generate a valid symbol even
-  in case some `ns` is missing."
-  {:added "0.5"}
-  [ns sym]
-  (when sym
-    (symbol (some-> ns str) (str sym))))
-
-(defn qualified-symbol?
-  "Return true if `x` is a symbol with a namespace.
-
-  This is only available from Clojure 1.9 so we backport it until we
-  drop support for Clojure 1.8."
-  {:added "0.5"}
-  [x]
-  (boolean (and (symbol? x) (namespace x) true)))
 
 ;;; Var meta logic
 (def var-meta-whitelist
@@ -53,17 +32,16 @@
            :file "clojure/core.clj"
            :special-form "true")))
 
-(defn qualified-sym-meta
+(defn normal-sym-meta
   [ns sym]
   (if-let [var (ns-resolve ns sym)]
     (meta var)))
 
 (defn sym-meta
   [ns sym]
-  (cond
-    (special-symbol? sym) (special-sym-meta sym)
-    (qualified-symbol? sym) (qualified-sym-meta ns sym)
-    :else (qualified-sym-meta ns (qualify-sym ns sym))))
+  (if (special-symbol? sym)
+    (special-sym-meta sym)
+    (normal-sym-meta ns sym)))
 
 (defn normalize-meta
   [m]
