@@ -17,15 +17,15 @@ hosted under the nREPL GitHub organization.
 
 ==== ClojureScript Support
 
-* link:https://github.com/nrepl/piggieback[Piggieback]
+* https://github.com/nrepl/piggieback[Piggieback]
 
 The following ClojureScript REPLs are leveraging piggieback internally to provide
 nREPL support.
 
-* link:https://github.com/nrepl/weasel[Weasel]
-* link:https://github.com/bhauman/lein-figwheel[figwheel]
-* link:https://github.com/bhauman/figwheel-main[figwheel-main]
-* link:https://github.com/thheller/shadow-cljs[shadow-cljs] (it actually
+* https://github.com/nrepl/weasel[Weasel]
+* https://github.com/bhauman/lein-figwheel[figwheel]
+* https://github.com/bhauman/figwheel-main[figwheel-main]
+* https://github.com/thheller/shadow-cljs[shadow-cljs] (it actually
 only stubs the piggieback API, leverages its own nREPL middleware
 internally for ClojureScript evaluation)
 
@@ -33,11 +33,11 @@ internally for ClojureScript evaluation)
 
 ==== HTTP Support
 
-* link:https://github.com/nrepl/drawbridge[drawbridge]
+* https://github.com/nrepl/drawbridge[drawbridge]
 
 ==== Transit Support
 
-* link:https://github.com/nrepl/fastlane[fastlane]
+* https://github.com/nrepl/fastlane[fastlane]
 
 == Third-party
 
@@ -48,34 +48,34 @@ hosted outside the nREPL GitHub organization.
 
 ==== Clojure Editor Support
 
-* link:https://github.com/clojure-emacs/cider-nrepl[cider-nrepl]: A collection of nREPL middleware designed to enhance CIDER (and Clojure editors in general).
-* link:https://github.com/clojure-emacs/refactor-nrepl[refactor-nrepl]: A collection of functionality designed to support editor refactoring features.
-* link:https://github.com/liquidz/iced-nrepl[iced-nrepl]: nREPL middleware to support vim-iced.
-* link:https://github.com/nubank/midje-nrepl[midje-nrepl]: nREPL middleware to run Midje tests.
+* https://github.com/clojure-emacs/cider-nrepl[cider-nrepl]: A collection of nREPL middleware designed to enhance CIDER (and Clojure editors in general).
+* https://github.com/clojure-emacs/refactor-nrepl[refactor-nrepl]: A collection of functionality designed to support editor refactoring features.
+* https://github.com/liquidz/iced-nrepl[iced-nrepl]: nREPL middleware to support vim-iced.
+* https://github.com/nubank/midje-nrepl[midje-nrepl]: nREPL middleware to run Midje tests.
 
 ==== Debugging
 
-* link:https://clojure-emacs.github.io/sayid/[sayid]: A powerful tracing/debugging tool. It is a great alternative of CIDER-nREPL's basic tracing functionality.
-* link:https://github.com/vvvvalvalval/scope-capture-nrepl[scope-capture-nrepl]: A companion library to scope-capture, providing an nREPL middleware that lets you put your REPL in the context of an Execution Point.
+* https://clojure-emacs.github.io/sayid/[sayid]: A powerful tracing/debugging tool. It is a great alternative of CIDER-nREPL's basic tracing functionality.
+* https://github.com/vvvvalvalval/scope-capture-nrepl[scope-capture-nrepl]: A companion library to scope-capture, providing an nREPL middleware that lets you put your REPL in the context of an Execution Point.
 
 ==== Deprecated
 
 This section lists middleware that were somewhat prominent in the
 past, but were replaced by alternatives down the road.
 
-* link:https://github.com/pallet/ritz/tree/develop/nrepl-middleware[nrepl-middleware],
-  part of link:https://github.com/pallet/ritz[ritz] that provides a
+* https://github.com/pallet/ritz/tree/develop/nrepl-middleware[nrepl-middleware],
+  part of https://github.com/pallet/ritz[ritz] that provides a
   variety of nREPL middleware supporting various enhanced REPL
   operations (including apropos, javadoc lookup, code completion, and
   an alternative eval implementation). **(superseded by `cider-nrepl`)**
-* link:https://github.com/technomancy/javert[Javert] provides a basic
+* https://github.com/technomancy/javert[Javert] provides a basic
   object inspector. **(superseded by `cider-nrepl`)**
-* link:https://github.com/thunknyc/nrepl-profile[nrepl-profile]: profiling middleware,
+* https://github.com/thunknyc/nrepl-profile[nrepl-profile]: profiling middleware,
 which was eventually integrated into `cider-nrepl`.
 
 
 [NOTE]
 ====
 This list doesn't aim to be complete. You can find more 3rd-party middleware listed
-link:https://github.com/nrepl/nrepl/wiki/Extensions[here].
+https://github.com/nrepl/nrepl/wiki/Extensions[here].
 ====

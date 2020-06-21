@@ -15,23 +15,23 @@ will cause bugs when used with other servers, while other clients are
 designed with language-agnosticism in mind. Usually the nREPL servers would mention in their
 documentation which clients are known to work well with them.
 
-* link:https://github.com/Foxboron/HyREPL[HyREPL] - an nREPL for the link:http://hylang.org/[Hy programming language]
+* https://github.com/Foxboron/HyREPL[HyREPL] - an nREPL for the http://hylang.org/[Hy programming language]
 
-* link:https://gitlab.com/technomancy/jeejah[JeeJah] - an nREPL server for link:https://fennel-lang.org/[Fennel] and link:https://www.lua.org/[Lua]
+* https://gitlab.com/technomancy/jeejah[JeeJah] - an nREPL server for https://fennel-lang.org/[Fennel] and https://www.lua.org/[Lua]
 
-* link:https://gitlab.com/technomancy/ogion[Ogion] - an nREPL server for link:https://racket-lang.org/[Racket]
+* https://gitlab.com/technomancy/ogion[Ogion] - an nREPL server for https://racket-lang.org/[Racket]
 
-* link:http://wiki.call-cc.org/eggref/5/nrepl[Chicken NREPL] - an nREPL server for link:https://call-cc.org/[Chicken Scheme]
+* http://wiki.call-cc.org/eggref/5/nrepl[Chicken NREPL] - an nREPL server for https://call-cc.org/[Chicken Scheme]
 
-* link:https://github.com/sjl/cl-nrepl[cl-nrepl] - an nREPL server for Common Lisp
+* https://github.com/sjl/cl-nrepl[cl-nrepl] - an nREPL server for Common Lisp
 
-* link:https://github.com/bodil/cljs-noderepl[cljs-noderepl] - an nREPL server for ClojureScript running on Node.js
+* https://github.com/bodil/cljs-noderepl[cljs-noderepl] - an nREPL server for ClojureScript running on Node.js
 
-* link:https://github.com/vspinu/R-nREPL[R-nREPL] - an nREPL server for R
+* https://github.com/vspinu/R-nREPL[R-nREPL] - an nREPL server for R
 
-* link:https://github.com/clojure/clr.tools.nrepl[nREPL CLR] - an nREPL server for ClojureCLR. A 1:1 port of the reference Clojure nREPL. Unfortunately it has been abandoned a long time ago.
+* https://github.com/clojure/clr.tools.nrepl[nREPL CLR] - an nREPL server for ClojureCLR. A 1:1 port of the reference Clojure nREPL. Unfortunately it has been abandoned a long time ago.
 
-* link:https://github.com/arcadia-unity/Arcadia/blob/master/Editor/NRepl.cs[Arcadia nREPL] - an nREPL server implemented in C# for Arcadia. An actively maintained alternative of nREPL CLR.
+* https://github.com/arcadia-unity/Arcadia/blob/master/Editor/NRepl.cs[Arcadia nREPL] - an nREPL server implemented in C# for Arcadia. An actively maintained alternative of nREPL CLR.
 
 * https://github.com/borkdude/nrepl-server[nREPL Prototype] - a simple nREPL implementation in Clojure. Used as the basis of the `babashka` implementation.
 

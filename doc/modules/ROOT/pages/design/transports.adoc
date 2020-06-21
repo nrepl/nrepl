@@ -14,13 +14,13 @@ nREPL includes three transports, all of which are socket-based: a "tty"
 transport that allows one to connect to an nREPL endpoint using e.g. `telnet`
 (which therefore supports only the most simplistic interactive evaluation of
 expressions), one that uses
-link:https://wiki.theory.org/index.php/BitTorrentSpecification#Bencoding[bencode] to encode
+https://wiki.theory.org/index.php/BitTorrentSpecification#Bencoding[bencode] to encode
 nREPL messages over sockets, and one that uses EDN as the data exchange format.
 
 NOTE: It's the bencode transport that is used by default by
 `nrepl.server/start-server` and `nrepl.core/connect`.
 
-link:https://github.com/nrepl/nrepl/wiki/Extensions[Other nREPL transports (e.g. HTTP) are available as libraries].
+https://github.com/nrepl/nrepl/wiki/Extensions[Other nREPL transports (e.g. HTTP) are available as libraries].
 
 == Bencode Transport
 

@@ -69,7 +69,7 @@ A few major changes happened since nREPL 0.2.x:
 
 [TIP]
 ====
-Refer to the link:https://github.com/nrepl/nrepl/blob/master/CHANGELOG.md[changelog]
+Refer to the https://github.com/nrepl/nrepl/blob/master/CHANGELOG.md[changelog]
 for an exhaustive listing of all the changes.
 ====
 
@@ -86,6 +86,6 @@ compatibility remains as important as always.
 ====
 You'll need Boot 2.8.2+ or Leiningen 2.8.3+ to take advantage of nREPL
 0.4+, as their older releases bundled nREPL 0.2.x. Leiningen users can also use the
-link:https://github.com/nrepl/lein-nrepl/pulls[lein-nrepl plugin] if they are stuck on
+https://github.com/nrepl/lein-nrepl/pulls[lein-nrepl plugin] if they are stuck on
 an older Leiningen release.
 ====

@@ -9,32 +9,32 @@ servers written in any language.
 
 == Command-line Clients
 
-* link:https://leiningen.org/grench[grenchman] (command-line nREPL client written in OCaml, works with non-Clojure servers)
-* link:https://github.com/trptcolin/reply/[REPL-y] (command-line client for nREPL)
-* link:https://github.com/eraserhd/rep[rep] (A single-shot nREPL client designed for shell invocation.)
-* link:https://git.sr.ht/~technomancy/shevek/[shevek] (A command-line nREPL client written in link:https://fennel-lang.org/[Fennel], works with non-Clojure servers)
-* link:https://github.com/kanej/parle[Parle] (A command-line nREPL client using node.js written in ClojureScript)
+* https://leiningen.org/grench[grenchman] (command-line nREPL client written in OCaml, works with non-Clojure servers)
+* https://github.com/trptcolin/reply/[REPL-y] (command-line client for nREPL)
+* https://github.com/eraserhd/rep[rep] (A single-shot nREPL client designed for shell invocation.)
+* https://git.sr.ht/~technomancy/shevek/[shevek] (A command-line nREPL client written in https://fennel-lang.org/[Fennel], works with non-Clojure servers)
+* https://github.com/kanej/parle[Parle] (A command-line nREPL client using node.js written in ClojureScript)
 
 NOTE: Both Leiningen and Boot use internally REPL-y, as their command-line nREPL client.
 
 == Editors/IDEs
 
-* link:https://github.com/clojure-emacs/cider[CIDER] (Clojure Interactive
+* https://github.com/clojure-emacs/cider[CIDER] (Clojure Interactive
   Development Environment that Rocks for Emacs)
-* link:https://cursiveclojure.com[Cursive] (Clojure IDE/plugin for IntelliJ Idea)
-* link:https://github.com/ccw-ide/ccw[Counterclockwise] (Clojure IDE/plugin
+* https://cursiveclojure.com[Cursive] (Clojure IDE/plugin for IntelliJ Idea)
+* https://github.com/ccw-ide/ccw[Counterclockwise] (Clojure IDE/plugin
   for Eclipse)
-* link:https://github.com/sanel/monroe[monroe] (nREPL client for Emacs, works with non-Clojure servers)
-* link:https://github.com/Saikyun/miracle[miracle] (fork of `monroe` targeting Arcadia)
-* link:https://github.com/tpope/vim-fireplace[fireplace.vim] (Clojure + nREPL
+* https://github.com/sanel/monroe[monroe] (nREPL client for Emacs, works with non-Clojure servers)
+* https://github.com/Saikyun/miracle[miracle] (fork of `monroe` targeting Arcadia)
+* https://github.com/tpope/vim-fireplace[fireplace.vim] (Clojure + nREPL
   support for vim)
 * https://github.com/Olical/conjure[Conjure] (Clojure(Script) plugin for Neovim)
-* link:https://github.com/liquidz/vim-iced[vim-iced] (Clojure Interactive Development Environment for Vim8/Neovim)
-* link:https://github.com/clojure-vim/acid.nvim[Acid.nvim] (Asynchronous Clojure Interactive Development for Neovim)
+* https://github.com/liquidz/vim-iced[vim-iced] (Clojure Interactive Development Environment for Vim8/Neovim)
+* https://github.com/clojure-vim/acid.nvim[Acid.nvim] (Asynchronous Clojure Interactive Development for Neovim)
 * https://github.com/mauricioszabo/atom-chlorine[Chrorine] (Atom plugin for Clojure Development)
-* link:https://github.com/jasongilman/proto-repl[Proto REPL] (Clojure development environment and REPL for Atom)
-* link:https://github.com/BetterThanTomorrow/calva[Calva] (Clojure & ClojureScript support for VS Code)
-* link:https://github.com/eerohele/tutkain[Tutkain] (Clojure plugin for Sublime Text)
+* https://github.com/jasongilman/proto-repl[Proto REPL] (Clojure development environment and REPL for Atom)
+* https://github.com/BetterThanTomorrow/calva[Calva] (Clojure & ClojureScript support for VS Code)
+* https://github.com/eerohele/tutkain[Tutkain] (Clojure plugin for Sublime Text)
 
 If your preferred Clojure development environment supports nREPL, you're in luck.
 Just use it or connect to an existing nREPL endpoint and start hacking.
@@ -46,9 +46,9 @@ externally for local development purposes.
 
 == Libraries
 
-* link:https://github.com/rksm/node-nrepl-client[node-nrepl-client] (An nREPL client for programmatic use from node.js written in Javascript)
-* link:https://github.com/clojure-vim/nrepl-python-client[nrepl-python-client] (nREPL client library for Python)
-* link:https://github.com/vspinu/R-nREPL[R-nREPL] (nREPL client for R)
+* https://github.com/rksm/node-nrepl-client[node-nrepl-client] (An nREPL client for programmatic use from node.js written in Javascript)
+* https://github.com/clojure-vim/nrepl-python-client[nrepl-python-client] (nREPL client library for Python)
+* https://github.com/vspinu/R-nREPL[R-nREPL] (nREPL client for R)
 
 == Using the built-in client
 

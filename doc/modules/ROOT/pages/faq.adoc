@@ -9,13 +9,13 @@ Very simply put - this project is the continuation of the contrib project.
 
 Yes, it does, although you'll need additional middleware to enable the
 ClojureScript support
-(e.g. link:https://github.com/nrepl/piggieback[piggieback] or
-link:https://github.com/thheller/shadow-cljs[shadow-cljs]).
+(e.g. https://github.com/nrepl/piggieback[piggieback] or
+https://github.com/thheller/shadow-cljs[shadow-cljs]).
 
 == Does nREPL support ClojureCLR?
 
 nREPL currently doesn't support ClojureCLR. The reason for this is
-that it leverages Java APIs internally. There's an link:https://github.com/clojure/clr.tools.nrepl[nREPL port for ClojureCLR], but it's not
+that it leverages Java APIs internally. There's an https://github.com/clojure/clr.tools.nrepl[nREPL port for ClojureCLR], but it's not
 actively maintained and it doesn't behave like the Clojure nREPL.
 
 == When is nREPL 1.0 going to be released?

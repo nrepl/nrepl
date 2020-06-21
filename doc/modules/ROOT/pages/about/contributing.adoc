@@ -3,7 +3,7 @@
 == Issues
 
 Report issues and suggest features and improvements on the
-link:https://github.com/nrepl/nrepl/issues[GitHub issue tracker]. Don't ask
+https://github.com/nrepl/nrepl/issues[GitHub issue tracker]. Don't ask
 questions on the issue tracker - use the xref:about/support.adoc[support channels] instead.
 
 If you want to file a bug, please provide all the necessary info listed in
@@ -15,7 +15,7 @@ new GitHub issue).
 Patches in any form are always welcome! GitHub pull requests are even better! :-)
 
 Before submitting a patch or a pull request make sure all tests are
-passing and that your patch is in line with the link:https://github.com/nrepl/nrepl/blob/master/.github/CONTRIBUTING.md[contribution guidelines].
+passing and that your patch is in line with the https://github.com/nrepl/nrepl/blob/master/.github/CONTRIBUTING.md[contribution guidelines].
 
 == Documentation
 
@@ -25,8 +25,8 @@ Consider improving and extending this manual.
 
 === Working on the Manual
 
-The manual is generated from the AsciiDoc files in the link:https://github.com/nrepl/nrepl/tree/master/doc[doc] folder of nREPL's GitHub repo and is published to https://nrepl.org.
-link:https://antora.org[Antora] is used to convert the manual into HTML.
+The manual is generated from the AsciiDoc files in the https://github.com/nrepl/nrepl/tree/master/doc[doc] folder of nREPL's GitHub repo and is published to https://nrepl.org.
+https://antora.org[Antora] is used to convert the manual into HTML.
 The filesystem layout is described at https://docs.antora.org/antora/2.0/component-structure/.
 
 To make changes to the manual you simply have to change the files under `doc`.
@@ -48,7 +48,7 @@ if you run into any problems.
 
 ==== Building the Site
 
-You can build the documentation locally from the link:https://github.com/nrepl/nrepl.org[nrepl.org] repo.
+You can build the documentation locally from the https://github.com/nrepl/nrepl.org[nrepl.org] repo.
 
 [source]
 ----
@@ -68,7 +68,7 @@ NOTE: You'll need commit access to the repository for this to work.
 To check the generated site you can simply open `docs/index.html` in your favourite browser.
 
 If you want to make changes to the manual's page structure you'll have to edit
-link:https://github.com/nrepl/nrepl/blob/master/doc/modules/ROOT/nav.adoc[nav.adoc].
+https://github.com/nrepl/nrepl/blob/master/doc/modules/ROOT/nav.adoc[nav.adoc].
 
 == Funding
 
@@ -79,18 +79,18 @@ Raising a monthly budget of over $5000 would open the possibility of someone wor
 which would speed up the pace of development significantly.
 
 We welcome both individual and corporate sponsors! We also offer a wide array of funding channels to account
-for your preferences (although currently link:https://opencollective.com/nrepl[Open Collective] is our preferred funding platform).
+for your preferences (although currently https://opencollective.com/nrepl[Open Collective] is our preferred funding platform).
 
 If you're working in a company that's making significant use of nREPL we'd appreciate it if you suggest to your company
 to become a nREPL sponsor.
 
-You can support the development of nREPL, CIDER, link:https://github.com/clojure-emacs/clojure-mode[clojure-mode] and link:https://github.com/clojure-emacs/inf-clojure[inf-clojure] via
-link:https://opencollective.com/nrepl[Open Collective],
-link:https://https://github.com/sponsors/bbatsov[GitHub Sponsors]
-link:https://www.patreon.com/bbatsov[Patreon] and
-link:https://www.paypal.me/bbatsov[PayPal].
+You can support the development of nREPL, CIDER, https://github.com/clojure-emacs/clojure-mode[clojure-mode] and https://github.com/clojure-emacs/inf-clojure[inf-clojure] via
+https://opencollective.com/nrepl[Open Collective],
+https://https://github.com/sponsors/bbatsov[GitHub Sponsors]
+https://www.patreon.com/bbatsov[Patreon] and
+https://www.paypal.me/bbatsov[PayPal].
 
 === Open Collective
 
-* link:https://opencollective.com/nrepl#backer[Become a backer] (for individuals)
-* link:https://opencollective.com/nrepl#sponsor[Become a sponsor] (for companies)
+* https://opencollective.com/nrepl#backer[Become a backer] (for individuals)
+* https://opencollective.com/nrepl#sponsor[Become a sponsor] (for companies)

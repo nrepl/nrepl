@@ -13,7 +13,7 @@ from other nREPL users there.
 
 == Slack
 
-We've got an official link:https://clojurians.slack.com/[Clojurians Slack] -
+We've got an official https://clojurians.slack.com/[Clojurians Slack] -
 `#nrepl`. This is usually be best way to get a handle on some of the maintainers
 and interact with other nREPL users.
 
@@ -25,5 +25,5 @@ nREPL-related topics, as nREPL is the foundation of CIDER.
 We're also encouraging users to ask nREPL-related questions on StackOverflow.
 
 When doing so you should use the
-link:http://stackoverflow.com/questions/tagged/nrepl[nrepl] tag (ideally combined
+http://stackoverflow.com/questions/tagged/nrepl[nrepl] tag (ideally combined
 with the tags `clojure` or `clojurescript`).

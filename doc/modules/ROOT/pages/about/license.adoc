@@ -1,11 +1,11 @@
 = License
 
-nREPL is licensed under the link:https://www.eclipse.org/legal/epl-v10.html[Eclipse Public License].
+nREPL is licensed under the https://www.eclipse.org/legal/epl-v10.html[Eclipse Public License].
 A copy of the license is bundled with the source code.
 
 All official nREPL extensions (e.g. Piggieback and Drawbridge) share the same license.
 
 NOTE: While nREPL was part of Clojure Contrib (until 2018), it was also licensed under Clojure's Contributor Agreement,
-but this was changed with nREPL 0.3. You can find the re-licensing discussion link:https://github.com/nrepl/nrepl/issues/2[here].
+but this was changed with nREPL 0.3. You can find the re-licensing discussion https://github.com/nrepl/nrepl/issues/2[here].
 
 Copyright © 2010-2020 Chas Emerick, Bozhidar Batsov and nREPL contributors.

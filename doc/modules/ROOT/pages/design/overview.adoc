@@ -2,7 +2,7 @@
 
 nREPL largely consists of three abstractions: xref:design/handlers.adoc[handlers], xref:design/middleware.adoc[middleware], and xref:design/transports.adoc[transports].
 These are roughly analogous to the handlers, middleware, and
-adapters of link:https://github.com/ring-clojure/ring[Ring], though there are some
+adapters of https://github.com/ring-clojure/ring[Ring], though there are some
 important semantic differences. Finally, nREPL is fundamentally message-oriented
 and asynchronous (in contrast to most REPLs that build on top of streams
 provided by e.g.  terminals).

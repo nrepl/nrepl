@@ -2,10 +2,10 @@
 
 == Articles
 
-* link:https://lambdaisland.com/guides/clojure-repls/clojure-repls[Clojure REPLs]: A good overview of the various Clojure REPLs. It features a nice link:https://lambdaisland.com/guides/clojure-repls/clojure-repls#org8a9b873[section on nREPL].
-* link:https://juxt.pro/blog/posts/nrepl.html[Overview of nREPL]
-* link:https://metaredux.com/posts/2018/10/21/nrepls-secret-tty-transport.html[nREPL's hidden TTY transport]
-* link:https://metaredux.com/posts/2018/10/29/nrepl-redux.html[nREPL Redux]
+* https://lambdaisland.com/guides/clojure-repls/clojure-repls[Clojure REPLs]: A good overview of the various Clojure REPLs. It features a nice https://lambdaisland.com/guides/clojure-repls/clojure-repls#org8a9b873[section on nREPL].
+* https://juxt.pro/blog/posts/nrepl.html[Overview of nREPL]
+* https://metaredux.com/posts/2018/10/21/nrepls-secret-tty-transport.html[nREPL's hidden TTY transport]
+* https://metaredux.com/posts/2018/10/29/nrepl-redux.html[nREPL Redux]
 * https://metaredux.com/posts/2019/01/12/nrepl-beyond-clojure.html[nREPL: Beyond Clojure]
 * https://metaredux.com/posts/2019/03/29/nrepl-0-6.html[nREPL 0.6]
 * https://metaredux.com/posts/2019/06/21/nrepl-0-7-introducing-a-native-edn-transport.html[nREPL 0.7: Introducing a Native EDN Transport]
@@ -16,7 +16,7 @@
 
 == Presentations
 
-* link:https://www.youtube.com/watch?v=4X-1fJm25Ww&list=PLZdCLR02grLoc322bYirANEso3mmzvCiI&index=6[The Evolution of the Emacs tooling for Clojure] -
+* https://www.youtube.com/watch?v=4X-1fJm25Ww&list=PLZdCLR02grLoc322bYirANEso3mmzvCiI&index=6[The Evolution of the Emacs tooling for Clojure] -
   presented at Clojure/conj 2014; dedicated to the origin and the architecture
   of CIDER and related tooling. The talk features nREPL prominently.
 * https://www.youtube.com/watch?v=WTzzUSw6iaI[nREPL Redux] - presented at Dutch Clojure Days 2019.

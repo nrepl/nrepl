@@ -36,7 +36,7 @@ user-specified middleware provided to
 `nrepl.server/default-handler`.  To understand how that implicit
 merge works, we'll first need to talk about middleware "descriptors".
 
-link:https://github.com/nrepl/nrepl/wiki/Extensions[Other nREPL middleware are provided by the community].
+https://github.com/nrepl/nrepl/wiki/Extensions[Other nREPL middleware are provided by the community].
 
 (See xref:ops.adoc[this documentation listing] for
 details as to the operations implemented by nREPL's default middleware stack,
@@ -159,7 +159,7 @@ messages, and a guarantee for serial execution of messages. The only way to
 create a long-lived session is to clone an existing session (even an
 ephemeral one).
 
-Sessions persist link:https://clojure.org/reference/vars[dynamic vars]
+Sessions persist https://clojure.org/reference/vars[dynamic vars]
 (collected by `get-thread-bindings`) against a unique lookup. This allows
 you to have a different value for `*e` from different REPL clients
 (e.g. two separate REPL-y instances). An existing session can be cloned
@@ -168,10 +168,10 @@ of existing preferences into new environments.
 
 Sessions become even more useful when different nREPL extensions start
 taking advantage of
-them. link:https://github.com/gfredericks/debug-repl/[debug-repl] uses
+them. https://github.com/gfredericks/debug-repl/[debug-repl] uses
 sessions to store information about the current breakpoint, allowing
 debugging of two things
-separately. link:https://github.com/nrepl/piggieback[piggieback] uses
+separately. https://github.com/nrepl/piggieback[piggieback] uses
 sessions to allow host a ClojureScript REPL alongside an existing
 Clojure one.
 
@@ -190,7 +190,7 @@ considered experimental.
 
 nREPL includes a `print` middleware to print the results of evaluated forms as
 strings for returning to the client. This enables using libraries like
-link:https://github.com/greglook/puget[puget] to pretty print the evaluation
+https://github.com/greglook/puget[puget] to pretty print the evaluation
 results automatically. The middleware options may be provided in either requests
 or responses (the former taking precedence over the latter if any options are
 specified in both). The following options are supported:
@@ -354,7 +354,7 @@ The client is responsible for responding to the lookup. It does so by replying w
 * `:type` and `:name` the same as the lookup.
 * `:content` base-64 encoded byte array of the resource or class. An empty response indicates "resource/class not found."
 
-See link:../building_clients.html[Building Clients] on how to implement the server side of this functionality.
+See xref:building_clients.adoc[Building Clients] on how to implement the server side of this functionality.
 
 === Triggering the sideloader
 
