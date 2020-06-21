@@ -46,7 +46,7 @@ There are a few other simple clients that you can explore for inspiration:
 * https://github.com/clojure-vim/nrepl-python-client[nrepl-python-client]
 
 It might also be a good idea to see the message exchange between some nREPL and client.
-CIDER provides a https://docs.cider.mx/cider/troubleshooting.html#_debugging_the_communication_with_nrepl[convenient solution] for this.
+CIDER provides a https://docs.cider.mx/cider/troubleshooting.html#debugging-the-communication-with-nrepl[convenient solution] for this.
 
 == Best Practices
 

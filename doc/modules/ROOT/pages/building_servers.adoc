@@ -46,7 +46,7 @@ Here are a few simple nREPL implementations that you can peruse for inspiration:
 * https://gitlab.com/technomancy/ogion[Ogion, nREPL server for Racket]
 
 It might also be a good idea to see the message exchange between some nREPL server and client.
-CIDER provides a https://docs.cider.mx/cider/troubleshooting.html#_debugging_the_communication_with_nrepl[convenient solution] for this.
+CIDER provides a https://docs.cider.mx/cider/troubleshooting.html#debugging-the-communication-with-nrepl[convenient solution] for this.
 
 == Best Practices
 
