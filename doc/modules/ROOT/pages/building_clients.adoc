@@ -78,17 +78,21 @@ Let's start by looking at an exchange of messages while using sideloading:
 {:op      "sideloader-start"
  :id      "1"
  :session "x"}
+
+;; -> try to require a namespace that's not available locally
 {:op      "eval"
  :id      "2"
  :session "x"
  :code    (quote (require '[foo.bar :as bar])
                  (bar/qaz))}
+
 ;; <- lookup for foo.bar
 {:id      "1"
  :session "x"
  :status  :sideloader-lookup
  :type    "resource"
  :name    "foo/bar.clj"}
+
 ;; -> providing resource
 {:id      "3"
  :session "x"
@@ -96,10 +100,12 @@ Let's start by looking at an exchange of messages while using sideloading:
  :type    "resource"
  :name    "foo/bar.clj"
  :content "<base64 package>"}
+
 ;; <- ack of provided resource
 {:id      "3"
  :session "x"
  :status  :done}
+
 ;; <- result of eval
 {:id      "2"
  :session "x"
@@ -109,7 +115,7 @@ Let's start by looking at an exchange of messages while using sideloading:
 
 Note that between sending the `eval` op in message `2` and receiving the result, two other messages were dealt with:
 
-- We received a response from message `1`, requesting a resource. This indicates that the the resource was not found on the server JVM, and evaluation is blocked until we provide it, or respond with an empty package.
+- We received a response from message `1`, requesting a resource. This indicates that the the resource was not found on the server JVM, and evaluation is blocked until we provide it, or respond with an empty package (`:content` should be an empty string).
 - We provide the resource/file using message `3`, to which the server responds with a `:done`.
 
 This unblocks the `eval` command, which returns the value `Qaz` in the final message.
