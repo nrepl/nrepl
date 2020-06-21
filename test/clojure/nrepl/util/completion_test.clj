@@ -1,5 +1,6 @@
 (ns nrepl.util.completion-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.set :as set]
+            [clojure.test :refer :all]
             [nrepl.util.completion :as completion :refer [completions]]))
 
 (defn- candidates
@@ -45,4 +46,22 @@
 
     (is (some #{"String/valueOf"} (candidates "String/")))
 
-    (is (not (some #{"String/indexOf" ".indexOf"} (candidates "String/"))))))
+    (is (not (some #{"String/indexOf" ".indexOf"} (candidates "String/")))))
+
+  (testing "candidate types"
+    (is (some #{{:candidate "comment" :type :macro}}
+              (completions "comment" 'clojure.core)))
+    (is (some #{{:candidate "commute" :type :function}}
+              (completions "commute" 'clojure.core)))
+    (is (some #{{:candidate "unquote" :type :var}}
+              (completions "unquote" 'clojure.core)))
+    (is (some #{{:candidate "if" :ns "clojure.core" :type :special-form}}
+              (completions "if" 'clojure.core)))
+    (is (some #{{:candidate "UnsatisfiedLinkError" :type :class}}
+              (completions "Unsatisfied" 'clojure.core)))
+    (is (some #{{:candidate "clojure.core" :type :namespace}}
+              (completions "clojure.core" 'clojure.core)))
+    (is (some #{{:candidate "Integer/parseInt" :type :static-method}}
+              (completions "Integer/parseInt" 'clojure.core)))
+    (is (some #{{:candidate ".toString" :type :method}}
+              (completions ".toString" 'clojure.core)))))

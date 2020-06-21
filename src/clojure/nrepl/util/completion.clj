@@ -24,13 +24,12 @@
 (defn ns-public-vars
   "Returns a list of potential public var name completions for a given namespace"
   [ns]
-  (keys (ns-publics ns)))
+  (vals (ns-publics ns)))
 
 (defn ns-vars
   "Returns a list of all potential var name completions for a given namespace"
   [ns]
-  (for [[sym val] (ns-map ns) :when (var? val)]
-    sym))
+  (filter var? (vals (ns-map ns))))
 
 (defn ns-classes
   "Returns a list of potential class name completions for a given namespace"
@@ -102,15 +101,12 @@
 
 ;;; Candidates
 
-(defn var-type [var]
-  (let [m (meta var)]
-    (cond
-      (:macro m) :macro
-      (:arglists m) :function
-      :else :var)))
-
 (defn annotate-var [var]
-  {:candidate (name var) :type (var-type var)})
+  (let [{macro :macro arglists :arglists var-name :name} (meta var)
+        type (cond macro :macro
+                   arglists :function
+                   :else :var)]
+    {:candidate (name var-name) :type type}))
 
 (defn annotate-class
   [cname]
