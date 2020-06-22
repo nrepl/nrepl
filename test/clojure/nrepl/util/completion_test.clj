@@ -45,6 +45,7 @@
            (candidates "java.lang.System/out")))
 
     (is (some #{"String/valueOf"} (candidates "String/")))
+    (is (every? #(= 1 %) (vals (frequencies (candidates "String/")))))
 
     (is (not (some #{"String/indexOf" ".indexOf"} (candidates "String/")))))
 
