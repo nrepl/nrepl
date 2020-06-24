@@ -14,12 +14,17 @@ provides a REPL server and client, along with some common APIs
 of use to IDEs and other tools that may need to evaluate Clojure
 code in remote environments.
 
-### How is this different from the "contrib" [tools.nrepl](https://github.com/clojure/tools.nrepl/) project?
+nREPL powers [many well-known development tools](https://nrepl.org/nrepl/usage/clients.html).
 
-Check the brief history of nREPL, available
-[here](https://nrepl.org/nrepl/about/history.html).
+## Usage
 
-### Status
+See the [documentation](https://nrepl.org/nrepl/usage/server.html).
+
+## API Documentation
+
+You can find nREPL's API documentation on [cljdoc](https://cljdoc.org/d/nrepl/nrepl/CURRENT).
+
+## Status
 
 Extremely stable. nREPL's protocol and API are rock-solid and battle
 tested. nREPL's team pledges to evolve them only in
@@ -39,13 +44,12 @@ but languishing nREPL issues. Future releases will focus on supporting
 the needs of the essential tools of the Clojure(Script) ecosystem
 (e.g. Leiningen, Boot, CIDER, Cursive).
 
-## Usage
+## FAQ
 
-See the [manual](https://nrepl.org).
+### How is this different from the "contrib" [tools.nrepl](https://github.com/clojure/tools.nrepl/) project?
 
-## API Documentation
-
-You can find nREPL's API documentation on [cljdoc](https://cljdoc.org/d/nrepl/nrepl/CURRENT).
+Check the brief history of nREPL, available
+[here](https://nrepl.org/nrepl/about/history.html).
 
 ## Contributors
 
