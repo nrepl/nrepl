@@ -52,9 +52,10 @@
 (defn static-members
   "Returns a list of potential static members for a given class"
   [^Class class]
-  (distinct
-   (for [member (concat (.getMethods class) (.getDeclaredFields class)) :when (static? member)]
-     (.getName ^Member member))))
+  (->> (concat (.getMethods class) (.getDeclaredFields class))
+       (filter static?)
+       (map #(.getName ^Member %))
+       (distinct)))
 
 (defn path-files [^String path]
   (cond (.endsWith path "/*")
