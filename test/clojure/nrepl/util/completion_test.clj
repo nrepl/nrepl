@@ -11,6 +11,14 @@
   ([prefix ns]
    (map :candidate (completions prefix ns))))
 
+(defn- distinct-candidates?
+  "Return true if every candidate occurs in the list of
+   candidates only once."
+  ([prefix]
+   (distinct-candidates? prefix *ns*))
+  ([prefix ns]
+   (apply distinct? (candidates prefix ns))))
+
 (deftest completions-test
   (testing "var completion"
     (is (= '("alength" "alias" "all-ns" "alter" "alter-meta!" "alter-var-root")
@@ -35,7 +43,9 @@
 
   (testing "Java instance methods completion"
     (is (= '(".toUpperCase")
-           (candidates ".toUpper"))))
+           (candidates ".toUpper")))
+
+    (is (distinct-candidates? ".toString")))
 
   (testing "static members completion"
     (is (= '("System/out")
@@ -45,7 +55,7 @@
            (candidates "java.lang.System/out")))
 
     (is (some #{"String/valueOf"} (candidates "String/")))
-    (is (every? #(= 1 %) (vals (frequencies (candidates "String/")))))
+    (is (distinct-candidates? "String/v"))
 
     (is (not (some #{"String/indexOf" ".indexOf"} (candidates "String/")))))
 
