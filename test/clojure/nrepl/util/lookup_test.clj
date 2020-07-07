@@ -23,6 +23,12 @@
             :macro "true"}
            (select-keys (lookup 'clojure.core 'future) [:ns :name :macro]))))
 
+  (testing "special form lookup"
+    (is (= {:ns "clojure.core"
+            :name "let"
+            :special-form "true"}
+           (select-keys (lookup 'clojure.core 'let) [:ns :name :special-form]))))
+
   (testing "Java sym lookup"
     (is (empty? (lookup 'clojure.core 'String)))))
 
