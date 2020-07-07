@@ -57,6 +57,7 @@
       (update :name str)
       (update :file resolve-file)
       (cond-> (:macro m) (update :macro str))
+      (cond-> (:special-form m) (update :special-form str))
       (assoc :arglists-str (str (:arglists m)))))
 
 (defn lookup
