@@ -6,9 +6,9 @@
   (:require [clojure.java.io :as io]))
 
 (defn log
-  [ex & msgs]
-  (let [ex (when (instance? Throwable ex) ex)
-        msgs (if ex msgs (cons ex msgs))]
+  [ex-or-msg & msgs]
+  (let [ex (when (instance? Throwable ex-or-msg) ex-or-msg)
+        msgs (if ex msgs (filter identity (cons ex-or-msg msgs)))]
     (binding [*out* *err*]
       (apply println "ERROR:" msgs)
       (when ex (.printStackTrace ^Throwable ex)))))
