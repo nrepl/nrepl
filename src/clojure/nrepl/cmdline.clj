@@ -26,7 +26,8 @@
   "Requests that the process exit with the given `status`.  Does not
   return."
   [status]
-  (throw (ex-info nil {::kind ::exit ::status status})))
+  ;; :nrepl/kind is our shared (ns independent) ExceptionInfo discriminator
+  (throw (ex-info nil {:nrepl/kind ::exit ::status status})))
 
 (defn die
   "`Print`s items in `msg` to *err* and then exits with a status of 2."
@@ -458,7 +459,7 @@ Exit:      Control+D or (exit) or (quit)"
     (let [[options _args] (args->cli-options args)]
       (dispatch-commands options))
     (catch clojure.lang.ExceptionInfo ex
-      (let [{:keys [::kind ::status]} (ex-data ex)]
+      (let [{:keys [:nrepl/kind ::status]} (ex-data ex)]
         (when (= kind ::exit)
           (clean-up-and-exit status))
         (throw ex)))))
