@@ -42,3 +42,5 @@ If `cider-nrepl` had named the op `cider/complete` instead, that would have prev
 situation.
 
 == Additional Resources
+
+* https://metaredux.com/posts/2019/12/04/documenting-nrepl-middleware-apis.html
