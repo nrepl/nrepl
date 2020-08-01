@@ -14,7 +14,7 @@ directly to the needs of development tools.
 NOTE: Code completion support was added in nREPL 0.8 and the API is still
 considered experimental.
 
-nREPL bundles a completion middleware with a flexible interface. By default it will use nREPL own
+nREPL bundles a completion middleware with a flexible interface. By default it will use nREPL's own
 code completion in `nrepl.util.completion`, but you can instruct nREPL to use
 another completion function (e.g. one based on `compliment`).
 
@@ -49,7 +49,7 @@ user=> (set! nrepl.middleware.completion/*complete-fn* my.namespace/my-completio
 NOTE: Symbol look support was added in nREPL 0.8 and the API is still
 considered experimental.
 
-nREPL bundles a lookup middleware with a flexible interface. By default it will use nREPL own
+nREPL bundles a lookup middleware with a flexible interface. By default it will use nREPL's own
 lookup logic in `nrepl.util.lookup`, but you can instruct nREPL to use
 another lookup function (e.g. `info` from `orchard`).
 
