@@ -19,6 +19,23 @@ familiar with it before proceeding to implement any middleware.
 
 In this section we'll go over some of the best practices for implementing nREPL middleware.
 
+=== Code Structure
+
+It's best to keep the business logic decoupled from the middleware code and have middleware
+serve as a thin wrapper around it. This means that ideally you should have the business logic
+in a different namespace (or even a different library). A good example would be the completion
+middleware bundled with nREPL:
+
+* The actual completion logic lives in `nrepl.util.completion`
+* The middleware code lives in `nrepl.middleware.completion` and it simply delegates to
+`nrepl.util.completion`
+
+This separation makes it easier to test the business logic in isolation and to re-use it outside
+of nREPL (a good example here would be the `orchard` library that `cider-nrepl` uses heavily).
+
+As a corollary - you should avoid creating middleware that provides a lot of unrelated functionality.
+Ideally all ops within some middleware should be closely linked by their purpose.
+
 === Naming conventions
 
 It's recommended to prefix middleware names with `wrap` - e.g. `wrap-complete`, `wrap-lookup`, etc.
