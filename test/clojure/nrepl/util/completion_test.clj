@@ -34,12 +34,13 @@
 
     (is (= () (candidates "/"))))
 
-  #_(is (= '("clojure.core" "clojure.core.ArrayChunk" "clojure.core.ArrayManager" "clojure.core.IVecImpl" "clojure.core.Vec" "clojure.core.VecNode" "clojure.core.VecSeq" "clojure.core.protocols" "clojure.core.protocols.InternalReduce")
-           (candidates "clojure.co")))
-
   (testing "namespace completion"
     (is (= '("nrepl.util.completion" "nrepl.util.completion-test")
-           (candidates "nrepl.util.comp"))))
+           (candidates "nrepl.util.comp")))
+
+    (is (set/subset?
+         #{"clojure.core" "clojure.core.ArrayChunk" "clojure.core.ArrayManager" "clojure.core.IVecImpl" "clojure.core.Vec" "clojure.core.VecNode" "clojure.core.VecSeq" "clojure.core.protocols" "clojure.core.protocols.InternalReduce"}
+         (set (candidates "clojure.co")))))
 
   (testing "Java instance methods completion"
     (is (= '(".toUpperCase")
