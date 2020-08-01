@@ -24,7 +24,7 @@ Optionally you can have some dynamic vars for configuration purposes. Bellow is 
 [source,clojure]
 ----
 (ns nrepl.middleware.completion
-  "Code completion middleware.
+  "Code completion middleware."
   (:require
    [nrepl.util.completion :as complete]
    [nrepl.middleware :as middleware :refer [set-descriptor!]]
