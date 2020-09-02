@@ -1060,7 +1060,7 @@
         (iterate #(.getParent %))
         (take-while boolean))))
 
-(def-repl-test hotloading-common-classloader-test
+#_(def-repl-test hotloading-common-classloader-test
   (testing "Check if RT/baseLoader and ContexClassLoader have a common DCL ancestor"
     (let [dcls (fn [str] ;; parses the string output of classloader-hierarch
                  (set (map (fn [[_ id]] id)

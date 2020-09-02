@@ -59,7 +59,11 @@
    Uses `clojure.main/repl` to drive the evaluation of :code (either a string
    or a seq of forms to be evaluated), which may also optionally specify a :ns
    (resolved via `find-ns`).  The map MUST contain a Transport implementation
-   in :transport; expression results and errors will be sent via that Transport."
+   in :transport; expression results and errors will be sent via that Transport.
+
+   Note: we are doubling up on restoring of ctxcl in a `catch` block both here
+   and within `misc/with-session-classloader`. Not too sure why this is needed,
+   but it does seem to be a fix for https://github.com/nrepl/nrepl/issues/206"
   [{:keys [transport session eval ns code file line column out-limit]
     :as msg}]
   (let [explicit-ns (and ns (-> ns symbol find-ns))
@@ -70,7 +74,8 @@
     (if (and ns (not explicit-ns))
       (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}
                                            :ns ns}))
-      (let [;; TODO: out-limit -> out-buffer-size | err-buffer-size
+      (let [ctxcl (.getContextClassLoader (Thread/currentThread))
+            ;; TODO: out-limit -> out-buffer-size | err-buffer-size
             ;; TODO: new options: out-quota | err-quota
             opts {::print/buffer-size (or out-limit (get (meta session) :out-limit))}
             out (print/replying-PrintWriter :out msg opts)
@@ -126,6 +131,7 @@
                                    :root-ex (str (class (clojure.main/root-cause e)))}]
                          (t/send transport (response-for msg resp))))))
           (finally
+            (.setContextClassLoader (Thread/currentThread) ctxcl)
             (.flush err)
             (.flush out)))))))
 
