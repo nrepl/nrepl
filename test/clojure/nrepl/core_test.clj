@@ -1060,20 +1060,21 @@
         (iterate #(.getParent %))
         (take-while boolean))))
 
-#_(def-repl-test hotloading-common-classloader-test
-    (testing "Check if RT/baseLoader and ContexClassLoader have a common DCL ancestor"
-      (let [dcls (fn [str] ;; parses the string output of classloader-hierarch
-                   (set (map (fn [[_ id]] id)
-                             (re-seq #"DynamicClassLoader@([0-9a-f]{8})" (or str "")))))]
-        (let [resp1 (->> (message session {:op   "eval"
-                                           :code "(#'nrepl.core-test/classloader-hierarchy (clojure.lang.RT/baseLoader))"})
-                         (map clean-response)
-                         combine-responses)
-              resp2 (->> (message session {:op   "eval"
-                                           :code "(#'nrepl.core-test/classloader-hierarchy (.. Thread currentThread getContextClassLoader))"})
-                         (map clean-response)
-                         combine-responses)]
-          (is (not-empty
-               (set/intersection
-                (dcls (first (:value resp2)))
-                (dcls (first (:value resp1))))))))))
+;; This test is broken for Java 8 at the moment.
+(def-repl-test ^{:min-java-version "11"} hotloading-common-classloader-test
+  (testing "Check if RT/baseLoader and ContexClassLoader have a common DCL ancestor"
+    (let [dcls (fn [str] ;; parses the string output of classloader-hierarch
+                 (set (map (fn [[_ id]] id)
+                           (re-seq #"DynamicClassLoader@([0-9a-f]{8})" (or str "")))))]
+      (let [resp1 (->> (message session {:op   "eval"
+                                         :code "(#'nrepl.core-test/classloader-hierarchy (clojure.lang.RT/baseLoader))"})
+                       (map clean-response)
+                       combine-responses)
+            resp2 (->> (message session {:op   "eval"
+                                         :code "(#'nrepl.core-test/classloader-hierarchy (.. Thread currentThread getContextClassLoader))"})
+                       (map clean-response)
+                       combine-responses)]
+        (is (not-empty
+             (set/intersection
+              (dcls (first (:value resp2)))
+              (dcls (first (:value resp1))))))))))

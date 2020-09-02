@@ -2,7 +2,8 @@
   "Misc utilities used in nREPL's implementation (potentially also
   useful for anyone extending it)."
   {:author "Chas Emerick"}
-  (:refer-clojure :exclude [requiring-resolve]))
+  (:refer-clojure :exclude [requiring-resolve])
+  (:require [clojure.string :as str]))
 
 (defn log
   [ex & msgs]
@@ -81,3 +82,9 @@
          ~@body)
        (finally
          (.setContextClassLoader (Thread/currentThread) ctxcl#)))))
+
+(defn java-8?
+  "Util to check if we are using Java 8. Useful for features that behave
+  differently after version 8"
+  []
+  (str/starts-with? (System/getProperty "java.runtime.version") "1.8"))

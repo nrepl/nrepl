@@ -9,7 +9,7 @@
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.caught :as caught]
    [nrepl.middleware.print :as print]
-   [nrepl.misc :refer [response-for with-session-classloader]]
+   [nrepl.misc :as misc :refer [response-for with-session-classloader]]
    [nrepl.transport :as t])
   (:import
    (clojure.lang Compiler$CompilerException LineNumberingPushbackReader)
@@ -131,7 +131,8 @@
                                    :root-ex (str (class (clojure.main/root-cause e)))}]
                          (t/send transport (response-for msg resp))))))
           (finally
-            (.setContextClassLoader (Thread/currentThread) ctxcl)
+            (when (misc/java-8?)
+              (.setContextClassLoader (Thread/currentThread) ctxcl))
             (.flush err)
             (.flush out)))))))
 
