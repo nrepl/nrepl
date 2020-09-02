@@ -87,4 +87,5 @@
   "Util to check if we are using Java 8. Useful for features that behave
   differently after version 8"
   []
-  (boolean (re-matches #"^1\.8.*" (System/getProperty "java.runtime.version"))))
+  (.startsWith (System/getProperty "java.runtime.version")
+               "1.8"))
