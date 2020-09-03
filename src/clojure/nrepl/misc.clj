@@ -85,7 +85,7 @@
 
 (defn java-8?
   "Util to check if we are using Java 8. Useful for features that behave
-  differently after version 8"
+  differently after version 8."
   []
   (.startsWith (System/getProperty "java.runtime.version")
                "1.8"))
