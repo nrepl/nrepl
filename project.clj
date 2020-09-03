@@ -32,10 +32,13 @@
   :profiles {:fastlane {:dependencies [[nrepl/fastlane "0.1.0"]]}
              :test {:dependencies [[com.hypirion/io "0.3.1"]
                                    [commons-net/commons-net "3.6"]
-                                   [lambdaisland/kaocha "1.0-612"]
-                                   [lambdaisland/kaocha-junit-xml "0.0-70"]]
+                                   [lambdaisland/kaocha "1.0.672"]
+                                   [lambdaisland/kaocha-junit-xml "0.0.76"]]
                     :plugins      [[test2junit "1.4.2"]]
                     :test2junit-output-dir "test-results"
+                    ;; This skips any tests that doesn't work on all java versions
+                    ;; TODO: replicate koacha's version filter logic here
+                    :test-selectors {:default (complement :min-java-version)}
                     :aliases {"test" "test2junit"}}
              ;; Clojure versions matrix
              :provided {:dependencies [[org.clojure/clojure "1.10.1"]]}

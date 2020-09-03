@@ -1060,7 +1060,8 @@
         (iterate #(.getParent %))
         (take-while boolean))))
 
-(def-repl-test hotloading-common-classloader-test
+;; This test is broken for Java 8 at the moment.
+(def-repl-test ^{:min-java-version "11.0"} hotloading-common-classloader-test
   (testing "Check if RT/baseLoader and ContexClassLoader have a common DCL ancestor"
     (let [dcls (fn [str] ;; parses the string output of classloader-hierarch
                  (set (map (fn [[_ id]] id)
