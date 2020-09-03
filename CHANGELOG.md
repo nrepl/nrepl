@@ -2,6 +2,8 @@
 
 ## master (unreleased)
 
+## 0.8.1 (2020-09-03)
+
 ### Bugs fixed
 
 * [#206](https://github.com/nrepl/nrepl/issues/206): Fix classloader-related breakage with `cider-nrepl` and Java 8.
