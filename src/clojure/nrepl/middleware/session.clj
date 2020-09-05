@@ -1,11 +1,13 @@
 (ns nrepl.middleware.session
   "Support for persistent, cross-connection REPL sessions."
   {:author "Chas Emerick"}
+  (:refer-clojure :exclude [future])
   (:require
    clojure.main
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.interruptible-eval :refer [*msg* evaluate]]
    [nrepl.misc :refer [uuid response-for]]
+   [nrepl.threads :as threads]
    [nrepl.transport :as t])
   (:import
    (clojure.lang Compiler$CompilerException LineNumberingPushbackReader)
@@ -38,6 +40,20 @@
 
 (def ^{:dynamic true :private true} *skipping-eol* false)
 
+(defn- ^java.lang.Thread create-daemon-thread
+  [^Runnable runnable thread-name cl]
+  (doto (.newThread threads/*platform-thread-factory*
+                    (bound-fn []
+                      (let [t (Thread/currentThread)
+                            old-name (.getName t)]
+                        (try
+                          (.setName t thread-name)
+                          (.run runnable)
+                          (finally
+                            (.setName t old-name))))))
+    (.setDaemon true)
+    (.setContextClassLoader cl)))
+
 (defn- configure-thread-factory
   "Returns a new ThreadFactory for the given session.  This implementation
    generates daemon threads, with names that include the session id."
@@ -49,10 +65,10 @@
             (.getContextClassLoader (Thread/currentThread)))]
     (reify ThreadFactory
       (newThread [_ runnable]
-        (doto (Thread. runnable
-                       (format "nREPL-worker-%s" (.getAndIncrement session-thread-counter)))
-          (.setDaemon true)
-          (.setContextClassLoader cl))))))
+        (create-daemon-thread
+         runnable
+         (format "nREPL-worker-%s" (.getAndIncrement session-thread-counter))
+         cl)))))
 
 (defn- configure-executor
   "Returns a ThreadPoolExecutor, configured (by default) to
@@ -173,13 +189,15 @@
   [^Thread t]
   (.interrupt t)
   (Thread/sleep 100)
-  (future
-    (Thread/sleep 5000)
-    (when-not (= (Thread$State/TERMINATED)
-                 (.getState t))
-      (.stop t))))
+  (.start
+   (.newThread threads/*platform-thread-factory*
+               (bound-fn []
+                 (Thread/sleep 5000)
+                 (when-not (= (Thread$State/TERMINATED)
+                              (.getState t))
+                   (.stop t))))))
 
-(defn session-exec
+(defn- session-exec
   "Takes a session id and returns a maps of three functions meant for interruptible-eval:
    * :exec, takes an id (typically a msg-id), a thunk and an ack runnables (see #'default-exec for ampler
      context). Executions are serialized and occurs on a single thread.
@@ -206,10 +224,9 @@
                            (some-> ack .run)
                            (recur))))
                      (catch InterruptedException e))
-        spawn-thread #(doto (Thread. main-loop (str "nREPL-session-" id))
-                        (.setDaemon true)
-                        (.setContextClassLoader cl)
-                        .start)]
+        spawn-thread #(doto (create-daemon-thread
+                             main-loop (str "nREPL-session-" id) cl)
+                        (.start))]
     (reset! thread (spawn-thread))
     ;; This map is added to the meta of the session object by `register-session`,
     ;; it contains functions that are accessed by `interrupt-session` and `close-session`.
@@ -225,7 +242,8 @@
                         (interrupt-stop @thread)
                         (reset! thread (spawn-thread))
                         current))))
-     :close #(interrupt-stop @thread)
+     :close (bound-fn []
+              (interrupt-stop @thread))
      :exec (fn [exec-id r ack]
              (.put queue [exec-id r ack]))}))
 

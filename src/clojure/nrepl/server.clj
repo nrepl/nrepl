@@ -12,6 +12,7 @@
    nrepl.middleware.session
    nrepl.middleware.sideloader
    [nrepl.misc :refer [log response-for returning]]
+   [nrepl.threads :as threads]
    [nrepl.transport :as t])
   (:import
    [java.net InetSocketAddress ServerSocket]))
@@ -36,7 +37,10 @@
    Returns nil when [recv] returns nil for the given transport."
   [handler transport]
   (when-let [msg (normalize-msg (t/recv transport))]
-    (future (handle* msg handler transport))
+    (.start
+     (.newThread threads/*platform-thread-factory*
+                 (bound-fn []
+                   (handle* msg handler transport))))
     (recur handler transport)))
 
 (defn- safe-close
@@ -51,15 +55,21 @@
     :as server}]
   (when-not (.isClosed server-socket)
     (let [sock (.accept server-socket)]
-      (future (let [transport (transport sock)]
-                (try
-                  (swap! open-transports conj transport)
-                  (when greeting (greeting transport))
-                  (handle handler transport)
-                  (finally
-                    (swap! open-transports disj transport)
-                    (safe-close transport)))))
-      (future (accept-connection server)))))
+      (.start
+       (.newThread threads/*platform-thread-factory*
+                   (bound-fn []
+                     (let [transport (transport sock)]
+                       (try
+                         (swap! open-transports conj transport)
+                         (when greeting (greeting transport))
+                         (handle handler transport)
+                         (finally
+                           (swap! open-transports disj transport)
+                           (safe-close transport)))))))
+      (.start
+       (.newThread threads/*platform-thread-factory*
+                   (bound-fn []
+                     (accept-connection server)))))))
 
 (defn stop-server
   "Stops a server started via `start-server`."
@@ -133,6 +143,12 @@
   java.io.Closeable
   (close [this] (stop-server this)))
 
+(defn create-default-thread-factory
+  []
+  (reify java.util.concurrent.ThreadFactory
+    (newThread [_ r]
+      (Thread. r))))
+
 (defn start-server
   "Starts a socket-based nREPL server.  Configuration options include:
 
@@ -156,7 +172,7 @@
    either via `stop-server`, (.close server), or automatically via `with-open`.
    The port that the server is open on is available in the :port slot of the
    server map (useful if the :port option is 0 or was left unspecified."
-  [& {:keys [port bind transport-fn handler ack-port greeting-fn]}]
+  [& {:keys [port bind transport-fn handler ack-port greeting-fn thread-factory]}]
   (let [port (or port 0)
         addr (fn [^String bind ^Integer port] (InetSocketAddress. bind port))
         transport-fn (or transport-fn t/bencode)
@@ -173,7 +189,11 @@
                         transport-fn
                         greeting-fn
                         (or handler (default-handler)))]
-    (future (accept-connection server))
+    (binding [threads/*platform-thread-factory* (or thread-factory
+                                                    (create-default-thread-factory))]
+      (.start
+       (.newThread threads/*platform-thread-factory*
+                   (bound-fn [] (accept-connection server)))))
     (when ack-port
       (ack/send-ack (:port server) ack-port transport-fn))
     server))

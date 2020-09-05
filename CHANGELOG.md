@@ -2,6 +2,11 @@
 
 ## master (unreleased)
 
+### New features
+
+* Make the thread factory of a server configurable. This makes it possible to start an embedded nrepl server in a google app engine java dev server.
+
+
 ## 0.8.2 (2020-09-15)
 
 ### Bugs fixed
