@@ -1,7 +1,9 @@
 (ns nrepl.util.lookup-test
   (:require [clojure.test :refer :all]
             [clojure.string :as str]
-            [nrepl.util.lookup :as l :refer [lookup]]))
+            [nrepl.bencode :as bencode]
+            [nrepl.util.lookup :as l :refer [lookup]])
+  (:import (java.io ByteArrayOutputStream)))
 
 (deftest lookup-test
   (testing "special sym lookup"
@@ -43,3 +45,29 @@
 
   (is (= "/foo/bar/baz.clj"
          (:file (l/normalize-meta {:file "/foo/bar/baz.clj"})))))
+
+(defn- bencode-str
+  "Bencode a thing and write it into a string."
+  [thing]
+  (let [out (ByteArrayOutputStream.)]
+    (try
+      (bencode/write-bencode out thing)
+      (.toString out)
+      (catch IllegalArgumentException ex
+        (throw (ex-info (.getMessage ex) {:thing thing}))))))
+
+(defn- lookup-public-vars
+  "Look up every public var in all namespaces in the classpath and return the result as a set."
+  []
+  (transduce
+   (comp
+    (mapcat ns-publics)
+    (map (comp meta val))
+    (map #(lookup (.getName (:ns %)) (:name %))))
+   conj
+   #{}
+   (all-ns)))
+
+(deftest bencode-test
+  (doseq [m (lookup-public-vars)]
+    (is ((comp string? not-empty) (bencode-str m)))))
