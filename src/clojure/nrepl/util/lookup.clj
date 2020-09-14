@@ -52,6 +52,7 @@
       (select-keys var-meta-whitelist)
       (update :ns str)
       (update :name str)
+      (update :protocol str)
       (update :file resolve-file)
       (cond-> (:macro m) (update :macro str))
       (cond-> (:special-form m) (update :special-form str))
