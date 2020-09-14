@@ -15,7 +15,13 @@
 
   (testing "non-qualified lookup"
     (is (not-empty (lookup 'clojure.core 'map)))
-    (is (not-empty (lookup 'nrepl.util.lookup 'map))))
+
+    (is (= {:ns "clojure.core"
+            :name "map"
+            :arglists "([f] [f coll] [f c1 c2] [f c1 c2 c3] [f c1 c2 c3 & colls])"
+            :arglists-str "([f] [f coll] [f c1 c2] [f c1 c2 c3] [f c1 c2 c3 & colls])"}
+           (select-keys (lookup 'nrepl.util.lookup 'map) [:ns :name :arglists :arglists-str])
+           (select-keys (lookup 'clojure.core 'map) [:ns :name :arglists :arglists-str]))))
 
   (testing "macro lookup"
     (is (= {:ns "clojure.core"
