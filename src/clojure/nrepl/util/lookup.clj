@@ -45,9 +45,7 @@
 
 (defn resolve-file
   [path]
-  (if-let [resource (io/resource path)]
-    (str resource)
-    path))
+  (or (some-> path io/resource str) path))
 
 (defn normalize-meta
   [m]
