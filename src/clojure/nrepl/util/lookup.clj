@@ -34,8 +34,7 @@
 
 (defn normal-sym-meta
   [ns sym]
-  (if-let [var (ns-resolve ns sym)]
-    (meta var)))
+  (some-> (ns-resolve ns sym) meta))
 
 (defn sym-meta
   [ns sym]
@@ -63,5 +62,4 @@
   If the `sym` is not qualified than it will be resolved in the context
   of `ns`."
   [ns sym]
-  (if-let [m (sym-meta ns sym)]
-    (normalize-meta m)))
+  (some-> (sym-meta ns sym) normalize-meta))
