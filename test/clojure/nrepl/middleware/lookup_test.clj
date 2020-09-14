@@ -16,13 +16,18 @@
 (defprotocol MyProtocol
   (protocol-method [_]))
 
+(defn fn-with-coll-in-arglist
+  [{{bar :bar} :baz}]
+  bar)
+
 (def-repl-test lookup-op
   (doseq [op [{:op "lookup" :sym "map" :ns "clojure.core"}
               {:op "lookup" :sym "let" :ns "clojure.core"}
               {:op "lookup" :sym "*assert*" :ns "clojure.core"}
               {:op "lookup" :sym "map" :ns "nrepl.core"}
               {:op "lookup" :sym "future" :ns "nrepl.core"}
-              {:op "lookup" :sym "protocol-method" :ns "nrepl.middleware.lookup-test"}]]
+              {:op "lookup" :sym "protocol-method" :ns "nrepl.middleware.lookup-test"}
+              {:op "lookup" :sym "fn-with-coll-in-arglist" :ns "nrepl.middleware.lookup-test"}]]
     (let [result (-> (nrepl/message session op)
                      nrepl/combine-responses
                      clean-response)]
