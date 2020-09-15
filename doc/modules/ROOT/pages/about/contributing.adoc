@@ -23,14 +23,14 @@ Good documentation is just as important as good code.
 
 Consider improving and extending this manual.
 
-=== Working on the Manual
+=== Working on the Docs Site
 
-The manual is generated from the AsciiDoc files in the https://github.com/nrepl/nrepl/tree/master/doc[doc] folder of nREPL's GitHub repo and is published to https://nrepl.org.
+The https://nrepl.org[documentation site] is generated from the AsciiDoc files in the https://github.com/nrepl/nrepl/tree/master/doc[doc] folder of nREPL's GitHub repo and is published to https://nrepl.org.
 https://antora.org[Antora] is used to convert the manual into HTML.
 The filesystem layout is described at https://docs.antora.org/antora/2.0/component-structure/.
 
 To make changes to the manual you simply have to change the files under `doc`.
-The manual will be regenerated manually periodically.
+The site will be regenerated manually periodically.
 
 ==== Installing Antora
 
@@ -69,6 +69,32 @@ To check the generated site you can simply open `docs/index.html` in your favour
 
 If you want to make changes to the manual's page structure you'll have to edit
 https://github.com/nrepl/nrepl/blob/master/doc/modules/ROOT/nav.adoc[nav.adoc].
+
+==== Testing Local Changes
+
+By default Antora will build the documentation for nREPL's `master` branch and all recent stable
+releases by fetching the data from nREPL main GitHub repository.
+
+If you want to check changes you've made locally you'll have to update the `antora-playbook.yml`
+file in the `nrepl.org` repository. There you should instruct Antora to build the docs from your
+local git repo instead of the main repo on GitHub:
+
+[source,yaml]
+----
+# you have to change this
+content:
+   sources:
+   - url: https://github.com/nrepl/nrepl.git
+     branches: ['master']
+     tags: ['0.5.3', '0.6.0', '0.7.0', '0.8.2']
+
+# to something like
+content:
+   sources:
+   - url: /path/to/local/nrepl/clone
+     branches: ['issues/207']
+     start_path: doc
+----
 
 == Funding
 
