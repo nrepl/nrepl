@@ -2,6 +2,12 @@
 
 ## master (unreleased)
 
+## 0.8.2 (2020-09-15)
+
+### Bugs fixed
+
+* [#211](https://github.com/nrepl/nrepl/pull/211): Fix a couple of lookup op errors.
+
 ## 0.8.1 (2020-09-03)
 
 ### Bugs fixed
