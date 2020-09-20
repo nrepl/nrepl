@@ -176,7 +176,7 @@ Exit:      Control+D or (exit) or (quit)"
   -p/--port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
   --ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.
   -n/--handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`.
-  -m/--middleware MIDDLEWARE  A sequence of vars, representing middleware you wish to mix in to the nREPL handler.
+  -m/--middleware MIDDLEWARE  A sequence of vars (comma seperated, no spaces), representing middleware you wish to mix in to the nREPL handler.
   -t/--transport TRANSPORT    The transport to use. By default that's nrepl.transport/bencode.
   --help                      Show this help message.
   -v/--version                Display the nREPL version.
