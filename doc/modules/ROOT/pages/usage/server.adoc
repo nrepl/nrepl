@@ -65,18 +65,25 @@ interface (this output was simply generated with `--help`):
 -p/--port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
 --ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.
 -n/--handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`.
--m/--middleware MIDDLEWARE  A sequence of vars (comma seperated, no spaces), representing middleware you wish to mix in to the nREPL handler.
+-m/--middleware MIDDLEWARE  A sequence of vars, representing middleware you wish to mix in to the nREPL handler.
 -t/--transport TRANSPORT    The transport to use. By default that's `nrepl.transport/bencode`.
 --help                      Show this help message.
 ....
 
-NOTE: If using deps.edn file, the spaces between sequence values will not work. Instead use comma seperated values. Working example from deps.edn like
- ```:main-opts ["-m" "nrepl.cmdline"
-                                   "-b" "0.0.0.0"
-                                   "-p" "12345"
-                                   "--middleware"
-                                   "[refactor-nrepl.middleware/wrap-refactor,cider.nrepl/cider-middleware]"
-                                   ]```. Some additional details https://ask.clojure.org/index.php/9034/clj-m-works-from-shell-but-not-as-alias[here].
+[NOTE]
+====
+When using `tools.deps` (`deps.edn`), spaces between sequence values will not work. Instead use comma separated values. Here's a working example from `deps.edn`:
+
+[source,clojure]
+----
+:main-opts ["-m" "nrepl.cmdline"
+            "-b" "0.0.0.0"
+            "-p" "12345"
+            "--middleware" "[cider.nrepl/cider-middleware,refactor-nrepl.middleware/wrap-refactor,]"]
+----
+
+Some additional details can be found https://ask.clojure.org/index.php/9034/clj-m-works-from-shell-but-not-as-alias[here].
+====
 
 === Using Leiningen
 
