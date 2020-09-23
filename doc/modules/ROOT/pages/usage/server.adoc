@@ -70,6 +70,14 @@ interface (this output was simply generated with `--help`):
 --help                      Show this help message.
 ....
 
+NOTE: If using deps.edn file, the spaces between sequence values will not work. Instead use comma seperated values. Working example from deps.edn like
+ ```:main-opts ["-m" "nrepl.cmdline"
+                                   "-b" "0.0.0.0"
+                                   "-p" "12345"
+                                   "--middleware"
+                                   "[refactor-nrepl.middleware/wrap-refactor,cider.nrepl/cider-middleware]"
+                                   ]```. Some additional details https://ask.clojure.org/index.php/9034/clj-m-works-from-shell-but-not-as-alias[here].
+
 === Using Leiningen
 
 https://github.com/technomancy/leiningen[Leiningen] has built-in support for nREPL since
