@@ -72,17 +72,17 @@ interface (this output was simply generated with `--help`):
 
 [NOTE]
 ====
-When using `tools.deps` (`deps.edn`), spaces between sequence values will not work. Instead use comma separated values. Here's a working example from `deps.edn`:
+When defining an alias in `deps.edn` with `:main-opts`, spaces between sequence values will not work. Use comma separated values instead. Here's a simple example:
 
 [source,clojure]
 ----
 :main-opts ["-m" "nrepl.cmdline"
             "-b" "0.0.0.0"
             "-p" "12345"
-            "--middleware" "[cider.nrepl/cider-middleware,refactor-nrepl.middleware/wrap-refactor,]"]
+            "--middleware" "[cider.nrepl/cider-middleware,refactor-nrepl.middleware/wrap-refactor]"]
 ----
 
-Some additional details can be found https://ask.clojure.org/index.php/9034/clj-m-works-from-shell-but-not-as-alias[here].
+Some additional details on the subject can be found https://ask.clojure.org/index.php/9034/clj-m-works-from-shell-but-not-as-alias[here].
 ====
 
 === Using Leiningen
