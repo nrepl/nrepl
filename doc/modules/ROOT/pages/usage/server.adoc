@@ -95,7 +95,7 @@ version 2. Just do:
 $ lein repl
 ----
 
-And you're all set. By default Lein will also connect to the running nREPL server using the
+And you're all set. By default Leiningen will also connect to the running nREPL server using the
 popular command-line nREPL client https://github.com/trptcolin/reply/[REPL-y]. If you don't need the terminal REPL you can
 also start nREPL in headless mode:
 
