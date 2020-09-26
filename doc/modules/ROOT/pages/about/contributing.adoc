@@ -40,10 +40,10 @@ Installing the Antora is super simple:
 
 [source]
 ----
-$ npm i -g @antora/cli@2.0 @antora/site-generator-default@2.0
+$ npm i -g @antora/cli@2.3 @antora/site-generator-default@2.3
 ----
 
-Check out https://docs.antora.org/antora/2.0/install/install-antora/[the detailed installation instructions]
+Check out https://docs.antora.org/antora/2.3/install/install-antora/[the detailed installation instructions]
 if you run into any problems.
 
 ==== Building the Site
