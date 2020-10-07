@@ -6,7 +6,7 @@
 [![CircleCI](https://circleci.com/gh/nrepl/nrepl/tree/master.svg?style=svg)](https://circleci.com/gh/nrepl/nrepl/tree/master)
 [![Clojars Project](https://img.shields.io/clojars/v/nrepl.svg)](https://clojars.org/nrepl)
 [![cljdoc badge](https://cljdoc.org/badge/nrepl/nrepl)](https://cljdoc.org/d/nrepl/nrepl/CURRENT)
-[![https://clojars.org/nrepl](https://versions.deps.co/nrepl/nrepl/downloads.svg)]
+[![downloads badge](https://versions.deps.co/nrepl/nrepl/downloads.svg)](https://clojars.org/nrepl)
 [![Backers on Open Collective](https://opencollective.com/nrepl/backers/badge.svg)](#backers)
 [![Sponsors on Open Collective](https://opencollective.com/nrepl/sponsors/badge.svg)](#sponsors)
 
