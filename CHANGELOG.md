@@ -2,6 +2,8 @@
 
 ## master (unreleased)
 
+## 0.8.3 (2020-10-25)
+
 ### Bugs fixed
 
 * [#213](https://github.com/nrepl/nrepl/pull/213): Fix sideloader race condition.
