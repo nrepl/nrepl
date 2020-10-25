@@ -4,7 +4,7 @@
 
 ### Bugs fixed
 
-* [#213](https://github.com/nrepl/nrepl/pull/213): Fix sideloader race condition
+* [#213](https://github.com/nrepl/nrepl/pull/213): Fix sideloader race condition.
 
 ## 0.8.2 (2020-09-15)
 
