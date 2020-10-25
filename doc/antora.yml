@@ -1,6 +1,6 @@
 name: nrepl
 title: nREPL
-# don't include patch version here - it should major.minor only
-version: 0.8
+# don't include patch version here - it should be major.minor only
+version: master
 nav:
 - modules/ROOT/nav.adoc
