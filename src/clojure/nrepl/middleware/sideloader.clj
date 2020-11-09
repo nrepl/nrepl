@@ -58,12 +58,14 @@
   (fn []
     (let [resolve-fn
           (fn [type name]
-            (t/send transport (response-for msg
-                                            {:status :sideloader-lookup
-                                             :type type
-                                             :name name}))
             (let [p (promise)]
+              ;; Swap into the atom *before* sending the lookup request to ensure that the server
+              ;; knows about the pending request when the client sends the response.
               (swap! pending assoc [(clojure.core/name type) name] p)
+              (t/send transport (response-for msg
+                                              {:status :sideloader-lookup
+                                               :type type
+                                               :name name}))
               @p))]
       (proxy [clojure.lang.DynamicClassLoader] [(.getContextClassLoader (Thread/currentThread))]
         (findResource [name]
