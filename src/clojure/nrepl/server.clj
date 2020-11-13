@@ -12,15 +12,16 @@
    nrepl.middleware.session
    nrepl.middleware.sideloader
    [nrepl.misc :refer [log response-for returning]]
-   [nrepl.threads :as threads]
    [nrepl.transport :as t])
   (:import
    [java.net InetSocketAddress ServerSocket]))
 
 (defn handle*
-  [msg handler transport]
+  [msg handler transport thread-factory]
   (try
-    (handler (assoc msg :transport transport))
+    (handler (assoc msg
+                    :transport transport
+                    :thread-factory thread-factory))
     (catch Throwable t
       (log t "Unhandled REPL handler exception processing message" msg))))
 
@@ -35,13 +36,12 @@
 (defn handle
   "Handles requests received via [transport] using [handler].
    Returns nil when [recv] returns nil for the given transport."
-  [handler transport]
+  [handler transport thread-factory]
   (when-let [msg (normalize-msg (t/recv transport))]
     (.start
-     (.newThread threads/*platform-thread-factory*
-                 (bound-fn []
-                   (handle* msg handler transport))))
-    (recur handler transport)))
+     (.newThread thread-factory
+                 #(handle* msg handler transport thread-factory)))
+    (recur handler transport thread-factory)))
 
 (defn- safe-close
   [^java.io.Closeable x]
@@ -51,25 +51,24 @@
       (log e "Failed to close " x))))
 
 (defn- accept-connection
-  [{:keys [^ServerSocket server-socket open-transports transport greeting handler]
+  [{:keys [^ServerSocket server-socket open-transports transport greeting handler thread-factory]
     :as server}]
   (when-not (.isClosed server-socket)
     (let [sock (.accept server-socket)]
       (.start
-       (.newThread threads/*platform-thread-factory*
-                   (bound-fn []
+       (.newThread thread-factory
+                   (fn []
                      (let [transport (transport sock)]
                        (try
                          (swap! open-transports conj transport)
                          (when greeting (greeting transport))
-                         (handle handler transport)
+                         (handle handler transport thread-factory)
                          (finally
                            (swap! open-transports disj transport)
                            (safe-close transport)))))))
       (.start
-       (.newThread threads/*platform-thread-factory*
-                   (bound-fn []
-                     (accept-connection server)))))))
+       (.newThread thread-factory
+                   #(accept-connection server))))))
 
 (defn stop-server
   "Stops a server started via `start-server`."
@@ -139,7 +138,7 @@
       (binding [dynamic-loader/*state* state]
         ((:handler @state) msg)))))
 
-(defrecord Server [server-socket port open-transports transport greeting handler]
+(defrecord Server [server-socket port open-transports transport greeting handler thread-factory]
   java.io.Closeable
   (close [this] (stop-server this)))
 
@@ -183,17 +182,17 @@
         ss (doto (ServerSocket.)
              (.setReuseAddress true)
              (.bind (addr bind port)))
+        thread-factory (or thread-factory (create-default-thread-factory))
         server (Server. ss
                         (.getLocalPort ss)
                         (atom #{})
                         transport-fn
                         greeting-fn
-                        (or handler (default-handler)))]
-    (binding [threads/*platform-thread-factory* (or thread-factory
-                                                    (create-default-thread-factory))]
-      (.start
-       (.newThread threads/*platform-thread-factory*
-                   (bound-fn [] (accept-connection server)))))
+                        (or handler (default-handler))
+                        thread-factory)]
+    (.start
+     (.newThread thread-factory
+                 #(accept-connection server)))
     (when ack-port
       (ack/send-ack (:port server) ack-port transport-fn))
     server))

@@ -1,13 +1,11 @@
 (ns nrepl.middleware.session
   "Support for persistent, cross-connection REPL sessions."
   {:author "Chas Emerick"}
-  (:refer-clojure :exclude [future])
   (:require
    clojure.main
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.interruptible-eval :refer [*msg* evaluate]]
    [nrepl.misc :refer [uuid response-for]]
-   [nrepl.threads :as threads]
    [nrepl.transport :as t])
   (:import
    (clojure.lang Compiler$CompilerException LineNumberingPushbackReader)
@@ -41,9 +39,9 @@
 (def ^{:dynamic true :private true} *skipping-eol* false)
 
 (defn- ^java.lang.Thread create-daemon-thread
-  [^Runnable runnable thread-name cl]
-  (doto (.newThread threads/*platform-thread-factory*
-                    (bound-fn []
+  [thread-factory ^Runnable runnable thread-name cl]
+  (doto (.newThread thread-factory
+                    (fn []
                       (let [t (Thread/currentThread)
                             old-name (.getName t)]
                         (try
@@ -57,7 +55,7 @@
 (defn- configure-thread-factory
   "Returns a new ThreadFactory for the given session.  This implementation
    generates daemon threads, with names that include the session id."
-  []
+  [thread-factory]
   (let [session-thread-counter (AtomicLong. 0)
         ;; Create a constant dcl for use across evaluations. This allows
         ;; modifications to the classloader to persist.
@@ -65,10 +63,10 @@
             (.getContextClassLoader (Thread/currentThread)))]
     (reify ThreadFactory
       (newThread [_ runnable]
-        (create-daemon-thread
-         runnable
-         (format "nREPL-worker-%s" (.getAndIncrement session-thread-counter))
-         cl)))))
+        (create-daemon-thread thread-factory
+                              runnable
+                              (format "nREPL-worker-%s" (.getAndIncrement session-thread-counter))
+                              cl)))))
 
 (defn- configure-executor
   "Returns a ThreadPoolExecutor, configured (by default) to
@@ -77,13 +75,11 @@
   [& {:keys [keep-alive queue thread-factory]
       :or {keep-alive 30000
            queue (SynchronousQueue.)}}]
-  (let [^ThreadFactory thread-factory (or thread-factory (configure-thread-factory))]
+  (let [^ThreadFactory thread-factory (or thread-factory (configure-thread-factory thread-factory))]
     (ThreadPoolExecutor. 1 Integer/MAX_VALUE
                          (long 30000) TimeUnit/MILLISECONDS
                          ^BlockingQueue queue
                          thread-factory)))
-
-(def default-executor "Delay containing the default Executor." (delay (configure-executor)))
 
 (defn default-exec
   "Submits a task for execution using #'default-executor.
@@ -92,9 +88,9 @@
    * thunk, a Runnable, the task itself,
    * ack, another Runnable, ran to notify of successful execution of thunk.
    The thunk/ack split is meaningful for interruptible eval: only the thunk can be interrupted."
-  [id ^Runnable thunk ^Runnable ack]
+  [^ExecutorService es id ^Runnable thunk ^Runnable ack]
   (let [^Runnable f #(do (.run thunk) (.run ack))]
-    (.submit ^ExecutorService @default-executor f)))
+    (.submit es f)))
 
 (defn- session-in
   "Returns a LineNumberingPushbackReader suitable for binding to *in*.
@@ -154,7 +150,7 @@
   `clojure.core/get-thread-bindings`. *in* is obtained using `session-in`, *ns*
   defaults to 'user, and other bindings as optionally provided in
   `session` are merged in."
-  ([{:keys [transport session out-limit] :as msg}]
+  ([{:keys [transport session out-limit es] :as msg}]
    (let [id (uuid)
          {:keys [input-queue stdin-reader]} (session-in id transport)
          the-session (atom (into (or (some-> session deref) {})
@@ -164,7 +160,7 @@
                                   :out-limit (or out-limit (:out-limit (meta session)))
                                   :stdin-reader stdin-reader
                                   :input-queue input-queue
-                                  :exec default-exec})
+                                  :exec (partial default-exec es)})
          msg {:code "" :session the-session}]
      ;; to fully initialize bindings
      (binding [*msg* msg]
@@ -189,13 +185,11 @@
   [^Thread t]
   (.interrupt t)
   (Thread/sleep 100)
-  (.start
-   (.newThread threads/*platform-thread-factory*
-               (bound-fn []
-                 (Thread/sleep 5000)
-                 (when-not (= (Thread$State/TERMINATED)
-                              (.getState t))
-                   (.stop t))))))
+  (future
+    (Thread/sleep 5000)
+    (when-not (= (Thread$State/TERMINATED)
+                 (.getState t))
+      (.stop t))))
 
 (defn- session-exec
   "Takes a session id and returns a maps of three functions meant for interruptible-eval:
@@ -206,7 +200,7 @@
      :idle (no running execution), the interrupted id, or nil when the running id doesn't match the id argument.
      Upon successful interruption the backing thread is replaced.
    * :close, terminates the backing thread."
-  [id]
+  [thread-factory id]
   (let [cl (clojure.lang.DynamicClassLoader.
             (.getContextClassLoader (Thread/currentThread)))
         queue (LinkedBlockingQueue.)
@@ -224,8 +218,8 @@
                            (some-> ack .run)
                            (recur))))
                      (catch InterruptedException e))
-        spawn-thread #(doto (create-daemon-thread
-                             main-loop (str "nREPL-session-" id) cl)
+        spawn-thread #(doto (create-daemon-thread thread-factory
+                                                  main-loop (str "nREPL-session-" id) cl)
                         (.start))]
     (reset! thread (spawn-thread))
     ;; This map is added to the meta of the session object by `register-session`,
@@ -242,18 +236,17 @@
                         (interrupt-stop @thread)
                         (reset! thread (spawn-thread))
                         current))))
-     :close (bound-fn []
-              (interrupt-stop @thread))
+     :close #(interrupt-stop @thread)
      :exec (fn [exec-id r ack]
              (.put queue [exec-id r ack]))}))
 
 (defn- register-session
   "Registers a new session containing the baseline bindings contained in the
    given message's :session."
-  [{:keys [session transport] :as msg}]
+  [{:keys [session transport thread-factory] :as msg}]
   (let [session (create-session msg)
         {:keys [id]} (meta session)]
-    (alter-meta! session into (session-exec id))
+    (alter-meta! session into (session-exec thread-factory id))
     (swap! sessions assoc id session)
     (t/send transport (response-for msg :status :done :new-session id))))
 
@@ -311,20 +304,24 @@
    *msg* to the currently-evaluated message so that session-specific *out*
    and *err* content can be associated with the originating message)."
   [h]
-  (fn [{:keys [op session transport] :as msg}]
-    (let [the-session (if session
-                        (@sessions session)
-                        (create-session msg))]
-      (if-not the-session
-        (t/send transport (response-for msg :status #{:error :unknown-session :done}))
-        (let [msg (assoc msg :session the-session)]
-          (case op
-            "clone" (register-session msg)
-            "interrupt" (interrupt-session msg)
-            "close" (close-session msg)
-            "ls-sessions" (t/send transport (response-for msg :status :done
-                                                          :sessions (or (keys @sessions) [])))
-            (h msg)))))))
+  (let [es (promise)]
+    (fn [{:keys [op session transport thread-factory] :as msg}]
+      (when (not (realized? es))
+        (deliver es (configure-executor :thread-factory thread-factory)))
+      (let [msg (assoc msg :es @es)
+            the-session (if session
+                          (@sessions session)
+                          (create-session msg))]
+        (if-not the-session
+          (t/send transport (response-for msg :status #{:error :unknown-session :done}))
+          (let [msg (assoc msg :session the-session)]
+            (case op
+              "clone" (register-session msg)
+              "interrupt" (interrupt-session msg)
+              "close" (close-session msg)
+              "ls-sessions" (t/send transport (response-for msg :status :done
+                                                            :sessions (or (keys @sessions) [])))
+              (h msg))))))))
 
 (set-descriptor! #'session
                  {:requires #{}
