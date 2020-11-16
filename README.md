@@ -52,6 +52,20 @@ the needs of the essential tools of the Clojure(Script) ecosystem
 Check the brief history of nREPL, available
 [here](https://nrepl.org/nrepl/about/history.html).
 
+### How does nREPL compare to other REPL servers (e.g. `prepl`)?
+
+Check out [this detailed comparison](https://nrepl.org/nrepl/alternatives.html).
+
+### Does nREPL support ClojureScript?
+
+Yes and no. The reference nREPL implementation is Clojure-specific, but it can be extended with ClojureScript support
+via the Piggieback middleware. In the future there may be implementations of nREPL that target ClojureScript directly.
+
+### Does nREPL support other programming languages besides Clojure?
+
+The nREPL protocol is language-agnostic and implementations of nREPL servers exist for [several programming languages](https://nrepl.org/nrepl/beyond_clojure.html).
+Implementing new nREPL servers is [pretty simple](https://nrepl.org/nrepl/building_servers.html).
+
 ## Contributors
 
 This project exists thanks to all the people who contribute.
