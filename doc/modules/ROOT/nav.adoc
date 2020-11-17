@@ -1,3 +1,4 @@
+// Don't forget to update cljdoc.edn when making changes here
 * xref:index.adoc[Home]
 * xref:installation.adoc[Installation]
 * Usage
