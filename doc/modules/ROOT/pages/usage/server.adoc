@@ -268,6 +268,9 @@ project). Its purpose is to set project-specific settings (e.g. a common port
 you always want to use with a particular project). Any setting in `.nrepl.edn`
 will take precedence over a setting in `.nrepl/nrepl.edn`.
 
+NOTE: Settings passed via the command-line interface will take
+precedence over settings specified via the configuration files.
+
 Here's an example global configuration file:
 
 ..nrepl/nrepl.edn
