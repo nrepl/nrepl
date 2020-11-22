@@ -77,3 +77,33 @@
               (completions "Integer/parseInt" 'clojure.core)))
     (is (some #{{:candidate ".toString" :type :method}}
               (completions ".toString" 'clojure.core)))))
+
+(deftest keyword-completions-test
+  (testing "colon prefix"
+    (is (set/subset? #{":doc" ":refer" ":refer-clojure"}
+                     (set (candidates ":" *ns*)))))
+
+  (testing "unqualified keywords"
+    (do #{:t-key-foo :t-key-bar :t-key-baz :t-key/quux}
+        (is (set/subset? #{":t-key-foo" ":t-key-bar" ":t-key-baz" ":t-key/quux"}
+                         (set (candidates ":t-key" *ns*))))))
+
+  (testing "auto-resolved unqualified keywords"
+    (do #{::foo ::bar ::baz}
+        (is (set/subset? #{":nrepl.util.completion-test/bar" ":nrepl.util.completion-test/baz"}
+                         (set (candidates ":nrepl.util.completion-test/ba" *ns*))))
+        (is (set/subset? #{"::bar" "::baz"}
+                         (set (candidates "::ba" 'nrepl.util.completion-test))))))
+
+  (testing "auto-resolved qualified keywords"
+    (do #{:nrepl.core/aliased-one :nrepl.core/aliased-two}
+        (require '[nrepl.core :as core])
+        (is (set/subset? #{"::core/aliased-one" "::core/aliased-two"}
+                         (set (candidates "::core/ali" *ns*))))))
+
+  (testing "namespace aliases"
+    (is (set/subset? #{"::set"}
+                     (set (candidates "::s" 'nrepl.util.completion-test)))))
+
+  (testing "namespace aliases without namespace"
+    (is (empty? (candidates "::/" *ns*)))))
