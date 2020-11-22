@@ -144,7 +144,7 @@
     {:candidate name :type :static-method}))
 
 (defn scoped-candidates
-  [prefix ns]
+  [^String prefix ns]
   (when-let [prefix-scope (first (.split prefix "/"))]
     (let [scope (symbol prefix-scope)]
       (map #(update % :candidate (fn [c] (str scope "/" c)))
@@ -154,7 +154,7 @@
                (ns-public-var-candidates ns)))))))
 
 (defn class-candidates
-  [prefix ns]
+  [^String prefix ns]
   (map annotate-class
        (if (.contains prefix "$")
          @nested-classes
@@ -168,7 +168,7 @@
           (ns-class-candidates ns)))
 
 (defn completion-candidates
-  [prefix ns]
+  [^String prefix ns]
   (cond
     (.startsWith prefix ".") (ns-java-method-candidates ns)
     (.contains prefix "/")  (scoped-candidates prefix ns)
@@ -183,4 +183,4 @@
    (completions prefix ns nil))
   ([^String prefix ns _options]
    (let [candidates (completion-candidates prefix ns)]
-     (sort-by :candidate (filter #(.startsWith (:candidate %) prefix) candidates)))))
+     (sort-by :candidate (filter #(.startsWith ^String (:candidate %) prefix) candidates)))))
