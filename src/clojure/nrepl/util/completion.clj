@@ -8,8 +8,93 @@
   (:require [clojure.main])
   (:import [java.util.jar JarFile]
            [java.io File]
-           [java.lang.reflect Member]
-           [java.util.jar JarEntry]))
+           [java.lang.reflect Field Member]
+           [java.util.jar JarEntry]
+           [java.util.concurrent ConcurrentHashMap]))
+
+;; Code adapted from Compliment (https://github.com/alexander-yakushev/compliment)
+
+(defn annotate-keyword
+  [kw]
+  {:candidate kw :type :keyword})
+
+(defn all-keywords
+  []
+  (let [^Field field (.getDeclaredField clojure.lang.Keyword "table")]
+    (.setAccessible field true)
+    (.keySet ^ConcurrentHashMap (.get field nil))))
+
+(defn- resolve-namespace
+  [sym ns]
+  (get (ns-aliases ns) sym (find-ns sym)))
+
+(defn qualified-auto-resolved-keywords
+  "Given a namespace alias, a prefix, and a namespace, return completion
+  candidates for qualified, auto-resolved keywords (e.g. ::foo/bar)."
+  [ns-alias prefix ns]
+  (let [ns-alias-name (str (resolve-namespace (symbol ns-alias) ns))]
+    (sequence
+     (comp
+      (filter #(= (namespace %) ns-alias-name))
+      (filter #(.startsWith (name %) prefix))
+      (map #(str "::" ns-alias "/" (name %)))
+      (map annotate-keyword))
+     (all-keywords))))
+
+(defn unqualified-auto-resolved-keywords
+  "Given a prefix and a namespace, return completion candidates for
+  keywords that belong to the given namespace."
+  [prefix ns]
+  (sequence
+   (comp
+    (filter #(= (namespace %) (str ns)))
+    (filter #(.startsWith (name %) (subs prefix 2)))
+    (map #(str "::" (name %)))
+    (map annotate-keyword))
+   (all-keywords)))
+
+(defn keyword-namespace-aliases
+  "Given a prefix and a namespace, return completion candidates for namespace
+  aliases as auto-resolved keywords."
+  [prefix ns]
+  (sequence
+   (comp
+    (map (comp name first))
+    (filter (fn [^String alias-name] (.startsWith alias-name (subs prefix 2))))
+    (map #(str "::" (name %)))
+    (map annotate-keyword))
+   (ns-aliases ns)))
+
+(defn single-colon-keywords
+  "Given a prefix, return completion candidates for keywords that are either
+  unqualified or qualified with a synthetic namespace."
+  [prefix]
+  (sequence
+   (comp
+    (filter #(.startsWith (str %) (subs prefix 1)))
+    (map #(str ":" %))
+    (map annotate-keyword))
+   (all-keywords)))
+
+(defn keyword-candidates
+  [^String prefix ns]
+  (assert (string? prefix))
+  (let [double-colon? (.startsWith prefix "::")
+        single-colon? (.startsWith prefix ":")
+        slash-pos (.indexOf prefix "/")]
+    (cond
+      (and double-colon? (pos? slash-pos))
+      (let [ns-alias (subs prefix 2 slash-pos)
+            prefix (subs prefix (inc slash-pos))]
+        (qualified-auto-resolved-keywords ns-alias prefix ns))
+
+      double-colon?
+      (into
+       (unqualified-auto-resolved-keywords prefix ns)
+       (keyword-namespace-aliases prefix ns))
+
+      single-colon?
+      (single-colon-keywords prefix))))
 
 ;; Code adapted from clojure-complete (https://github.com/ninjudd/clojure-complete)
 ;; The results follow compliment's format, as it's richer and gives more useful
@@ -170,6 +255,7 @@
 (defn completion-candidates
   [^String prefix ns]
   (cond
+    (.startsWith prefix ":") (keyword-candidates prefix ns)
     (.startsWith prefix ".") (ns-java-method-candidates ns)
     (.contains prefix "/")  (scoped-candidates prefix ns)
     (.contains prefix ".")  (concat (ns-candidates ns) (class-candidates prefix ns))

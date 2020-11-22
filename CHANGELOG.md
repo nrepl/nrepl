@@ -2,6 +2,10 @@
 
 ## master (unreleased)
 
+### New features
+
+* Add keyword completion support
+
 ## 0.8.3 (2020-10-25)
 
 ### Bugs fixed
