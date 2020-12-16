@@ -5,7 +5,8 @@
   the API is subject to changes."
   {:author "Bozhidar Batsov"
    :added  "0.8"}
-  (:require [clojure.main])
+  (:require [clojure.main]
+            [nrepl.misc :as misc])
   (:import [java.util.jar JarFile]
            [java.io File]
            [java.lang.reflect Field Member]
@@ -189,11 +190,13 @@
 ;;; Candidates
 
 (defn annotate-var [var]
-  (let [{macro :macro arglists :arglists var-name :name} (meta var)
+  (let [{macro :macro arglists :arglists var-name :name doc :doc} (-> var meta misc/normalize-meta)
         type (cond macro :macro
                    arglists :function
                    :else :var)]
-    {:candidate (name var-name) :type type}))
+    (cond-> {:candidate (name var-name) :type type}
+      doc (assoc :doc doc)
+      arglists (assoc :arglists arglists))))
 
 (defn annotate-class
   [cname]
@@ -204,7 +207,16 @@
 
 (defn ns-candidates
   [ns]
-  (map #(hash-map :candidate (name %) :type :namespace) (namespaces ns)))
+  ;; Calling meta on sym that names a namespace only returns doc if the ns form
+  ;; uses the docstring arg, but not if it uses the ^{:doc "..."} meta form.
+  ;;
+  ;; find-ns returns the namespace the sym names. Calling meta on it returns
+  ;; the docstring, no matter which way it's defined.
+  (map #(let [doc (some-> % find-ns meta :doc)]
+          (cond-> {:candidate (name %)
+                   :type :namespace}
+            doc (assoc :doc doc)))
+       (namespaces ns)))
 
 (defn ns-var-candidates
   [ns]

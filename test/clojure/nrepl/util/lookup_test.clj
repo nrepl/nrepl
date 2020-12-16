@@ -40,12 +40,6 @@
   (testing "Java sym lookup"
     (is (empty? (lookup 'clojure.core 'String)))))
 
-(deftest normalize-meta-test
-  (is (not-empty (:file (l/normalize-meta {:file "clojure/core.clj"}))))
-
-  (is (= "/foo/bar/baz.clj"
-         (:file (l/normalize-meta {:file "/foo/bar/baz.clj"})))))
-
 (defn- bencode-str
   "Bencode a thing and write it into a string."
   [thing]

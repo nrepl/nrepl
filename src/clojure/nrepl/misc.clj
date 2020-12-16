@@ -3,7 +3,8 @@
   useful for anyone extending it)."
   {:author "Chas Emerick"}
   (:refer-clojure :exclude [requiring-resolve])
-  (:require [clojure.string :as str]))
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str]))
 
 (defn log
   [ex & msgs]
@@ -89,3 +90,28 @@
   []
   (.startsWith (System/getProperty "java.runtime.version")
                "1.8"))
+
+(def safe-var-metadata
+  "A list of var metadata attributes are safe to return to the clients.
+  We need to guard ourselves against EDN data that's not encodeable/decodable
+  with bencode. We also optimize the response payloads by not returning
+  redundant metadata."
+  [:ns :name :doc :file :arglists :forms :macro :special-form
+   :protocol :line :column :added :deprecated :resource])
+
+(defn resolve-file
+  [path]
+  (or (some-> path io/resource str) path))
+
+(defn normalize-meta
+  [m]
+  (-> m
+      (select-keys safe-var-metadata)
+      (update :ns str)
+      (update :name str)
+      (update :protocol str)
+      (update :file resolve-file)
+      (cond-> (:macro m) (update :macro str))
+      (cond-> (:special-form m) (update :special-form str))
+      (assoc :arglists-str (str (:arglists m)))
+      (cond-> (:arglists m) (update :arglists str))))

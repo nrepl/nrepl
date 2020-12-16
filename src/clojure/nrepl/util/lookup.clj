@@ -13,15 +13,6 @@
    [clojure.string :as str]
    [nrepl.misc :as misc]))
 
-;;; Var meta logic
-(def var-meta-whitelist
-  "A list of var metadata attributes are safe to return to the clients.
-  We need to guard ourselves against EDN data that's not encodeable/decodable
-  with bencode. We also optimize the response payloads by not returning
-  redundant metadata."
-  [:ns :name :doc :file :arglists :forms :macro :special-form
-   :protocol :line :column :added :deprecated :resource])
-
 (defn special-sym-meta
   [sym]
   ;; clojure.repl/special-doc is private, so we need to work a
@@ -42,26 +33,9 @@
     (special-sym-meta sym)
     (normal-sym-meta ns sym)))
 
-(defn resolve-file
-  [path]
-  (or (some-> path io/resource str) path))
-
-(defn normalize-meta
-  [m]
-  (-> m
-      (select-keys var-meta-whitelist)
-      (update :ns str)
-      (update :name str)
-      (update :protocol str)
-      (update :file resolve-file)
-      (cond-> (:macro m) (update :macro str))
-      (cond-> (:special-form m) (update :special-form str))
-      (assoc :arglists-str (str (:arglists m)))
-      (update :arglists str)))
-
 (defn lookup
   "Lookup the metadata for `sym`.
   If the `sym` is not qualified than it will be resolved in the context
   of `ns`."
   [ns sym]
-  (some-> (sym-meta ns sym) normalize-meta))
+  (some-> (sym-meta ns sym) misc/normalize-meta))
