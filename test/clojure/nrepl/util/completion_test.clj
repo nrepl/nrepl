@@ -1,7 +1,12 @@
 (ns nrepl.util.completion-test
+  "Unit tests for completion utilities."
   (:require [clojure.set :as set]
             [clojure.test :refer :all]
             [nrepl.util.completion :as completion :refer [completions]]))
+
+(def t-var "var" nil)
+(defn t-fn "fn" [x] x)
+(defmacro t-macro "macro" [y] y)
 
 (defn- candidates
   "Return only the candidate names without any additional
@@ -61,18 +66,36 @@
     (is (not (some #{"String/indexOf" ".indexOf"} (candidates "String/")))))
 
   (testing "candidate types"
-    (is (some #{{:candidate "comment" :type :macro}}
-              (completions "comment" 'clojure.core)))
-    (is (some #{{:candidate "commute" :type :function}}
-              (completions "commute" 'clojure.core)))
+    (is (some #{{:candidate "t-var"
+                 :type :var
+                 :doc "var"}}
+              (completions "t-var" 'nrepl.util.completion-test)))
+    (is (some #{{:candidate "t-fn"
+                 :type :function
+                 :arglists "([x])"
+                 :doc "fn"}}
+              (completions "t-fn" 'nrepl.util.completion-test)))
+    (is (some #{{:candidate "t-macro"
+                 :type :macro
+                 :arglists "([y])"
+                 :doc "macro"}}
+              (completions "t-macro" 'nrepl.util.completion-test)))
     (is (some #{{:candidate "unquote" :type :var}}
               (completions "unquote" 'clojure.core)))
     (is (some #{{:candidate "if" :ns "clojure.core" :type :special-form}}
               (completions "if" 'clojure.core)))
     (is (some #{{:candidate "UnsatisfiedLinkError" :type :class}}
               (completions "Unsatisfied" 'clojure.core)))
-    (is (some #{{:candidate "clojure.core" :type :namespace}}
+    ;; ns with :doc meta
+    (is (some #{{:candidate "clojure.core"
+                 :type :namespace
+                 :doc "Fundamental library of the Clojure language"}}
               (completions "clojure.core" 'clojure.core)))
+    ;; ns with docstring argument
+    (is (some #{{:candidate "nrepl.util.completion-test"
+                 :type :namespace
+                 :doc "Unit tests for completion utilities."}}
+              (completions "nrepl.util.completion-test" 'clojure.core)))
     (is (some #{{:candidate "Integer/parseInt" :type :static-method}}
               (completions "Integer/parseInt" 'clojure.core)))
     (is (some #{{:candidate "File/separator", :type :static-method}}

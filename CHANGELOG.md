@@ -5,6 +5,7 @@
 ### New features
 
 * Add keyword completion support
+* Add doc and arglists to completion responses
 
 ### Bugs fixed
 
