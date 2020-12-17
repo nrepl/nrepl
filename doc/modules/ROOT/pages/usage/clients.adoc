@@ -9,7 +9,7 @@ servers written in any language.
 
 == Command-line Clients
 
-* https://leiningen.org/grench[grenchman] (command-line nREPL client written in OCaml, works with non-Clojure servers)
+* https://leiningen.org/grench.html[grenchman] (command-line nREPL client written in OCaml, works with non-Clojure servers)
 * https://github.com/trptcolin/reply/[REPL-y] (command-line client for nREPL)
 * https://github.com/eraserhd/rep[rep] (A single-shot nREPL client designed for shell invocation.)
 * https://git.sr.ht/~technomancy/shevek/[shevek] (A command-line nREPL client written in https://fennel-lang.org/[Fennel], works with non-Clojure servers)
