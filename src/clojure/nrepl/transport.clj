@@ -10,7 +10,7 @@
    nrepl.version)
   (:import
    clojure.lang.RT
-   [java.io ByteArrayOutputStream EOFException PushbackInputStream PushbackReader]
+   [java.io ByteArrayOutputStream EOFException PushbackInputStream PushbackReader OutputStream]
    [java.net Socket SocketException]
    [java.util.concurrent BlockingQueue LinkedBlockingQueue SynchronousQueue TimeUnit]))
 
@@ -100,7 +100,7 @@
   (let [buffer (ByteArrayOutputStream.)]
     (try
       (bencode/write-bencode buffer thing))
-    (.write output (.toByteArray buffer))))
+    (.write ^OutputStream output (.toByteArray buffer))))
 
 (defn bencode
   "Returns a Transport implementation that serializes messages
