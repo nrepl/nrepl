@@ -6,7 +6,7 @@ organization.
 == Java
 
 nREPL officially targets Java 8, Java 11 and the most recent rapid
-release version (e.g. Java 14).  More generally speaking - we aim
+release version (e.g. Java 15).  More generally speaking - we aim
 to support all Java releases that are currently officially supported
 by Oracle.
 
