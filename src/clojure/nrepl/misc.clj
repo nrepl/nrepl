@@ -103,7 +103,8 @@
   [path]
   (or (some-> path io/resource str) path))
 
-(defn normalize-meta
+(defn sanitize-meta
+  "Sanitize a Clojure metadata map such that it can be bencoded."
   [m]
   (-> m
       (select-keys safe-var-metadata)
