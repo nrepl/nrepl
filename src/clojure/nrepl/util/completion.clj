@@ -189,14 +189,14 @@
 
 ;;; Candidates
 
-(defn annotate-var [var]
+(defn annotate-var [var {:keys [extra-metadata]}]
   (let [{macro :macro arglists :arglists var-name :name doc :doc} (-> var meta misc/sanitize-meta)
         type (cond macro :macro
                    arglists :function
                    :else :var)]
     (cond-> {:candidate (name var-name) :type type}
-      doc (assoc :doc doc)
-      arglists (assoc :arglists arglists))))
+      (and (contains? extra-metadata :doc) doc) (assoc :doc doc)
+      (and (contains? extra-metadata :arglists) arglists) (assoc :arglists arglists))))
 
 (defn annotate-class
   [cname]
@@ -206,7 +206,7 @@
   (map #(hash-map :candidate (name %) :type :special-form :ns "clojure.core") special-forms))
 
 (defn ns-candidates
-  [ns]
+  [ns {:keys [extra-metadata]}]
   ;; Calling meta on sym that names a namespace only returns doc if the ns form
   ;; uses the docstring arg, but not if it uses the ^{:doc "..."} meta form.
   ;;
@@ -215,16 +215,16 @@
   (map #(let [doc (some-> % find-ns meta :doc)]
           (cond-> {:candidate (name %)
                    :type :namespace}
-            doc (assoc :doc doc)))
+            (and (contains? extra-metadata :doc) doc) (assoc :doc doc)))
        (namespaces ns)))
 
 (defn ns-var-candidates
-  [ns]
-  (map annotate-var (ns-vars ns)))
+  [ns options]
+  (map #(annotate-var % options) (ns-vars ns)))
 
 (defn ns-public-var-candidates
-  [ns]
-  (map annotate-var (ns-public-vars ns)))
+  [ns options]
+  (map #(annotate-var % options) (ns-public-vars ns)))
 
 (defn ns-class-candidates
   [ns]
@@ -241,14 +241,14 @@
     {:candidate name :type :static-method}))
 
 (defn scoped-candidates
-  [^String prefix ns]
+  [^String prefix ns options]
   (when-let [prefix-scope (first (.split prefix "/"))]
     (let [scope (symbol prefix-scope)]
       (map #(update % :candidate (fn [c] (str scope "/" c)))
            (if-let [class (resolve-class ns scope)]
              (static-member-candidates class)
              (when-let [ns (or (find-ns scope) (scope (ns-aliases ns)))]
-               (ns-public-var-candidates ns)))))))
+               (ns-public-var-candidates ns options)))))))
 
 (defn class-candidates
   [^String prefix ns]
@@ -258,20 +258,20 @@
          @top-level-classes)))
 
 (defn generic-candidates
-  [ns]
+  [ns options]
   (concat special-form-candidates
-          (ns-candidates ns)
-          (ns-var-candidates ns)
+          (ns-candidates ns options)
+          (ns-var-candidates ns options)
           (ns-class-candidates ns)))
 
 (defn completion-candidates
-  [^String prefix ns]
+  [^String prefix ns options]
   (cond
     (.startsWith prefix ":") (keyword-candidates prefix ns)
     (.startsWith prefix ".") (ns-java-method-candidates ns)
-    (.contains prefix "/")  (scoped-candidates prefix ns)
-    (.contains prefix ".")  (concat (ns-candidates ns) (class-candidates prefix ns))
-    :else                   (generic-candidates ns)))
+    (.contains prefix "/")  (scoped-candidates prefix ns options)
+    (.contains prefix ".")  (concat (ns-candidates ns options) (class-candidates prefix ns))
+    :else                   (generic-candidates ns options)))
 
 (defn completions
   "Return a sequence of matching completion candidates given a prefix string and an optional current namespace."
@@ -279,6 +279,6 @@
    (completions prefix *ns*))
   ([prefix ns]
    (completions prefix ns nil))
-  ([^String prefix ns _options]
-   (let [candidates (completion-candidates prefix ns)]
+  ([^String prefix ns options]
+   (let [candidates (completion-candidates prefix ns options)]
      (sort-by :candidate (filter #(.startsWith ^String (:candidate %) prefix) candidates)))))
