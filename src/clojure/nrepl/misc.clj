@@ -99,10 +99,6 @@
   [:ns :name :doc :file :arglists :forms :macro :special-form
    :protocol :line :column :added :deprecated :resource])
 
-(defn resolve-file
-  [path]
-  (or (some-> path io/resource str) path))
-
 (defn sanitize-meta
   "Sanitize a Clojure metadata map such that it can be bencoded."
   [m]
@@ -111,7 +107,7 @@
       (update :ns str)
       (update :name str)
       (update :protocol str)
-      (update :file resolve-file)
+      (update :file #(or (some-> % io/resource str) %))
       (cond-> (:macro m) (update :macro str))
       (cond-> (:special-form m) (update :special-form str))
       (assoc :arglists-str (str (:arglists m)))
