@@ -190,7 +190,7 @@
 ;;; Candidates
 
 (defn annotate-var [var]
-  (let [{macro :macro arglists :arglists var-name :name doc :doc} (-> var meta misc/normalize-meta)
+  (let [{macro :macro arglists :arglists var-name :name doc :doc} (-> var meta misc/sanitize-meta)
         type (cond macro :macro
                    arglists :function
                    :else :var)]

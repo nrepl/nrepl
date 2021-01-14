@@ -38,4 +38,4 @@
   If the `sym` is not qualified than it will be resolved in the context
   of `ns`."
   [ns sym]
-  (some-> (sym-meta ns sym) misc/normalize-meta))
+  (some-> (sym-meta ns sym) misc/sanitize-meta))
