@@ -75,6 +75,8 @@
               (completions "clojure.core" 'clojure.core)))
     (is (some #{{:candidate "Integer/parseInt" :type :static-method}}
               (completions "Integer/parseInt" 'clojure.core)))
+    (is (some #{{:candidate "File/separator", :type :static-method}}
+              (completions "File/" 'nrepl.util.completion)))
     (is (some #{{:candidate ".toString" :type :method}}
               (completions ".toString" 'clojure.core)))))
 
