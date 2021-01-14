@@ -6,6 +6,10 @@
 
 * Add keyword completion support
 
+### Bugs fixed
+
+* Fix completion for static class members
+
 ## 0.8.3 (2020-10-25)
 
 ### Bugs fixed

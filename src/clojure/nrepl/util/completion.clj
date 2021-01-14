@@ -178,8 +178,8 @@
      (for [file classfiles :when (re-find #"^[^\$]+(\$[^\d]\w*)+\.class" file)]
        (classname file)))))
 
-(defn resolve-class [sym]
-  (try (let [val (resolve sym)]
+(defn resolve-class [ns sym]
+  (try (let [val (ns-resolve ns sym)]
          (when (class? val) val))
        (catch Exception e
          (when (not= ClassNotFoundException
@@ -233,7 +233,7 @@
   (when-let [prefix-scope (first (.split prefix "/"))]
     (let [scope (symbol prefix-scope)]
       (map #(update % :candidate (fn [c] (str scope "/" c)))
-           (if-let [class (resolve-class scope)]
+           (if-let [class (resolve-class ns scope)]
              (static-member-candidates class)
              (when-let [ns (or (find-ns scope) (scope (ns-aliases ns)))]
                (ns-public-var-candidates ns)))))))
