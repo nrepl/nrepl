@@ -66,9 +66,9 @@ Required parameters::
 
 
 Optional parameters::
-* `:complete` The fully qualified name of a completion function to use instead of the default one (e.g. ``my.ns/completion``).
+* `:complete-fn` The fully qualified name of a completion function to use instead of the default one (e.g. ``my.ns/completion``).
 * `:ns` The namespace in which we want to obtain completion candidates. Defaults to ``\*ns*``.
-* `:options` A map of options supported by the completion function.
+* `:options` A map of options supported by the completion function. Supported keys: ``extra-metadata`` (possible values: ``:arglists``, ``:docs``).
 
 
 Returns::
@@ -290,3 +290,4 @@ Optional parameters::
 Returns::
 * `:status` ``done``, once done, and ``error``, if there's any problems in loading a middleware
 * `:unresolved-middleware` List of middleware that could not be resolved
+

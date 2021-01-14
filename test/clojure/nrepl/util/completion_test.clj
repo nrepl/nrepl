@@ -67,19 +67,28 @@
 
   (testing "candidate types"
     (is (some #{{:candidate "t-var"
+                 :type :var}}
+              (completions "t-var" 'nrepl.util.completion-test)))
+    (is (some #{{:candidate "t-var"
                  :type :var
                  :doc "var"}}
-              (completions "t-var" 'nrepl.util.completion-test)))
+              (completions "t-var" 'nrepl.util.completion-test {:extra-metadata #{:arglists :doc}})))
+    (is (some #{{:candidate "t-fn"
+                 :type :function}}
+              (completions "t-fn" 'nrepl.util.completion-test)))
     (is (some #{{:candidate "t-fn"
                  :type :function
                  :arglists "([x])"
                  :doc "fn"}}
-              (completions "t-fn" 'nrepl.util.completion-test)))
+              (completions "t-fn" 'nrepl.util.completion-test {:extra-metadata #{:arglists :doc}})))
+    (is (some #{{:candidate "t-macro"
+                 :type :macro}}
+              (completions "t-macro" 'nrepl.util.completion-test)))
     (is (some #{{:candidate "t-macro"
                  :type :macro
                  :arglists "([y])"
                  :doc "macro"}}
-              (completions "t-macro" 'nrepl.util.completion-test)))
+              (completions "t-macro" 'nrepl.util.completion-test {:extra-metadata #{:arglists :doc}})))
     (is (some #{{:candidate "unquote" :type :var}}
               (completions "unquote" 'clojure.core)))
     (is (some #{{:candidate "if" :ns "clojure.core" :type :special-form}}
@@ -88,14 +97,20 @@
               (completions "Unsatisfied" 'clojure.core)))
     ;; ns with :doc meta
     (is (some #{{:candidate "clojure.core"
+                 :type :namespace}}
+              (completions "clojure.core" 'clojure.core)))
+    (is (some #{{:candidate "clojure.core"
                  :type :namespace
                  :doc "Fundamental library of the Clojure language"}}
-              (completions "clojure.core" 'clojure.core)))
+              (completions "clojure.core" 'clojure.core {:extra-metadata #{:doc}})))
     ;; ns with docstring argument
+    (is (some #{{:candidate "nrepl.util.completion-test"
+                 :type :namespace}}
+              (completions "nrepl.util.completion-test" 'clojure.core)))
     (is (some #{{:candidate "nrepl.util.completion-test"
                  :type :namespace
                  :doc "Unit tests for completion utilities."}}
-              (completions "nrepl.util.completion-test" 'clojure.core)))
+              (completions "nrepl.util.completion-test" 'clojure.core {:extra-metadata #{:doc}})))
     (is (some #{{:candidate "Integer/parseInt" :type :static-method}}
               (completions "Integer/parseInt" 'clojure.core)))
     (is (some #{{:candidate "File/separator", :type :static-method}}

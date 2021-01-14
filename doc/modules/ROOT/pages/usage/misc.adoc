@@ -44,6 +44,28 @@ setting `nrepl.middleware.completion/*complete-fn*`.
 user=> (set! nrepl.middleware.completion/*complete-fn* my.namespace/my-completion)
 ----
 
+=== Options
+
+The default completion function accepts the `extra-metadata` option. It allows clients to request additional metadata about completion items. For example, to request docstrings and argument lists for applicable completion items:
+
+[source,clojure]
+----
+;; -> client sends completion op
+{:op "completions"
+ :prefix "ma"
+ :ns "clojure.core"
+ :options {:extra-metadata ["arglists" "doc"]}}
+
+;; <- server returns completion items
+{:completions
+ [,,,
+  {:candidate "map"
+   :type "function"
+   :arglists "([f] [f coll] [f c1 c2] [f c1 c2 c3] [f c1 c2 c3 & colls])"
+   :doc "Returns a lazy sequence..."}
+  ,,,]}
+----
+
 == Symbol Lookup
 
 NOTE: Symbol look support was added in nREPL 0.8 and the API is still

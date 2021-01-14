@@ -13,6 +13,7 @@
   {:author "Bozhidar Batsov"
    :added "0.8"}
   (:require
+   [clojure.walk :as walk]
    [nrepl.util.completion :as complete]
    [nrepl.middleware :as middleware :refer [set-descriptor!]]
    [nrepl.misc :refer [response-for] :as misc]
@@ -25,12 +26,17 @@
   options for the completion function."
   complete/completions)
 
+(def ^:private parse-options
+  (memoize
+   (fn [options]
+     (update (walk/keywordize-keys options) :extra-metadata (comp set (partial map keyword))))))
+
 (defn completion-reply
   [{:keys [session prefix ns complete-fn options] :as msg}]
   (let [ns (if ns (symbol ns) (symbol (str (@session #'*ns*))))
         completion-fn (or (and complete-fn (misc/requiring-resolve (symbol complete-fn))) *complete-fn*)]
     (try
-      (response-for msg {:status :done :completions (completion-fn prefix ns options)})
+      (response-for msg {:status :done :completions (completion-fn prefix ns (parse-options options))})
       (catch Exception e
         (response-for msg {:status #{:done :completion-error}})))))
 
@@ -57,5 +63,5 @@
                              :requires {"prefix" "The prefix to complete."}
                              :optional {"ns" "The namespace in which we want to obtain completion candidates. Defaults to `*ns*`."
                                         "complete-fn" "The fully qualified name of a completion function to use instead of the default one (e.g. `my.ns/completion`)."
-                                        "options" "A map of options supported by the completion function."}
+                                        "options" "A map of options supported by the completion function. Supported keys: `extra-metadata` (possible values: `:arglists`, `:docs`)."}
                              :returns {"completions" "A list of completion candidates. Each candidate is a map with `:candidate` and `:type` keys. Vars also have a `:ns` key."}}}})
