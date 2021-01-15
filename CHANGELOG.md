@@ -4,12 +4,12 @@
 
 ### New features
 
-* Add keyword completion support
-* Add doc and arglists to completion responses
+* [#217](https://github.com/nrepl/nrepl/pull/217): Add keyword completion support.
+* [#226](https://github.com/nrepl/nrepl/pull/226): Add doc and arglists to completion responses.
 
 ### Bugs fixed
 
-* Fix completion for static class members
+* [#227](https://github.com/nrepl/nrepl/pull/227): Fix completion for static class members.
 
 ## 0.8.3 (2020-10-25)
 
