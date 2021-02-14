@@ -50,6 +50,10 @@ externally for local development purposes.
 * https://github.com/clojure-vim/nrepl-python-client[nrepl-python-client] (nREPL client library for Python)
 * https://github.com/vspinu/R-nREPL[R-nREPL] (nREPL client for R)
 
+== Other Clients
+
+* https://github.com/clojupyter/clojupyter[clojupyter] (Jupyter notebooks for Clojure)
+
 == Using the built-in client
 
 nREPL ships with a very simple command-line client that you can use for some basic
