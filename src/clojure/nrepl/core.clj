@@ -84,7 +84,7 @@
    \"done\" :status."
   [client {:keys [id] :as msg :or {id (uuid)}}]
   (let [f (delimited-transport-seq client #{"done" :done} {:id id})]
-    (f (assoc msg :id id))))
+    (f msg)))
 
 (defn new-session
   "Provokes the creation and retention of a new session, optionally as a clone
