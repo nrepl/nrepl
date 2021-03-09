@@ -2,9 +2,9 @@
   "Doc generation utilities"
   (:require
    [clojure.tools.cli :as cli]
-   [clojure.java.io :as io]
    [clojure.string :as string]
    [nrepl.core :as nrepl]
+   [clojure.walk :as walk]
    [nrepl.server :as server]
    [nrepl.transport :as transport]
    [nrepl.version :as version])
@@ -51,7 +51,7 @@
   "Given a message containing the response to a verbose :describe message,
 generates a markdown string conveying the information therein, suitable for
 use in e.g. wiki pages, github, etc."
-  [{:keys [ops versions]}]
+  [{:keys [ops _versions]}]
   (apply str "# Supported nREPL operations
 
 <small>generated from a verbose 'describe' response (nREPL v"
@@ -86,7 +86,7 @@ use in e.g. wiki pages, github, etc."
   "Given a message containing the response to a verbose :describe message,
   generates a asciidoc string conveying the information therein, suitable for
   use in e.g. wiki pages, github, etc."
-  [{:keys [ops versions]}]
+  [{:keys [ops _versions]}]
   (apply str "= Supported nREPL operations\n\n"
          "[small]#generated from a verbose 'describe' response (nREPL v"
          (:version-string version/version)
@@ -122,12 +122,12 @@ use in e.g. wiki pages, github, etc."
     (handler (assoc msg :transport remote))
     (-> (nrepl/response-seq local 500)
         first
-        clojure.walk/keywordize-keys)))
+        walk/keywordize-keys)))
 
 (defn -main
   "Regenerate and output the ops documentation to the specified destination in the specified format."
   [& args]
-  (let [{:keys [options arguments errors summary]} (cli/parse-opts args cli-options)]
+  (let [{:keys [options _arguments errors summary]} (cli/parse-opts args cli-options)]
     (cond
       (:help options) (exit 0 (usage summary))
       errors (exit 1 (error-msg errors))

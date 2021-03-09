@@ -8,11 +8,11 @@
    [nrepl.misc :refer [uuid response-for]]
    [nrepl.transport :as t])
   (:import
-   (clojure.lang Compiler$CompilerException LineNumberingPushbackReader)
+   (clojure.lang LineNumberingPushbackReader)
    (java.io Reader)
    (java.util.concurrent.atomic AtomicLong)
    (java.util.concurrent BlockingQueue LinkedBlockingQueue SynchronousQueue
-                         Executor ExecutorService
+                         ExecutorService
                          ThreadFactory ThreadPoolExecutor
                          TimeUnit)))
 
@@ -63,7 +63,7 @@
            queue (SynchronousQueue.)}}]
   (let [^ThreadFactory thread-factory (or thread-factory (configure-thread-factory))]
     (ThreadPoolExecutor. 1 Integer/MAX_VALUE
-                         (long 30000) TimeUnit/MILLISECONDS
+                         (long keep-alive) TimeUnit/MILLISECONDS
                          ^BlockingQueue queue
                          thread-factory)))
 
@@ -76,7 +76,7 @@
    * thunk, a Runnable, the task itself,
    * ack, another Runnable, ran to notify of successful execution of thunk.
    The thunk/ack split is meaningful for interruptible eval: only the thunk can be interrupted."
-  [id ^Runnable thunk ^Runnable ack]
+  [_id ^Runnable thunk ^Runnable ack]
   (let [^Runnable f #(do (.run thunk) (.run ack))]
     (.submit ^ExecutorService @default-executor f)))
 
@@ -138,7 +138,7 @@
   `clojure.core/get-thread-bindings`. *in* is obtained using `session-in`, *ns*
   defaults to 'user, and other bindings as optionally provided in
   `session` are merged in."
-  ([{:keys [transport session out-limit] :as msg}]
+  ([{:keys [transport session out-limit] :as _msg}]
    (let [id (uuid)
          {:keys [input-queue stdin-reader]} (session-in id transport)
          the-session (atom (into (or (some-> session deref) {})
@@ -205,7 +205,7 @@
                                    (compare-and-set! running exec-id nil)))
                            (some-> ack .run)
                            (recur))))
-                     (catch InterruptedException e))
+                     (catch InterruptedException _e))
         spawn-thread #(doto (Thread. main-loop (str "nREPL-session-" id))
                         (.setDaemon true)
                         (.setContextClassLoader cl)
@@ -232,7 +232,7 @@
 (defn- register-session
   "Registers a new session containing the baseline bindings contained in the
    given message's :session."
-  [{:keys [session transport] :as msg}]
+  [{:keys [_session transport] :as msg}]
   (let [session (create-session msg)
         {:keys [id]} (meta session)]
     (alter-meta! session into (session-exec id))
@@ -311,7 +311,7 @@
 (set-descriptor! #'session
                  {:requires #{}
                   :expects #{}
-                  :describe-fn (fn [{:keys [session] :as describe-msg}]
+                  :describe-fn (fn [{:keys [session] :as _describe-msg}]
                                  (when (and session (instance? clojure.lang.Atom session))
                                    {:current-ns (-> @session (get #'*ns*) str)}))
                   :handles {"clone"

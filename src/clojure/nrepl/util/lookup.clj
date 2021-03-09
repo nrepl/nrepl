@@ -8,6 +8,7 @@
   the API is subject to changes."
   {:author "Bozhidar Batsov"
    :added "0.8"}
+  #_:clj-kondo/ignore
   (:require
    [clojure.java.io :as io]
    [clojure.string :as str]

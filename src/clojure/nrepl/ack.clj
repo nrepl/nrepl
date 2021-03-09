@@ -35,7 +35,8 @@
       (h msg)
       (try
         (deliver @ack-port-promise port)
-        (t/send transport {:status :done})))))
+        (t/send transport {:status :done})
+        (catch Throwable e (println (.getMessage e)))))))
 
 ;; TODO: could stand to have some better error handling around all of this
 (defn send-ack

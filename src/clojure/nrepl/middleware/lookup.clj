@@ -12,7 +12,6 @@
   {:author "Bozhidar Batsov"
    :added "0.8"}
   (:require
-   [clojure.java.io :as io]
    [nrepl.middleware :as middleware :refer [set-descriptor!]]
    [nrepl.misc :refer [response-for] :as misc]
    [nrepl.util.lookup :as lookup]
@@ -33,7 +32,7 @@
           sym (symbol sym)
           lookup-fn (or (and lookup-fn (misc/requiring-resolve (symbol lookup-fn))) *lookup-fn*)]
       (response-for msg {:status :done :info (lookup-fn ns sym)}))
-    (catch Exception e
+    (catch Exception _e
       (response-for msg {:status #{:done :lookup-error}}))))
 
 (defn wrap-lookup

@@ -5,10 +5,7 @@
    clojure.set
    [nrepl.misc :refer [uuid]]
    [nrepl.transport :as transport]
-   [nrepl.version :as version])
-  (:import
-   clojure.lang.LineNumberingPushbackReader
-   [java.io Reader StringReader Writer PrintWriter]))
+   [nrepl.version :as version]))
 
 (defn response-seq
   "Returns a lazy seq of messages received via the given Transport.
@@ -30,7 +27,7 @@
   [transport response-timeout]
   (let [latest-head (atom nil)
         update #(swap! latest-head
-                       (fn [[timestamp seq :as head] now]
+                       (fn [[timestamp :as head] now]
                          (if (< timestamp now)
                            [now %]
                            head))
