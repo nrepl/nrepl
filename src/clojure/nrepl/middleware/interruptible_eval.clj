@@ -142,7 +142,7 @@
    otherwise."
   [h & _configuration]
   (fn [{:keys [op session id transport] :as msg}]
-    (let [{:keys [exec] _session-id :id} (meta session)]
+    (let [{:keys [exec]} (meta session)]
       (case op
         "eval"
         (if-not (:code msg)

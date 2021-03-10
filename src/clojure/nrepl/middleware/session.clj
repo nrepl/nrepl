@@ -232,7 +232,7 @@
 (defn- register-session
   "Registers a new session containing the baseline bindings contained in the
    given message's :session."
-  [{:keys [_session transport] :as msg}]
+  [{:keys [transport] :as msg}]
   (let [session (create-session msg)
         {:keys [id]} (meta session)]
     (alter-meta! session into (session-exec id))
@@ -311,7 +311,7 @@
 (set-descriptor! #'session
                  {:requires #{}
                   :expects #{}
-                  :describe-fn (fn [{:keys [session] :as _describe-msg}]
+                  :describe-fn (fn [{:keys [session]}]
                                  (when (and session (instance? clojure.lang.Atom session))
                                    {:current-ns (-> @session (get #'*ns*) str)}))
                   :handles {"clone"

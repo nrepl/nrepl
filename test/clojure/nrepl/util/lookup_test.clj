@@ -1,6 +1,5 @@
 (ns nrepl.util.lookup-test
   (:require [clojure.test :refer :all]
-            [clojure.string :as str]
             [nrepl.bencode :as bencode]
             [nrepl.util.lookup :as l :refer [lookup]])
   (:import (java.io ByteArrayOutputStream)))
@@ -13,7 +12,7 @@
     (is (not-empty (lookup 'nrepl.util.lookup 'clojure.core/map))))
 
   (testing "aliased sym lookup"
-    (is (not-empty (lookup 'nrepl.util.lookup 'str/upper-case))))
+    (is (not-empty (lookup 'nrepl.util.lookup 'clojure.string/upper-case))))
 
   (testing "non-qualified lookup"
     (is (not-empty (lookup 'clojure.core 'map)))

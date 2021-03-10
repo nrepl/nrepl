@@ -53,7 +53,7 @@
 
 (defn- sideloader
   "Creates a classloader that obey standard delegating policy."
-  [{:keys [_session _id transport] :as msg} pending]
+  [{:keys [transport] :as msg} pending]
   (fn []
     (let [resolve-fn
           (fn [type name]
