@@ -38,7 +38,7 @@
 (defmacro ^{:author "Colin Jones"} set-signal-handler!
   [signal f]
   (if (try (Class/forName "sun.misc.Signal")
-           (catch Throwable e))
+           (catch Throwable _e))
     `(try
        (sun.misc.Signal/handle
         (sun.misc.Signal. ~signal)
@@ -207,7 +207,7 @@ Exit:      Control+D or (exit) or (quit)"
       [var])))
 
 (defn- handle-interrupt
-  [signal]
+  [_signal]
   (let [transport (:transport @running-repl)
         client (:client @running-repl)]
     (if (and transport client)
@@ -324,7 +324,7 @@ Exit:      Control+D or (exit) or (quit)"
 (defn- options->greeting
   "Takes a map of nREPL CLI options and the selected transport for the server.
   Returns a greeting function or nil."
-  [options transport]
+  [_options transport]
   (when (= transport #'transport/tty)
     #'transport/tty-greeting))
 
@@ -373,7 +373,7 @@ Exit:      Control+D or (exit) or (quit)"
   "Connects to a running nREPL server and runs a REPL. Exits program when REPL
   is closed.
   Takes a map of nREPL CLI options."
-  [{:keys [host port transport] :as options}]
+  [{:keys [host port _transport] :as options}]
   (interactive-repl {:host host
                      :port port}
                     options)
@@ -414,7 +414,7 @@ Exit:      Control+D or (exit) or (quit)"
   can infer the nREPL server port.
   Takes nREPL server map and processed CLI options map.
   Returns nil."
-  [server options]
+  [server _options]
   ;; Many clients look for this file to infer the port to connect to
   (let [port (:port server)
         port-file (io/file ".nrepl-port")]
@@ -425,7 +425,7 @@ Exit:      Control+D or (exit) or (quit)"
   "Creates an nREPL server instance.
   Takes map of CLI options.
   Returns nREPL server map."
-  [{:keys [port bind handler transport greeting] :as options}]
+  [{:keys [port bind handler transport greeting]}]
   (nrepl-server/start-server
    :port port
    :bind bind

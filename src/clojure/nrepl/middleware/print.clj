@@ -101,7 +101,7 @@
   of the content written to that `PrintWriter` will be sent as messages on the
   transport of `msg`, keyed by `key`."
   ^java.io.PrintWriter
-  [key {:keys [transport] :as msg} {:keys [::buffer-size ::quota] :as opts}]
+  [key {:keys [transport] :as msg} {:keys [::buffer-size ::quota]}]
   (-> (proxy [Writer] []
         (write
           ([x]
@@ -136,9 +136,9 @@
   (transport/send transport (apply dissoc resp keys)))
 
 (defn- send-nonstreamed
-  [{:keys [transport] :as msg}
+  [{:keys [transport]}
    resp
-   {:keys [::print-fn ::quota ::keys] :as opts}]
+   {:keys [::print-fn ::quota ::keys]}]
   (let [print-key (fn [key]
                     (let [value (get resp key)
                           writer (-> (StringWriter.)

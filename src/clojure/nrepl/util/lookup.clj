@@ -9,8 +9,6 @@
   {:author "Bozhidar Batsov"
    :added "0.8"}
   (:require
-   [clojure.java.io :as io]
-   [clojure.string :as str]
    [nrepl.misc :as misc]))
 
 (defn special-sym-meta

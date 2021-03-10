@@ -3,7 +3,7 @@
   (:require
    [nrepl.middleware.load-file :as load-file])
   (:import
-   (java.io File StringReader)))
+   (java.io File)))
 
 (defn load-file-command
   "(If it is available, sending nrepl.middleware.load-file

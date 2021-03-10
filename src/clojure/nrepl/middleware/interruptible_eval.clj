@@ -13,7 +13,7 @@
    [nrepl.transport :as t])
   (:import
    (clojure.lang Compiler$CompilerException LineNumberingPushbackReader)
-   (java.io FilterReader LineNumberReader StringReader Writer)
+   (java.io StringReader Writer)
    (java.lang.reflect Field)))
 
 (def ^:dynamic *msg*
@@ -140,9 +140,9 @@
   "Evaluation middleware that supports interrupts.  Returns a handler that supports
    \"eval\" and \"interrupt\" :op-erations that delegates to the given handler
    otherwise."
-  [h & configuration]
+  [h & _configuration]
   (fn [{:keys [op session id transport] :as msg}]
-    (let [{:keys [exec] session-id :id} (meta session)]
+    (let [{:keys [exec]} (meta session)]
       (case op
         "eval"
         (if-not (:code msg)

@@ -27,9 +27,9 @@
   Transport
   (send [this msg] (send-fn msg) this)
   (recv [this] (.recv this Long/MAX_VALUE))
-  (recv [this timeout] (recv-fn timeout))
+  (recv [_this timeout] (recv-fn timeout))
   java.io.Closeable
-  (close [this] (close)))
+  (close [_this] (close)))
 
 (defn fn-transport
   "Returns a Transport implementation that delegates its functionality
@@ -98,8 +98,7 @@
    This will still throw an exception if called with something unencodable."
   [output thing]
   (let [buffer (ByteArrayOutputStream.)]
-    (try
-      (bencode/write-bencode buffer thing))
+    (bencode/write-bencode buffer thing)
     (.write ^OutputStream output (.toByteArray buffer))))
 
 (defn bencode
@@ -172,7 +171,7 @@
                      (merge {:op "eval" :code [code] :ns @cns :id (str "eval" (uuid))}
                             (when @session-id {:session @session-id})))
          read-seq (atom (cons {:op "clone"} (repeatedly read-msg)))
-         write (fn [{:keys [out err value status ns new-session id] :as msg}]
+         write (fn [{:keys [out err value status ns new-session id]}]
                  (when new-session (reset! session-id new-session))
                  (when ns (reset! cns ns))
                  (doseq [^String x [out err value] :when x]
@@ -222,8 +221,8 @@
 (deftype QueueTransport [^BlockingQueue in ^BlockingQueue out]
   nrepl.transport.Transport
   (send [this msg] (.put out msg) this)
-  (recv [this] (.take in))
-  (recv [this timeout] (.poll in timeout TimeUnit/MILLISECONDS)))
+  (recv [_this] (.take in))
+  (recv [_this timeout] (.poll in timeout TimeUnit/MILLISECONDS)))
 
 (defn piped-transports
   "Returns a pair of Transports that read from and write to each other."

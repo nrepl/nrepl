@@ -37,7 +37,7 @@
         completion-fn (or (and complete-fn (misc/requiring-resolve (symbol complete-fn))) *complete-fn*)]
     (try
       (response-for msg {:status :done :completions (completion-fn prefix ns (parse-options options))})
-      (catch Exception e
+      (catch Exception _e
         (response-for msg {:status #{:done :completion-error}})))))
 
 (defn wrap-completion

@@ -8,8 +8,7 @@
    [clojure.java.io :as io]
    [nrepl.middleware :as middleware :refer [set-descriptor!]]
    [nrepl.misc :refer [response-for]]
-   [nrepl.transport :as t])
-  (:import nrepl.transport.Transport))
+   [nrepl.transport :as t]))
 
 ;; TODO: dedup with base64 in elisions branch once both are merged
 (defn base64-encode [^java.io.InputStream in]
@@ -54,7 +53,7 @@
 
 (defn- sideloader
   "Creates a classloader that obey standard delegating policy."
-  [{:keys [session id transport] :as msg} pending]
+  [{:keys [transport] :as msg} pending]
   (fn []
     (let [resolve-fn
           (fn [type name]

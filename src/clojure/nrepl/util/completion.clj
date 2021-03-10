@@ -152,7 +152,7 @@
         (.endsWith path ".jar")
         (try (for [^JarEntry entry (enumeration-seq (.entries (JarFile. path)))]
                (.getName entry))
-             (catch Exception e))
+             (catch Exception _e))
 
         :else
         (for [^File file (file-seq (File. path))]
@@ -251,7 +251,7 @@
                (ns-public-var-candidates ns options)))))))
 
 (defn class-candidates
-  [^String prefix ns]
+  [^String prefix _ns]
   (map annotate-class
        (if (.contains prefix "$")
          @nested-classes

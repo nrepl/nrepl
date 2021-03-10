@@ -11,7 +11,7 @@
           props (Properties.)]
       (.load props file-reader)
       (into {} props))
-    (catch Exception e nil)))
+    (catch Exception _e nil)))
 
 (defn- get-properties-filename [group artifact]
   (str "META-INF/maven/" group "/" artifact "/pom.properties"))
@@ -41,6 +41,6 @@
   (assoc (->> version-string
               (re-find #"(\d+)\.(\d+)\.(\d+)-?(.*)")
               rest
-              (map #(try (Integer/parseInt %) (catch Exception e nil)))
+              (map #(try (Integer/parseInt %) (catch Exception _e nil)))
               (zipmap [:major :minor :incremental :qualifier]))
          :version-string version-string))
