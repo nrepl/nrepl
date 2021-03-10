@@ -373,7 +373,7 @@ Exit:      Control+D or (exit) or (quit)"
   "Connects to a running nREPL server and runs a REPL. Exits program when REPL
   is closed.
   Takes a map of nREPL CLI options."
-  [{:keys [host port _transport] :as options}]
+  [{:keys [host port] :as options}]
   (interactive-repl {:host host
                      :port port}
                     options)

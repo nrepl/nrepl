@@ -152,7 +152,7 @@
         (.endsWith path ".jar")
         (try (for [^JarEntry entry (enumeration-seq (.entries (JarFile. path)))]
                (.getName entry))
-             (catch Exception e (println (.getMessage e))))
+             (catch Exception _e))
 
         :else
         (for [^File file (file-seq (File. path))]

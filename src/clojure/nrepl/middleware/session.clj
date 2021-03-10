@@ -138,7 +138,7 @@
   `clojure.core/get-thread-bindings`. *in* is obtained using `session-in`, *ns*
   defaults to 'user, and other bindings as optionally provided in
   `session` are merged in."
-  ([{:keys [transport session out-limit] :as _msg}]
+  ([{:keys [transport session out-limit]}]
    (let [id (uuid)
          {:keys [input-queue stdin-reader]} (session-in id transport)
          the-session (atom (into (or (some-> session deref) {})

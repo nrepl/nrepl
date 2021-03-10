@@ -324,7 +324,7 @@
       :else (type thing))))
 
 (defmethod write-bencode :default
-  [x]
+  [_output x]
   (throw (IllegalArgumentException. (str "Cannot write value of type " (class x)))))
 
 ;; The following methods should be pretty straight-forward.
