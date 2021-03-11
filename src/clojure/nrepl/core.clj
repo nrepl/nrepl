@@ -61,6 +61,14 @@
     (concat head (take 1 tail))))
 
 (defn- delimited-transport-seq
+  "Returns a function of one arument that performs described below.
+   The following \"message\" is the argument of the function returned by this function.
+
+    - Merge delimited-slots to the message
+    - Sends a message via client
+    - Filter only items related to the delimited-slots of client's response seq
+    - Returns head of the seq that will terminate
+      upon receipt of a :status, when :status is an element of termination-statuses"
   [client termination-statuses delimited-slots]
   (with-meta
     (comp (partial take-until (comp #(seq (clojure.set/intersection % termination-statuses))
@@ -75,7 +83,8 @@
         (update-in [::taking-until] merge delimited-slots))))
 
 (defn message
-  "Sends a message via [client] with a fixed message :id added to it.
+  "Sends a message via [client] with a fixed message :id added to it
+   by `delimited-transport-seq`.
    Returns the head of the client's response seq, filtered to include only
    messages related to the message :id that will terminate upon receipt of a
    \"done\" :status."
