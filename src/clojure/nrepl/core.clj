@@ -64,14 +64,14 @@
     (concat head (take 1 tail))))
 
 (defn- delimited-transport-seq
-  "Sends a message via client and returns the head of client's response seq
-   by following the steps described below.
+  "Returns a function of one arument that performs described below.
+   The following \"message\" is the argument of the function returned by this function.
 
-    - Add an :id to the message(argument)
-    - Sends a message(argument) via client
-    - Filter only messages(response) related to the :id of client's response seq
-    - Returns head of the seq that will terminate upon receipt
-      of a \"done\" :status"
+    - Merge delimited-slots to the message
+    - Sends a message via client
+    - Filter only items related to the delimited-slots of client's response seq
+    - Returns head of the seq that will terminate
+      upon receipt of a :status, when :status is an element of termination-statuses"
   [client termination-statuses delimited-slots]
   (with-meta
     (comp (partial take-until (comp #(seq (clojure.set/intersection % termination-statuses))
