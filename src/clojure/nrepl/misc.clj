@@ -4,7 +4,8 @@
   {:author "Chas Emerick"}
   (:refer-clojure :exclude [requiring-resolve])
   (:require [clojure.java.io :as io])
-  (:import [java.net URL]))
+  (:import [java.net URL]
+           [java.io File]))
 
 (defn log
   [ex & msgs]
@@ -99,23 +100,13 @@
   [:ns :name :doc :file :arglists :forms :macro :special-form
    :protocol :line :column :added :deprecated :resource])
 
-(defn handle-file-meta-1 [file]
-  (cond
-    (nil? file) file
-    (instance? URL file) (str file)
-    (instance? java.io.File file) (str file)
-    (not (nil? (io/resource file))) (str (io/resource file))
-    :else file))
-
 (defn handle-file-meta [file]
-  (let [type-map {java.net.URL #(str %)
-                  java.io.File #(str %)
-                  java.lang.String #(or (some-> % io/resource str) %)}
-        file-type (type file)
-        result (type-map file-type)]
-    (if (nil? result)
-      file
-      (result file))))
+  (if (nil? file) file
+      (str (cond
+             (instance? URL file) file
+             (instance? File file) file
+             (not (nil? (io/resource file))) (io/resource file)
+             :else file))))
 
 (defn sanitize-meta
   "Sanitize a Clojure metadata map such that it can be bencoded."
