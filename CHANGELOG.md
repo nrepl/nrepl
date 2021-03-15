@@ -2,6 +2,10 @@
 
 ## master (unreleased)
 
+### Bugs fixed
+
+* [#231](https://github.com/nrepl/nrepl/issues/231): Fix sanitize error when file is java.net.URL.
+
 ### New features
 
 * [#217](https://github.com/nrepl/nrepl/pull/217): Add keyword completion support.
