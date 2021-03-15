@@ -100,13 +100,18 @@
   [:ns :name :doc :file :arglists :forms :macro :special-form
    :protocol :line :column :added :deprecated :resource])
 
-(defn handle-file-meta [file]
-  (if (nil? file) file
-      (str (cond
-             (instance? URL file) file
-             (instance? File file) file
-             (not (nil? (io/resource file))) (io/resource file)
-             :else file))))
+(defn- handle-file-meta
+  "Convert :file metadata to string.
+  Typically `value` would be a string, a File or an URL."
+  [value]
+  (when value
+    (str (if (string? value)
+           ;; try to convert relative file paths like "clojure/core.clj"
+           ;; to absolute file paths
+           (or (io/resource value) value)
+           ;; If :file is a File or URL object we just return it as is
+           ;; and covert it to string
+           value))))
 
 (defn sanitize-meta
   "Sanitize a Clojure metadata map such that it can be bencoded."
