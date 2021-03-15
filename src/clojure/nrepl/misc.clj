@@ -99,11 +99,13 @@
   [:ns :name :doc :file :arglists :forms :macro :special-form
    :protocol :line :column :added :deprecated :resource])
 
-(defn- check-filetype [file]
+(defn handle-file-meta [file]
   (cond
-    (instance? URL file) file
-    (instance? java.io.File file) file
-    :else (io/resource file)))
+    (nil? file) file
+    (instance? URL file) (str file)
+    (instance? java.io.File file) (str file)
+    (not (nil? (io/resource file))) (str (io/resource file))
+    :else file))
 
 (defn sanitize-meta
   "Sanitize a Clojure metadata map such that it can be bencoded."
@@ -113,7 +115,7 @@
       (update :ns str)
       (update :name str)
       (update :protocol str)
-      (update :file #(or (some-> % check-filetype str) %))
+      (update :file handle-file-meta)
       (cond-> (:macro m) (update :macro str))
       (cond-> (:special-form m) (update :special-form str))
       (assoc :arglists-str (str (:arglists m)))
