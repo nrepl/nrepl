@@ -3,7 +3,9 @@
   useful for anyone extending it)."
   {:author "Chas Emerick"}
   (:refer-clojure :exclude [requiring-resolve])
-  (:require [clojure.java.io :as io]))
+  (:require [clojure.java.io :as io])
+  (:import [java.net URL]
+           [java.io File]))
 
 (defn log
   [ex & msgs]
@@ -98,6 +100,14 @@
   [:ns :name :doc :file :arglists :forms :macro :special-form
    :protocol :line :column :added :deprecated :resource])
 
+(defn handle-file-meta [file]
+  (if (nil? file) file
+      (str (cond
+             (instance? URL file) file
+             (instance? File file) file
+             (not (nil? (io/resource file))) (io/resource file)
+             :else file))))
+
 (defn sanitize-meta
   "Sanitize a Clojure metadata map such that it can be bencoded."
   [m]
@@ -106,7 +116,7 @@
       (update :ns str)
       (update :name str)
       (update :protocol str)
-      (update :file #(or (some-> % io/resource str) %))
+      (update :file handle-file-meta)
       (cond-> (:macro m) (update :macro str))
       (cond-> (:special-form m) (update :special-form str))
       (assoc :arglists-str (str (:arglists m)))
