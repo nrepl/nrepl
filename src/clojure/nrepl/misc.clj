@@ -106,7 +106,7 @@
       (update :ns str)
       (update :name str)
       (update :protocol str)
-      (update :file #(or (some-> % io/resource str) %))
+      (update :file #(or (some-> (str %) io/resource str) %))
       (cond-> (:macro m) (update :macro str))
       (cond-> (:special-form m) (update :special-form str))
       (assoc :arglists-str (str (:arglists m)))
