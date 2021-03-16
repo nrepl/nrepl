@@ -3,9 +3,7 @@
   useful for anyone extending it)."
   {:author "Chas Emerick"}
   (:refer-clojure :exclude [requiring-resolve])
-  (:require [clojure.java.io :as io])
-  (:import [java.net URL]
-           [java.io File]))
+  (:require [clojure.java.io :as io]))
 
 (defn log
   [ex & msgs]
