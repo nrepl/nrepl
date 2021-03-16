@@ -15,6 +15,7 @@
 
 (defmacro returning
   "Executes `body`, returning `x`."
+  {:style/indent 1}
   [x & body]
   `(let [x# ~x] ~@body x#))
 
