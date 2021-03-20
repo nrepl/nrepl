@@ -6,7 +6,7 @@
    [clojure.walk :as walk]
    [nrepl.bencode :as bencode]
    [clojure.edn :as edn]
-   [nrepl.misc :refer [uuid]]
+   [nrepl.misc :refer [noisy-future uuid]]
    nrepl.version)
   (:import
    clojure.lang.RT
@@ -37,11 +37,15 @@
   ([transport-read write] (fn-transport transport-read write nil))
   ([transport-read write close]
    (let [read-queue (SynchronousQueue.)
-         msg-pump (future (try
-                            (while true
-                              (.put read-queue (transport-read)))
-                            (catch Throwable t
-                              (.put read-queue t))))]
+         msg-pump (noisy-future
+                   (try
+                     (try
+                       (while true
+                         (.put read-queue (transport-read)))
+                       (catch Throwable t
+                         (.put read-queue t)))
+                     (catch InterruptedException ex
+                       nil)))]
      (FnTransport.
       (let [failure (atom nil)]
         #(if @failure

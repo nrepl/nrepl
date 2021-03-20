@@ -10,6 +10,7 @@
    [nrepl.config :as config]
    [nrepl.core :as nrepl]
    [nrepl.ack :refer [send-ack]]
+   [nrepl.misc :refer [noisy-future]]
    [nrepl.server :as nrepl-server]
    [nrepl.transport :as transport]
    [nrepl.version :as version]))
@@ -97,9 +98,9 @@ Exit:      Control+D or (exit) or (quit)"
      (println (repl-intro))
      ;; We take 50ms to listen to any greeting messages, and display the value
      ;; in the `:out` slot.
-     (future (->> (client)
-                  (take-while #(nil? (:id %)))
-                  (run! #(when-let [msg (:out %)] (print msg)))))
+     (noisy-future (->> (client)
+                        (take-while #(nil? (:id %)))
+                        (run! #(when-let [msg (:out %)] (print msg)))))
      (Thread/sleep 50)
      (let [session (nrepl/client-session client)
            ns (atom "user")]

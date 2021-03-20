@@ -13,6 +13,17 @@
       (apply println "ERROR:" msgs)
       (when ex (.printStackTrace ^Throwable ex)))))
 
+(defmacro noisy-future
+  "Executes body in a future, logging any execptions that make it to the
+  top level."
+  [& body]
+  `(future
+     (try
+       ~@body
+       (catch Throwable ex#
+         (log ex#)
+         (throw ex#)))))
+
 (defmacro returning
   "Executes `body`, returning `x`."
   {:style/indent 1}
