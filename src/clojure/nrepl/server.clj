@@ -11,10 +11,10 @@
    nrepl.middleware.lookup
    nrepl.middleware.session
    nrepl.middleware.sideloader
-   [nrepl.misc :refer [log response-for returning]]
+   [nrepl.misc :refer [log noisy-future response-for returning]]
    [nrepl.transport :as t])
   (:import
-   [java.net InetSocketAddress ServerSocket]))
+   [java.net InetSocketAddress ServerSocket SocketException]))
 
 (defn handle*
   [msg handler transport]
@@ -36,7 +36,7 @@
    Returns nil when [recv] returns nil for the given transport."
   [handler transport]
   (when-let [msg (normalize-msg (t/recv transport))]
-    (future (handle* msg handler transport))
+    (noisy-future (handle* msg handler transport))
     (recur handler transport)))
 
 (defn- safe-close
@@ -51,15 +51,20 @@
     :as server}]
   (when-not (.isClosed server-socket)
     (let [sock (.accept server-socket)]
-      (future (let [transport (transport sock)]
-                (try
-                  (swap! open-transports conj transport)
-                  (when greeting (greeting transport))
-                  (handle handler transport)
-                  (finally
-                    (swap! open-transports disj transport)
-                    (safe-close transport)))))
-      (future (accept-connection server)))))
+      (noisy-future (let [transport (transport sock)]
+                      (try
+                        (swap! open-transports conj transport)
+                        (when greeting (greeting transport))
+                        (handle handler transport)
+                        (catch SocketException ex
+                          nil)
+                        (finally
+                          (swap! open-transports disj transport)
+                          (safe-close transport)))))
+      (noisy-future (try
+                      (accept-connection server)
+                      (catch SocketException ex
+                        nil))))))
 
 (defn stop-server
   "Stops a server started via `start-server`."
@@ -174,7 +179,11 @@
                         transport-fn
                         greeting-fn
                         (or handler (default-handler)))]
-    (future (accept-connection server))
+    (noisy-future
+     (try
+       (accept-connection server)
+       (catch SocketException ex
+         nil)))
     (when ack-port
       (ack/send-ack (:port server) ack-port transport-fn))
     server))
