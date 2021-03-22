@@ -29,6 +29,10 @@ executors:
     docker:
       - image: circleci/clojure:openjdk-15-lein-2.9.5-buster
     <<: *defaults
+  openjdk16:
+    docker:
+      - image: circleci/clojure:openjdk-16-lein-2.9.5-buster
+    <<: *defaults
 
 # Runs a given set of steps, with some standard pre- and post-
 # steps, including restoring of cache, saving of cache.
@@ -208,6 +212,26 @@ workflows:
           name: Java 15, Clojure master
           clojure_version: "master"
           jdk_version: openjdk15
+      - test_code:
+          name: Java 16, Clojure 1.7
+          clojure_version: "1.7"
+          jdk_version: openjdk16
+      - test_code:
+          name: Java 16, Clojure 1.8
+          clojure_version: "1.8"
+          jdk_version: openjdk16
+      - test_code:
+          name: Java 16, Clojure 1.9
+          clojure_version: "1.9"
+          jdk_version: openjdk16
+      - test_code:
+          name: Java 16, Clojure 1.10
+          clojure_version: "1.10"
+          jdk_version: openjdk16
+      - test_code:
+          name: Java 16, Clojure master
+          clojure_version: "master"
+          jdk_version: openjdk16
       - util_job:
           name: Code Linting
           steps:
