@@ -9,6 +9,7 @@
 [![downloads badge](https://versions.deps.co/nrepl/nrepl/downloads.svg)](https://clojars.org/nrepl)
 [![Backers on Open Collective](https://opencollective.com/nrepl/backers/badge.svg)](#backers)
 [![Sponsors on Open Collective](https://opencollective.com/nrepl/sponsors/badge.svg)](#sponsors)
+[![Discord](https://img.shields.io/badge/chat-on%20discord-7289da.svg?sanitize=true)](https://discord.com/invite/nFPpynQPME)
 
 nREPL is a Clojure *n*etwork REPL that
 provides a REPL server and client, along with some common APIs
