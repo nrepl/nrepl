@@ -28,9 +28,9 @@ and interact with other nREPL users.
 There's also another channel named `#cider`, where often people are discussing
 nREPL-related topics, as nREPL is the foundation of CIDER.
 
-== Stackoverflow
+== Stack Overflow
 
-We're also encouraging users to ask nREPL-related questions on StackOverflow.
+We're also encouraging users to ask nREPL-related questions on Stack Overflow.
 
 When doing so you should use the
 http://stackoverflow.com/questions/tagged/nrepl[nrepl] tag (ideally combined
