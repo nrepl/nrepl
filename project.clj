@@ -77,5 +77,7 @@
                                          testing-print [[:inner 0]]}}}
 
              :eastwood [:test
-                        {:plugins [[jonase/eastwood "0.3.4"]]
-                         :eastwood {:config-files ["eastwood.clj"]}}]})
+                        {:plugins [[jonase/eastwood "0.7.1"]]
+                         :global-vars {*warn-on-reflection* true}
+                         :eastwood {:config-files ["eastwood.clj"]
+                                    :ignored-faults {:unused-ret-vals {nrepl.util.completion-test true}}}}]})
