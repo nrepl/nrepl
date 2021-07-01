@@ -93,9 +93,13 @@
     (let [[resp1 resp2 resp3]
           (handle {:value          (range 512)
                    ::print/stream? 1})]
-      (is (.startsWith (:value resp1) "(0 1 2 3"))
+      (is (-> resp1
+              ^String (:value)
+              (.startsWith "(0 1 2 3")))
       (is (= {} (dissoc resp1 :value)))
-      (is (.endsWith (:value resp2) "510 511)"))
+      (is (-> resp2
+              ^String (:value)
+              (.endsWith "510 511)")))
       (is (= {} (dissoc resp2 :value)))
       (is (= {} resp3))))
   (testing-print "respects buffer-size option"
@@ -112,9 +116,13 @@
     (let [[resp1 resp2 resp3] (handle {:value          (range 512)
                                        ::print/stream? 1
                                        ::print/print   `custom-printer})]
-      (is (.startsWith (:value resp1) "<foo (0 1 2 3"))
+      (is (-> resp1
+              ^String (:value)
+              (.startsWith "<foo (0 1 2 3")))
       (is (= {} (dissoc resp1 :value)))
-      (is (.endsWith (:value resp2) "510 511) ...>"))
+      (is (-> resp2
+              ^String (:value)
+              (.endsWith "510 511) ...>")))
       (is (= {} (dissoc resp2 :value)))
       (is (= {} resp3))))
   (testing-print "works with custom printer and print-options"
@@ -122,9 +130,13 @@
                                        ::print/stream? 1
                                        ::print/print   `custom-printer
                                        ::print/options {:sub "bar"}})]
-      (is (.startsWith (:value resp1) "<foo (0 1 2 3"))
+      (is (-> resp1
+              ^String (:value)
+              (.startsWith "<foo (0 1 2 3")))
       (is (= {} (dissoc resp1 :value)))
-      (is (.endsWith (:value resp2) "510 511) bar>"))
+      (is (-> resp2
+              ^String (:value)
+              (.endsWith "510 511) bar>")))
       (is (= {} (dissoc resp2 :value)))
       (is (= {} resp3)))))
 

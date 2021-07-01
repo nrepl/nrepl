@@ -38,8 +38,9 @@
 (defn- sh
   "A version of clojure.java.shell/sh that streams in/out/err.
   Taken and edited from https://github.com/technomancy/leiningen/blob/f7e1adad6ff5137d6ea56bc429c3b620c6f84128/leiningen-core/src/leiningen/core/eval.clj"
+  ^Process
   [& cmd]
-  (let [proc (.exec (Runtime/getRuntime) (into-array String cmd))]
+  (let [proc (.exec (Runtime/getRuntime) ^"[Ljava.lang.String;" (into-array String cmd))]
     (.addShutdownHook (Runtime/getRuntime)
                       (Thread. (fn [] (.destroy proc))))
     (with-open [out (.getInputStream proc)
@@ -121,6 +122,7 @@
 
 (deftest ^:slow ack
   (let [ack-port (:port *server*)
+        ^Process
         server-process (apply sh ["java" "-Dnreplacktest=y"
                                   "-cp" (System/getProperty "java.class.path")
                                   "nrepl.main"
@@ -130,7 +132,8 @@
     (try
       (is acked-port "Timed out waiting for ack")
       (when acked-port
-        (with-open [transport-2 (nrepl/connect :port acked-port
+        (with-open [^nrepl.transport.FnTransport
+                    transport-2 (nrepl/connect :port acked-port
                                                :transport-fn *transport-fn*)]
           (let [client (nrepl/client transport-2 1000)]
             ;; just a sanity check
@@ -148,6 +151,7 @@
         free-port (with-open [ss (java.net.ServerSocket.)]
                     (.bind ss nil)
                     (.getLocalPort ss))
+        ^Process
         server-process (apply sh ["java" "-Dnreplacktest=y"
                                   "-cp" (System/getProperty "java.class.path")
                                   "nrepl.main"
@@ -165,10 +169,11 @@
 ;; the TTY transport.
 
 (deftest ^:slow tty-server
-  (let [free-port      (with-open [ss (java.net.ServerSocket.)]
+  (let [^int free-port (with-open [ss (java.net.ServerSocket.)]
                          (.bind ss nil)
                          (.getLocalPort ss))
         ack-port       (:port *server*)
+        ^Process
         server-process (apply sh ["java" "-Dnreplacktest=y"
                                   "-cp" (System/getProperty "java.class.path")
                                   "nrepl.main"

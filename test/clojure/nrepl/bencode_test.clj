@@ -90,14 +90,16 @@
     "l6:cheesei42ed3:ham4:eggsee" ["cheese" 42 {"ham" "eggs"}]
     "d6:cheesei42e3:haml4:eggsee" {"cheese" 42 "ham" ["eggs"]}))
 
-(defn- >stream
+(defn- ^ByteArrayOutputStream >stream
   [thing & {:keys [writer]}]
   (doto (ByteArrayOutputStream.)
     (writer thing)))
 
 (defn- >output
   [& args]
-  (.toString (apply >stream args) "UTF-8"))
+  (-> >stream
+      ^ByteArrayOutputStream (apply args)
+      (.toString "UTF-8")))
 
 (deftest test-netstring-writing
   (are [x y] (= (>output (>bytes x) :writer write-netstring) y)

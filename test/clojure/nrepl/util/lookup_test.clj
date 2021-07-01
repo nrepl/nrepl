@@ -56,7 +56,7 @@
    (comp
     (mapcat ns-publics)
     (map (comp meta val))
-    (map #(lookup (.getName (:ns %)) (:name %))))
+    (map #(lookup (.getName ^clojure.lang.Namespace (:ns %)) (:name %))))
    conj
    #{}
    (all-ns)))

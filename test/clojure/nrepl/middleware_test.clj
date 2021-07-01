@@ -58,11 +58,10 @@
     (is (= #{n m} (set (take-last 2 stack))))))
 
 (deftest no-descriptor-warning
-  (is (.contains
-       (with-out-str
-         (binding [*err* *out*]
-           (indexed-stack (conj default-middleware {:dummy :middleware}))))
-       "No nREPL middleware descriptor in metadata of {:dummy :middleware}")))
+  (let [^String s (with-out-str
+                    (binding [*err* *out*]
+                      (indexed-stack (conj default-middleware {:dummy :middleware}))))]
+    (is (.contains s "No nREPL middleware descriptor in metadata of {:dummy :middleware}"))))
 
 (deftest NREPL-53-regression
   (is (= [0 1 2]

@@ -156,6 +156,7 @@
    either via `stop-server`, (.close server), or automatically via `with-open`.
    The port that the server is open on is available in the :port slot of the
    server map (useful if the :port option is 0 or was left unspecified."
+  ^nrepl.server.Server
   [& {:keys [port bind transport-fn handler ack-port greeting-fn]}]
   (let [port (or port 0)
         addr (fn [^String bind ^Integer port] (InetSocketAddress. bind port))

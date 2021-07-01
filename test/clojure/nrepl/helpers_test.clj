@@ -8,7 +8,7 @@
   (:import
    (java.io File)))
 
-(def project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
+(def ^File project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
 
 (use-fixtures :once repl-server-fixture)
 
