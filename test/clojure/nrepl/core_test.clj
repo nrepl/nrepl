@@ -48,9 +48,9 @@
                         (find-var 'fastlane.core/transit+json) "transit+json"
                         (find-var 'fastlane.core/transit+json-verbose) "transit+json-verbose"})))
 
-(def project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
+(def ^File project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
 
-(def ^{:dynamic true} *server* nil)
+(def ^:dynamic ^nrepl.server.Server  *server* nil)
 (def ^{:dynamic true} *transport-fn* nil)
 
 (defn start-server-for-transport-fn
@@ -79,7 +79,8 @@
 (defmacro def-repl-test
   [name & body]
   `(deftest ~name
-     (with-open [transport# (connect :port (:port *server*)
+     (with-open [^nrepl.transport.FnTransport
+                 transport# (connect :port (:port *server*)
                                      :transport-fn *transport-fn*)]
        (let [~'transport transport#
              ~'client (client transport# Long/MAX_VALUE)
@@ -103,7 +104,7 @@
   [resp]
   (when-require 'nrepl.spec
                 (when-not (#'clojure.spec.alpha/valid? :nrepl.spec/message resp)
-                  (throw (Exception. (#'clojure.spec.alpha/explain-str :nrepl.spec/message resp)))))
+                  (throw (Exception. ^String (#'clojure.spec.alpha/explain-str :nrepl.spec/message resp)))))
   resp)
 
 (defn clean-response
@@ -260,8 +261,9 @@
 
 (def-repl-test cross-transport-*out*
   (let [sid (-> session meta ::nrepl/taking-until :session)]
-    (with-open [transport2 (nrepl.core/connect :port (:port *server*)
-                                               :transport-fn *transport-fn*)]
+    (with-open [^nrepl.transport.FnTransport
+                transport2 (connect :port (:port *server*)
+                                    :transport-fn *transport-fn*)]
       (transport/send transport2 {:op "eval" :code "(println :foo)"
                                   "session" sid})
       (is (= [{:out ":foo\n"}
@@ -357,7 +359,10 @@
                                    (mapv clean-response))]
       ;; check the interrupt succeeded first; otherwise eval-responses will not terminate
       (is (= [{:status #{:done}}] interrupt-responses))
-      (is (.startsWith (:value (first eval-responses)) "(0 1 2 3"))
+      (is (-> eval-responses
+              first
+              ^String (:value)
+              (.startsWith "(0 1 2 3")))
       (is (= {:status #{:done :interrupted}} (last eval-responses))))))
 
 (def-repl-test session-return-recall
@@ -366,7 +371,8 @@
                                  (apply + (range 6))
                                  (str 12 \c)
                                  (keyword "hello"))))
-    (with-open [separate-connection (connect :port (:port *server*)
+    (with-open [^nrepl.transport.FnTransport
+                separate-connection (connect :port (:port *server*)
                                              :transport-fn *transport-fn*)]
       (let [history [[15 "12c" :hello]]
             sid (-> session meta :nrepl.core/taking-until :session)
@@ -386,10 +392,10 @@
   (is (= [["badpath" true]] (repl-values session (code [*compile-path* *warn-on-reflection*])))))
 
 (def-repl-test exceptions
-  (let [{:keys [status err value]} (-> session
-                                       (repl-eval "(throw (Exception. \"bad, bad code\"))")
-                                       combine-responses
-                                       clean-response)]
+  (let [{:keys [status ^String err value]} (-> session
+                                               (repl-eval "(throw (Exception. \"bad, bad code\"))")
+                                               combine-responses
+                                               clean-response)]
     (is (= #{:eval-error :done} status))
     (is (nil? value))
     (is (.contains err "bad, bad code"))
@@ -562,6 +568,7 @@
 (defn- root-cause
   "Returns the initial cause of an exception or error by peeling off all of
   its wrappers"
+  ^Throwable
   [^Throwable t]
   (loop [cause t]
     (if-let [cause (.getCause cause)]
@@ -577,6 +584,7 @@
 (deftest transports-fail-on-disconnects
   (testing "Ensure that transports fail ASAP when the server they're connected to goes down."
     (let [server (server/start-server :transport-fn *transport-fn*)
+          ^nrepl.transport.FnTransport
           transport (connect :port (:port server)
                              :transport-fn *transport-fn*)]
       (transport/send transport {:op "eval" :code "(+ 1 1)"})
@@ -604,6 +612,7 @@
 (deftest server-starts-with-minimal-configuration
   (testing "Ensure server starts with minimal configuration"
     (let [server (server/start-server)
+          ^nrepl.transport.FnTransport
           transport (connect :port (:port server))
           client (client transport Long/MAX_VALUE)]
       (is (= ["3"]
@@ -679,7 +688,8 @@
   (is (= [" :kthxbai"] (repl-values session "(read-line)"))))
 
 (def-repl-test test-url-connect
-  (with-open [conn (url-connect (str (transport-fn->protocol *transport-fn*)
+  (with-open [^nrepl.transport.FnTransport
+              conn (url-connect (str (transport-fn->protocol *transport-fn*)
                                      "://127.0.0.1:"
                                      (:port *server*)))]
     (transport/send conn {:op "eval" :code "(+ 1 1)"})
@@ -701,7 +711,8 @@
 
 (deftest cloned-session-*1-binding
   (let [port (:port *server*)
-        conn (nrepl/connect :port port :transport-fn *transport-fn*)
+        ^nrepl.transport.FnTransport
+        conn (connect :port port :transport-fn *transport-fn*)
         client (nrepl/client conn 1000)
         sess (nrepl/client-session client)
         sess-id (->> (sess {:op "eval"
@@ -919,7 +930,7 @@
    (File. project-base-dir "test-resources/HelloFactory.class")})
 
 (defn string->content
-  [str]
+  [^String str]
   (if str
     (-> str
         (.getBytes "UTF-8")
@@ -1057,7 +1068,7 @@
   ([] (classloader-hierarchy (.. Thread currentThread getContextClassLoader)))
   ([tip]
    (->> tip
-        (iterate #(.getParent %))
+        (iterate #(.getParent ^ClassLoader %))
         (take-while boolean))))
 
 ;; This test is broken for Java 8 at the moment.
