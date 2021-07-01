@@ -8,22 +8,22 @@ test:
 # runner with Clojure 1.7 and 1.8.
 
 ifeq ($(VERSION),$(filter $(VERSION),1.9 1.10 master))
-	lein with-profile +$(VERSION),+test run -m kaocha.runner
+	lein with-profile -user,+$(VERSION),+test run -m kaocha.runner
 else
-	lein with-profile +$(VERSION),+test test
+	lein with-profile -user,+$(VERSION),+test test
 endif
 
 eastwood:
-	lein with-profile +$(VERSION),+eastwood eastwood
+	lein with-profile -user,+$(VERSION),+eastwood eastwood
 
 cljfmt:
-	lein with-profile +$(VERSION),+cljfmt cljfmt check
+	lein with-profile -user,+$(VERSION),+cljfmt cljfmt check
 
 kondo:
 	clj-kondo --lint src
 
 cloverage:
-	lein with-profile +$(VERSION),+cloverage cloverage --codecov
+	lein with-profile -user,+$(VERSION),+cloverage cloverage --codecov
 
 verify_cljdoc:
 	curl -fsSL https://raw.githubusercontent.com/cljdoc/cljdoc/master/script/verify-cljdoc-edn | bash -s doc/cljdoc.edn
@@ -35,14 +35,14 @@ verify_cljdoc:
 BUMP ?= patch
 
 release:
-	lein with-profile +$(VERSION) release $(BUMP)
+	lein with-profile -user,+$(VERSION) release $(BUMP)
 
 # Deploying requires the caller to set environment variables as
 # specified in project.clj to provide a login and password to the
 # artifact repository.
 
 deploy:
-	lein with-profile +$(VERSION) deploy clojars
+	lein with-profile -user,+$(VERSION) deploy clojars
 
 clean:
 	lein clean
