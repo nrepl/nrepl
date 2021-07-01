@@ -1,5 +1,4 @@
 (ns nrepl.cmdline-test
-  ^:test-refresh/focus
   {:author "Chas Emerick"}
   (:require
    [clojure.test :refer :all]
