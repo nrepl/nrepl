@@ -10,8 +10,6 @@
   (:import
    (java.util.concurrent BlockingQueue LinkedBlockingQueue TimeUnit)))
 
-(println (format "Testing with Clojure v%s on %s" (clojure-version) (System/getProperty "java.version")))
-
 (defn- internal-eval
   ([expr] (internal-eval nil expr))
   ([ns expr]
