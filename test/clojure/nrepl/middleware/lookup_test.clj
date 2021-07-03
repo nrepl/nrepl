@@ -38,7 +38,7 @@
   (let [result (-> (nrepl/message session {:op "lookup"})
                    nrepl/combine-responses
                    clean-response)]
-    (is (= #{:done :lookup-error} (:status result)))))
+    (is (= #{:done :lookup-error :namespace-not-found} (:status result)))))
 
 (def-repl-test lookup-op-custom-fn
   (let [result (-> (nrepl/message session {:op "lookup" :sym "map" :ns "clojure.core" :lookup-fn "nrepl.middleware.lookup-test/dummy-lookup"})

@@ -38,7 +38,7 @@
     (try
       (response-for msg {:status :done :completions (completion-fn prefix ns (parse-options options))})
       (catch Exception _e
-        (response-for msg {:status #{:done :completion-error}})))))
+        (response-for msg {:status #{:done :namespace-not-found :completion-error}})))))
 
 (defn wrap-completion
   "Middleware that provides code completion.

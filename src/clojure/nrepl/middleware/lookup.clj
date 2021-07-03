@@ -33,7 +33,7 @@
           lookup-fn (or (and lookup-fn (misc/requiring-resolve (symbol lookup-fn))) *lookup-fn*)]
       (response-for msg {:status :done :info (lookup-fn ns sym)}))
     (catch Exception _e
-      (response-for msg {:status #{:done :lookup-error}}))))
+      (response-for msg {:status #{:done :lookup-error :namespace-not-found}}))))
 
 (defn wrap-lookup
   "Middleware that provides symbol info lookup.
