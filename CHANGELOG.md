@@ -2,6 +2,10 @@
 
 ## master (unreleased)
 
+### New feature
+
+* [#238](https://github.com/nrepl/nrepl/pull/238): Expand completion and lookup error message when ns not found.
+
 ### Bugs fixed
 
 * [#231](https://github.com/nrepl/nrepl/issues/231): Fix sanitize error when file is java.net.URL.
