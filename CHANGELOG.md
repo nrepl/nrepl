@@ -2,10 +2,6 @@
 
 ## master (unreleased)
 
-### Bugs fixed
-
-* [#231](https://github.com/nrepl/nrepl/issues/231): Fix sanitize error when file is java.net.URL.
-
 ### New features
 
 * [#217](https://github.com/nrepl/nrepl/pull/217): Add keyword completion support.
@@ -14,6 +10,7 @@
 ### Bugs fixed
 
 * [#227](https://github.com/nrepl/nrepl/pull/227): Fix completion for static class members.
+* [#231](https://github.com/nrepl/nrepl/issues/231): Fix sanitize error when file is `java.net.URL`.
 
 ## 0.8.3 (2020-10-25)
 
