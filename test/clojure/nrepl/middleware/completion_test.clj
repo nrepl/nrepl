@@ -25,7 +25,7 @@
                    nrepl/combine-responses
                    clean-response
                    (select-keys [:completions :status]))]
-    (is (= #{:done :completion-error} (:status result)))))
+    (is (= #{:done :completion-error :namespace-not-found} (:status result)))))
 
 (def-repl-test completions-op-custom-fn
   (let [result (-> (nrepl/message session {:op "completions" :prefix "map" :ns "clojure.core" :complete-fn "nrepl.middleware.completion-test/dummy-completion"})

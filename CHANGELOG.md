@@ -6,6 +6,7 @@
 
 * [#217](https://github.com/nrepl/nrepl/pull/217): Add keyword completion support.
 * [#226](https://github.com/nrepl/nrepl/pull/226): Add doc and arglists to completion responses.
+* [#238](https://github.com/nrepl/nrepl/pull/238): Expand completion and lookup error message when ns not found.
 
 ### Bugs fixed
 

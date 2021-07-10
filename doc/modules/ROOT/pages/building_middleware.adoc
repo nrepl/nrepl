@@ -47,7 +47,7 @@ Optionally you can have some dynamic vars for configuration purposes. Bellow is 
     (try
       (response-for msg {:status :done :completions (completion-fn prefix ns options)})
       (catch Exception e
-        (response-for msg {:status #{:done :completion-error}})))))
+        (response-for msg {:status #{:done :completion-error :namespace-not-found}})))))
 
 ;; the handler
 (defn wrap-completion
@@ -128,7 +128,7 @@ Here's a simple example:
                    nrepl/combine-responses
                    clean-response
                    (select-keys [:completions :status]))]
-    (is (= #{:done :completion-error} (:status result)))))
+    (is (= #{:done :completion-error :namespace-not-found} (:status result)))))
 
 (def-repl-test completions-op-custom-fn
   (let [result (-> (nrepl/message session {:op "completions" :prefix "map" :ns "clojure.core" :complete-fn "nrepl.middleware.completion-test/dummy-completion"})
