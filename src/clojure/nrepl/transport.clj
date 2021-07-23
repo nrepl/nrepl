@@ -51,7 +51,7 @@
                          (.put read-queue (transport-read)))
                        (catch Throwable t
                          (.put read-queue t)))
-                     (catch InterruptedException ex
+                     (catch InterruptedException _
                        nil)))]
      (FnTransport.
       (let [failure (atom nil)]
