@@ -53,7 +53,7 @@
     :as server}]
   (when-let [sock (try
                     (socket/accept server-socket)
-                    (catch ClosedChannelException ex
+                    (catch ClosedChannelException _
                       nil))]
     (noisy-future
      (let [transport (transport sock)]
@@ -61,7 +61,7 @@
          (swap! open-transports conj transport)
          (when greeting (greeting transport))
          (handle handler transport)
-         (catch SocketException ex
+         (catch SocketException _
            nil)
          (finally
            (swap! open-transports disj transport)
@@ -69,7 +69,7 @@
     (noisy-future
      (try
        (accept-connection server)
-       (catch SocketException ex
+       (catch SocketException _
          nil)))))
 
 (defn stop-server
@@ -186,7 +186,7 @@
     (noisy-future
      (try
        (accept-connection server)
-       (catch SocketException ex
+       (catch SocketException _
          nil)))
     (when ack-port
       (ack/send-ack (:port server) ack-port transport-fn))

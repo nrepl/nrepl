@@ -188,14 +188,15 @@
 (definterface Writable
   (write [byte-array]
          "Writes the given bytes to the output as per OutputStream write.")
-  (write [byte-array offset length]
+  ;; Underscores were added to satisfy clj-kondo
+  (write [_byte-array _offset _length]
          "Writes the given bytes to the output as per OutputStream write."))
 
 (defrecord BufferedOutputChannel
            [^SocketChannel channel ^ByteBuffer buffer]
 
   java.io.Flushable
-  (flush [this]
+  (flush [_this] ;; Underscore was added to satisfy clj-kondo
     (.flip buffer)
     (.write channel buffer)
     (.clear buffer))
