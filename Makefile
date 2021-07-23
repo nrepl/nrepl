@@ -25,6 +25,9 @@ kondo:
 cloverage:
 	lein with-profile -user,+$(VERSION),+cloverage cloverage --codecov
 
+# Roughly match what runs in CI using the current JVM
+check: test eastwood kondo cljfmt cloverage
+
 verify_cljdoc:
 	curl -fsSL https://raw.githubusercontent.com/cljdoc/cljdoc/master/script/verify-cljdoc-edn | bash -s doc/cljdoc.edn
 
