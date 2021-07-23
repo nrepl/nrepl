@@ -20,7 +20,7 @@ cljfmt:
 	lein with-profile -user,+$(VERSION),+cljfmt cljfmt check
 
 kondo:
-	clj-kondo --lint src
+	lein with-profile +clj-kondo run -m clj-kondo.main --lint src
 
 cloverage:
 	lein with-profile -user,+$(VERSION),+cloverage cloverage --codecov

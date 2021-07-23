@@ -42,6 +42,7 @@
                     :aliases {"test" "test2junit"}}
              :junixsocket {:jvm-opts ["-Dnrepl.test.junixsocket=true"]
                            :dependencies [[com.kohlschutter.junixsocket/junixsocket-core "2.3.2"]]}
+             :clj-kondo {:dependencies [[clj-kondo "2021.06.18"]]}
              ;; Clojure versions matrix
              :provided {:dependencies [[org.clojure/clojure "1.10.2"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
