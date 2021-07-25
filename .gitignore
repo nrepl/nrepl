@@ -17,6 +17,7 @@ target
 
 .externalToolBuilders
 
+/.eastwood
 /.lein*
 /.nrepl-port
 pom.xml
