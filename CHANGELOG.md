@@ -12,7 +12,7 @@
   command line or `(start-server ... :socket PATH)` whenever the JDK
   is version 16 or newer or
   [junixsocket](https://kohlschutter.github.io/junixsocket/) is
-  avaialble as a dependency.
+  available as a dependency.
 
 ### Bugs fixed
 
