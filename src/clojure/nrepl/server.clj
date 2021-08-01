@@ -149,7 +149,10 @@
 
    * :port — defaults to 0, which autoselects an open port
    * :bind — bind address, by default \"127.0.0.1\"
-   * :socket - filesystem socket path (alternative to :port and :bind)
+   * :socket — filesystem socket path (alternative to :port and :bind).
+       Note that POSIX does not specify the effect (if any) of the
+       socket file's permissions (and some systems have ignored them),
+       so any access control should be arranged via parent directories.
    * :handler — the nREPL message handler to use for each incoming connection;
        defaults to the result of `(default-handler)`
    * :transport-fn — a function that, given a java.net.Socket corresponding

@@ -216,7 +216,8 @@ You can also ask nREPL to listen on a UNIX domain (filesystem) socket
 with the `:socket` keyword (if you're using JDK 16 or newer add a
 https://kohlschutter.github.io/junixsocket/[junixsocket] dependency),
 which should be as secure as the access to the socket\'s parent
-directories:
+directories (POSIX doesn't specify the effect of the socket file's
+permissions (if any), and some systems have ignored them):
 
 [source,clojure]
 ----
