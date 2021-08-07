@@ -6,7 +6,8 @@
   https://bugs.openjdk.java.net/browse/JDK-4509080."
   (:require
    [clojure.java.io :as io]
-   [nrepl.misc :refer [log]])
+   [nrepl.misc :refer [log]]
+   [nrepl.socket.dynamic :refer [get-path]])
   (:import
    (java.io BufferedInputStream BufferedOutputStream File)
    (java.net InetSocketAddress ProtocolFamily ServerSocket Socket SocketAddress
@@ -15,8 +16,6 @@
    (java.nio.file Path)
    (java.nio.channels Channels ClosedChannelException NetworkChannel
                       ServerSocketChannel SocketChannel)))
-
-(def orig-warn-on-reflection *warn-on-reflection*)
 
 (defmacro find-class [full-path]
   `(try
@@ -88,16 +87,6 @@
     (let [msg "Support for filesystem sockets requires JDK 16+ or a junixsocket dependency"]
       (log msg)
       (throw (ex-info msg {:nrepl/kind ::no-filesystem-sockets})))))
-
-(set! *warn-on-reflection* false)
-
-;; SocketAddress doesn't have .getPath until JDK 16, and we can't refer to
-;; AFUnixSocketAddress unconditionally in the junixsocket cases.  Also note that
-;; the former returns a Path, and the latter returns a string.
-
-(defn- get-path [addr] (.getPath addr))
-
-(set! *warn-on-reflection* orig-warn-on-reflection)
 
 (def jdk-unix-server-socket
   ;; Dynamic because one argument open doesn't exist until jvm 15, nor UNIX
