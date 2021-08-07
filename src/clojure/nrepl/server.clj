@@ -144,7 +144,7 @@
   java.io.Closeable
   (close [this] (stop-server this)))
 
-(defn start-server
+(defn ^Server start-server
   "Starts a socket-based nREPL server.  Configuration options include:
 
    * :port — defaults to 0, which autoselects an open port
