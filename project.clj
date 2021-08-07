@@ -84,4 +84,5 @@
                          :global-vars {*warn-on-reflection* true}
                          :eastwood {:config-files ["eastwood.clj"]
                                     :ignored-faults {:non-dynamic-earmuffs {nrepl.middleware.load-file true}
-                                                     :unused-ret-vals {nrepl.util.completion-test true}}}}]})
+                                                     :unused-ret-vals {nrepl.util.completion-test true}
+                                                     :reflection {nrepl.socket.dynamic true}}}}]})
