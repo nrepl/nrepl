@@ -9,8 +9,10 @@ test:
 
 ifeq ($(VERSION),$(filter $(VERSION),1.9 1.10 master))
 	lein with-profile -user,+$(VERSION),+test run -m kaocha.runner
+	lein with-profile -user,+$(VERSION),+test,+junixsocket run -m kaocha.runner
 else
 	lein with-profile -user,+$(VERSION),+test test
+	lein with-profile -user,+$(VERSION),+test,+junixsocket test
 endif
 
 eastwood:
