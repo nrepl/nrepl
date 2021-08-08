@@ -67,10 +67,6 @@ commands:
           command: |
             sudo apt-get install make
       - run:
-          name: Install clj-kondo
-          command: |
-           sudo curl -sLO https://raw.githubusercontent.com/clj-kondo/clj-kondo/master/script/install-clj-kondo && sudo chmod +x install-clj-kondo && sudo ./install-clj-kondo
-      - run:
           name: Generate Cache Checksum
           command: |
             for file in << parameters.files >>
