@@ -14,7 +14,7 @@
       (when ex (.printStackTrace ^Throwable ex)))))
 
 (defmacro noisy-future
-  "Executes body in a future, logging any execptions that make it to the
+  "Executes body in a future, logging any exceptions that make it to the
   top level."
   [& body]
   `(future
