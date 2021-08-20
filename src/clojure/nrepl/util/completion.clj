@@ -274,7 +274,9 @@
     :else                   (generic-candidates ns options)))
 
 (defn completions
-  "Return a sequence of matching completion candidates given a prefix string and an optional current namespace."
+  "Return a sequence of matching completion candidates given a prefix string and an optional current namespace.
+  You can also provide an additional `options` map to tweak the candidate list to your needs.
+  E.g. you can pass {:extra-metadata #{:arglists :doc}} to request additional metadata for the candidates."
   ([prefix]
    (completions prefix *ns*))
   ([prefix ns]
