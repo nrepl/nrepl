@@ -39,4 +39,6 @@ documentation which clients are known to work well with them.
 
 * https://github.com/djblue/nrepl-cljs[nrepl-cljs] - a native ClojureScript nREPL server implementation
 
+* https://github.com/viesti/nrepl-cljs-sci[nrepl-cljs-sci] - a native Node.js nREPL server implementation using https://github.com/borkdude/sci[SCI].
+
 As you can see nREPL has implementations for many popular Lisp dialects, but it's certainly not limited to Lisp dialects.
