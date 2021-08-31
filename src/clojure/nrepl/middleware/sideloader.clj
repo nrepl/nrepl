@@ -42,13 +42,16 @@
     (loop [bits 0 buf 0]
       (let [got (.read in)]
         (when-not (or (neg? got) (= 61 got))
-          (let [buf (bit-or (.indexOf table got) (bit-shift-left buf 6))
-                bits (+ bits 6)]
-            (if (<= 8 bits)
-              (let [bits (- bits 8)]
-                (.write bos (bit-shift-right buf bits))
-                (recur bits (bit-and 63 buf)))
-              (recur bits buf))))))
+          (let [table-idx (.indexOf table got)]
+            (if (= -1 table-idx)
+              (recur bits buf)
+              (let [buf (bit-or table-idx (bit-shift-left buf 6))
+                    bits (+ bits 6)]
+                (if (<= 8 bits)
+                  (let [bits (- bits 8)]
+                    (.write bos (bit-shift-right buf bits))
+                    (recur bits (bit-and 63 buf)))
+                  (recur bits buf))))))))
     (.toByteArray bos)))
 
 (defn- sideloader
