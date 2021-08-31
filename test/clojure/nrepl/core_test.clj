@@ -1044,6 +1044,99 @@
     (is (= {:status #{:done}} rsp1))
     (is (= {:status #{:done} :pong "pong"} rsp2))))
 
+(def-repl-test dynamic-middleware+sideloading-interleaved
+  (testing "sideloader state persists across middleware changes"
+    (let [sl-session (new-session client)
+          res (response-seq transport 2000)
+          ns (gensym "bar") ;; make sure the ns is not yet defined
+          status? #(some #{%1 (name %1)} %2)
+          send #(do #_(prn '--> %) (transport/send transport %))]
+      (send {:id 1
+             :session sl-session
+             :op "sideloader-start"})
+      (send {:id 2
+             :op "eval"
+             :session sl-session
+             :code (str "(require 'foo." ns ")")})
+
+      ;; We are asked to provide the ns resource twice, looking at
+      ;; clojure.lang.RT/load and loadResourceScript it first does a getResource
+      ;; to see if the clj file exists, then calls getResourceAsStream to load
+      ;; it.
+      (is (= [:added-middleware
+              :provided-ns
+              :provided-ns
+              [:eval-ok "\"Hello!\""]]
+             (reduce
+              (fn [result {:keys [id status type name value] :as msg}]
+                ;; (prn '<-- msg result)
+                (cond
+                  ;; If this happens it means the sideloader has forgotten about
+                  ;; what it asked us for
+                  (status? :unexpected-provide status)
+                  (throw (ex-info "Unexpected provide" msg))
+
+                  ;; Sideloader has kicked in, before we respond rebuild the
+                  ;; middleware stack
+                  (and (= name (str "foo/" ns ".clj"))
+                       (status? :sideloader-lookup status)
+                       (not (some #{:added-middleware} result)))
+                  (do
+                    (send {:id 3
+                           :op "add-middleware"
+                           :session sl-session
+                           :middleware []})
+                    (conj result :added-middleware))
+
+                  ;; Middleware change is done, now respond with the sideloader
+                  ;; resource. If rebuilding the middleware blew away the
+                  ;; sideloader state then we would get an unexpected-provide
+                  ;; here.
+                  (or (and (= 3 id) (status? :done status))
+                      (and (= name (str "foo/" ns ".clj"))
+                           (status? :sideloader-lookup status)))
+                  (do
+                    (send {:session sl-session
+                           :id 1
+                           :op "sideloader-provide"
+                           :content (string->content (str "(prn 'xx) (ns foo." ns ") (prn 'yy) (defn hello [] \"Hello!\")"))
+                           :type "resource"
+                           :name (str "foo/" ns ".clj")})
+                    (conj result :provided-ns))
+
+                  ;; Other sideloader requests get an empty response, we can't
+                  ;; provide those.
+                  (status? :sideloader-lookup status)
+                  (do
+                    (send {:session sl-session
+                           :id 1
+                           :op "sideloader-provide"
+                           :content ""
+                           :type type
+                           :name name})
+                    result)
+
+
+                  ;; Verify that the sideloading worked
+                  (and (= 2 id) (status? :done status))
+                  (do
+                    (send {:id 4
+                           :op "eval"
+                           :session sl-session
+                           :code (str "(foo." ns "/hello)")})
+                    result)
+
+                  (and (= 4 id) value)
+                  (conj result [:eval-ok value])
+
+                  (and (= 4 id) (status? :done status))
+                  (reduced result)
+
+                  :else
+                  result))
+              []
+              res))))))
+
 (def-repl-test dynamic-middleware+deferred+sideloading
   (let [rsp1 (->> (message-with-sideloader client
                                            {:op               "add-middleware"
@@ -1091,3 +1184,8 @@
              (set/intersection
               (dcls (first (:value resp2)))
               (dcls (first (:value resp1))))))))))
+
+(deftest base64-decode-test
+  (testing "base64-decode ignores invalid characters such as newlines"
+    (is (= (seq (sideloader/base64-decode "abc"))
+           (seq (sideloader/base64-decode "a\nb\nc"))))))
