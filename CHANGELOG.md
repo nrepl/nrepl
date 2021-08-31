@@ -13,6 +13,7 @@
   is version 16 or newer or
   [junixsocket](https://kohlschutter.github.io/junixsocket/) is
   available as a dependency.
+* [#243](https://github.com/nrepl/nrepl/pull/243): Keep the sideloader state in the session so it persists across middleware changes. Sanitize the input in base64-decode.
 
 ### Bugs fixed
 
