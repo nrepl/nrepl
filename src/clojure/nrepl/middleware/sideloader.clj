@@ -81,15 +81,17 @@
 (defn wrap-sideloader
   "Middleware that enables the client to serve resources and classes to the server."
   [h]
-  (let [pending (atom {})]
-    (fn [{:keys [op type name content transport session] :as msg}]
-      (case op
-        "sideloader-start"
-        (alter-meta! session assoc :classloader
-                     (sideloader msg pending))
+  (fn [{:keys [op type name content transport session] :as msg}]
+    (case op
+      "sideloader-start"
+      (let [pending (atom {})]
+        (alter-meta! session assoc
+                     :classloader (sideloader msg pending)
+                     ::pending pending))
 
-        "sideloader-provide"
-        (if-some [p (@pending [type name])]
+      "sideloader-provide"
+      (let [pending (::pending (meta session))]
+        (if-some [p (and pending (@pending [type name]))]
           (do
             (deliver p (let [bytes (base64-decode content)]
                          (when (pos? (count bytes))
@@ -98,9 +100,9 @@
             (t/send transport (response-for msg {:status :done})))
           (t/send transport (response-for msg {:status #{:done :unexpected-provide}
                                                :type type
-                                               :name name})))
+                                               :name name}))))
 
-        (h msg)))))
+      (h msg))))
 
 (set-descriptor! #'wrap-sideloader
                  {:requires #{"clone"}
