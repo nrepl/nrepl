@@ -67,12 +67,14 @@
   "Resolves namespace-qualified sym per 'resolve'. If initial resolve fails,
   attempts to require sym's namespace and retries. Returns nil if sym could not
   be resolved."
-  [sym]
+  [sym & [log?]]
   (or (resolve sym)
       (try
         (require (symbol (namespace sym)))
         (resolve sym)
-        (catch Exception _))))
+        (catch Exception e
+          (when log?
+            (log e))))))
 
 (defmacro with-session-classloader
   "This macro does two things:
