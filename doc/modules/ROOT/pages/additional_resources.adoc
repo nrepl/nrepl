@@ -13,6 +13,7 @@
 * https://metaredux.com/posts/2019/12/20/userstanding-nrepl-sessions.html[Understanding nREPL Sessions]
 * https://metaredux.com/posts/2020/03/28/nrepl-0-7.html[nREPL 0.7]
 * https://metaredux.com/posts/2020/04/10/a-cornucopia-of-nrepl-updates.html[A Cornucopia of nREPL Updates]
+* https://suvratapte.com/nREPL-middleware/[nREPL Middleware]
 
 == Presentations
 
