@@ -33,7 +33,7 @@
                             (-> middleware-str-or-var
                                 (str/replace "#'" "")
                                 symbol
-                                misc/requiring-resolve)))
+                                (misc/requiring-resolve :log-errors))))
                         middleware)
           stack    (linearize-middleware-stack resolved)]
       (if (every? some? resolved)
