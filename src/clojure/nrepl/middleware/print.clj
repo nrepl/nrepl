@@ -175,9 +175,9 @@
       this)))
 
 (defn- resolve-print
-  [{:keys [::print transport] :as msg}]
+  [{:keys [::print transport session] :as msg}]
   (when-let [var-sym (some-> print (symbol))]
-    (let [print-var (misc/requiring-resolve var-sym)]
+    (let [print-var (misc/session-resolve session var-sym)]
       (when-not print-var
         (let [resp {:status ::error
                     ::error (str "Couldn't resolve var " var-sym)}]
@@ -233,7 +233,7 @@
                  (update ::stream? #(if (= [] %) false (boolean %))))]
       (handler (assoc msg :transport (printing-transport msg opts))))))
 
-(set-descriptor! #'wrap-print {:requires #{}
+(set-descriptor! #'wrap-print {:requires #{"clone"}
                                :expects #{}
                                :handles {}})
 

@@ -6,6 +6,7 @@
    :added  "0.7"}
   (:require
    [clojure.java.io :as io]
+   [clojure.string :as str]
    [nrepl.middleware :as middleware :refer [set-descriptor!]]
    [nrepl.misc :refer [response-for]]
    [nrepl.transport :as t]))
@@ -56,50 +57,65 @@
 
 (defn- sideloader
   "Creates a classloader that obey standard delegating policy."
-  [{:keys [transport] :as msg} pending]
-  (fn []
-    (let [resolve-fn
-          (fn [type name]
-            (let [p (promise)]
-              ;; Swap into the atom *before* sending the lookup request to ensure that the server
-              ;; knows about the pending request when the client sends the response.
-              (swap! pending assoc [(clojure.core/name type) name] p)
-              (t/send transport (response-for msg
-                                              {:status :sideloader-lookup
-                                               :type type
-                                               :name name}))
-              @p))]
-      (proxy [clojure.lang.DynamicClassLoader] [(.getContextClassLoader (Thread/currentThread))]
-        (findResource [name]
-          (when-some  [bytes (resolve-fn "resource" name)]
-            (let [file (doto (java.io.File/createTempFile "nrepl-sideload-" (str "-" (re-find #"[^/]*$" name)))
-                         .deleteOnExit)]
-              (io/copy bytes file)
-              (-> file .toURI .toURL))))
-        (findClass [name]
-          (if-some  [bytes (resolve-fn "class" name)]
-            (.defineClass ^clojure.lang.DynamicClassLoader this name bytes nil)
-            (throw (ClassNotFoundException. name))))))))
+  [{:keys [transport] :as msg} loaded prefixes]
+  (let [resolve-fn
+        (fn [type name]
+          (when-not (and prefixes (not (some #(str/starts-with? name %) prefixes)))
+            (if-let [p (get @loaded [(clojure.core/name type) name])]
+              ;; reuse results
+              @p
+              (let [p (promise)]
+                ;; Swap into the atom *before* sending the lookup request to ensure that the server
+                ;; knows about the loaded request when the client sends the response.
+                (swap! loaded assoc [(clojure.core/name type) name] p)
+                (t/send transport (response-for msg
+                                                {:status :sideloader-lookup
+                                                 :type type
+                                                 :name name}))
+                @p))))
+        new-cl (memoize
+                (fn [parent]
+                  (proxy [clojure.lang.DynamicClassLoader] [parent]
+                    (findResource [name]
+                      (when-some [uri (resolve-fn "resource" name)]
+                        uri))
+                    (findClass [name]
+                      (if-let [klass (resolve-fn "class" name)]
+                        klass
+                        (throw (ClassNotFoundException. name)))))))]
+    (fn []
+      (new-cl (.getContextClassLoader (Thread/currentThread))))))
 
 (defn wrap-sideloader
   "Middleware that enables the client to serve resources and classes to the server."
   [h]
-  (fn [{:keys [op type name content transport session] :as msg}]
+  (fn [{:keys [op type name content transport session prefixes] :as msg}]
     (case op
       "sideloader-start"
-      (let [pending (atom {})]
+      (let [loaded (atom {})]
         (alter-meta! session assoc
-                     :classloader (sideloader msg pending)
-                     ::pending pending))
+                     :classloader (sideloader msg loaded prefixes)
+                     ::loaded loaded))
+
+      "sideloader-stop"
+      (alter-meta! session dissoc :classloader ::loaded)
 
       "sideloader-provide"
-      (let [pending (::pending (meta session))]
-        (if-some [p (and pending (@pending [type name]))]
+      (let [loaded (::loaded (meta session))]
+        (if-some [p (and loaded (@loaded [type name]))]
           (do
-            (deliver p (let [bytes (base64-decode content)]
-                         (when (pos? (count bytes))
-                           bytes)))
-            (swap! pending dissoc [type name])
+            (deliver
+             p
+             (let [bytes (base64-decode content)]
+               (when (pos? (count bytes))
+                 (case type
+                   "resource"
+                   (let [file (doto (java.io.File/createTempFile "nrepl-sideload-" (str "-" (re-find #"[^/]*$" name)))
+                                .deleteOnExit)]
+                     (io/copy bytes file)
+                     (-> file .toURI .toURL))
+                   "class"
+                   (.defineClass ^java.lang.ClassLoader (.getContextClassLoader (Thread/currentThread)) name bytes nil)))))
             (t/send transport (response-for msg {:status :done})))
           (t/send transport (response-for msg {:status #{:done :unexpected-provide}
                                                :type type
