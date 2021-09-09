@@ -64,7 +64,7 @@
     (merge basis response)))
 
 (defn requiring-resolve
-  "Resolves namespace-qualified sym per 'resolve'. If initial resolve fails,
+  "Resolves namespace-qualified sym per [[resolve]]. If initial resolve fails,
   attempts to require sym's namespace and retries. Returns nil if sym could not
   be resolved."
   [sym & [log?]]
@@ -96,6 +96,20 @@
          ~@body)
        (finally
          (.setContextClassLoader (Thread/currentThread) ctxcl#)))))
+
+(defn session-resolve
+  "Try to resolve the `var-sym`, and if not yet defined, require its ns and retry.
+  Like [[requiring-resolve]], but honors the session-classloader, and logs any
+  errors. Prefer this over [[requiring-resolve]] + [[with-session-classloader]],
+  since this only instantiates the classloader when the var is not found."
+  [session var-sym]
+  (or (resolve sym)
+      (try
+        (with-session-classloader session
+          (require (symbol (namespace sym))))
+        (resolve sym)
+        (catch Exception e
+          (log e)))))
 
 (defn java-8?
   "Util to check if we are using Java 8. Useful for features that behave
