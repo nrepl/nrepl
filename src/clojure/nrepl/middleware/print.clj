@@ -175,9 +175,10 @@
       this)))
 
 (defn- resolve-print
-  [{:keys [::print transport] :as msg}]
+  [{:keys [::print transport session] :as msg}]
   (when-let [var-sym (some-> print (symbol))]
-    (let [print-var (misc/requiring-resolve var-sym)]
+    (let [print-var (misc/with-session-classloader session
+                      (misc/requiring-resolve var-sym :log))]
       (when-not print-var
         (let [resp {:status ::error
                     ::error (str "Couldn't resolve var " var-sym)}]
