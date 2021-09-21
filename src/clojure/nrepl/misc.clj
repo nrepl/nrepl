@@ -90,12 +90,16 @@
          alt-cl# (when-let [classloader# (:classloader (meta ~session))]
                    (classloader#))
          cl#     (or alt-cl# ctxcl#)]
-     (.setContextClassLoader (Thread/currentThread) cl#)
-     (try
+     (if (= ctxcl# cl#)
        (with-bindings {clojure.lang.Compiler/LOADER cl#}
          ~@body)
-       (finally
-         (.setContextClassLoader (Thread/currentThread) ctxcl#)))))
+       (do
+         (.setContextClassLoader (Thread/currentThread) cl#)
+         (try
+           (with-bindings {clojure.lang.Compiler/LOADER cl#}
+             ~@body)
+           (finally
+             (.setContextClassLoader (Thread/currentThread) ctxcl#)))))))
 
 (defn java-8?
   "Util to check if we are using Java 8. Useful for features that behave

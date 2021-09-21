@@ -8,7 +8,7 @@
    [nrepl.misc :refer [noisy-future uuid response-for]]
    [nrepl.transport :as t])
   (:import
-   (clojure.lang LineNumberingPushbackReader)
+   (clojure.lang DynamicClassLoader LineNumberingPushbackReader)
    (java.io Reader)
    (java.util.concurrent.atomic AtomicLong)
    (java.util.concurrent BlockingQueue LinkedBlockingQueue SynchronousQueue
@@ -38,6 +38,25 @@
 
 (def ^{:dynamic true :private true} *skipping-eol* false)
 
+(defn has-dcl?
+  "Is this classloader or any of its ancestors a DynamicClassLoader?"
+  ^DynamicClassLoader
+  [^ClassLoader cl]
+  (loop [loader cl]
+    (when loader
+      (if (instance? DynamicClassLoader loader)
+        true
+        (recur (.getParent loader))))))
+
+(defn dynamic-classloader
+  "Return a DynamicClassLoader, or a classloader with a DCL as ancestor, based on
+  the current context classloader."
+  []
+  (let [context-loader (.getContextClassLoader (Thread/currentThread))]
+    (if (has-dcl? context-loader)
+      context-loader
+      (DynamicClassLoader. context-loader))))
+
 (defn- configure-thread-factory
   "Returns a new ThreadFactory for the given session.  This implementation
    generates daemon threads, with names that include the session id."
@@ -45,8 +64,7 @@
   (let [session-thread-counter (AtomicLong. 0)
         ;; Create a constant dcl for use across evaluations. This allows
         ;; modifications to the classloader to persist.
-        cl (clojure.lang.DynamicClassLoader.
-            (.getContextClassLoader (Thread/currentThread)))]
+        cl (dynamic-classloader)]
     (reify ThreadFactory
       (newThread [_ runnable]
         (doto (Thread. runnable
@@ -189,9 +207,7 @@
      Upon successful interruption the backing thread is replaced.
    * :close, terminates the backing thread."
   [id]
-  (let [cl (clojure.lang.DynamicClassLoader.
-            (.getContextClassLoader (Thread/currentThread)))
-        queue (LinkedBlockingQueue.)
+  (let [queue (LinkedBlockingQueue.)
         running (atom nil)
         thread (atom nil)
         main-loop #(try
@@ -208,7 +224,7 @@
                      (catch InterruptedException _e))
         spawn-thread #(doto (Thread. main-loop (str "nREPL-session-" id))
                         (.setDaemon true)
-                        (.setContextClassLoader cl)
+                        (.setContextClassLoader (dynamic-classloader))
                         .start)]
     (reset! thread (spawn-thread))
     ;; This map is added to the meta of the session object by `register-session`,

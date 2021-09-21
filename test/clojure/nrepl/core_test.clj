@@ -1116,7 +1116,6 @@
                            :name name})
                     result)
 
-
                   ;; Verify that the sideloading worked
                   (and (= 2 id) (status? :done status))
                   (do
