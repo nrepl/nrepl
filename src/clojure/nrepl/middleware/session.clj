@@ -8,7 +8,7 @@
    [nrepl.misc :refer [noisy-future uuid response-for]]
    [nrepl.transport :as t])
   (:import
-   (clojure.lang DynamicClassloader LineNumberingPushbackReader)
+   (clojure.lang DynamicClassLoader LineNumberingPushbackReader)
    (java.io Reader)
    (java.util.concurrent.atomic AtomicLong)
    (java.util.concurrent BlockingQueue LinkedBlockingQueue SynchronousQueue
@@ -38,6 +38,25 @@
 
 (def ^{:dynamic true :private true} *skipping-eol* false)
 
+(defn has-dcl?
+  "Is this classloader or any of its ancestors a DynamicClassLoader?"
+  ^DynamicClassLoader
+  [^ClassLoader cl]
+  (loop [loader cl]
+    (when loader
+      (if (instance? DynamicClassLoader loader)
+        true
+        (recur (.getParent loader))))))
+
+(defn dynamic-classloader
+  "Return a DynamicClassLoader, or a classloader with a DCL as ancestor, based on
+  the current context classloader."
+  []
+  (let [context-loader (.getContextClassLoader (Thread/currentThread))]
+    (if (has-dcl? context-loader)
+      context-loader
+      (DynamicClassLoader. context-loader))))
+
 (defn- configure-thread-factory
   "Returns a new ThreadFactory for the given session.  This implementation
    generates daemon threads, with names that include the session id."
@@ -45,8 +64,7 @@
   (let [session-thread-counter (AtomicLong. 0)
         ;; Create a constant dcl for use across evaluations. This allows
         ;; modifications to the classloader to persist.
-        cl (DynamicClassLoader.
-            (.getContextClassLoader (Thread/currentThread)))]
+        cl (dynamic-classloader)]
     (reify ThreadFactory
       (newThread [_ runnable]
         (doto (Thread. runnable
@@ -179,20 +197,6 @@
                 (.getState t))
      (.stop t))))
 
-(defn root-loader
-  "Find the bottom-most DynamicClassLoader in the chain of parent classloaders"
-  ^DynamicClassLoader
-  [^ClassLoader cl]
-  (when cl
-    (loop [loader cl]
-      (let [parent (.getParent loader)]
-        (cond
-          (instance? DynamicClassLoader parent)
-          (recur parent)
-
-          (instance? DynamicClassLoader loader)
-          loader)))))
-
 (defn session-exec
   "Takes a session id and returns a maps of three functions meant for interruptible-eval:
    * :exec, takes an id (typically a msg-id), a thunk and an ack runnables (see #'default-exec for ampler
@@ -203,10 +207,7 @@
      Upon successful interruption the backing thread is replaced.
    * :close, terminates the backing thread."
   [id]
-  (let [context-loader (.getContextClassLoader (Thread/currentThread))
-        cl (when-not (root-loader context-loader)
-             (DynamicClassLoader. context-loader))
-        queue (LinkedBlockingQueue.)
+  (let [queue (LinkedBlockingQueue.)
         running (atom nil)
         thread (atom nil)
         main-loop #(try
@@ -223,7 +224,7 @@
                      (catch InterruptedException _e))
         spawn-thread #(doto (Thread. main-loop (str "nREPL-session-" id))
                         (.setDaemon true)
-                        (cond-> cl (.setContextClassLoader cl))
+                        (.setContextClassLoader (dynamic-classloader))
                         .start)]
     (reset! thread (spawn-thread))
     ;; This map is added to the meta of the session object by `register-session`,
