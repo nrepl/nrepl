@@ -30,7 +30,7 @@ Then you can simply run the nREPL server in headless mode like this:
 
 [source,shell]
 ----
-$ clj -R:nREPL -m nrepl.cmdline
+$ clj -M:nREPL -m nrepl.cmdline
 ----
 
 A good practice is add whatever nREPL middleware you want to use to
@@ -50,7 +50,7 @@ how you can easily start a ClojureScript capable nREPL:
 
 [source,shell]
 ----
-$ clj -R:nREPL -m nrepl.cmdline --middleware "[cider.piggieback/wrap-cljs-repl]"
+$ clj -M:nREPL -m nrepl.cmdline --middleware "[cider.piggieback/wrap-cljs-repl]"
 ----
 
 By default, nREPL listens for connections on a randomly chosen local
@@ -74,7 +74,7 @@ you can ask it to listen on a UNIX domain (filesystem) socket instead:
 [source,shell]
 ----
 $ mkdir -m go-rwx nrepl-test
-$ clj -R:nREPL -m nrepl.cmdline --socket nrepl-test/socket
+$ clj -M:nREPL -m nrepl.cmdline --socket nrepl-test/socket
 ----
 
 Here's a listing of all the options available via nREPL's command-line
