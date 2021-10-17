@@ -131,7 +131,7 @@ You can also start an nREPL with a EDN transport using `clj`:
 
 [source,shell]
 ----
-$ clj -R:nrepl -m nrepl.cmdline -t nrepl.transport/edn
+$ clj -M:nrepl -m nrepl.cmdline -t nrepl.transport/edn
 nREPL server started on port 63266 on host localhost - nrepl+edn://localhost:63266
 ----
 
@@ -165,6 +165,6 @@ Starting with nREPL 0.5 you can also start an nREPL with a TTY transport using `
 
 [source,shell]
 ----
-$ clj -R:nrepl -m nrepl.cmdline -t nrepl.transport/tty
+$ clj -M:nrepl -m nrepl.cmdline -t nrepl.transport/tty
 nREPL server started on port 63266 on host localhost - telnet://localhost:63266
 ----
