@@ -23,3 +23,5 @@ target
 pom.xml
 build.xml
 /test-results
+/.clj-kondo/
+/.lsp/

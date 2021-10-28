@@ -187,46 +187,6 @@
         (Thread/sleep 2000)
         (.destroy server-process)))))
 
-;; The following tests ignore the server started in the fixture, as they only test
-;; the TTY transport.
-
-(deftest ^:slow tty-server
-  (let [^int free-port (with-open [ss (java.net.ServerSocket.)]
-                         (.bind ss nil)
-                         (.getLocalPort ss))
-        ack-port       (:port *server*)
-        ^Process
-        server-process (apply sh ["java" "-Dnreplacktest=y"
-                                  "-cp" (System/getProperty "java.class.path")
-                                  "nrepl.main"
-                                  "--port" (str free-port)
-                                  "--ack" (str ack-port)
-                                  "--transport" "nrepl.transport/tty"])
-        acked-port     (ack/wait-for-ack 10000)]
-    (try
-      (let [c    (org.apache.commons.net.telnet.TelnetClient.)
-            _    (.connect c "localhost" free-port)
-            out  (java.io.PrintStream. (.getOutputStream c))
-            br   (java.io.BufferedReader. (java.io.InputStreamReader. (.getInputStream c)))
-            _    (doto out
-                   (.println "(System/getProperty \"nreplacktest\")")
-                   (.flush))
-            resp (doall (repeatedly 3 #(.readLine br)))
-            _    (.disconnect c)]
-        (is (= "user=> \"y\""
-               (last resp))))
-      (finally
-        (.destroy server-process)))))
-
-(deftest no-tty-client
-  (testing "Trying to connect with the tty transport should fail."
-    (with-open [^Server server (server/start-server :transport-fn #'transport/tty)]
-      (let [options (cmd/connection-opts {:port      (:port server)
-                                          :host      "localhost"
-                                          :transport 'nrepl.transport/tty})]
-        (is (thrown? clojure.lang.ExceptionInfo
-                     (cmd/interactive-repl server options)))))))
-
 ;;; Unix domain socket tests
 
 (defn send-jdk-socket-message [message path]
@@ -248,12 +208,11 @@
       (write-bencode (.getOutputStream sock) message))))
 
 (deftest ^:slow basic-fs-socket-behavior
-
   (if-not unix-domain-flavor
     (binding [*out* *err*]
       ;; Otherwise kaocha treats no tests as an error
-      (is (not unix-domain-flavor))
-      (println "Skipping UNIX domain socket tests for JDK < 16 without junixsocket dependency"))
+      (testing "Skipping UNIX domain socket tests for JDK < 16 without junixsocket dependency"
+        (is (not unix-domain-flavor))))
     (let [tmpdir (create-tmpdir "target" "socket-test-" "rwx------")
           sock-path (str tmpdir "/socket")
           sock-file (as-file sock-path)]
@@ -268,6 +227,7 @@
           (try
             (while (not (.exists sock-file))
               (Thread/sleep 100))
+            (Thread/sleep 1000)
             (case unix-domain-flavor
               :jdk
               (send-jdk-socket-message {:code "(System/exit 42)" :op :eval}
