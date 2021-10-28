@@ -5,10 +5,11 @@ organization.
 
 == Java
 
-nREPL officially targets Java 8, Java 11 and the most recent rapid
-release version (e.g. Java 15).  More generally speaking - we aim
-to support all Java releases that are currently officially supported
-by Oracle.
+nREPL officially targets LTS releases and the most recent rapid
+release version.  More generally speaking - we aim to support all
+Java releases that are currently officially supported by Oracle.
+
+This is currently Java 8, 11, and 17.
 
 == Clojure
 
@@ -17,7 +18,7 @@ we have to get a bit creative to determine the minimum version to target.
 
 The minimum required Clojure version is currently derived using data
 from the
-https://clojure.org/news/2019/02/04/state-of-clojure-2019[State of
+https://clojure.org/news/2021/04/06/state-of-clojure-2021[State of
 Clojure] survey. In general we consider a Clojure release eligible for
 dropping once its usage drops bellow 5%, but we'd not drop support for
 any release just for the sake of doing it. We'd do it only if
