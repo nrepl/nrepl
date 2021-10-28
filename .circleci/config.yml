@@ -14,24 +14,20 @@ defaults: &defaults
     LEIN_ROOT: "true"   # we intended to run lein as root
     JVM_OPTS: -Xmx3200m # limit the maximum heap size to prevent out of memory errors
 
-# Runners for OpenJDK 8 and 11
+# Runners for OpenJDK
 
 executors:
   openjdk8:
     docker:
-      - image: circleci/clojure:openjdk-8-lein-2.9.1
+      - image: circleci/clojure:openjdk-8-lein-2.9.7-bullseye
     <<: *defaults
   openjdk11:
     docker:
-      - image: circleci/clojure:openjdk-11-lein-2.9.1
+      - image: circleci/clojure:openjdk-11-lein-2.9.7-bullseye
     <<: *defaults
-  openjdk15:
+  openjdk17:
     docker:
-      - image: circleci/clojure:openjdk-15-lein-2.9.5-buster
-    <<: *defaults
-  openjdk16:
-    docker:
-      - image: circleci/clojure:openjdk-16-lein-2.9.5-buster
+      - image: circleci/clojure:openjdk-17-lein-2.9.7-bullseye
     <<: *defaults
 
 # Runs a given set of steps, with some standard pre- and post-
@@ -97,11 +93,11 @@ jobs:
   util_job:
     description: |
       Running utility commands/checks (linter etc.)
-      Always uses Java11 and Clojure 1.10
+      Always uses Java17 and Clojure 1.10
     parameters:
       steps:
         type: steps
-    executor: openjdk11
+    executor: openjdk17
     environment:
       VERSION: "1.10"
     steps:
@@ -189,45 +185,46 @@ workflows:
           clojure_version: "master"
           jdk_version: openjdk11
       - test_code:
-          name: Java 15, Clojure 1.7
+          name: Java 17, Clojure 1.7
           clojure_version: "1.7"
-          jdk_version: openjdk15
+          jdk_version: openjdk17
       - test_code:
-          name: Java 15, Clojure 1.8
+          name: Java 17, Clojure 1.8
           clojure_version: "1.8"
-          jdk_version: openjdk15
+          jdk_version: openjdk17
       - test_code:
-          name: Java 15, Clojure 1.9
+          name: Java 17, Clojure 1.9
           clojure_version: "1.9"
-          jdk_version: openjdk15
+          jdk_version: openjdk17
       - test_code:
-          name: Java 15, Clojure 1.10
+          name: Java 17, Clojure 1.10
           clojure_version: "1.10"
-          jdk_version: openjdk15
+          jdk_version: openjdk17
       - test_code:
-          name: Java 15, Clojure master
+          name: Java 17, Clojure master
           clojure_version: "master"
-          jdk_version: openjdk15
-      - test_code:
-          name: Java 16, Clojure 1.7
-          clojure_version: "1.7"
-          jdk_version: openjdk16
-      - test_code:
-          name: Java 16, Clojure 1.8
-          clojure_version: "1.8"
-          jdk_version: openjdk16
-      - test_code:
-          name: Java 16, Clojure 1.9
-          clojure_version: "1.9"
-          jdk_version: openjdk16
-      - test_code:
-          name: Java 16, Clojure 1.10
-          clojure_version: "1.10"
-          jdk_version: openjdk16
-      - test_code:
-          name: Java 16, Clojure master
-          clojure_version: "master"
-          jdk_version: openjdk16
+          jdk_version: openjdk17
+      # Add back in when Java 18 is released
+      # - test_code:
+      #     name: Java 18, Clojure 1.7
+      #     clojure_version: "1.7"
+      #     jdk_version: openjdk18
+      # - test_code:
+      #     name: Java 18, Clojure 1.8
+      #     clojure_version: "1.8"
+      #     jdk_version: openjdk18
+      # - test_code:
+      #     name: Java 18, Clojure 1.9
+      #     clojure_version: "1.9"
+      #     jdk_version: openjdk18
+      # - test_code:
+      #     name: Java 18, Clojure 1.10
+      #     clojure_version: "1.10"
+      #     jdk_version: openjdk18
+      # - test_code:
+      #     name: Java 18, Clojure master
+      #     clojure_version: "master"
+      #     jdk_version: openjdk18
       - util_job:
           name: Code Linting
           steps:
