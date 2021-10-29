@@ -42,7 +42,7 @@
                     :aliases {"test" "test2junit"}}
              :junixsocket {:jvm-opts ["-Dnrepl.test.junixsocket=true"]
                            :dependencies [[com.kohlschutter.junixsocket/junixsocket-core "2.3.2"]]}
-             :clj-kondo {:dependencies [[clj-kondo "2021.06.18"]]}
+             :clj-kondo {:dependencies [[clj-kondo "2021.10.19"]]}
              ;; Clojure versions matrix
              :provided {:dependencies [[org.clojure/clojure "1.10.2"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
@@ -64,14 +64,14 @@
 
              ;; CI tools
              :cloverage [:test
-                         {:plugins [[lein-cloverage "1.1.2"]]
-                          :dependencies [[cloverage "1.1.2"]]
+                         {:plugins [[lein-cloverage "1.2.2"]]
+                          :dependencies [[cloverage "1.2.2"]]
                           :cloverage {:codecov? true
                                       ;; Cloverage can't handle some of the code
                                       ;; in this project
                                       :test-ns-regex [#"^((?!nrepl.sanity-test).)*$"]}}]
 
-             :cljfmt {:plugins [[lein-cljfmt "0.6.1"]]
+             :cljfmt {:plugins [[lein-cljfmt "0.8.0"]]
                       :cljfmt {:indents {as-> [[:inner 0]]
                                          with-debug-bindings [[:inner 0]]
                                          merge-meta [[:inner 0]]
@@ -80,7 +80,7 @@
                                          testing-print [[:inner 0]]}}}
 
              :eastwood [:test
-                        {:plugins [[jonase/eastwood "0.9.4"]]
+                        {:plugins [[jonase/eastwood "0.9.9"]]
                          :global-vars {*warn-on-reflection* true}
                          :eastwood {:config-files ["eastwood.clj"]
                                     :ignored-faults {:non-dynamic-earmuffs {nrepl.middleware.load-file true}
