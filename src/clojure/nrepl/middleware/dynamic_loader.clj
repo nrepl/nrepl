@@ -67,7 +67,8 @@
   [h]
   (fn [{:keys [op transport session middleware extra-namespaces] :as msg}]
     (when-not (instance? clojure.lang.IAtom *state*)
-      (throw (ex-info "dynamic-loader/*state* is not bond to an atom. This is likely a bug" nil)))
+      (throw (ex-info "dynamic-loader/*state* is not bond to an atom. This is likely a bug"
+                      {:state-class (class *state*)})))
     (case op
       "add-middleware"
       (do
