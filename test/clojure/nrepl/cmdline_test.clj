@@ -225,6 +225,10 @@
                                (.redirectOutput ProcessBuilder$Redirect/INHERIT)
                                (.redirectError ProcessBuilder$Redirect/INHERIT)))]
           (try
+            ;; we want to ensure the server is up before trying to connect to it
+            ;; this is done by waiting till the socket file is created, and then
+            ;; waiting an extra 1s. (extra wait seems to help with test reliability
+            ;; in CI. Question: why are we not using ack to do this? To investigate
             (while (not (.exists sock-file))
               (Thread/sleep 100))
             (Thread/sleep 1000)
