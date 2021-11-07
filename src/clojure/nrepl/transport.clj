@@ -16,8 +16,7 @@
             EOFException
             Flushable
             PushbackInputStream
-            PushbackReader
-            OutputStream)
+            PushbackReader)
    [java.net Socket SocketException]
    [java.util.concurrent BlockingQueue LinkedBlockingQueue SynchronousQueue TimeUnit]))
 
@@ -110,7 +109,7 @@
   [output thing]
   (let [buffer (ByteArrayOutputStream.)]
     (bencode/write-bencode buffer thing)
-    (.write ^OutputStream output (.toByteArray buffer))))
+    (socket/write output (.toByteArray buffer))))
 
 (defn bencode
   "Returns a Transport implementation that serializes messages

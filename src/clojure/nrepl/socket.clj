@@ -9,7 +9,7 @@
    [nrepl.misc :refer [log]]
    [nrepl.socket.dynamic :refer [get-path]])
   (:import
-   (java.io BufferedInputStream BufferedOutputStream File)
+   (java.io BufferedInputStream BufferedOutputStream File OutputStream)
    (java.net InetSocketAddress ProtocolFamily ServerSocket Socket SocketAddress
              StandardProtocolFamily URI)
    (java.nio ByteBuffer)
@@ -174,12 +174,19 @@
 ;; (cf. https://bugs.openjdk.java.net/browse/JDK-4509080).  Verified that this
 ;; still happens (via thread dump when hung) with jdk 16.
 
-(definterface Writable
-  (write [byte-array]
-         "Writes the given bytes to the output as per OutputStream write.")
+(defprotocol Writable
   ;; Underscores were added to satisfy clj-kondo
-  (write [_byte-array _offset _length]
-         "Writes the given bytes to the output as per OutputStream write."))
+  (write
+    [w byte-array]
+    [w byte-array offset length]
+    "Writes the given bytes to the output as per OutputStream write."))
+
+(extend-protocol Writable
+  OutputStream
+  (write
+    ([s byte-array] (.write ^OutputStream s ^"[B" byte-array))
+    ([s byte-array offset length]
+     (.write ^OutputStream s byte-array offset length))))
 
 (defrecord BufferedOutputChannel
            [^SocketChannel channel ^ByteBuffer buffer]
