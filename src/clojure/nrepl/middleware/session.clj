@@ -40,7 +40,7 @@
 
 (defn has-dcl?
   "Is this classloader or any of its ancestors a DynamicClassLoader?"
-  ^DynamicClassLoader
+  ^clojure.lang.DynamicClassLoader
   [^ClassLoader cl]
   (loop [loader cl]
     (when loader
