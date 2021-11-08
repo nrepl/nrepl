@@ -13,6 +13,7 @@ defaults: &defaults
   environment:
     LEIN_ROOT: "true"   # we intended to run lein as root
     JVM_OPTS: -Xmx3200m # limit the maximum heap size to prevent out of memory errors
+  resource_class: large # default is medium. large (may) give us more consistent CI results
 
 # Runners for OpenJDK
 
