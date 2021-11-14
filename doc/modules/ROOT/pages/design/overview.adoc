@@ -49,16 +49,16 @@ final one would have the status attached to it.
 As mentioned earlier each op would produce different response messages. Here's what you can expect
 to see in responses generated as a result of an `eval` op invocation.
 
-- `:ns` The stringified value of `*ns*` at the time of the response message's
+- `:ns` The stringified value of `\*ns*` at the time of the response message's
   generation.
-- `:out` Contains content written to `*out*` while the request's code was being evaluated.  Messages containing `*out*` content may be sent at the discretion
+- `:out` Contains content written to `\*out*` while the request's code was being evaluated.  Messages containing `*out*` content may be sent at the discretion
 of the server, though at minimum corresponding with flushes of the underlying
 stream/writer.
-- `:err` Same as `:out`, but for `*err*`.
+- `:err` Same as `:out`, but for `\*err*`.
 - `:value` The result of printing a result of evaluating a form in the code sent
   in the corresponding request.  More than one value may be sent, if more than
 one form can be read from the request's code string.  In contrast to the output
-written to `*out*` and `*err*`, this may be usefully/reliably read and utilized
+written to `\*out*` and `\*err*`, this may be usefully/reliably read and utilized
 by the client, e.g. in tooling contexts, assuming the evaluated code returns a
 printable and readable value.  Interactive clients will likely want to simply
 stream ``:value``'s content to their UI's primary output / log.

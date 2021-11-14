@@ -104,7 +104,7 @@ NOTE: nREPL's default lookup function is pretty basic and it can only handle sym
 forms and vars.
 
 You can either specify a custom lookup function in the requests (via the `lookup-fn` key) or by
-setting `nrepl.middleware.lookup/*lookup-fn*`.
+setting `nrepl.middleware.lookup/\*lookup-fn*`.
 
 [source,clojure]
 ----
