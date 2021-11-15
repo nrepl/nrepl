@@ -21,6 +21,7 @@
 * [#231](https://github.com/nrepl/nrepl/issues/231): Fix sanitize error when file is `java.net.URL`.
 * [#208](https://github.com/nrepl/nrepl/issues/208): Fix namespace resolution in the cmdline REPL.
 * [#248](https://github.com/nrepl/nrepl/pull/248): Create fewer new classloaders
+* [#258](https://github.com/nrepl/nrepl/pull/258): Make compatible with graalvm native image.
 
 ## 0.8.3 (2020-10-25)
 
