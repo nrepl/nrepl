@@ -168,6 +168,7 @@
   (.. file (replace ".class" "") (replace File/separator ".")))
 
 (def top-level-classes
+  ;; Avoid using future directly on top-level for graalvm compatibility
   (delay
    @(misc/noisy-future
      (doall
@@ -175,6 +176,7 @@
         (classname file))))))
 
 (def nested-classes
+  ;; Avoid using future directly on top-level for graalvm compatibility
   (delay
    @(misc/noisy-future
      (doall
