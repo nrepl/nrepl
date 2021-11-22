@@ -204,7 +204,7 @@
     (if (> length (.capacity buffer))
       (do
         (.flush this)
-        (.write channel (ByteBuffer/wrap byte-array) offset length))
+        (.write channel (ByteBuffer/wrap byte-array offset length)))
       (do
         (when (> length (.remaining buffer))
           (.flush this))
