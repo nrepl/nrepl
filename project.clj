@@ -1,4 +1,4 @@
-(defproject nrepl "0.9.0-beta4"
+(defproject nrepl "0.9.0-beta5"
   :description "nREPL is a Clojure *n*etwork REPL."
   :url "https://nrepl.org"
   :license {:name "Eclipse Public License"
