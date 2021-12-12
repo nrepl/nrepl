@@ -77,6 +77,11 @@ $ mkdir -m go-rwx nrepl-test
 $ clj -M:nREPL -m nrepl.cmdline --socket nrepl-test/socket
 ----
 
+TIP: UNIX domain sockets know that they're running locally, so they
+can avoid some checks and operations (like routing), which makes them faster and
+lighter than TCP/IP sockets. In practice this means they are a better option
+for local development.
+
 Here's a listing of all the options available via nREPL's command-line
 interface (this output was simply generated with `--help`):
 
