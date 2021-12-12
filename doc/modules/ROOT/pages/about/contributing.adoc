@@ -86,7 +86,7 @@ content:
    sources:
    - url: https://github.com/nrepl/nrepl.git
      branches: ['master']
-     tags: ['0.5.3', '0.6.0', '0.7.0', '0.8.3']
+     tags: ['0.5.3', '0.6.0', '0.7.0', '0.9.0']
 
 # to something like
 content:

@@ -2,6 +2,8 @@
 
 ## master (unreleased)
 
+## 0.9.0 (2021-12-12)
+
 ### New features
 
 * [#217](https://github.com/nrepl/nrepl/pull/217): Add keyword completion support.
@@ -13,14 +15,14 @@
   is version 16 or newer or
   [junixsocket](https://kohlschutter.github.io/junixsocket/) is
   available as a dependency.
-* [#243](https://github.com/nrepl/nrepl/pull/243): Keep the sideloader state in the session so it persists across middleware changes. Sanitize the input in base64-decode.
+* [#243](https://github.com/nrepl/nrepl/pull/243): Keep the sideloader state in the session so it persists across middleware changes. Sanitize the input in `base64-decode`.
 
 ### Bugs fixed
 
 * [#227](https://github.com/nrepl/nrepl/pull/227): Fix completion for static class members.
 * [#231](https://github.com/nrepl/nrepl/issues/231): Fix sanitize error when file is `java.net.URL`.
 * [#208](https://github.com/nrepl/nrepl/issues/208): Fix namespace resolution in the cmdline REPL.
-* [#248](https://github.com/nrepl/nrepl/pull/248): Create fewer new classloaders
+* [#248](https://github.com/nrepl/nrepl/pull/248): Create fewer new classloaders.
 * [#258](https://github.com/nrepl/nrepl/pull/258): Make compatible with graalvm native image.
 
 ## 0.8.3 (2020-10-25)
