@@ -163,13 +163,13 @@ is to request the extra namespace to be loaded at `add-middleware` time too:
 {:op "add-middleware"
  :middleware ["cider.nrepl.middleware/wrap-version"]
  :extra-namespaces ["cider.nrepl.middleware.version"]}
- ;; now, the following shoud work
+ ;; now, the following should work
  {:op "cider-version"}
 ----
 
 There is no operation to remove a single middleware, but it's possible to reset
 the stack to a baseline with the `swap-middleware` operation. If the goal is to
-simply reset the middleware stack, use this in conjuction with
+simply reset the middleware stack, use this in conjunction with
 `nrepl.server/default-middleware`.
 
 Also note that updating the middleware stack may also destroy/re-create middleware state. As an example, sideloading would need to be re-started. The impact on each middleware differs, however, as some of them, e.g. `session` holds their state globally.

@@ -38,7 +38,7 @@ nil
 ----
 
 As you can see the main issue with the socket REPL is that it's hard to tell apart values from output in the evaluation
-responses. That's fine when you're interacting with a REPL directly, but is a big issue if you're using it programatically.
+responses. That's fine when you're interacting with a REPL directly, but is a big issue if you're using it programmatically.
 Still, I think it's fair to say that the main purpose of the socket REPL server is to give you a basic REPL, not building development tools on top of it.
 
 === Pros

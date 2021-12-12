@@ -349,7 +349,7 @@ As additional resources/classes are looked up, server will send messages to the 
 * `:type`, being `resource` or `class`
 * `:name`, being a string (e.g. `foo/bar.clj` or `foo.bar`)
 
-The client is responsible for responding to the lookup. It does so by replying with the operation `sideloader-provide`, and paramters
+The client is responsible for responding to the lookup. It does so by replying with the operation `sideloader-provide`, and parameters
 
 * `:type` and `:name` the same as the lookup.
 * `:content` base-64 encoded byte array of the resource or class. An empty response indicates "resource/class not found."

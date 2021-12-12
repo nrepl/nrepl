@@ -8,7 +8,7 @@ Very simply put - this project is the continuation of the contrib project.
 == What's the plural form of "middleware"?
 
 The plural form of "middleware" is "middleware", not "middlewares".footnote:[See https://english.stackexchange.com/questions/257120/middleware-vs-middlewares for a
-discusion on the subject] While there's https://www.wordhippo.com/what-is/the-plural-of/middleware.html[some debate] on whether its okay to write something like "a collection of middlewares", we've opted
+discussion on the subject] While there's https://www.wordhippo.com/what-is/the-plural-of/middleware.html[some debate] on whether its okay to write something like "a collection of middlewares", we've opted
 to stick to using "middleware" everywhere in both the codebase and the documentation.
 
 == Does nREPL support ClojureScript?

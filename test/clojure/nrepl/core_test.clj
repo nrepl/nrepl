@@ -498,7 +498,7 @@
                (:status r)))
         (is (= "class java.lang.InterruptedException"
                (:ex r))))))
-  (testing "interruptable code"
+  (testing "interruptible code"
     (let [resp (message session {:op "eval"
                                  :code (code
                                         (do
