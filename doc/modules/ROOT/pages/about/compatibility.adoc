@@ -63,6 +63,10 @@ requirements were bumped in nREPL 0.4.
 | 8
 | 1.7
 
+| 0.9.x
+| 8
+| 1.7
+
 |===
 
 == Backwards Compatibility
