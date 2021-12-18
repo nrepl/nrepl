@@ -50,7 +50,7 @@ CIDER provides a https://docs.cider.mx/cider/troubleshooting.html#debugging-the-
 
 == Best Practices
 
-Bellow is a listing of best practices when it comes to building nREPL clients. A
+Below is a listing of best practices when it comes to building nREPL clients. A
 common problem with clients is that they typically assume they are talking to a
 Clojure server. While this is OK in some cases (e.g. if you're building a
 Clojure IDE), it's always better to build clients that can work with any nREPL

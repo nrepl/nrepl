@@ -1,7 +1,7 @@
 = nREPL Clients
 
 Most of the time, you will connect to an nREPL server using an existing
-library/client/tool. Bellow is a listing of many such clients.
+library/client/tool. Below is a listing of many such clients.
 
 NOTE: Some of these clients will only work with Clojure nREPL servers, while
 others are built with language-agnosticism and can connect to nREPL

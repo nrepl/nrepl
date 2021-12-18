@@ -126,7 +126,7 @@
            ;; to absolute file paths
            (or (io/resource value) value)
            ;; If :file is a File or URL object we just return it as is
-           ;; and covert it to string
+           ;; and convert it to string
            value))))
 
 (defn sanitize-meta

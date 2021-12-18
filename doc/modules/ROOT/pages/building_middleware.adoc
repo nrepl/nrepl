@@ -19,7 +19,7 @@ The basic structure of most middleware is pretty simple:
 * Some functions that do the actual work for each op and provide the responses
 * A middleware descriptor that specifies which middlewares are provided/required and documents the API of the middleware
 
-Optionally you can have some dynamic vars for configuration purposes. Bellow is a complete example:
+Optionally you can have some dynamic vars for configuration purposes. Below is a complete example:
 
 [source,clojure]
 ----
