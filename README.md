@@ -4,6 +4,7 @@
 
 ----------
 [![CircleCI](https://circleci.com/gh/nrepl/nrepl/tree/master.svg?style=svg)](https://circleci.com/gh/nrepl/nrepl/tree/master)
+[![Spell-check Status](https://github.com/nrepl/nrepl/actions/workflows/spell_checking.yml/badge.svg)](https://github.com/nrepl/nrepl/actions/workflows/spell_checking.yml)
 [![Clojars Project](https://img.shields.io/clojars/v/nrepl.svg)](https://clojars.org/nrepl)
 [![cljdoc badge](https://cljdoc.org/badge/nrepl/nrepl)](https://cljdoc.org/d/nrepl/nrepl/CURRENT)
 [![downloads badge](https://versions.deps.co/nrepl/nrepl/downloads.svg)](https://clojars.org/nrepl)
