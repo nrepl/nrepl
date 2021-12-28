@@ -37,7 +37,7 @@ The function should ideally return results in the following format:
 ----
 
 You can either specify a custom completion function in the requests (via the `complete-fn` key) or by
-setting `nrepl.middleware.completion/*complete-fn*`.
+setting `+nrepl.middleware.completion/*complete-fn*+`.
 
 [source,clojure]
 ----
