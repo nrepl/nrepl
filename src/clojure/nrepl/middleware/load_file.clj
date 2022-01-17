@@ -86,8 +86,8 @@ be loaded."} file-contents (atom {}))
                          load-large-file-code)
                        file file-path file-name)
                 :transport (reify Transport
-                             (recv [this] (.recv transport))
-                             (recv [this timeout] (.recv transport timeout))
+                             (recv [_this] (.recv transport))
+                             (recv [_this timeout] (.recv transport timeout))
                              (send [this resp]
                                ;; *ns* is always 'user' after loading a file, so
                                ;; *remove it to avoid confusing tools that assume any

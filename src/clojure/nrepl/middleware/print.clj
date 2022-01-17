@@ -161,9 +161,9 @@
 (defn- printing-transport
   [{:keys [transport] :as msg} opts]
   (reify Transport
-    (recv [this]
+    (recv [_this]
       (transport/recv transport))
-    (recv [this timeout]
+    (recv [_this timeout]
       (transport/recv transport timeout))
     (send [this resp]
       (let [{:keys [::stream?] :as opts} (-> (merge msg (bound-configuration) resp opts)
