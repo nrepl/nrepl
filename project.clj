@@ -42,7 +42,7 @@
                     :aliases {"test" "test2junit"}}
              :junixsocket {:jvm-opts ["-Dnrepl.test.junixsocket=true"]
                            :dependencies [[com.kohlschutter.junixsocket/junixsocket-core "2.3.2"]]}
-             :clj-kondo {:dependencies [[clj-kondo "2021.10.19"]]}
+             :clj-kondo {:dependencies [[clj-kondo "2022.01.15"]]}
              ;; Clojure versions matrix
              :provided {:dependencies [[org.clojure/clojure "1.10.2"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
@@ -80,8 +80,7 @@
                                          testing-print [[:inner 0]]}}}
 
              :eastwood [:test
-                        {:plugins [[jonase/eastwood "0.9.9"]]
-                         :global-vars {*warn-on-reflection* true}
+                        {:plugins [[jonase/eastwood "1.1.1"]]
                          :eastwood {:config-files ["eastwood.clj"]
                                     :ignored-faults {:non-dynamic-earmuffs {nrepl.middleware.load-file true}
                                                      :unused-ret-vals {nrepl.util.completion-test true}
