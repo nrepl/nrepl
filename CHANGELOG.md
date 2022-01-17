@@ -2,6 +2,10 @@
 
 ## master (unreleased)
 
+### Bugs fixed
+
+* [#263](https://github.com/nrepl/nrepl/issues/263): Gracefully handle exceptions related to illegal reflection access, which can be seen in JDK16+ under certain circumstances.
+
 ## 0.9.0 (2021-12-12)
 
 ### New features

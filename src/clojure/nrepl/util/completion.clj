@@ -21,9 +21,14 @@
 
 (defn all-keywords
   []
-  (let [^Field field (.getDeclaredField clojure.lang.Keyword "table")]
-    (.setAccessible field true)
-    (.keySet ^ConcurrentHashMap (.get field nil))))
+  (try
+    (let [^Field field (.getDeclaredField clojure.lang.Keyword "table")]
+      (.setAccessible field true)
+      (.keySet ^ConcurrentHashMap (.get field nil)))
+    (catch Exception e
+      (when-not (misc/inaccessible-object-exception? e)
+        (throw e))
+      #{})))
 
 (defn- resolve-namespace
   [sym ns]

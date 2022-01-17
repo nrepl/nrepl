@@ -142,3 +142,10 @@
       (cond-> (:special-form m) (update :special-form str))
       (assoc :arglists-str (str (:arglists m)))
       (cond-> (:arglists m) (update :arglists str))))
+
+(defn inaccessible-object-exception?
+  "Is `e` an `InaccessibleObjectException`?
+
+  Note that that class is absent in JDK8."
+  [e]
+  (-> e class .getName (= "java.lang.reflect.InaccessibleObjectException")))
