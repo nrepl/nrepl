@@ -4,6 +4,9 @@
             [clojure.test :refer :all]
             [nrepl.util.completion :as completion :refer [completions]]))
 
+(deftest all-keywords-test
+  (is (seq (completion/all-keywords))))
+
 (def t-var "var" nil)
 (defn t-fn "fn" [x] x)
 (defmacro t-macro "macro" [y] y)

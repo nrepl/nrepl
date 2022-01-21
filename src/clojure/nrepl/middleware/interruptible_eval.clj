@@ -39,11 +39,15 @@
         (doto (.setAccessible true))
         (.set reader column))))
 
-(defn- source-logging-pushback-reader
+(defn source-logging-pushback-reader
   [code line column]
   (let [reader (LineNumberingPushbackReader. (StringReader. code))]
-    (when line (set-line! reader (int line)))
-    (when column (set-column! reader (int column)))
+    (try
+      (when line (set-line! reader (int line)))
+      (when column (set-column! reader (int column)))
+      (catch Exception e
+        (when-not (misc/inaccessible-object-exception? e)
+          (throw e))))
     reader))
 
 (defn- interrupted?
