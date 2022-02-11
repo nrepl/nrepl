@@ -30,7 +30,8 @@
                                     :sign-releases false}]]
 
   :profiles {:fastlane {:dependencies [[nrepl/fastlane "0.1.0"]]}
-             :test {:dependencies [[com.hypirion/io "0.3.1"]
+             :test {:dependencies [[com.github.ivarref/locksmith "0.1.6"]
+                                   [com.hypirion/io "0.3.1"]
                                    [commons-net/commons-net "3.6"]
                                    [lambdaisland/kaocha "1.0.672"]
                                    [lambdaisland/kaocha-junit-xml "0.0.76"]]

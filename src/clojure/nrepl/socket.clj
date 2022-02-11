@@ -7,6 +7,7 @@
   (:require
    [clojure.java.io :as io]
    [nrepl.misc :refer [log]]
+   [nrepl.tls :as tls]
    [nrepl.socket.dynamic :refer [get-path]])
   (:import
    (java.io BufferedInputStream BufferedOutputStream File OutputStream)
@@ -15,7 +16,8 @@
    (java.nio ByteBuffer)
    (java.nio.file Path)
    (java.nio.channels Channels ClosedChannelException NetworkChannel
-                      ServerSocketChannel SocketChannel)))
+                      ServerSocketChannel SocketChannel)
+   (javax.net.ssl SSLServerSocket)))
 
 (defmacro find-class [full-path]
   `(try
@@ -25,16 +27,24 @@
 
 ;;; InetSockets (TCP)
 
-(defn inet-socket [bind port]
-  (let [port (or port 0)
-        addr (fn [^String bind port] (InetSocketAddress. bind (int port)))
-        ;; We fallback to 127.0.0.1 instead of to localhost to avoid
-        ;; a dependency on the order of ipv4 and ipv6 records for
-        ;; localhost in /etc/hosts
-        bind (or bind "127.0.0.1")]
-    (doto (ServerSocket.)
-      (.setReuseAddress true)
-      (.bind (addr bind port)))))
+(defn inet-socket
+  ([bind port]
+   (let [port (or port 0)
+         addr (fn [^String bind port] (InetSocketAddress. bind (int port)))
+         ;; We fallback to 127.0.0.1 instead of to localhost to avoid
+         ;; a dependency on the order of ipv4 and ipv6 records for
+         ;; localhost in /etc/hosts
+         bind (or bind "127.0.0.1")]
+     (doto (ServerSocket.)
+       (.setReuseAddress true)
+       (.bind (addr bind port)))))
+  ([bind port tls-context]
+   (let [port (or port 0)
+         ;; We fallback to 127.0.0.1 instead of to localhost to avoid
+         ;; a dependency on the order of ipv4 and ipv6 records for
+         ;; localhost in /etc/hosts
+         bind (or bind "127.0.0.1")]
+     (tls/server-socket tls-context bind port))))
 
 ;; Unix domain sockets
 
@@ -194,7 +204,9 @@
               nil)
         ;; Assume it's an InetAddress socket
         (let [sock ^ServerSocket sock]
-          (URI. transport-scheme
+          (URI. (str transport-scheme
+                     (when (instance? SSLServerSocket sock)
+                       "s"))
                 nil ;; userInfo
                 (-> sock .getInetAddress .getHostName)
                 (.getLocalPort sock)
@@ -210,6 +222,12 @@
 (extend-protocol Acceptable
   ServerSocketChannel
   (accept [s] (.accept s))
+
+  SSLServerSocket
+  (accept [s]
+    (when (.isClosed s)
+      (throw (ClosedChannelException.)))
+    (tls/accept s))
 
   ServerSocket
   (accept [s]

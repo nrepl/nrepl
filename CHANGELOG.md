@@ -2,6 +2,10 @@
 
 ## master (unreleased)
 
+### New Features
+
+* [#266](https://github.com/nrepl/nrepl/pull/266): Add TLS support.
+
 ## 1.0.0 (2022-08-24)
 
 ### New Features
