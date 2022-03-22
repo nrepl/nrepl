@@ -44,11 +44,17 @@
 (def ^Class junixsocket-server-class
   (find-class 'org.newsclub.net.unix.AFUNIXServerSocket))
 
+(def ^Class junixsocket-class
+  (find-class 'org.newsclub.net.unix.AFUNIXSocket))
+
 (def ^Class jdk-unix-address-class
   (find-class 'java.net.UnixDomainSocketAddress))
 
 (def ^Class jdk-unix-server-class
   (find-class 'java.nio.channels.ServerSocketChannel))
+
+(def ^Class jdk-unix-class
+  (find-class 'java.nio.channels.SocketChannel))
 
 (def ^:private test-junixsocket?
   ;; Make it possible to test junixsocket even when JDK >= 16
@@ -99,9 +105,25 @@
                                    (into-array Class [ProtocolFamily]))]
       #(.invoke open nil protocol))))
 
+(def jdk-unix-socket
+  ;; Dynamic because one argument open doesn't exist until jvm 15, nor UNIX
+  ;; until jvm 16.
+  (when (= :jdk unix-domain-flavor)
+    (let [protocol (-> (.getDeclaredField StandardProtocolFamily "UNIX")
+                       (.get StandardProtocolFamily))
+          protocol (into-array ProtocolFamily [protocol])
+          open (.getDeclaredMethod SocketChannel "open"
+                                   (into-array Class [ProtocolFamily]))]
+      #(.invoke open nil protocol))))
+
 (def junix-server-socket
   (when (= :junixsocket unix-domain-flavor)
     (let [make (.getDeclaredMethod junixsocket-server-class "newInstance" nil)]
+      #(.invoke make nil nil))))
+
+(def junix-socket
+  (when (= :junixsocket unix-domain-flavor)
+    (let [make (.getDeclaredMethod junixsocket-class "newInstance" nil)]
       #(.invoke make nil nil))))
 
 (defn unix-server-socket
@@ -124,6 +146,28 @@
         (.bind ^ServerSocket sock addr)
         (let [^String path (get-path addr)]
           (-> path File. .deleteOnExit))
+        sock)
+
+      (let [msg "Support for filesystem sockets requires JDK 16+ or a junixsocket dependency"]
+        (log msg)
+        (throw (ex-info msg {:nrepl/kind ::no-filesystem-sockets}))))))
+
+(defn unix-client-socket
+  "Returns a filesystem socket bound to the path if the JDK is version
+  16 or newer or if com.kohlschutter.junixsocket/junixsocket-core can
+  be loaded dynamically.  Otherwise throws the ex-info map
+  {:nrepl/kind ::no-filesystem-sockets}."
+  [^String path]
+  (let [^SocketAddress addr (unix-socket-address path)]
+    (case unix-domain-flavor
+      :jdk
+      (let [sock (jdk-unix-socket)]
+        (.connect ^SocketChannel sock addr)
+        sock)
+
+      :junixsocket
+      (let [sock (junix-socket)]
+        (.connect ^Socket sock addr)
         sock)
 
       (let [msg "Support for filesystem sockets requires JDK 16+ or a junixsocket dependency"]
