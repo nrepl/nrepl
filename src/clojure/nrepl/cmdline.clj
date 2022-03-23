@@ -123,16 +123,16 @@ Exit:      Control+D or (exit) or (quit)"
    (let [{:keys [host port socket]} server
          {:keys [transport] :or {transport #'transport/bencode}} options]
      (run-repl-with-transport
-       (cond
-         socket
-         (nrepl/connect :socket socket :transport-fn transport)
+      (cond
+        socket
+        (nrepl/connect :socket socket :transport-fn transport)
 
-         (and host port)
-         (nrepl/connect :host host :port port :transport-fn transport)
+        (and host port)
+        (nrepl/connect :host host :port port :transport-fn transport)
 
-         :else
-         (die "Must supply host/port or socket."))
-       options)))
+        :else
+        (die "Must supply host/port or socket."))
+      options)))
   ([host port]
    (run-repl {:server {:host host :port port} :options nil}))
   ([host port options]
@@ -397,8 +397,8 @@ Exit:      Control+D or (exit) or (quit)"
                 :options (merge (when (:color options) colored-output)
                                 {:transport transport})})
       (repl-fn host port
-              (merge (when (:color options) colored-output)
-                     {:transport transport})))))
+               (merge (when (:color options) colored-output)
+                      {:transport transport})))))
 
 (defn connect-to-server
   "Connects to a running nREPL server and runs a REPL. Exits program when REPL
