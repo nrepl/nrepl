@@ -120,23 +120,26 @@ Exit:      Control+D or (exit) or (quit)"
 
 (defn- run-repl
   ([{:keys [server options]}]
-   (let [{:keys [host port socket]} server
+   (let [{:keys [host port socket] :or {host "127.0.0.1"}} server
          {:keys [transport] :or {transport #'transport/bencode}} options]
      (run-repl-with-transport
-      (cond
-        socket
-        (nrepl/connect :socket socket :transport-fn transport)
+       (cond
+         socket
+         (nrepl/connect :socket socket :transport-fn transport)
 
-        (and host port)
-        (nrepl/connect :host host :port port :transport-fn transport)
+         (and host port)
+         (nrepl/connect :host host :port port :transport-fn transport)
 
-        :else
-        (die "Must supply host/port or socket."))
-      options)))
+         :else
+         (die "Must supply host/port or socket."))
+       options)))
   ([host port]
-   (run-repl {:server {:host host :port port} :options nil}))
+   (run-repl host port nil))
   ([host port options]
-   (run-repl {:server {:host host :port port} :options options})))
+   (run-repl {:server  (cond-> {}
+                               host (assoc :host host)
+                               port (assoc :port port))
+              :options options})))
 
 (def #^{:private true} option-shorthands
   {"-i" "--interactive"
