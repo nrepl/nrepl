@@ -123,22 +123,22 @@ Exit:      Control+D or (exit) or (quit)"
    (let [{:keys [host port socket] :or {host "127.0.0.1"}} server
          {:keys [transport] :or {transport #'transport/bencode}} options]
      (run-repl-with-transport
-       (cond
-         socket
-         (nrepl/connect :socket socket :transport-fn transport)
+      (cond
+        socket
+        (nrepl/connect :socket socket :transport-fn transport)
 
-         (and host port)
-         (nrepl/connect :host host :port port :transport-fn transport)
+        (and host port)
+        (nrepl/connect :host host :port port :transport-fn transport)
 
-         :else
-         (die "Must supply host/port or socket."))
-       options)))
+        :else
+        (die "Must supply host/port or socket."))
+      options)))
   ([host port]
    (run-repl host port nil))
   ([host port options]
    (run-repl {:server  (cond-> {}
-                               host (assoc :host host)
-                               port (assoc :port port))
+                         host (assoc :host host)
+                         port (assoc :port port))
               :options options})))
 
 (def #^{:private true} option-shorthands
