@@ -265,3 +265,26 @@
             (let [results (atom [])]
               (#'cmd/run-repl (:host server) (:port server) {:prompt >devnull :err >devnull :out >devnull :value #(swap! results conj %)})
               (is (= expected-output @results)))))))))
+
+(deftest ^:slow can-connect-to-unix-socket
+  (testing "We can connect to unix domain socker from the cli."
+    (let [test-input      (str/join \newline ["::a"
+                                              "(ns a)" "::a"
+                                              "(ns b)" "::a"
+                                              "(ns user)" "::a"
+                                              "(require '[a :as z])" "::z/a"])
+          expected-output [":user/a"
+                           "nil" ":a/a"
+                           "nil" ":b/a"
+                           "nil" ":user/a"
+                           "nil" ":a/a"]
+          >devnull        (fn [& _] nil)
+          tmpdir          (create-tmpdir "target" "socket-test-" "rwx------")
+          sock-path       (str tmpdir "/socket")]
+      (binding [*in* (java.io.PushbackReader. (java.io.StringReader. test-input))]
+        (with-redefs [cmd/clean-up-and-exit >devnull]
+          (with-open [server (server/start-server :socket sock-path)]
+            (let [results (atom [])]
+              (#'cmd/run-repl {:server  {:socket sock-path}
+                               :options {:prompt >devnull :err >devnull :out >devnull :value #(swap! results conj %)}})
+              (is (= expected-output @results)))))))))
