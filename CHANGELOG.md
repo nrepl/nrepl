@@ -2,6 +2,10 @@
 
 ## master (unreleased)
 
+### New Features
+
+* [#217](https://github.com/nrepl/nrepl/pull/270): Add nREPL client support for unix domain sockets
+
 ## 0.9.0 (2021-12-12)
 
 ### New features
