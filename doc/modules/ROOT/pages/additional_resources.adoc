@@ -14,6 +14,7 @@
 * https://metaredux.com/posts/2020/03/28/nrepl-0-7.html[nREPL 0.7]
 * https://metaredux.com/posts/2020/04/10/a-cornucopia-of-nrepl-updates.html[A Cornucopia of nREPL Updates]
 * https://suvratapte.com/nREPL-middleware/[nREPL Middleware]
+* https://metaredux.com/posts/2020/06/15/nrepl-0-8-evolving-the-protocol.html[nREPL 0.8: Evolving the Protocol]
 
 == Presentations
 
@@ -21,3 +22,11 @@
   presented at Clojure/conj 2014; dedicated to the origin and the architecture
   of CIDER and related tooling. The talk features nREPL prominently.
 * https://www.youtube.com/watch?v=WTzzUSw6iaI[nREPL Redux] - presented at Dutch Clojure Days 2019.
+
+== Design
+
+NOTE: The articles here are quite outdated, but they can give you some historical context about the certain design decisions in the early versions of
+nREPL.
+
+* https://docs.google.com/document/edit?id=1dnb1ONTpK9ttO5W4thxiXkU5Ki89gK62anRqKEK4YZI&authkey=CMuszuMI&hl=en#[Original Design Notes]
+* https://github.com/clojure/tools.nrepl/wiki/nREPL.Next[nREPL 0.1 Design Notes]
