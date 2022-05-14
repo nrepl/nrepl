@@ -104,6 +104,6 @@ Support this project by becoming a sponsor. Your logo will show up here with a l
 
 ## License
 
-Copyright © 2010-2021 Chas Emerick, Bozhidar Batsov and contributors.
+Copyright © 2010-2022 Chas Emerick, Bozhidar Batsov and contributors.
 
 Licensed under the EPL. (See the file epl.html.)
