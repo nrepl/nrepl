@@ -5,7 +5,8 @@
    clojure.set
    [nrepl.misc :refer [uuid]]
    [nrepl.transport :as transport]
-   [nrepl.version :as version]))
+   [nrepl.version :as version]
+   [nrepl.socket :as socket]))
 
 (defn response-seq
   "Returns a lazy seq of messages received via the given Transport.
@@ -172,16 +173,24 @@
        :value))
 
 (defn connect
-  "Connects to a socket-based REPL at the given host (defaults to 127.0.0.1) and port,
-   returning the Transport (by default `nrepl.transport/bencode`)
+  "Connects to a socket-based REPL at the given host (defaults to 127.0.0.1) and port
+   or using the supplied socket, returning the Transport (by default `nrepl.transport/bencode`)
    for that connection.
 
    Transports are most easily used with `client`, `client-session`, and
    `message`, depending on the semantics desired."
-  [& {:keys [port host transport-fn] :or {transport-fn transport/bencode
-                                          host "127.0.0.1"}}]
-  {:pre [transport-fn port]}
-  (transport-fn (java.net.Socket. ^String host (int port))))
+  [& {:keys [port host socket transport-fn] :or {transport-fn transport/bencode
+                                                 host         "127.0.0.1"}}]
+  {:pre [transport-fn]}
+  (cond
+    socket
+    (transport-fn (socket/unix-client-socket socket))
+
+    (and host port)
+    (transport-fn (java.net.Socket. ^String host (int port)))
+
+    :else
+    (throw (IllegalArgumentException. "A host plus port or a socket must be supplied to connect."))))
 
 (defn- ^java.net.URI to-uri
   [x]

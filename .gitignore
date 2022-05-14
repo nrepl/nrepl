@@ -9,6 +9,7 @@
 .project
 .classpath
 .settings
+/.idea/
 
 # artifacts, etc
 eclipse-classes

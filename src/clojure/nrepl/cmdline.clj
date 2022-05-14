@@ -87,40 +87,59 @@ Exit:      Control+D or (exit) or (quit)"
           (System/getProperty "java.vm.name")
           (System/getProperty "java.runtime.version")))
 
+(defn- run-repl-with-transport
+  [transport {:keys [prompt err out value]
+              :or   {prompt #(print (str % "=> "))
+                     err    print
+                     out    print
+                     value  println}}]
+  (let [client (nrepl/client transport Long/MAX_VALUE)]
+    (println (repl-intro))
+    ;; We take 50ms to listen to any greeting messages, and display the value
+    ;; in the `:out` slot.
+    (noisy-future (->> (client)
+                       (take-while #(nil? (:id %)))
+                       (run! #(when-let [msg (:out %)] (print msg)))))
+    (Thread/sleep 50)
+    (let [session (nrepl/client-session client)]
+      (swap! running-repl assoc :transport transport)
+      (swap! running-repl assoc :client session)
+      (binding [*ns* *ns*]
+        (loop []
+          (prompt *ns*)
+          (flush)
+          (let [input (read *in* false 'exit)]
+            (if (done? input)
+              (clean-up-and-exit 0)
+              (do (doseq [res (nrepl/message session {:op "eval" :code (pr-str input)})]
+                    (when (:value res) (value (:value res)))
+                    (when (:out res) (out (:out res)))
+                    (when (:err res) (err (:err res)))
+                    (when (:ns res) (set! *ns* (create-ns (symbol (:ns res))))))
+                  (recur)))))))))
+
 (defn- run-repl
+  ([{:keys [server options]}]
+   (let [{:keys [host port socket] :or {host "127.0.0.1"}} server
+         {:keys [transport] :or {transport #'transport/bencode}} options]
+     (run-repl-with-transport
+      (cond
+        socket
+        (nrepl/connect :socket socket :transport-fn transport)
+
+        (and host port)
+        (nrepl/connect :host host :port port :transport-fn transport)
+
+        :else
+        (die "Must supply host/port or socket."))
+      options)))
   ([host port]
    (run-repl host port nil))
-  ([host port {:keys [prompt err out value transport]
-               :or {prompt #(print (str % "=> "))
-                    err print
-                    out print
-                    value println
-                    transport #'transport/bencode}}]
-   (let [transport (nrepl/connect :host host :port port :transport-fn transport)
-         client (nrepl/client transport Long/MAX_VALUE)]
-     (println (repl-intro))
-     ;; We take 50ms to listen to any greeting messages, and display the value
-     ;; in the `:out` slot.
-     (noisy-future (->> (client)
-                        (take-while #(nil? (:id %)))
-                        (run! #(when-let [msg (:out %)] (print msg)))))
-     (Thread/sleep 50)
-     (let [session (nrepl/client-session client)]
-       (swap! running-repl assoc :transport transport)
-       (swap! running-repl assoc :client session)
-       (binding [*ns* *ns*]
-         (loop []
-           (prompt *ns*)
-           (flush)
-           (let [input (read *in* false 'exit)]
-             (if (done? input)
-               (clean-up-and-exit 0)
-               (do (doseq [res (nrepl/message session {:op "eval" :code (pr-str input)})]
-                     (when (:value res) (value (:value res)))
-                     (when (:out res) (out (:out res)))
-                     (when (:err res) (err (:err res)))
-                     (when (:ns res) (set! *ns* (create-ns (symbol (:ns res))))))
-                   (recur))))))))))
+  ([host port options]
+   (run-repl {:server  (cond-> {}
+                         host (assoc :host host)
+                         port (assoc :port port))
+              :options options})))
 
 (def #^{:private true} option-shorthands
   {"-i" "--interactive"
@@ -180,7 +199,7 @@ Exit:      Control+D or (exit) or (quit)"
   -b/--bind ADDR              Bind address, by default \"127.0.0.1\".
   -h/--host ADDR              Host address to connect to when using --connect. Defaults to \"127.0.0.1\".
   -p/--port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
-  -s/--socket PATH            Start nREPL on filesystem socket at PATH.
+  -s/--socket PATH            Start nREPL on filesystem socket at PATH or nREPL to connect to when using --connect.
   --ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.
   -n/--handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`.
   -m/--middleware MIDDLEWARE  A sequence of vars, representing middleware you wish to mix in to the nREPL handler.
@@ -371,20 +390,27 @@ Exit:      Control+D or (exit) or (quit)"
   [server options]
   (let [transport (:transport options)
         repl-fn (:repl-fn options)
+        socket (:socket server)
         host (:host server)
         port (:port server)]
     (when (= transport #'transport/tty)
       (die "The built-in client does not support the tty transport. Consider using `nc` or `telnet`.\n"))
-    (repl-fn host port (merge (when (:color options) colored-output)
-                              {:transport transport}))))
+    (if socket
+      (repl-fn {:server  server
+                :options (merge (when (:color options) colored-output)
+                                {:transport transport})})
+      (repl-fn host port
+               (merge (when (:color options) colored-output)
+                      {:transport transport})))))
 
 (defn connect-to-server
   "Connects to a running nREPL server and runs a REPL. Exits program when REPL
   is closed.
   Takes a map of nREPL CLI options."
-  [{:keys [host port _transport] :as options}]
-  (interactive-repl {:host host
-                     :port port}
+  [{:keys [host port socket] :as options}]
+  (interactive-repl {:host   host
+                     :port   port
+                     :socket socket}
                     options)
   (exit 0))
 

@@ -83,6 +83,18 @@ user=> (+ 1 2)
 3
 ----
 
+If you want to connect to a unix domain socket, you can do it like this:
+
+[source,shell]
+----
+$ clj -Sdeps '{:deps {nrepl {:mvn/version "0.9.0"}}}' -m nrepl.cmdline --connect --socket /some/where/safe/nrepl
+nREPL 0.9.0
+Clojure 1.9.0
+Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
+user=> (+ 1 2)
+3
+----
+
 The built in client does not support the tty transport. Use `nc` or `telnet` instead.
 
 Most users, however, are advised to use REPL-y or their favourite
