@@ -43,3 +43,14 @@ Looking forward to seeing you around! We need all the help we can get!
 
 Cheers, +
 Bozhidar (a.k.a. Bug)
+
+== Notable Milestones
+
+* 21 Sep 2011 - Initial commit by Chas Emerick.
+* 11 Oct 2011 - 0.0.1 release.
+* 13 Jan 2013 - 0.2.0 release brings a massive redesign.
+* 18 May 2018 - nREPL officially leaves Clojure contrib and version 0.3 is released with the updated coordinates `nrepl/nrepl`.
+* 05 Feb 2019 - nREPL 0.6 introduces `nrepl.middleware.print` that replaces `nrepl.middleware.pr-values`.
+* 28 Mar 2020 - nREPL 0.7 introduces an built-in EDN transport and the ability to sideload code dynamically into a running nREPL server.
+* 01 Aug 2020 - nREPL 0.8 introduces built-in `lookup` and `completions` ops. It's now possible to dynamically load/unload middleware.
+* 12 Dec 2021 - nREPL 0.9 introduces support for UNIX domain sockets.
