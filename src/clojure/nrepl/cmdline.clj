@@ -454,7 +454,7 @@ Exit:      Control+D or (exit) or (quit)"
   ;; Many clients look for this file to infer the port to connect to
   (let [port (:port server)
         port-file (io/file ".nrepl-port")]
-    (.deleteOnExit port-file)
+    (.deleteOnExit ^java.io.File port-file)
     (spit port-file port)))
 
 (defn start-server
