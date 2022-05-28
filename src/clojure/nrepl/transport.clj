@@ -165,12 +165,12 @@
             (.close out))))))))
 
 (defn tty-read-msg
-  "Invokes read on r, the provided java.io.PushbackReader.  The current namespace cns
-  and session id (provided as atoms) are used with the read result to return an eval op."
+  "Provides a fn that invokes read on r, the provided java.io.PushbackReader.  The current
+  namespace, cns, and session id (provided as atoms) are used with the read result to return an eval op."
   [r cns session-id]
-  (let [code (read {:read-cond :allow} r)]
-    (merge {:op "eval" :code [code] :ns @cns :id (str "eval" (uuid))}
-           (when @session-id {:session @session-id}))))
+  #(let [code (read {:read-cond :allow} r)]
+     (merge {:op "eval" :code [code] :ns @cns :id (str "eval" (uuid))}
+            (when @session-id {:session @session-id}))))
 
 (defn tty
   "Returns a Transport implementation suitable for serving an nREPL backend
@@ -184,7 +184,8 @@
                   (when newline? (.write w (int \newline)))
                   (.write w (str @cns "=> ")))
          session-id (atom nil)
-         read-seq (atom (cons {:op "clone"} (repeatedly tty-read-msg)))
+         read-msg (tty-read-msg r cns session-id)
+         read-seq (atom (cons {:op "clone"} (repeatedly read-msg)))
          write (fn [{:keys [out err value status ns new-session id]}]
                  (when new-session (reset! session-id new-session))
                  (when ns (reset! cns ns))

@@ -18,4 +18,4 @@
           cns (atom "user")
           session-id (atom nil)]
       (is (= ['(try nil (catch Throwable e nil))]
-             (:code (sut/tty-read-msg r cns session-id)))))))
+             (:code ((sut/tty-read-msg r cns session-id))))))))
