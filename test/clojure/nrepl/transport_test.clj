@@ -17,7 +17,7 @@
                  (java.io.PushbackReader.))
           out (ByteArrayOutputStream.)]
       (is (= ['(try nil (catch Throwable e nil))]
-             (let [FnTransport (sut/tty in out nil)]
-               (sut/recv FnTransport)     ;; :op "clone"
-               (-> (sut/recv FnTransport) ;; :op "eval"
+             (let [^nrepl.transport.FnTransport fn-transport (sut/tty in out nil)]
+               (.recv fn-transport)     ;; :op "clone"
+               (-> (.recv fn-transport) ;; :op "eval"
                    :code)))))))
