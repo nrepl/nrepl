@@ -12,10 +12,12 @@
 
 (deftest tty-read-conditional-test
   (testing "tty-read-msg is configured to read conditionals"
-    (let [r (-> "(try nil (catch #?(:clj Throwable :cljr Exception) e nil))"
-                (java.io.StringReader.)
-                (java.io.PushbackReader.))
-          cns (atom "user")
-          session-id (atom nil)]
+    (let [in (-> "(try nil (catch #?(:clj Throwable :cljr Exception) e nil))"
+                 (java.io.StringReader.)
+                 (java.io.PushbackReader.))
+          out (ByteArrayOutputStream.)]
       (is (= ['(try nil (catch Throwable e nil))]
-             (:code ((sut/tty-read-msg r cns session-id))))))))
+             (let [FnTransport (sut/tty in out nil)]
+               (.recv FnTransport)     ;; :op "clone"
+               (-> (.recv FnTransport) ;; :op "eval"
+                   :code)))))))
