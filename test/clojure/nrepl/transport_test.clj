@@ -18,6 +18,6 @@
           out (ByteArrayOutputStream.)]
       (is (= ['(try nil (catch Throwable e nil))]
              (let [FnTransport (sut/tty in out nil)]
-               (.recv FnTransport)     ;; :op "clone"
-               (-> (.recv FnTransport) ;; :op "eval"
+               (sut/recv FnTransport)     ;; :op "clone"
+               (-> (sut/recv FnTransport) ;; :op "eval"
                    :code)))))))
