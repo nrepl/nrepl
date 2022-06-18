@@ -176,7 +176,7 @@
                   (when newline? (.write w (int \newline)))
                   (.write w (str @cns "=> ")))
          session-id (atom nil)
-         read-msg #(let [code (read r)]
+         read-msg #(let [code (read {:read-cond :allow} r)]
                      (merge {:op "eval" :code [code] :ns @cns :id (str "eval" (uuid))}
                             (when @session-id {:session @session-id})))
          read-seq (atom (cons {:op "clone"} (repeatedly read-msg)))
