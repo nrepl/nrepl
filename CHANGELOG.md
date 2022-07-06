@@ -5,7 +5,7 @@
 ### New Features
 
 * [#279](https://github.com/nrepl/nrepl/pull/279): Allow reader conditionals for tty transport.
-* [#217](https://github.com/nrepl/nrepl/pull/270): Add nREPL client support for unix domain sockets
+* [#217](https://github.com/nrepl/nrepl/pull/270): Add nREPL client support for unix domain sockets.
 
 ## 0.9.0 (2021-12-12)
 
