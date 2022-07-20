@@ -80,9 +80,14 @@
 
 (def junix-address-of
   (when (= :junixsocket unix-domain-flavor)
-    (let [c (.getDeclaredConstructor junixsocket-address-class
-                                     (into-array Class [File]))]
-      (fn [path] (.newInstance c (into-array File [(File. ^String path)]))))))
+    (or (try (let [addr-of (.getDeclaredMethod junixsocket-address-class "of"
+                                               (into-array Class [File]))]
+               (fn [path] (.invoke addr-of nil (into-array File [(File. ^String path)]))))
+             (catch NoSuchMethodException _))
+        ;; For junixsocket versions < 2.4.0
+        (let [c (.getDeclaredConstructor junixsocket-address-class
+                                         (into-array Class [File]))]
+          (fn [path] (.newInstance c (into-array File [(File. ^String path)])))))))
 
 (defn unix-socket-address
   "Returns a filesystem socket address for the given path string."
