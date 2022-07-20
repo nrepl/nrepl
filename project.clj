@@ -41,7 +41,7 @@
                     :test-selectors {:default (complement :min-java-version)}
                     :aliases {"test" "test2junit"}}
              :junixsocket {:jvm-opts ["-Dnrepl.test.junixsocket=true"]
-                           :dependencies [[com.kohlschutter.junixsocket/junixsocket-core "2.3.2"]]}
+                           :dependencies [[com.kohlschutter.junixsocket/junixsocket-core "2.5.1" :extension "pom"]]}
              :clj-kondo {:dependencies [[clj-kondo "2022.01.15"]]}
              ;; Clojure versions matrix
              :provided {:dependencies [[org.clojure/clojure "1.10.2"]]}

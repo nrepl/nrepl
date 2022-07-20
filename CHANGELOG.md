@@ -6,6 +6,7 @@
 
 * [#279](https://github.com/nrepl/nrepl/pull/279): Allow reader conditionals for tty transport.
 * [#217](https://github.com/nrepl/nrepl/pull/270): Add nREPL client support for unix domain sockets.
+* [#281](https://github.com/nrepl/nrepl/pull/281): Make unix domain socket integration compatible with [junixsocket](https://kohlschutter.github.io/junixsocket/) versions >= 2.5.0.
 
 ## 0.9.0 (2021-12-12)
 
