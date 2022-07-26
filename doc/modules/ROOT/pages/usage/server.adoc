@@ -134,6 +134,79 @@ also start nREPL in headless mode:
 $ lein repl :headless
 ----
 
+This will start nREPL listening on `localhost` and a random port. You can specify the host and port explicitly like this:
+
+[source,shell]
+----
+$ lein repl :headless :host some-host :port 1234
+----
+
+Alternatively you bind nREPL to an Unix domain socket like this:
+
+[source,shell]
+----
+$ lein repl :headless :socket path/to/socket
+----
+
+NOTE: You'll need Leiningen 2.99 or newer for the command above to work.
+
+IMPORTANT: As noted earlier - using Unix sockets improves your security, as that's a connection that's guaranteed to be local. You should always be careful not to start nREPL on a public host and port.
+
+You can also specify a lot of nREPL's configuration options in the `:repl` profile in your `project.clj` file:
+
+[source,clojure]
+----
+;; Options to change the way the REPL behaves.
+:repl-options { ;; Specify the string to print when prompting for input.
+               ;; defaults to something like (fn [ns] (str *ns* "=> "))
+               :prompt (fn [ns] (str "your command for <" ns ">? " ))
+               ;; What to print when the repl session starts.
+               :welcome (println "Welcome to the magical world of the repl!")
+               ;; Specify the ns to start the REPL in (overrides :main in
+               ;; this case only)
+               :init-ns foo.bar
+               ;; This expression will run when first opening a REPL, in the
+               ;; namespace from :init-ns or :main if specified.
+               :init (println "here we are in" *ns*)
+               ;; Print stack traces on exceptions (highly recommended, but
+               ;; currently overwrites *1, *2, etc).
+               :caught clj-stacktrace.repl/pst+
+               ;; Skip's the default requires and printed help message.
+               :skip-default-init false
+               ;; Customize the socket the repl task listens on and
+               ;; attaches to.  Specify either a filesystem :socket
+               ;; (where the parent directory should be used to
+               ;; control access since POSIX doesn't require
+               ;; respecting the socket permissions):
+               :socket "/path/to/the/socket"
+               ;; or a network :host and/or :port
+               ;;   :host "0.0.0.0"
+               ;;   :port 4001
+               ;; If nREPL takes too long to load it may timeout,
+               ;; increase this to wait longer before timing out.
+               ;; Defaults to 30000 (30 seconds)
+               :timeout 40000
+               ;; nREPL server customization
+               ;; Only one of #{:nrepl-handler :nrepl-middleware}
+               ;; may be used at a time.
+               ;; Use a different server-side nREPL handler.
+               :nrepl-handler (nrepl.server/default-handler)
+               ;; Add server-side middleware to nREPL stack.
+               :nrepl-middleware [my.nrepl.thing/wrap-amazingness
+                                  ;; TODO: link to more detailed documentation.
+                                  ;; Middleware without appropriate metadata
+                                  ;; (see nrepl.middleware/set-descriptor!
+                                  ;; for details) will simply be appended to the stack
+                                  ;; of middleware (rather than ordered based on its
+                                  ;; expectations and requirements).
+                                  (fn [handler]
+                                    (fn [& args]
+                                      (prn :middle args)
+                                      (apply handler args)))]}
+----
+
+Refer to Leiningen's https://github.com/technomancy/leiningen/blob/main/sample.project.clj[sample.project.clj] for an up-to-date version of those options.
+
 [TIP]
 ====
 You can see the version of nREPL used by Leiningen in the message that it will display once the REPL
