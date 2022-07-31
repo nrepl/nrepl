@@ -39,6 +39,20 @@ nREPL is available in Clojars. Add this to your Leiningen
 You can override the version of nREPL supplied by Leiningen and Boot by
 adding nREPL as a dependency to your project.
 ====
+
+Or, add this to your Gradle project's `build.gradle`:
+
+[source, groovy]
+----
+dependencies {
+  // to use as a library in your code
+  implementation 'nrepl:nrepl:0.9.0'
+
+  // or to override the version of nREPL used by the clojureRepl task
+  nrepl 'nrepl:nrepl:0.9.0'
+}
+----
+
 Or, add this to your Maven project's `pom.xml`:
 
 [source,xml]
