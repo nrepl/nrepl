@@ -250,6 +250,21 @@ start nREPL in headless mode:
 $ boot repl -s wait
 ----
 
+=== Using Gradle
+
+The https://github.com/clojurephant/clojurephant[Clojurephant] plugin provides
+Clojure/ClojureScript support for Gradle, including built-in nREPL support:
+
+[source, shell]
+---
+$ ./gradlew clojureRepl
+---
+
+NOTE: Clojurephant will only start an nREPL server. You will need to use a separate
+nREPL client, such as your editor.
+
+See https://clojurephant.dev[Clojurephant's docs] for other configuration options.
+
 == Embedding nREPL
 
 All the above options are typically used during the development of an application.
