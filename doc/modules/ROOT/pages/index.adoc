@@ -1,5 +1,4 @@
-= nREPL
-:notitle:
+= {empty}
 
 image::logo-w1280.png[nREPL's logo]
 
