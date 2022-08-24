@@ -46,10 +46,9 @@ mind:
 * `[nrepl "0.4.0"]` changes the namespaces from `clojure.tools.nrepl.*` to
 `nrepl.*`.
 
-A later `1.0.0` release will include fixes for all previously-reported
-but languishing nREPL issues. Future releases will focus on supporting
+Future releases will focus on supporting
 the needs of the essential tools of the Clojure(Script) ecosystem
-(e.g. Leiningen, Boot, CIDER, Cursive).
+(e.g. Leiningen, CIDER, Cursive).
 
 ## FAQ
 

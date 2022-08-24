@@ -4,7 +4,7 @@ This file is _generated_ by #'nrepl.impl.docs/-main
 ////
 = Supported nREPL operations
 
-[small]#generated from a verbose 'describe' response (nREPL v0.9.0-SNAPSHOT)#
+[small]#generated from a verbose 'describe' response (nREPL v1.0.0)#
 
 == Operations
 
@@ -290,4 +290,3 @@ Optional parameters::
 Returns::
 * `:status` ``done``, once done, and ``error``, if there's any problems in loading a middleware
 * `:unresolved-middleware` List of middleware that could not be resolved
-

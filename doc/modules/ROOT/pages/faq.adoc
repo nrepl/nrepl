@@ -26,10 +26,12 @@ actively maintained and it doesn't behave like the Clojure nREPL.
 
 == When is nREPL 1.0 going to be released?
 
-There's no exact roadmap for the 1.0 release. Roughly speaking the idea is to
-release 1.0 once everything essential has been migrated from the legacy contrib nREPL
-to the new nREPL (e.g. lein, boot, key middleware) and we've cleaned up the most
-important tickets from our backlog.
+nREPL was released on August 24, 2022. This completes the promise we made
+way back in 2018 to address most languishing problems and get nREPL
+in a great shape.
+
+Future releases will focus on polishing the nREPL protocol and potentially
+adding some https://github.com/nrepl/nrepl/discussions/275[new features].
 
 == Are there any interesting nREPL extensions worth checking out?
 
