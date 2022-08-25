@@ -58,4 +58,4 @@ Bozhidar (a.k.a. Bug)
 * 28 Mar 2020 - nREPL 0.7 introduces a built-in EDN transport and the ability to sideload code dynamically into a running nREPL server.
 * 01 Aug 2020 - nREPL 0.8 introduces built-in `lookup` and `completions` ops. It's now possible to dynamically load/unload middleware.
 * 12 Dec 2021 - nREPL 0.9 introduces support for UNIX domain sockets.
-* 24 Aug 2021 - nREPL 1.0 is released!
+* 24 Aug 2022 - nREPL 1.0 is released!
