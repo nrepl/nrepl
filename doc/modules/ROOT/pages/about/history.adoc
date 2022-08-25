@@ -52,6 +52,8 @@ Bozhidar (a.k.a. Bug)
 * 13 Jan 2013 - 0.2.0 release brings a massive redesign.
 * Spring 2018 - Bozhidar Batsov, the author of CIDER, becomes nREPL's maintainer and vows to revive the project's development and realize its full potential.
 * 18 May 2018 - nREPL officially leaves Clojure contrib and version 0.3 is released with the updated coordinates `nrepl/nrepl`.
+* Summer 2018 - nREPL 0.4.x fixed a lot of small issues and improved a lot the built-in CLI interface.
+* 28 Nov 2018 - nREPL 0.5 introduces a configuration file (`.nrepl.edn`) and features many internal improvements.
 * 05 Feb 2019 - nREPL 0.6 introduces `nrepl.middleware.print` that replaces `nrepl.middleware.pr-values`.
 * 28 Mar 2020 - nREPL 0.7 introduces a built-in EDN transport and the ability to sideload code dynamically into a running nREPL server.
 * 01 Aug 2020 - nREPL 0.8 introduces built-in `lookup` and `completions` ops. It's now possible to dynamically load/unload middleware.
