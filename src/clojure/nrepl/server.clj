@@ -13,6 +13,7 @@
    nrepl.middleware.sideloader
    [nrepl.misc :refer [log noisy-future response-for returning]]
    [nrepl.socket :as socket :refer [inet-socket unix-server-socket]]
+   [nrepl.tls :as tls]
    [nrepl.transport :as t])
   (:import
    (java.net ServerSocket SocketException)
@@ -153,6 +154,10 @@
        Note that POSIX does not specify the effect (if any) of the
        socket file's permissions (and some systems have ignored them),
        so any access control should be arranged via parent directories.
+   * :tls? - specify `true` to use TLS.
+   * :tls-keys-file - A file that contains the certificates and private key.
+   * :tls-keys-str - A string that contains the certificates and private key.
+     :tls-keys-file or :tls-keys-str must be given if :tls? is true.
    * :handler — the nREPL message handler to use for each incoming connection;
        defaults to the result of `(default-handler)`
    * :transport-fn — a function that, given a java.net.Socket corresponding
@@ -171,15 +176,22 @@
    either via `stop-server`, (.close server), or automatically via `with-open`.
    The port that the server is open on is available in the :port slot of the
    server map (useful if the :port option is 0 or was left unspecified."
-  [& {:keys [port bind socket transport-fn handler ack-port greeting-fn]}]
-  (when (and socket (or port bind))
+  [& {:keys [port bind socket tls? tls-keys-str tls-keys-file transport-fn handler ack-port greeting-fn consume-exception]}]
+  (when (and socket (or port bind tls?))
     (let [msg "Cannot listen on both port and filesystem socket"]
       (log msg)
       (throw (ex-info msg {:nrepl/kind ::invalid-start-request}))))
+  (when (and tls? (not (or tls-keys-str tls-keys-file)))
+    (let [msg "tls? is true, but tls-keys-str nor tls-keys-file is present"]
+      (log msg)
+      (throw (ex-info msg {:nrepl/kind ::invalid-start-request}))))
   (let [transport-fn (or transport-fn t/bencode)
-        ss (if socket
-             (unix-server-socket socket)
-             (inet-socket bind port))
+        ss (cond socket
+                 (unix-server-socket socket)
+                 (or tls? (or tls-keys-str tls-keys-file))
+                 (inet-socket bind port (tls/ssl-context-or-throw tls-keys-str tls-keys-file))
+                 :else
+                 (inet-socket bind port))
         server (Server. ss
                         (when-not socket (.getLocalPort ^ServerSocket ss))
                         (atom #{})
@@ -189,8 +201,13 @@
     (noisy-future
      (try
        (accept-connection server)
-       (catch SocketException _
-         nil)))
+       (catch Throwable t
+         (cond consume-exception
+               (consume-exception t)
+               (instance? SocketException t)
+               nil
+               :else
+               (throw t)))))
     (when ack-port
       (ack/send-ack (:port server) ack-port transport-fn))
     server))

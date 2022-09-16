@@ -97,7 +97,9 @@
           :host "0.0.0.0"
           :socket nil
           :transport #'transport/bencode
-          :repl-fn #'nrepl.cmdline/run-repl}
+          :repl-fn #'nrepl.cmdline/run-repl
+          :tls-keys-str nil
+          :tls-keys-file nil}
          (cmd/connection-opts {:port "5000"
                                :host "0.0.0.0"
                                :transport nil}))))

@@ -4,6 +4,7 @@
   (:require
    clojure.set
    [nrepl.misc :refer [uuid]]
+   [nrepl.tls :as tls]
    [nrepl.transport :as transport]
    [nrepl.version :as version]
    [nrepl.socket :as socket]))
@@ -172,6 +173,11 @@
        combine-responses
        :value))
 
+(defn- tls-connect
+  [{:keys [port host transport-fn tls-keys-str tls-keys-file]}]
+  (let [tls-context (tls/ssl-context-or-throw tls-keys-str tls-keys-file)]
+    (transport-fn (tls/socket tls-context ^String host (int port) 10000))))
+
 (defn connect
   "Connects to a socket-based REPL at the given host (defaults to 127.0.0.1) and port
    or using the supplied socket, returning the Transport (by default `nrepl.transport/bencode`)
@@ -179,12 +185,17 @@
 
    Transports are most easily used with `client`, `client-session`, and
    `message`, depending on the semantics desired."
-  [& {:keys [port host socket transport-fn] :or {transport-fn transport/bencode
-                                                 host         "127.0.0.1"}}]
+  [& {:keys [port host socket transport-fn tls-keys-str tls-keys-file]
+      :or   {transport-fn transport/bencode
+             host         "127.0.0.1"}
+      :as   opts}]
   {:pre [transport-fn]}
   (cond
     socket
     (transport-fn (socket/unix-client-socket socket))
+
+    (or tls-keys-str tls-keys-file)
+    (tls-connect (assoc opts :transport-fn transport-fn :host host))
 
     (and host port)
     (transport-fn (java.net.Socket. ^String host (int port)))

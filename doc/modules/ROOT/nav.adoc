@@ -4,6 +4,7 @@
 * Usage
 ** xref:usage/server.adoc[Server]
 ** xref:usage/clients.adoc[Clients]
+** xref:usage/tls.adoc[TLS]
 ** xref:usage/misc.adoc[Misc]
 * Design
 ** xref:design/overview.adoc[Overview]

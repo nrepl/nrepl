@@ -6,6 +6,7 @@
   ["Usage" {}
    ["Server" {:file "doc/modules/ROOT/pages/usage/server.adoc"}]
    ["Client" {:file "doc/modules/ROOT/pages/usage/clients.adoc"}]
+   ["TLS" {:file "doc/modules/ROOT/pages/usage/tls.adoc"}]
    ["Misc" {:file "doc/modules/ROOT/pages/usage/misc.adoc"}]]
   ["Design" {}
    ["Overview" {:file "doc/modules/ROOT/pages/design/overview.adoc"}]

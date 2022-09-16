@@ -121,14 +121,14 @@ Exit:      Control+D or (exit) or (quit)"
 (defn- run-repl
   ([{:keys [server options]}]
    (let [{:keys [host port socket] :or {host "127.0.0.1"}} server
-         {:keys [transport] :or {transport #'transport/bencode}} options]
+         {:keys [transport tls-keys-file tls-keys-str] :or {transport #'transport/bencode}} options]
      (run-repl-with-transport
       (cond
         socket
         (nrepl/connect :socket socket :transport-fn transport)
 
         (and host port)
-        (nrepl/connect :host host :port port :transport-fn transport)
+        (nrepl/connect :host host :port port :transport-fn transport :tls-keys-file tls-keys-file :tls-keys-str tls-keys-str)
 
         :else
         (die "Must supply host/port or socket."))
@@ -362,14 +362,16 @@ Exit:      Control+D or (exit) or (quit)"
    :host (:host options)
    :socket (:socket options)
    :transport (options->transport options)
-   :repl-fn (options->repl-fn options)})
+   :repl-fn (options->repl-fn options)
+   :tls-keys-str (:tls-keys-str options)
+   :tls-keys-file (:tls-keys-file options)})
 
 (defn server-opts
   "Takes a map of nREPL CLI options
   Returns map of processed options to start an nREPL server."
   [options]
   (let [middleware (sanitize-middleware-option (:middleware options))
-        {:keys [host port socket transport]} (connection-opts options)]
+        {:keys [host port socket transport tls-keys-str tls-keys-file]} (connection-opts options)]
     (merge options
            {:host host
             :port port
@@ -377,6 +379,8 @@ Exit:      Control+D or (exit) or (quit)"
             :transport transport
             :bind (:bind options)
             :middleware middleware
+            :tls-keys-str tls-keys-str
+            :tls-keys-file tls-keys-file
             :handler (options->handler options middleware)
             :greeting (options->greeting options transport)
             :ack-port (options->ack-port options)
@@ -401,7 +405,8 @@ Exit:      Control+D or (exit) or (quit)"
                                 {:transport transport})})
       (repl-fn host port
                (merge (when (:color options) colored-output)
-                      {:transport transport})))))
+                      {:transport transport}
+                      (select-keys options [:tls-keys-str :tls-keys-file]))))))
 
 (defn connect-to-server
   "Connects to a running nREPL server and runs a REPL. Exits program when REPL
@@ -461,14 +466,16 @@ Exit:      Control+D or (exit) or (quit)"
   "Creates an nREPL server instance.
   Takes map of CLI options.
   Returns nREPL server map."
-  [{:keys [port bind socket handler transport greeting]}]
+  [{:keys [port bind socket handler transport greeting tls-keys-str tls-keys-file]}]
   (nrepl-server/start-server
    :port port
    :bind bind
    :socket socket
    :handler handler
    :transport-fn transport
-   :greeting-fn greeting))
+   :greeting-fn greeting
+   :tls-keys-str tls-keys-str
+   :tls-keys-file tls-keys-file))
 
 (defn dispatch-commands
   "Look at options to dispatch a specified command.
