@@ -1,20 +1,18 @@
 = TLS (Transport Layer Security) support
 
-The standard way to securely access a nREPL server has been
-to use `ssh` with port forwarding, and letting the nREPL server only bind to `127.0.0.1`.
+The standard way to securely access a remote nREPL server has been to use `ssh`
+with port forwarding, and letting the nREPL server only bind to `127.0.0.1`.
 This will secure and encrypt the communication.
 
-Sometimes however `ssh` may not be available, and thus you need to
-bind to `0.0.0.0` to make the nREPL server available.
+Sometimes however `ssh` may not be available, and thus you need to bind to
+`0.0.0.0` (or some specific public address) to make the nREPL server available.
 
-By using TLS, Transport Layer Security, the successor to
-Secure Sockets Layer (SSL), we can open a secure connection
-directly on the nREPL server. The server will require
-each client to authenticate itself.
+By using TLS, Transport Layer Security, the successor to Secure Sockets Layer
+(SSL), we can open a secure connection directly on the nREPL server. The server
+will require each client to authenticate itself.
 
-The following
-will show how to generate the certificates and keys required
-for running a TLS nREPL server and client.
+The following will show how to generate the certificates and keys required for
+running a TLS nREPL server and client.
 
 == Generating certificates and keys
 
@@ -126,9 +124,9 @@ INFO Started TLS proxy at 127.0.0.1:44063. Proxying to localhost:4001.
 
 This will write the locally opened port to the file `.nrepl-tls-proxy-port`.
 
-Then you may connect to localhost:<.nrepl-tls-proxy-port> using a plain (no TLS) TCP connection.
+Then you may connect to `localhost:<.nrepl-tls-proxy-port>` using a plain (no TLS) TCP connection.
 
-== Third party integration
+== Third-party clients integration
 
 Depending on how the socket is established, there are different
 approaches for using TLS as a client.
@@ -149,7 +147,8 @@ Then you can create the Socket using `nrepl.tls/socket`:
 ----
 
 == Credits
+
 This feature would not have been possible without
-[aphyr's](https://aphyr.com/) great work and in
-particular the [less-awful-ssl](https://github.com/aphyr/less-awful-ssl/) repository.
+https://aphyr.com/[Kyle Kingsbury's (a.k.a "Aphyr")] great work and in
+particular the https://github.com/aphyr/less-awful-ssl/[less-awful-ssl] project.
 Thanks!
