@@ -7,6 +7,7 @@
 (ns nrepl.tls
   "Interacting with the Java crypto APIs is one of the worst things you can do
   as a developer. I'm so sorry about all of this."
+  {:added "1.1"}
   (:require [clojure.java.io :as io :refer [input-stream]]
             [clojure.stacktrace]
             [clojure.string :as str])

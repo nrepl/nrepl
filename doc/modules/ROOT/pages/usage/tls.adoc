@@ -8,7 +8,7 @@ Sometimes however `ssh` may not be available, and thus you need to
 bind to `0.0.0.0` to make the nREPL server available.
 
 By using TLS, Transport Layer Security, the successor to
-Secure Sockets Layer (SSL), we can open a secure server
+Secure Sockets Layer (SSL), we can open a secure connection
 directly on the nREPL server. The server will require
 each client to authenticate itself.
 

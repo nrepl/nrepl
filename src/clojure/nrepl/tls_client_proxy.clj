@@ -7,6 +7,7 @@
 
   This will start a standalone program that will forward local TCP connections on 127.0.0.1:9001
   to the remote TLS TCP connection at 127.0.0.1:4001 using the key provided in the file `client.keys`."
+  {:added "1.1"}
   (:require [nrepl.tls :as tls]
             [nrepl.socket :as socket]
             [nrepl.cmdline :as cmdline])
