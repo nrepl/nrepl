@@ -179,7 +179,7 @@ Also note that updating the middleware stack may also destroy/re-create middlewa
 Occasionally it's be useful to inspect the communication between your client and
 nREPL. nREPL clients are generally encouraged to provide some nREPL message logging
 functionality, as that'd be beneficial for their end users as well. (e.g. CIDER
-has a `*nrepl-messages*` where you can monitor all requests and responses)
+has a `+*nrepl-messages*+` where you can monitor all requests and responses)
 
 There's also https://github.com/lambdaisland/nrepl-proxy[nrepl-proxy], that
 allows you to intercept the communication between an nREPL server and a client.
