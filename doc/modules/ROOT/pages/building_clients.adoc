@@ -174,6 +174,35 @@ simply reset the middleware stack, use this in conjunction with
 
 Also note that updating the middleware stack may also destroy/re-create middleware state. As an example, sideloading would need to be re-started. The impact on each middleware differs, however, as some of them, e.g. `session` holds their state globally.
 
+== Debugging the Communication with nREPL
+
+Occasionally it's be useful to inspect the communication between your client and
+nREPL. nREPL clients are generally encouraged to provide some nREPL message logging
+functionality, as that'd be beneficial for their end users as well. (e.g. CIDER
+has a `*nrepl-messages*` where you can monitor all requests and responses)
+
+There's also https://github.com/lambdaisland/nrepl-proxy[nrepl-proxy], that
+allows you to intercept the communication between an nREPL server and a client.
+Its output looks something like this:
+
+[source]
+----
+nil ---> 1 clone {}
+J <=== 1 #{:done} {:new-session "002914a8-db79-408d-807a-c5b3955ab6f9"}
+nil ---> 2 clone {}
+X <=== 2 #{:done} {:new-session "6a7e7b99-1b8e-4008-bbe5-ddddf46672a9"}
+Y ---> 3 describe {}
+Y <=== 3 #{:done} {:aux {:current-ns "user"}, :ops {:stdin {}, :add-middleware {}, :lookup {}, :swap-middleware {}, :sideloader-start {}, :ls-middleware {}, :close {}, :sideloader-provide {}, :load-file {}, :ls-sessions {}, :clone {}, :describe {}, :interrupt {}, :completions {}, :eval {}}, :versions {:clojure {:incremental 3, :major 1, :minor 10, :version-string "1.10.3"}, :java {:version-string "17"}, :nrepl {:incremental 0, :major 0, :minor 9, :version-string "0.9.0"}}}
+Y ---> 4 eval {:nrepl.middleware.print/buffer-size 4096, :file "*cider-repl lambdaisland/nrepl-proxy:localhost:5424(clj)*", :nrepl.middleware.print/quota 1048576, :nrepl.middleware.print/print "cider.nrepl.pprint/pprint", :column 1, :line 10, :code "(clojure.core/apply clojure.core/require clojure.main/repl-requires)", :inhibit-cider-middleware "true", :nrepl.middleware.print/stream? "1", :nrepl.middleware.print/options {:right-margin 80}}
+G ---> 5 eval {:code "(seq (.split (System/getProperty \"java.class.path\") \":\"))"}
+Y <--- 4 #{:nrepl.middleware.print/error} #:nrepl.middleware.print{:error "Couldn't resolve print-var cider.nrepl.pprint/pprint"}
+Y <--- 4 #{} {:value "nil"}
+Y <--- 4 #{} {:ns "user"}
+Y <=== 4 #{:done} {}
+----
+
+You can read more on the topic https://github.com/nrepl/nrepl/issues/85[here].
+
 == Additional Resources
 
 * https://mauricio.szabo.link/blog/2020/04/04/implementing-a-nrepl-client/
