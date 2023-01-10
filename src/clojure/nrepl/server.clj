@@ -197,17 +197,23 @@
                         (atom #{})
                         transport-fn
                         greeting-fn
-                        (or handler (default-handler)))]
-    (noisy-future
-     (try
-       (accept-connection server)
-       (catch Throwable t
-         (cond consume-exception
-               (consume-exception t)
-               (instance? SocketException t)
-               nil
-               :else
-               (throw t)))))
+                        (or handler (default-handler)))
+        accept-connections (fn accept-connections []
+                             (noisy-future
+                              (try
+                                (accept-connection server)
+                                (catch Throwable t
+                                  (cond consume-exception
+                                        (do (consume-exception t)
+                                            (accept-connections))
+                                        (instance? SocketException t)
+                                        nil
+                                        :else
+                                        (throw t))))))]
+    (try
+      (accept-connections)
+      (catch SocketException _
+        nil))
     (when ack-port
       (ack/send-ack (:port server) ack-port transport-fn))
     server))

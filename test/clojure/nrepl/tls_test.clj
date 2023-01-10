@@ -70,6 +70,37 @@
                            :value)))
           (is (instance? SSLHandshakeException @exception)))))))
 
+(deftest bad-keys-then-good
+  (let [[server-keys good-client-keys] (gen-key-pair)
+        [_ bad-client-keys] (gen-key-pair)
+        exception (promise)]
+    (with-open [server (server/start-server :tls? true
+                                            :tls-keys-str server-keys
+                                            :consume-exception (partial deliver exception))]
+      (with-open [transport (tls-connect {:tls-keys-str bad-client-keys
+                                          :host         "127.0.0.1"
+                                          :port         (:port server)
+                                          :transport-fn transport/bencode})]
+        (let [client (nrepl/client transport 1000)]
+          (is (thrown? SocketException
+                       (-> (nrepl/message client {:op   "eval"
+                                                  :code "(+ 1 1)"})
+                           first
+                           nrepl/read-response-value
+                           :value)))
+          (is (instance? SSLHandshakeException @exception))))
+      (with-open [transport (tls-connect {:tls-keys-str good-client-keys
+                                          :host         "127.0.0.1"
+                                          :port         (:port server)
+                                          :transport-fn transport/bencode})]
+        (let [client (nrepl/client transport 1000)]
+          (is (= 2
+                 (-> (nrepl/message client {:op   "eval"
+                                            :code "(+ 1 1)"})
+                     first
+                     nrepl/read-response-value
+                     :value))))))))
+
 (deftest regular-connection-times-out
   (let [[server-keys _] (gen-key-pair)
         exception (promise)]
