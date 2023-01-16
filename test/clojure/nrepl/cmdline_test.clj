@@ -152,7 +152,7 @@
                                   "nrepl.main"
                                   "--ack" (str ack-port)
                                   "--transport" (var->str *transport-fn*)])
-        acked-port (ack/wait-for-ack 10000)]
+        acked-port (ack/wait-for-ack 100000)]
     (try
       (is acked-port "Timed out waiting for ack")
       (when acked-port
@@ -182,7 +182,7 @@
                                   "--port" (str free-port)
                                   "--ack" (str ack-port)
                                   "--transport" (var->str *transport-fn*)])
-        acked-port (ack/wait-for-ack 10000)]
+        acked-port (ack/wait-for-ack 100000)]
     (try
       (is (= acked-port free-port))
       (finally

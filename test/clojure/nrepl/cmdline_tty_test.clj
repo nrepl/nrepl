@@ -6,6 +6,7 @@
             [nrepl.server :as server]
             [nrepl.transport :as transport])
   (:import [com.hypirion.io ClosingPipe Pipe]
+           [org.apache.commons.net.telnet TelnetClient]
            nrepl.server.Server))
 
 (defn- sh
@@ -24,6 +25,18 @@
             pump-in (ClosingPipe. System/in in)]
         proc))))
 
+(defn- attempt-connection [client host port timeout-ms]
+  (loop [n (/ timeout-ms 500)]
+    (or (try
+          (.connect ^TelnetClient client ^String host ^int port)
+          client
+          (catch java.net.ConnectException ex
+            (when-not (pos? n)
+              (throw ex))))
+        (do
+          (Thread/sleep 500)
+          (recur (dec n))))))
+
 (deftest ^:slow tty-server
   (let [^int free-port (with-open [ss (java.net.ServerSocket.)]
                          (.bind ss nil)
@@ -34,11 +47,9 @@
                                   "nrepl.main"
                                   "--port" (str free-port)
                                   "--transport" "nrepl.transport/tty"])]
-    ;; We can't use ack, so Wait for server to come up before trying to connect.
-    (Thread/sleep 10000)
     (try
-      (let [c    (org.apache.commons.net.telnet.TelnetClient.)
-            _    (.connect c "localhost" free-port)
+      (let [c    (doto (TelnetClient.)
+                   (attempt-connection "localhost" free-port 100000))
             out  (java.io.PrintStream. (.getOutputStream c))
             br   (java.io.BufferedReader. (java.io.InputStreamReader. (.getInputStream c)))
             _    (doto out
