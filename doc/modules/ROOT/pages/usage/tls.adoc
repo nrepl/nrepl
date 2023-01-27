@@ -118,7 +118,7 @@ nil
 
 [source,shell]
 ----
-$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.0.0"}}}' -m nrepl.cmdline --connect --host 127.0.0.1 --port 4001 --tls-keys-file client.keys
+$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.0.0"}}}' -M -m nrepl.cmdline --connect --host 127.0.0.1 --port 4001 --tls-keys-file client.keys
 ----
 
 == Use the TLS TCP proxy
