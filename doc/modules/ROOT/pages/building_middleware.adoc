@@ -83,7 +83,7 @@ requests or responses.
 
 It's important to make sure you don't let some exceptions slide, as some clients might block
 when waiting for a response (as some clients will try to handle nREPL messages in a synchronous
-fashion due to various limitation).
+fashion due to various limitations).
 
 Notice that you can have multiple statuses for one response - e.g. a combination of `:done` and
 some error status.

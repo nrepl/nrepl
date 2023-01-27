@@ -22,7 +22,7 @@ NOTE: As of 2021, Discord is Bozhidar's preferred chat for nREPL.
 == Slack
 
 We've got an official https://clojurians.slack.com/[Clojurians Slack] -
-`#nrepl`. This is usually be best way to get a handle on some of the maintainers
+`#nrepl`. This is usually the best way to get a handle on some of the maintainers
 and interact with other nREPL users.
 
 There's also another channel named `#cider`, where often people are discussing
