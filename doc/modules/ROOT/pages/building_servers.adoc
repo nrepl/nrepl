@@ -56,7 +56,7 @@ CIDER provides a https://docs.cider.mx/cider/troubleshooting.html#debugging-the-
 to mess up dependencies in the user space.
 * Provide some information in the `describe` op that makes it easy for clients to recognize your server.
 * Provide streaming results to the clients (e.g. values and output), as an option. This generally means that
-results are split over several message, so that clients would get feedback faster.
+results are split over several messages, so that clients would get feedback faster.
 * Provide some means for the clients to configure (pretty-)printing of results.
 
 == Extending the Core Protocol
