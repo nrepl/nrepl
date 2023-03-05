@@ -97,7 +97,7 @@ NOTE: The `openssl` curve parameters do not exactly match the ones used by the `
 
 == Starting the nREPL server
 
-Here's how you can start nREPL programatically with TLS enabled:
+Here's how you can start nREPL programmatically with TLS enabled:
 
 [source,clojure]
 ----

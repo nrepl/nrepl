@@ -11,7 +11,7 @@
   :javac-options ["-target" "8" "-source" "8"]
 
   :aliases {"bump-version" ["change" "version" "leiningen.release/bump-version"]
-            "test-all" ["with-profile" "+1.7:+1.8:+1.9:+1.10:+fastlane:+junixsocket" "test"]
+            "test-all" ["with-profile" "+1.7:+1.8:+1.9:+1.10:1.11:+fastlane:+junixsocket" "test"]
             "docs" ["with-profile" "+maint" "run" "-m" "nrepl.impl.docs" "--file"
                     ~(clojure.java.io/as-relative-path
                       (clojure.java.io/file "doc" "modules" "ROOT" "pages" "ops.adoc"))]
@@ -46,15 +46,17 @@
                            :dependencies [[com.kohlschutter.junixsocket/junixsocket-core "2.5.1" :extension "pom"]]}
              :clj-kondo {:dependencies [[clj-kondo "2022.01.15"]]}
              ;; Clojure versions matrix
-             :provided {:dependencies [[org.clojure/clojure "1.10.2"]]}
+             :provided {:dependencies [[org.clojure/clojure "1.11.1"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :1.10 {:dependencies [[org.clojure/clojure "1.10.2"]]
                     :source-paths ["src/spec"]}
+             :1.11 {:dependencies [[org.clojure/clojure "1.11.1"]]
+                    :source-paths ["src/spec"]}
              :master {:repositories [["snapshots"
                                       "https://oss.sonatype.org/content/repositories/snapshots"]]
-                      :dependencies [[org.clojure/clojure "1.11.0-master-SNAPSHOT"]]}
+                      :dependencies [[org.clojure/clojure "1.12.0-master-SNAPSHOT"]]}
 
              ;;; Maintenance profile
              ;;

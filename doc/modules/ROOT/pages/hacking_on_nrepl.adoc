@@ -113,11 +113,11 @@ $ lein test-all
 === Running tests on CI
 
 For ease of use/consistency with other nREPL projects, tests are ran on CI
-environments using a `Makefile`, with the command:
+environments using a https://github.com/babashka/babashka[babashka], with the command:
 
 [source,shell]
 ----
-$ make test
+$ bb test
 ----
 
 this will check the `VERSION` environmental variable, and switch between Kaocha
