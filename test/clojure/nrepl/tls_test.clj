@@ -60,7 +60,16 @@
       (with-open [transport (tls-connect {:tls-keys-str client-keys
                                           :host         "127.0.0.1"
                                           :port         (:port server)
-                                          :transport-fn transport/bencode})]
+                                          :transport-fn (fn [& args]
+                                                          ;; there appears to be
+                                                          ;; a (race?) condition
+                                                          ;; that the
+                                                          ;; transport-fn could
+                                                          ;; also be called.
+                                                          (try
+                                                            (apply transport/bencode args)
+                                                            (catch Exception e
+                                                              (is (instance? SSLHandshakeException e)))))})]
         (let [client (nrepl/client transport 1000)]
           (is (thrown? SocketException
                        (-> (nrepl/message client {:op   "eval"
