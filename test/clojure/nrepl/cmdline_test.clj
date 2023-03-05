@@ -11,6 +11,7 @@
    [nrepl.core-test :refer [*server* *transport-fn* transport-fns]]
    [nrepl.server :as server]
    [nrepl.socket :refer [find-class unix-domain-flavor unix-socket-address]]
+   [nrepl.test-helpers :as th]
    [nrepl.transport :as transport])
   (:import
    (com.hypirion.io Pipe ClosingPipe)
@@ -64,13 +65,14 @@
   (let [proc (.exec (Runtime/getRuntime) ^"[Ljava.lang.String;" (into-array String cmd))]
     (.addShutdownHook (Runtime/getRuntime)
                       (Thread. (fn [] (.destroy proc))))
-    (with-open [out (.getInputStream proc)
-                err (.getErrorStream proc)
-                in (.getOutputStream proc)]
-      (let [pump-out (doto (Pipe. out System/out) .start)
-            pump-err (doto (Pipe. err System/err) .start)
-            pump-in (ClosingPipe. System/in in)]
-        proc))))
+    (future (with-open [out (.getInputStream proc)
+                        err (.getErrorStream proc)
+                        in (.getOutputStream proc)]
+              (let [_pump-out (doto (Pipe. out System/out) .start)
+                    _pump-err (doto (Pipe. err System/err) .start)
+                    _pump-in (ClosingPipe. System/in in)]
+                (.waitFor proc))))
+    proc))
 
 (deftest repl-intro
   (is (re-find #"nREPL" (cmd/repl-intro))))
