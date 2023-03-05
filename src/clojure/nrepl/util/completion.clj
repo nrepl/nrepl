@@ -143,29 +143,58 @@
        (map #(.getName ^Member %))
        (distinct)))
 
-(defn path-files [^String path]
+(defn path-files
+  "Returns a list of relative paths to the files under PATH. All relative paths
+  are returned with '/' as their subpath separator.
+
+  When PATH ends with
+
+  - `.jar` the relative paths to the files in the jar are returned instead.
+
+  - `/*` only examine jar files in the PATH."
+  [^String path]
   (cond (.endsWith path "/*")
         (for [^File jar (.listFiles (File. path)) :when (.endsWith ^String (.getName jar) ".jar")
               file (path-files (.getPath jar))]
           file)
 
+        ;; jar files entries are returned with '/' as their default separator
+        ;; across all architectures.
         (.endsWith path ".jar")
         (try (for [^JarEntry entry (enumeration-seq (.entries (JarFile. path)))]
                (.getName entry))
              (catch Exception _e))
 
         :else
-        (for [^File file (file-seq (File. path))]
-          (.replace ^String (.getPath file) path ""))))
+        ;; use `java.net.URI/relativize`. to return with '/' as the subpath
+        ;; separator.
+        (let [dir (File. path)
+              dir-uri (.toURI dir)]
+          (for [^File file (file-seq  dir)]
+            (-> (.relativize dir-uri (.toURI file))
+                .getPath
+                str)))))
+
+(def java-class-paths-properties
+  "The java properties to look for locating java classes."
+  ["sun.boot.class.path" "java.ext.dirs" "java.class.path"])
 
 (def classfiles
-  (for [prop (filter #(System/getProperty %1) ["sun.boot.class.path" "java.ext.dirs" "java.class.path"])
+  "The list of all subpaths paths to `.class` files relative to the
+  paths found in the `java-class-paths-properties` values.
+
+  Relative paths:
+
+  - containing `__` are filtered out.
+
+  - use '/' as their subpath separator."
+  (for [prop (filter #(System/getProperty %1) java-class-paths-properties)
         path (.split (System/getProperty prop) File/pathSeparator)
         ^String file (path-files path) :when (and (.endsWith file ".class") (not (.contains file "__")))]
     file))
 
 (defn- classname [^String file]
-  (.. file (replace ".class" "") (replace File/separator ".")))
+  (.. file (replace ".class" "") (replace "/" ".")))
 
 (def top-level-classes
   ;; Avoid using future directly on top-level for graalvm compatibility
