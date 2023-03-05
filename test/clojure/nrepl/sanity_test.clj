@@ -6,6 +6,7 @@
    [nrepl.middleware.print :as print]
    [nrepl.middleware.session :as session]
    [nrepl.misc :as misc]
+   [nrepl.test-helpers :as th]
    [nrepl.transport :as transport :refer [piped-transports]])
   (:import
    (java.util.concurrent BlockingQueue LinkedBlockingQueue TimeUnit)))
@@ -98,6 +99,6 @@
 
     (is (= [(str "println" (System/getProperty "line.separator"))
             "abcdefghijm "
-            "\n#{}\n"]
+            (th/newline->sys "\n#{}\n")]
            (->> (nrepl/response-seq local 0)
                 (map :out))))))
