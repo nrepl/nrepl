@@ -17,13 +17,14 @@
   (let [proc (.exec (Runtime/getRuntime) ^"[Ljava.lang.String;" (into-array String cmd))]
     (.addShutdownHook (Runtime/getRuntime)
                       (Thread. (fn [] (.destroy proc))))
-    (with-open [out (.getInputStream proc)
-                err (.getErrorStream proc)
-                in (.getOutputStream proc)]
-      (let [pump-out (doto (Pipe. out System/out) .start)
-            pump-err (doto (Pipe. err System/err) .start)
-            pump-in (ClosingPipe. System/in in)]
-        proc))))
+    (future (with-open [out (.getInputStream proc)
+                        err (.getErrorStream proc)
+                        in (.getOutputStream proc)]
+              (let [_pump-out (doto (Pipe. out System/out) .start)
+                    _pump-err (doto (Pipe. err System/err) .start)
+                    _pump-in (ClosingPipe. System/in in)]
+                (.waitFor proc))))
+    proc))
 
 (defn- attempt-connection [client host port timeout-ms]
   (loop [n (/ timeout-ms 500)]
