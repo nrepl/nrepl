@@ -8,6 +8,9 @@ version: 2.1
 
 # Default settings for executors
 
+orbs:
+  win: circleci/windows@5.0.0
+
 defaults: &defaults
   working_directory: ~/repo
   environment:
@@ -34,8 +37,6 @@ executors:
 # Runs a given set of steps, with some standard pre- and post-
 # steps, including restoring of cache, saving of cache.
 #
-# we also install `make` here.
-#
 # Adapted from https://github.com/lambdaisland/meta/blob/master/circleci/clojure_orb.yml
 
 commands:
@@ -60,9 +61,11 @@ commands:
         default: "1"
     steps:
       - run:
-          name: Install make
+          name: Install babashka latest
           command: |
-            sudo apt-get install make
+            bash <(curl -s https://raw.githubusercontent.com/borkdude/babashka/master/install) --dir ~
+            sudo mv ~/bb /usr/local/bin/bb
+
       - run:
           name: Generate Cache Checksum
           command: |
@@ -79,6 +82,30 @@ commands:
             - .cpcache
             - repo
           key: clojure-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
+
+  setup-windows:
+    steps:
+      - checkout
+      - run:
+          name: Install scoop latest
+          command: |
+            iwr get.scoop.sh -outfile 'install.ps1'                                          ; if(-not $?){exit 9}
+            .\install.ps1 -RunAsAdmin                                                        ; if(-not $?){exit 9}
+            scoop bucket add scoop-clojure https://github.com/littleli/scoop-clojure         ; if(-not $?){exit 9}
+            scoop bucket add extras                                                          ; if(-not $?){exit 9}
+            New-Item -Path $PROFILE -ItemType "file" -Force                                  ; if(-not $?){exit 9}
+            add-content $PROFILE $("`$env:PATH=""$(Resolve-Path ~\scoop\shims);`$env:PATH"""); if(-not $?){exit 9}
+            Write-host $env:PATH                                                             ; if(-not $?){exit 9}
+
+      - run:
+          name: Install babashka latest
+          command:
+            scoop install babashka
+
+      - run:
+          name: Install lein latest
+          command:
+            scoop install leiningen
 
 ######################################################################
 #
@@ -128,123 +155,162 @@ jobs:
           steps:
             - run:
                 name: Running tests
-                command: make test
+                command: bb test
             - store_test_results:
                 path: test-results
 
+  test_code_win_java_system:
+    description: |
+      Run tests on MS-Windows using the system's JDK version and given
+      CLOJURE_VERSION.
+    executor: win/default
+    parameters:
+      clojure_version:
+        description: Version of Clojure to test against
+        type: string
+    steps:
+      - setup-windows
+      - run:
+          name: run tests
+          command: |
+            java -version; if(-not $?){exit 9}
+            bb test      ; if(-not $?){exit 9}
+
 # The ci-test-matrix does the following:
 #
-# - run tests against the target matrix
-#   - Java 8, 11 and 15
-#   - Clojure 1.7, 1.8, 1.9, 1.10, master
-# - linter, eastwood and cljfmt
-# - verifies cljdoc config
-# - runs code coverage report
+# - Linux
+#   - run tests against the target matrix
+#     - Java 8, 11 and 15
+#     - Clojure 1.7, 1.8, 1.9, 1.10, 1.11 master
+#   - linter, eastwood and cljfmt
+#   - verifies cljdoc config
+#   - runs code coverage report
+# - MS-Windows
+#   - run tests against installed java version and Clojure 1.11
 
 workflows:
   version: 2.1
   ci-test-matrix:
     jobs:
       - test_code:
-          name: Java 8, Clojure 1.7
+          name: Lnx, Java 8, Clj 1.7
           clojure_version: "1.7"
           jdk_version: openjdk8
       - test_code:
-          name: Java 8, Clojure 1.8
+          name: Lnx, Java 8, Clj 1.8
           clojure_version: "1.8"
           jdk_version: openjdk8
       - test_code:
-          name: Java 8, Clojure 1.9
+          name: Lnx, Java 8, Clj 1.9
           clojure_version: "1.9"
           jdk_version: openjdk8
       - test_code:
-          name: Java 8, Clojure 1.10
+          name: Lnx, Java 8, Clj 1.10
           clojure_version: "1.10"
           jdk_version: openjdk8
       - test_code:
-          name: Java 8, Clojure master
+          name: Lnx, Java 8, Clj 1.11
+          clojure_version: "1.11"
+          jdk_version: openjdk8
+      - test_code:
+          name: Lnx, Java 8, Clj master
           clojure_version: "master"
           jdk_version: openjdk8
       - test_code:
-          name: Java 11, Clojure 1.7
+          name: Lnx, Java 11, Clj 1.7
           clojure_version: "1.7"
           jdk_version: openjdk11
       - test_code:
-          name: Java 11, Clojure 1.8
+          name: Lnx, Java 11, Clj 1.8
           clojure_version: "1.8"
           jdk_version: openjdk11
       - test_code:
-          name: Java 11, Clojure 1.9
+          name: Lnx, Java 11, Clj 1.9
           clojure_version: "1.9"
           jdk_version: openjdk11
       - test_code:
-          name: Java 11, Clojure 1.10
+          name: Lnx, Java 11, Clj 1.10
           clojure_version: "1.10"
           jdk_version: openjdk11
       - test_code:
-          name: Java 11, Clojure master
+          name: Lnx, Java 11, Clj 1.11
+          clojure_version: "1.11"
+          jdk_version: openjdk11
+      - test_code:
+          name: Lnx, Java 11, Clj master
           clojure_version: "master"
           jdk_version: openjdk11
       - test_code:
-          name: Java 17, Clojure 1.7
+          name: Lnx, Java 17, Clj 1.7
           clojure_version: "1.7"
           jdk_version: openjdk17
       - test_code:
-          name: Java 17, Clojure 1.8
+          name: Lnx, Java 17, Clj 1.8
           clojure_version: "1.8"
           jdk_version: openjdk17
       - test_code:
-          name: Java 17, Clojure 1.9
+          name: Lnx, Java 17, Clj 1.9
           clojure_version: "1.9"
           jdk_version: openjdk17
       - test_code:
-          name: Java 17, Clojure 1.10
+          name: Lnx, Java 17, Clj 1.10
           clojure_version: "1.10"
           jdk_version: openjdk17
       - test_code:
-          name: Java 17, Clojure master
+          name: Lnx, Java 17, Clj 1.11
+          clojure_version: "1.11"
+          jdk_version: openjdk17
+      - test_code:
+          name: Lnx, Java 17, Clj master
           clojure_version: "master"
           jdk_version: openjdk17
       # Add back in when Java 18 is released
       # - test_code:
-      #     name: Java 18, Clojure 1.7
+      #     name: Lnx, Java 18, Clj 1.7
       #     clojure_version: "1.7"
       #     jdk_version: openjdk18
       # - test_code:
-      #     name: Java 18, Clojure 1.8
+      #     name: Lnx, Java 18, Clj 1.8
       #     clojure_version: "1.8"
       #     jdk_version: openjdk18
       # - test_code:
-      #     name: Java 18, Clojure 1.9
+      #     name: Lnx, Java 18, Clj 1.9
       #     clojure_version: "1.9"
       #     jdk_version: openjdk18
       # - test_code:
-      #     name: Java 18, Clojure 1.10
+      #     name: Lnx, Java 18, Clj 1.10
       #     clojure_version: "1.10"
       #     jdk_version: openjdk18
       # - test_code:
-      #     name: Java 18, Clojure master
+      #     name: Lnx, Java 18, Clj 1.11
+      #     clojure_version: "1.11"
+      #     jdk_version: openjdk18
+      # - test_code:
+      #     name: Lnx, Java 18, Clj master
       #     clojure_version: "master"
       #     jdk_version: openjdk18
+      - test_code_win_java_system:
+          name: Win, Java sys, Clj 1.11
+          clojure_version: "1.11"
       - util_job:
           name: Code Linting
           steps:
             - run:
                 name: Running Eastwood
                 command: |
-                  make eastwood
+                  bb eastwood
             - run:
                 name: Running cljfmt
                 command: |
-                  make cljfmt
+                  bb cljfmt
             - run:
                 name: Running clj-kondo
                 command: |
-                  make kondo
+                  bb kondo
       - util_job:
           name: Checking Cljdoc
           steps:
             - run:
                 name: Verifying Cljdoc
                 command: |
-                  make verify_cljdoc
+                  bb verify_cljdoc

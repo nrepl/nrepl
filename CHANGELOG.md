@@ -6,6 +6,10 @@
 
 * [#266](https://github.com/nrepl/nrepl/pull/266): Add TLS support.
 
+### Bugs fixed
+
+* [#291](https://github.com/nrepl/nrepl/pull/291): Fix issue with completion middleware not returning values for local class files, or .jar files on windows.
+
 ## 1.0.0 (2022-08-24)
 
 ### New Features
