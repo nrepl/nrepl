@@ -22,6 +22,7 @@
    [nrepl.middleware.sideloader :as sideloader]
    [nrepl.misc :refer [uuid]]
    [nrepl.server :as server]
+   [nrepl.test-helpers :as th]
    [nrepl.transport :as transport])
   (:import
    (java.io File Writer)
@@ -232,19 +233,19 @@
     (is (not (session-alive?)))))
 
 (def-repl-test separate-value-from-*out*
-  (is (= {:value [nil] :out "5\n"}
+  (is (= {:value [nil] :out (th/newline->sys "5\n")}
          (-> (map read-response-value (repl-eval client "(println 5)"))
              combine-responses
              (select-keys [:value :out])))))
 
 (def-repl-test sessionless-*out*
-  (is (= "5\n:foo\n"
+  (is (= (th/newline->sys "5\n:foo\n")
          (-> (repl-eval client "(println 5)(println :foo)")
              combine-responses
              :out))))
 
 (def-repl-test session-*out*
-  (is (= "5\n:foo\n"
+  (is (= (th/newline->sys "5\n:foo\n")
          (-> (repl-eval session "(println 5)(println :foo)")
              combine-responses
              :out))))
@@ -257,7 +258,7 @@
                       (foo))
         results (-> (repl-eval session (pr-str expression))
                     combine-responses)]
-    (is (= "1\n" (:out results)))
+    (is (= (th/newline->sys "1\n") (:out results)))
     (is (re-seq #"oops" (:err results)))))
 
 (def-repl-test cross-transport-*out*
@@ -267,7 +268,7 @@
                                     :transport-fn *transport-fn*)]
       (transport/send transport2 {:op "eval" :code "(println :foo)"
                                   "session" sid})
-      (is (= [{:out ":foo\n"}
+      (is (= [{:out (th/newline->sys ":foo\n")}
               {:ns "user" :value "nil"}
               {:status #{:done}}]
              (->> (repeatedly #(transport/recv transport2 100))
@@ -276,13 +277,13 @@
 
 (def-repl-test streaming-out
   (is (= (for [x (range 10)]
-           (str x \newline))
+           (str x th/sys-newline))
          (->> (repl-eval client "(dotimes [x 10] (println x))")
               (map :out)
               (remove nil?)))))
 
 (def-repl-test session-*out*-writer-length-translation
-  (is (= "#inst \"2013-02-11T12:13:44.000+00:00\"\n"
+  (is (= (th/newline->sys "#inst \"2013-02-11T12:13:44.000+00:00\"\n")
          (-> (repl-eval session
                         (code (println (doto (java.util.GregorianCalendar. 2013 1 11 12 13 44)
                                          (.setTimeZone (java.util.TimeZone/getTimeZone "GMT"))))))
@@ -316,9 +317,10 @@
               :value))))
 
 (def-repl-test ensure-whitespace-prints
-  (is (= " \t \n \f \n" (->> (repl-eval client "(println \" \t \n \f \")")
-                             combine-responses
-                             :out))))
+  (is (= (str " \t \n \f " th/sys-newline)
+         (->> (repl-eval client "(println \" \t \n \f \")")
+              combine-responses
+              :out))))
 
 (def-repl-test streamed-printing
   (testing "multiple forms"
@@ -340,8 +342,8 @@
                                                            (map println)))
                                           ::middleware.print/stream? 1})
                          (mapv clean-response))]
-      (is (= [{:out "0\n"}
-              {:out "1\n"}
+      (is (= [{:out (th/newline->sys "0\n")}
+              {:out (th/newline->sys "1\n")}
               {:value "(nil nil)"}
               {:ns "user"}
               {:status #{:done}}]
@@ -450,7 +452,7 @@
              :status))))
 
 (def-repl-test proper-response-ordering
-  (is (= [[nil "100\n"] ; printed number
+  (is (= [[nil (th/newline->sys "100\n")] ; printed number
           ["nil" nil] ; return val from println
           ["42" nil]  ; return val from `42`
           [nil nil]]  ; :done
@@ -529,7 +531,7 @@
         [ids ids2] (map #(set (map :id %)) results)
         [out1 out2] (map #(-> % combine-responses :out) results)]
     (is (empty? (clojure.set/intersection ids ids2)))
-    (is (= ":foo\n" out1 out2))))
+    (is (= (th/newline->sys ":foo\n") out1 out2))))
 
 (def-repl-test read-timeout
   (is (nil? (repl-values timeout-session "(Thread/sleep 1100) :ok")))
@@ -649,7 +651,7 @@
                                            (session {:op "stdin" :stdin "(1 2 3)"}))
                                          resp)))))
 
-  (session {:op "stdin" :stdin "a\nb\nc\n"})
+  (session {:op "stdin" :stdin (th/newline->sys "a\nb\nc\n")})
   (doseq [x "abc"]
     (is (= [(str x)] (repl-values session "(read-line)")))))
 
@@ -664,17 +666,17 @@
   (is (= '(:ohai) (response-values (for [resp (repl-eval session "(read)")]
                                      (do
                                        (when (-> resp clean-response :status (contains? :need-input))
-                                         (session {:op "stdin" :stdin ":ohai\n"}))
+                                         (session {:op "stdin" :stdin (th/newline->sys ":ohai\n")}))
                                        resp)))))
 
-  (session {:op "stdin" :stdin "a\n"})
+  (session {:op "stdin" :stdin (th/newline->sys "a\n")})
   (is (= ["a"] (repl-values session "(read-line)"))))
 
 (def-repl-test request-multiple-read-with-buffered-newline-*in*
   (is (= '(:ohai) (response-values (for [resp (repl-eval session "(read)")]
                                      (do
                                        (when (-> resp clean-response :status (contains? :need-input))
-                                         (session {:op "stdin" :stdin ":ohai\na\n"}))
+                                         (session {:op "stdin" :stdin (th/newline->sys ":ohai\na\n")}))
                                        resp)))))
 
   (is (= ["a"] (repl-values session "(read-line)"))))
@@ -683,7 +685,7 @@
   (is (= '(:ohai) (response-values (for [resp (repl-eval session "(read)")]
                                      (do
                                        (when (-> resp clean-response :status (contains? :need-input))
-                                         (session {:op "stdin" :stdin ":ohai :kthxbai\n"}))
+                                         (session {:op "stdin" :stdin (th/newline->sys ":ohai :kthxbai\n")}))
                                        resp)))))
 
   (is (= [" :kthxbai"] (repl-values session "(read-line)"))))
@@ -764,10 +766,10 @@
   (are [result expr] (= result (-> (repl-eval client expr)
                                    (combine-responses)
                                    (select-keys [:ns :out :err :value])))
-    {:ns "user" :out "5 6 7 \n 8 9 10\n" :value ["nil"]}
+    {:ns "user" :out (str "5 6 7 \n 8 9 10" th/sys-newline) :value ["nil"]}
     (code (println 5 6 7 \newline 8 9 10))
 
-    {:ns "user" :err "user/foo\n" :value ["nil"]}
+    {:ns "user" :err (th/newline->sys "user/foo\n") :value ["nil"]}
     (code (binding [*out* *err*]
             (prn 'user/foo)))
 
@@ -783,8 +785,8 @@
                                      (combine-responses))]
       (if (and (= (:major *clojure-version*) 1)
                (<= (:minor *clojure-version*) 9))
-        (is (re-matches #"(?s)^RuntimeException Map literal must contain an even number of forms[^\n]+\n$" err))
-        (is (re-matches #"(?s)^Syntax error reading source at[^\n]+\nMap literal must contain an even number of forms\n" err)))
+        (is (re-matches #"(?s)^RuntimeException Map literal must contain an even number of forms[^\r\n]+[\r]?\n$" err))
+        (is (re-matches #"(?s)^Syntax error reading source at[^\n]+[\r]?\nMap literal must contain an even number of forms[\r]?\n" err)))
       (is (not (contains? resp :out)))
       (is (not (contains? resp :value)))))
 
@@ -820,7 +822,7 @@
              resp4))))
 
   (testing "custom symbol should be used"
-    (is (= [{:err "foo java.lang.IllegalArgumentException\n"}
+    (is (= [{:err (th/newline->sys "foo java.lang.IllegalArgumentException\n")}
             {:status #{:eval-error}
              :ex "class java.lang.IllegalArgumentException"
              :root-ex "class java.lang.IllegalArgumentException"}
@@ -849,7 +851,7 @@
                                                      ::middleware.caught/caught `custom-repl-caught
                                                      ::middleware.caught/print? 1})
                                    (mapv clean-response))]
-      (is (= {:err "foo java.lang.IllegalArgumentException\n"}
+      (is (= {:err (th/newline->sys "foo java.lang.IllegalArgumentException\n")}
              resp1))
       (is (re-find #"IllegalArgumentException" (::middleware.caught/throwable resp2)))
       (is (= {:status #{:eval-error}
@@ -872,7 +874,7 @@
                                   :code (code (set! nrepl.middleware.caught/*caught-fn* (resolve `custom-session-repl-caught)))})
                 (mapv clean-response))))
 
-    (is (= [{:err "bar Divide by zero\n"}
+    (is (= [{:err (th/newline->sys "bar Divide by zero\n")}
             {:status #{:eval-error}
              :ex "class java.lang.ArithmeticException"
              :root-ex "class java.lang.ArithmeticException"}
@@ -882,7 +884,7 @@
                 (mapv clean-response)))))
 
   (testing "request can still override *caught-fn*"
-    (is (= [{:err "foo java.lang.ArithmeticException\n"}
+    (is (= [{:err (th/newline->sys "foo java.lang.ArithmeticException\n")}
             {:status #{:eval-error}
              :ex "class java.lang.ArithmeticException"
              :root-ex "class java.lang.ArithmeticException"}
@@ -911,7 +913,7 @@
                                                      ::middleware.caught/caught `custom-repl-caught
                                                      ::middleware.caught/print? 1})
                                    (mapv clean-response))]
-      (is (= {:err "foo java.lang.ArithmeticException\n"}
+      (is (= {:err (th/newline->sys "foo java.lang.ArithmeticException\n")}
              resp1))
       (is (re-find #"Divide by zero" (::middleware.caught/throwable resp2)))
       (is (= {:status #{:eval-error}
@@ -1187,4 +1189,4 @@
 (deftest base64-decode-test
   (testing "base64-decode ignores invalid characters such as newlines"
     (is (= (seq (sideloader/base64-decode "abc"))
-           (seq (sideloader/base64-decode "a\nb\nc"))))))
+           (seq (sideloader/base64-decode (th/newline->sys "a\nb\nc")))))))
