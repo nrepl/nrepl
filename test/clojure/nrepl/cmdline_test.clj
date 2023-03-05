@@ -210,43 +210,48 @@
       (write-bencode (.getOutputStream sock) message))))
 
 (deftest ^:slow basic-fs-socket-behavior
-  (if-not unix-domain-flavor
+  (if th/win?
     (binding [*out* *err*]
       ;; Otherwise kaocha treats no tests as an error
-      (testing "Skipping UNIX domain socket tests for JDK < 16 without junixsocket dependency"
-        (is (not unix-domain-flavor))))
-    (let [tmpdir (create-tmpdir "target" "socket-test-" "rwx------")
-          sock-path (str tmpdir "/socket")
-          sock-file (as-file sock-path)]
-      (try
+      (testing "Skipping UNIX domain socket tests on MS-Windows"
+        (is th/win?)))
+    (if-not unix-domain-flavor
+      (binding [*out* *err*]
+      ;; Otherwise kaocha treats no tests as an error
+        (testing "Skipping UNIX domain socket tests for JDK < 16 without junixsocket dependency"
+          (is (not unix-domain-flavor))))
+      (let [tmpdir (create-tmpdir "target" "socket-test-" "rwx------")
+            sock-path (str tmpdir "/socket")
+            sock-file (as-file sock-path)]
+        (try
         ;; Use a Process rather than sh so we can see server errors
-        (let [cmd (into-array ["java"
-                               "-cp" (System/getProperty "java.class.path")
-                               "nrepl.main" "-s" sock-path])
-              server (.start (doto (ProcessBuilder. ^"[Ljava.lang.String;" cmd)
-                               (.redirectOutput ProcessBuilder$Redirect/INHERIT)
-                               (.redirectError ProcessBuilder$Redirect/INHERIT)))]
-          (try
-            ;; we want to ensure the server is up before trying to connect to it
-            ;; this is done by waiting till the socket file is created, and then
-            ;; waiting an extra 1s. (extra wait seems to help with test reliability
-            ;; in CI. Question: why are we not using ack to do this? To investigate
-            (while (not (.exists sock-file))
-              (Thread/sleep 100))
-            (Thread/sleep 1000)
-            (case unix-domain-flavor
-              :jdk
-              (send-jdk-socket-message {:code "(System/exit 42)" :op :eval}
-                                       sock-path)
-              :junixsocket
-              (send-junixsocket-message {:code "(System/exit 42)" :op :eval}
-                                        sock-path))
-            (is (= 42 (.waitFor server)))
-            (finally
-              (.destroy server))))
-        (finally
-          (.delete sock-file)
-          (Files/delete tmpdir))))))
+          (let [cmd (into-array ["java"
+                                 "-cp" (System/getProperty "java.class.path")
+                                 "nrepl.main" "-s" sock-path])
+                server (.start (doto (ProcessBuilder. ^"[Ljava.lang.String;" cmd)
+                                 (.redirectOutput ProcessBuilder$Redirect/INHERIT)
+                                 (.redirectError ProcessBuilder$Redirect/INHERIT)))]
+            (try
+              ;; we want to ensure the server is up before trying to connect to it
+              ;; this is done by waiting till the socket file is created, and then
+              ;; waiting an extra 1s. (extra wait seems to help with test reliability
+              ;; in CI. Question: why are we not using ack to do this? To investigate
+              (while (not (.exists sock-file))
+                (Thread/sleep 100))
+              (Thread/sleep 1000)
+              (case unix-domain-flavor
+                :jdk
+                (send-jdk-socket-message {:code "(System/exit 42)" :op :eval}
+                                         sock-path)
+                :junixsocket
+                (send-junixsocket-message {:code "(System/exit 42)" :op :eval}
+                                          sock-path))
+              (is (= 42 (.waitFor server)))
+              (finally
+                (.destroy server))))
+          (finally
+            (.delete sock-file)
+            (Files/delete tmpdir)))))))
 
 (deftest ^:slow cmdline-namespace-resolution
   (testing "Ensuring that namespace resolution works in the cmdline repl"
@@ -270,28 +275,33 @@
 
 (deftest ^:slow can-connect-to-unix-socket
   (testing "We can connect to unix domain socker from the cli."
-    (if-not unix-domain-flavor
+    (if th/win?
       (binding [*out* *err*]
         ;; Otherwise kaocha treats no tests as an error
-        (testing "Skipping UNIX domain socket tests for JDK < 16 without junixsocket dependency"
-          (is (not unix-domain-flavor))))
-      (let [test-input      (str/join \newline ["::a"
-                                                "(ns a)" "::a"
-                                                "(ns b)" "::a"
-                                                "(ns user)" "::a"
-                                                "(require '[a :as z])" "::z/a"])
-            expected-output [":user/a"
-                             "nil" ":a/a"
-                             "nil" ":b/a"
-                             "nil" ":user/a"
-                             "nil" ":a/a"]
-            >devnull        (fn [& _] nil)
-            tmpdir          (create-tmpdir "target" "socket-test-" "rwx------")
-            sock-path       (str tmpdir "/socket")]
-        (binding [*in* (java.io.PushbackReader. (java.io.StringReader. test-input))]
-          (with-redefs [cmd/clean-up-and-exit >devnull]
-            (with-open [server (server/start-server :socket sock-path)]
-              (let [results (atom [])]
-                (#'cmd/run-repl {:server  {:socket sock-path}
-                                 :options {:prompt >devnull :err >devnull :out >devnull :value #(swap! results conj %)}})
-                (is (= expected-output @results))))))))))
+        (testing "Skipping UNIX domain socket tests on MS-Windows"
+          (is th/win?)))
+      (if-not unix-domain-flavor
+        (binding [*out* *err*]
+          ;; Otherwise kaocha treats no tests as an error
+          (testing "Skipping UNIX domain socket tests for JDK < 16 without junixsocket dependency"
+            (is (not unix-domain-flavor))))
+        (let [test-input      (str/join \newline ["::a"
+                                                  "(ns a)" "::a"
+                                                  "(ns b)" "::a"
+                                                  "(ns user)" "::a"
+                                                  "(require '[a :as z])" "::z/a"])
+              expected-output [":user/a"
+                               "nil" ":a/a"
+                               "nil" ":b/a"
+                               "nil" ":user/a"
+                               "nil" ":a/a"]
+              >devnull        (fn [& _] nil)
+              tmpdir          (create-tmpdir "target" "socket-test-" "rwx------")
+              sock-path       (str tmpdir "/socket")]
+          (binding [*in* (java.io.PushbackReader. (java.io.StringReader. test-input))]
+            (with-redefs [cmd/clean-up-and-exit >devnull]
+              (with-open [server (server/start-server :socket sock-path)]
+                (let [results (atom [])]
+                  (#'cmd/run-repl {:server  {:socket sock-path}
+                                   :options {:prompt >devnull :err >devnull :out >devnull :value #(swap! results conj %)}})
+                  (is (= expected-output @results)))))))))))
