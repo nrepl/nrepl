@@ -47,6 +47,11 @@
          #{"clojure.core" "clojure.core.ArrayChunk" "clojure.core.ArrayManager" "clojure.core.IVecImpl" "clojure.core.Vec" "clojure.core.VecNode" "clojure.core.VecSeq" "clojure.core.protocols" "clojure.core.protocols.InternalReduce"}
          (set (candidates "clojure.co")))))
 
+  (testing "namespace completion with java classes"
+    (is (set/subset?
+         #{"nrepl.test.Dummy"}
+         (set (candidates "nrepl.t")))))
+
   (testing "Java instance methods completion"
     (is (= '(".toUpperCase")
            (candidates ".toUpper")))

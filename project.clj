@@ -35,6 +35,7 @@
                                    [commons-net/commons-net "3.6"]
                                    [lambdaisland/kaocha "1.0.672"]
                                    [lambdaisland/kaocha-junit-xml "0.0.76"]]
+                    :java-source-paths ["test/java"]
                     :plugins      [[test2junit "1.4.2"]]
                     :test2junit-output-dir "test-results"
                     ;; This skips any tests that doesn't work on all java versions
