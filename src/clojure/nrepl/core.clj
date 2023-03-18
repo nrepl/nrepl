@@ -63,7 +63,7 @@
     (concat head (take 1 tail))))
 
 (defn- delimited-transport-seq
-  "Returns a function of one arument that performs described below.
+  "Returns a function of one argument that performs described below.
    The following \"message\" is the argument of the function returned by this function.
 
     - Merge delimited-slots to the message

@@ -96,7 +96,7 @@
          (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server"))
          (throw e#)))
      (catch Throwable e#
-       (if (and ~s (not (let [^Socket s# ~s] (.isConnected s#))))
+       (if (and ~s (instance? Socket ~s) (not (let [^Socket s# ~s] (.isConnected s#))))
          (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server"))
          (throw e#)))))
 

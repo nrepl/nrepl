@@ -11,7 +11,7 @@
   :javac-options ["-target" "8" "-source" "8"]
 
   :aliases {"bump-version" ["change" "version" "leiningen.release/bump-version"]
-            "test-all" ["with-profile" "+1.7:+1.8:+1.9:+1.10:1.11:+fastlane:+junixsocket" "test"]
+            "test-all" ["with-profile" "+1.7:+1.8:+1.9:+1.10:+1.11:+fastlane:+junixsocket" "test"]
             "docs" ["with-profile" "+maint" "run" "-m" "nrepl.impl.docs" "--file"
                     ~(clojure.java.io/as-relative-path
                       (clojure.java.io/file "doc" "modules" "ROOT" "pages" "ops.adoc"))]
@@ -67,13 +67,12 @@
                      :dependencies [[org.clojure/tools.cli "1.0.194"]]}
 
              ;; CI tools
-             :cloverage [:test
-                         {:plugins [[lein-cloverage "1.2.2"]]
-                          :dependencies [[cloverage "1.2.2"]]
-                          :cloverage {:codecov? true
-                                      ;; Cloverage can't handle some of the code
-                                      ;; in this project
-                                      :test-ns-regex [#"^((?!nrepl.sanity-test).)*$"]}}]
+             :cloverage {:plugins [[lein-cloverage "1.2.2"]]
+                         :dependencies [[cloverage "1.2.2"]]
+                         :cloverage {:codecov? true
+                                     ;; Cloverage can't handle some of the code
+                                     ;; in this project
+                                     :test-ns-regex [#"^((?!nrepl.sanity-test).)*$"]}}
 
              :cljfmt {:plugins [[lein-cljfmt "0.8.0"]]
                       :cljfmt {:indents {as-> [[:inner 0]]

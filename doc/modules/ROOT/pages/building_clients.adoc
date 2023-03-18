@@ -140,7 +140,7 @@ In this case, we can use the `dynamic-loader` in conjunction with the `sideloade
 [source,clojure]
 ----
 {:op "sideloader-start"}
-;; handle sideloading separatedly...
+;; handle sideloading separately...
 ;; now we add the middleware
 {:op "add-middleware"
  :middleware ["cider.nrepl.middleware/wrap-version"]}

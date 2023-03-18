@@ -73,21 +73,35 @@ NOTE: You don't really need an nREPL-powered REPL for this
 workflow. It's going to work in exactly the same manner regardless of
 the REPL you're using.
 
-== Running the tests
+== Task Management
 
-The primary way to run tests is using Kaocha. The following command runs
-the test suite on Clojure 1.10:
+All command line tasks are written in `babashka` as to maximize
+compatibility across platforms. Please see
+https://github.com/babashka/babashka[babashka] for installation
+instructions.
+
+To get a list of the available tasks (as defined in `bb.edn`) run:
 
 [source,shell]
 ----
-$ bin/kaocha
+$ bb tasks
+----
+
+== Running the tests
+
+The primary way to run tests is using Kaocha. The following command runs
+the test suite on latest configured Clojure version:
+
+[source,shell]
+----
+$ bb kaocha
 ----
 
 The following command is useful while actively working on the codebase:
 
 [source,shell]
 ----
-$ bin/kaocha --watch --skip-meta :slow
+$ bb kaocha --watch --skip-meta :slow
 ----
 
 as it will re-run tests on changes, but also skip a handful of slower tests.
@@ -103,7 +117,7 @@ use a command like this:
 $ lein with-profile 1.8 test
 ----
 
-To run tests for all Clojure versions from 1.7 to 1.10.
+To run tests for all Clojure versions from 1.7 to latest configured.
 
 [source,shell]
 ----
