@@ -71,12 +71,14 @@
                                                             (catch Exception e
                                                               (is (instance? SSLHandshakeException e)))))})]
         (let [client (nrepl/client transport 1000)]
-          (is (thrown? SocketException
-                       (-> (nrepl/message client {:op   "eval"
-                                                  :code "(+ 1 1)"})
-                           first
-                           nrepl/read-response-value
-                           :value)))
+          (try
+            (-> (nrepl/message client {:op   "eval"
+                                       :code "(+ 1 1)"})
+                first
+                nrepl/read-response-value
+                :value)
+            (is false "Expected an exception to be thrown.")
+            (catch Exception _e))
           (is (instance? SSLHandshakeException @exception)))))))
 
 (deftest regular-connection-times-out

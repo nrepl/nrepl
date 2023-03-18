@@ -253,7 +253,7 @@
                                          "(ns b)" "::a"
                                          "(ns user)" "::a"
                                          "(require '[a :as z])" "::z/a"])
-          expected-output [":user/a"
+          expected-output [(str (keyword (str *ns*) "a"))
                            "nil" ":a/a"
                            "nil" ":b/a"
                            "nil" ":user/a"
@@ -278,7 +278,7 @@
                                                 "(ns b)" "::a"
                                                 "(ns user)" "::a"
                                                 "(require '[a :as z])" "::z/a"])
-            expected-output [":user/a"
+            expected-output [(str (keyword (str *ns*) "a"))
                              "nil" ":a/a"
                              "nil" ":b/a"
                              "nil" ":user/a"

@@ -71,6 +71,10 @@ via the Piggieback middleware. In the future there may be implementations of nRE
 The nREPL protocol is language-agnostic and implementations of nREPL servers exist for [several programming languages](https://nrepl.org/nrepl/beyond_clojure.html).
 Implementing new nREPL servers is [pretty simple](https://nrepl.org/nrepl/building_servers.html).
 
+## Testing and Hacking around
+
+See [Hacking on nREPL](doc/modules/ROOT/pages/hacking_on_nrepl.adoc).
+
 ## Contributors
 
 This project exists thanks to all the people who contribute.
@@ -103,6 +107,6 @@ Support this project by becoming a sponsor. Your logo will show up here with a l
 
 ## License
 
-Copyright © 2010-2022 Chas Emerick, Bozhidar Batsov and contributors.
+Copyright © 2010-2023 Chas Emerick, Bozhidar Batsov and contributors.
 
 Licensed under the EPL. (See the file epl.html.)
