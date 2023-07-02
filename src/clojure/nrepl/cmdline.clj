@@ -191,7 +191,8 @@ Exit:      Control+D or (exit) or (quit)"
 
 (defn help
   []
-  (str "Usage:
+  ;; Updating this? Remember to also update server.adoc
+  "Usage:
 
   -i/--interactive            Start nREPL and connect to it with the built-in client.
   -c/--connect                Connect to a running nREPL with the built-in client.
@@ -201,12 +202,12 @@ Exit:      Control+D or (exit) or (quit)"
   -p/--port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
   -s/--socket PATH            Start nREPL on filesystem socket at PATH or nREPL to connect to when using --connect.
   --ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.
-  -n/--handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`.
-  -m/--middleware MIDDLEWARE  A sequence of vars, representing middleware you wish to mix in to the nREPL handler.
-  -t/--transport TRANSPORT    The transport to use. By default that's nrepl.transport/bencode.
+  -n/--handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`. Must be expressed as a namespace-qualified symbol. The underlying var will be automatically `require`d.
+  -m/--middleware MIDDLEWARE  A sequence of vars (expressed as namespace-qualified symbols), representing middleware you wish to mix in to the nREPL handler. The underlying vars will be automatically `require`d.
+  -t/--transport TRANSPORT    The transport to use (default `nrepl.transport/bencode`), expressed as a namespace-qualified symbol. The underlying var will be automatically `require`d.
   --help                      Show this help message.
   -v/--version                Display the nREPL version.
-  --verbose                   Show verbose output."))
+  --verbose                   Show verbose output.")
 
 (defn- require-and-resolve
   "Attempts to resolve the config `key`'s `value` as a namespaced symbol
