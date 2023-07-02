@@ -203,8 +203,7 @@
     :else
     (throw (IllegalArgumentException. "A host plus port or a socket must be supplied to connect."))))
 
-(defn- ^java.net.URI to-uri
-  [x]
+(defn- to-uri ^java.net.URI [x]
   {:post [(instance? java.net.URI %)]}
   (if (string? x)
     (java.net.URI. x)
