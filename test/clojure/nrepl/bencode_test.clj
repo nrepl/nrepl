@@ -90,7 +90,8 @@
     "l6:cheesei42ed3:ham4:eggsee" ["cheese" 42 {"ham" "eggs"}]
     "d6:cheesei42e3:haml4:eggsee" {"cheese" 42 "ham" ["eggs"]}))
 
-(defn- ^ByteArrayOutputStream >stream
+(defn- >stream
+  ^ByteArrayOutputStream
   [thing & {:keys [writer]}]
   (doto (ByteArrayOutputStream.)
     (writer thing)))

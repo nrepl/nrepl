@@ -98,8 +98,9 @@
 (defn- str->self-certificate [cert]
   (second (get-certs cert)))
 
-(defn- ^Certificate str->certificate
+(defn- str->certificate
   "Loads an X.509 certificate from a string."
+  ^Certificate
   [tls-keys-str]
   (with-open [stream (input-stream (.getBytes ^String (str->ca-certificate tls-keys-str)))]
     (.generateCertificate x509-cert-factory stream)))
@@ -220,8 +221,9 @@
   "An array of protocols we support."
   (into-array String ["TLSv1.3"]))
 
-(defn ^SSLServerSocket server-socket
+(defn server-socket
   "Given an SSL context, makes a server SSLSocket."
+  ^SSLServerSocket
   [^SSLContext context ^String host port]
   (let [^SSLServerSocket sock (.. context
                                   getServerSocketFactory
@@ -232,8 +234,9 @@
       (.setReuseAddress true)
       (.setEnabledProtocols enabled-protocols))))
 
-(defn ^SSLSocket socket
+(defn socket
   "Given an SSL context, makes a client SSLSocket."
+  ^SSLSocket
   [^SSLContext context ^String host port connect-timeout-ms]
   (let [^SSLSocket sock (-> context
                             .getSocketFactory
