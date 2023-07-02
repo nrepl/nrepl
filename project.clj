@@ -83,7 +83,7 @@
                                          testing-print [[:inner 0]]}}}
 
              :eastwood [:test
-                        {:plugins [[jonase/eastwood "1.1.1"]]
+                        {:plugins [[jonase/eastwood "1.4.0"]]
                          :eastwood {:config-files ["eastwood.clj"]
                                     :ignored-faults {:non-dynamic-earmuffs {nrepl.middleware.load-file true}
                                                      :unused-ret-vals {nrepl.util.completion-test true}
