@@ -100,7 +100,7 @@
 
 (defn- str->certificate
   "Loads an X.509 certificate from a string."
-  ^Certificate
+  ^java.security.cert.Certificate
   [tls-keys-str]
   (with-open [stream (input-stream (.getBytes ^String (str->ca-certificate tls-keys-str)))]
     (.generateCertificate x509-cert-factory stream)))
@@ -223,11 +223,11 @@
 
 (defn server-socket
   "Given an SSL context, makes a server SSLSocket."
-  ^SSLServerSocket
+  ^javax.net.ssl.SSLServerSocket
   [^SSLContext context ^String host port]
-  (let [^SSLServerSocket sock (.. context
-                                  getServerSocketFactory
-                                  createServerSocket)]
+  (let [^javax.net.ssl.SSLServerSocket sock (.. context
+                                                getServerSocketFactory
+                                                createServerSocket)]
     (doto sock
       (.bind (InetSocketAddress. host ^int port))
       (.setNeedClientAuth true)
@@ -248,7 +248,7 @@
 (defn accept
   "Accepts a new TLS connection. Waits 10 000 milliseconds for the TLS handshake
   to complete. Requires that the client certificate is different from the server certificate."
-  [^SSLServerSocket server]
+  [^javax.net.ssl.SSLServerSocket server]
   (let [p (promise)
         ^SSLSocket sock (.accept server)]
     (.addHandshakeCompletedListener sock

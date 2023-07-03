@@ -176,7 +176,7 @@
    either via `stop-server`, (.close server), or automatically via `with-open`.
    The port that the server is open on is available in the :port slot of the
    server map (useful if the :port option is 0 or was left unspecified."
-  ^Server
+  ^nrepl.server.Server
   [& {:keys [port bind socket tls? tls-keys-str tls-keys-file transport-fn handler ack-port greeting-fn consume-exception]}]
   (when (and socket (or port bind tls?))
     (let [msg "Cannot listen on both port and filesystem socket"]
@@ -194,7 +194,7 @@
                  :else
                  (inet-socket bind port))
         server (Server. ss
-                        (when-not socket (.getLocalPort ^ServerSocket ss))
+                        (when-not socket (.getLocalPort ^java.net.ServerSocket ss))
                         (atom #{})
                         transport-fn
                         greeting-fn

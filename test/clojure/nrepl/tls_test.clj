@@ -24,12 +24,12 @@
 
 ; Make sure TLS is in fact used
 (defn tls-connect
-  ^AutoCloseable [opts]
+  ^java.lang.AutoCloseable [opts]
   (#'nrepl/tls-connect opts))
 
 (deftest happy-case
   (let [[server-keys client-keys] (gen-key-pair)]
-    (with-open [^AutoCloseable server (server/start-server :tls? true :tls-keys-str server-keys)]
+    (with-open [^java.lang.AutoCloseable server (server/start-server :tls? true :tls-keys-str server-keys)]
       (with-open [transport (tls-connect {:tls-keys-str client-keys
                                           :host         "127.0.0.1"
                                           :port         (:port server)
@@ -87,7 +87,7 @@
     (with-open [server (server/start-server :tls? true
                                             :tls-keys-str server-keys
                                             :consume-exception (partial deliver exception))]
-      (with-open [^AutoCloseable _ (nrepl/connect :port (:port server))]
+      (with-open [^java.lang.AutoCloseable _ (nrepl/connect :port (:port server))]
         (is (or (instance? SocketException @exception)
                 (instance? SSLException @exception)))))))
 
@@ -97,7 +97,7 @@
     (with-open [server (server/start-server :tls? true
                                             :tls-keys-str server-keys
                                             :consume-exception (partial deliver exception))]
-      (with-open [^AutoCloseable transport (nrepl/connect :port (:port server))]
+      (with-open [^java.lang.AutoCloseable transport (nrepl/connect :port (:port server))]
         (let [client (nrepl/client transport 1000)]
           (is (thrown? SocketException
                        (-> (nrepl/message client {:op   "eval"
@@ -120,7 +120,7 @@
             (let [proxy-port (deref (:port-promise @state) 3000 nil)]
               (is (> proxy-port 0))
               (when (> proxy-port 0)
-                (with-open [^AutoCloseable transport (nrepl/connect :port proxy-port)]
+                (with-open [^java.lang.AutoCloseable transport (nrepl/connect :port proxy-port)]
                   (let [client (nrepl/client transport 1000)]
                     (is (= 2 (-> (nrepl/message client {:op   "eval"
                                                         :code "(+ 1 1)"})
