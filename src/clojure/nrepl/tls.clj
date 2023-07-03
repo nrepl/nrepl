@@ -22,7 +22,7 @@
                           KeyManager
                           KeyManagerFactory
                           SSLContext
-                          SSLException SSLServerSocket
+                          SSLException
                           SSLSocket
                           TrustManager
                           TrustManagerFactory
