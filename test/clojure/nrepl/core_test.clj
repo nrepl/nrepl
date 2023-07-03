@@ -1180,11 +1180,11 @@
           resp2 (->> (message session {:op   "eval"
                                        :code "(#'nrepl.core-test/classloader-hierarchy (.. Thread currentThread getContextClassLoader))"})
                      (map clean-response)
-                     combine-responses)
-          (is (not-empty
-               (set/intersection
-                (dcls (first (:value resp2)))
-                (dcls (first (:value resp1))))))])))
+                     combine-responses)]
+      (is (not-empty
+           (set/intersection
+            (dcls (first (:value resp2)))
+            (dcls (first (:value resp1)))))))))
 
 (deftest base64-decode-test
   (testing "base64-decode ignores invalid characters such as newlines"
