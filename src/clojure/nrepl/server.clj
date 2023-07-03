@@ -16,7 +16,7 @@
    [nrepl.tls :as tls]
    [nrepl.transport :as t])
   (:import
-   (java.net ServerSocket SocketException)
+   (java.net SocketException)
    [java.nio.channels ClosedChannelException]))
 
 (defn handle*
