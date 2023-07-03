@@ -992,7 +992,8 @@
                                              code-snippet
                                              sideloader-tests-lookup)]
       (is (= ["Hello nREPL"]
-             (:value rsp)))))
+             (:value rsp))
+          (pr-str rsp))))
   (testing "Loading source as resource (clj)"
     (let [code-snippet (code
                         (require '[foo.bar :as bar])
