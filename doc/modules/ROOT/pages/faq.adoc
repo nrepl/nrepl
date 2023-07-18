@@ -20,9 +20,7 @@ https://github.com/thheller/shadow-cljs[shadow-cljs]).
 
 == Does nREPL support ClojureCLR?
 
-nREPL currently doesn't support ClojureCLR. The reason for this is
-that it leverages Java APIs internally. There's an https://github.com/clojure/clr.tools.nrepl[nREPL port for ClojureCLR], but it's not
-actively maintained and it doesn't behave like the Clojure nREPL.
+There is a separate implementation of nREPL for ClojureCLR: https://github.com/clojure/clr.tools.nrepl[https://github.com/clojure/clr.tools.nrepl].
 
 == When is nREPL 1.0 going to be released?
 
