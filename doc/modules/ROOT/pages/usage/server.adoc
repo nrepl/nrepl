@@ -418,7 +418,7 @@ IMPORTANT: You should refer to vars only as symbols.
 
 And this is an example of a local config file:
 
-.nrepl.edn
+..nrepl.edn
 [source,clojure]
 ----
 {:bind         "localhost"
