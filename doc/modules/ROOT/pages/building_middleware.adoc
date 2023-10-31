@@ -154,7 +154,7 @@ middleware bundled with nREPL:
 * The middleware code lives in `nrepl.middleware.completion` and it simply delegates to
 `nrepl.util.completion`
 
-This separation makes it easier to test the business logic in isolation and to re-use it outside
+This separation makes it easier to test the business logic in isolation and to reuse it outside
 of nREPL (a good example here would be the `orchard` library that `cider-nrepl` uses heavily).
 
 As a corollary - you should avoid creating middleware that provides a lot of unrelated functionality.
