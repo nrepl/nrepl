@@ -22,7 +22,7 @@
                           KeyManager
                           KeyManagerFactory
                           SSLContext
-                          SSLException
+                          SSLHandshakeException
                           SSLSocket
                           TrustManager
                           TrustManagerFactory
@@ -246,7 +246,7 @@
     sock))
 
 (defn accept
-  "Accepts a new TLS connection. Waits 10 000 milliseconds for the TLS handshake
+  "Accepts a new TLS connection. Waits 30 000 milliseconds for the TLS handshake
   to complete. Requires that the client certificate is different from the server certificate."
   [^javax.net.ssl.SSLServerSocket server]
   (let [p (promise)
@@ -259,15 +259,25 @@
                                           (deliver p :handshake-bad!)
                                           (deliver p :handshake-ok!)))))
     (future
-      (when (= :timeout (deref p 10000 :timeout))
-        (deliver p :handshake-bad!)
-        (close-silently sock)))
+      (when (= :timeout (deref p 30000 :timeout))
+        (close-silently sock)
+        (deliver p :handshake-timeout!)))
     (try
       (.startHandshake sock)
       (let [v @p]
-        (if (= v :handshake-bad!)
-          (close-silently sock)
+        (cond
+          (= v :handshake-bad!)
+          (do
+            (close-silently sock)
+            (throw (SSLHandshakeException. "Cannot use same keys as server")))
+
+          (= v :handshake-timeout!)
+          (do
+            (close-silently sock)
+            (throw (SSLHandshakeException. "TLS handshake timed out (30000 ms)")))
+
+          :else
           sock))
-      (catch SSLException e
+      (catch Throwable t
         (close-silently sock)
-        (throw e)))))
+        (throw t)))))
