@@ -1,8 +1,10 @@
 = TLS (Transport Layer Security) support
 
-The standard way to securely access a remote nREPL server has been to use `ssh`
-with port forwarding, and letting the nREPL server only bind to `127.0.0.1`.
-This will secure and encrypt the communication.
+NOTE: TLS support was introduced in nREPL 1.1.
+
+Historically, the standard way to securely access a remote nREPL server has been
+to use `ssh` with port forwarding, and letting the nREPL server only bind to
+`127.0.0.1`.  This will secure and encrypt the communication.
 
 Sometimes however `ssh` may not be available, and thus you need to bind to
 `0.0.0.0` (or some specific public address) to make the nREPL server available.
@@ -118,7 +120,7 @@ nil
 
 [source,shell]
 ----
-$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.0.0"}}}' -M -m nrepl.cmdline --connect --host 127.0.0.1 --port 4001 --tls-keys-file client.keys
+$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.1.0"}}}' -M -m nrepl.cmdline --connect --host 127.0.0.1 --port 4001 --tls-keys-file client.keys
 ----
 
 == Use the TLS TCP proxy
@@ -127,7 +129,7 @@ If your editor/IDE does not support nREPL TLS connections yet, you may start a l
 
 [source,shell]
 ----
-$ clojure -Sdeps '{:aliases {:proxy {:deps {nrepl/nrepl {:mvn/version "1.0.0"}} :exec-fn nrepl.tls-client-proxy/start-tls-proxy :exec-args {:remote-host "localhost" :remote-port 4001 :tls-keys-file "client.keys"}}}}' -T:proxy
+$ clojure -Sdeps '{:aliases {:proxy {:deps {nrepl/nrepl {:mvn/version "1.1.0"}} :exec-fn nrepl.tls-client-proxy/start-tls-proxy :exec-args {:remote-host "localhost" :remote-port 4001 :tls-keys-file "client.keys"}}}}' -T:proxy
 INFO Started TLS proxy at 127.0.0.1:44063. Proxying to localhost:4001.
 ----
 
