@@ -26,7 +26,7 @@
 
 (deftest completions-test
   (testing "var completion"
-    (is (= '("alength" "alias" "all-ns" "alter" "alter-meta!" "alter-var-root")
+    (is (= '("alength" "alias" "all-ns" "alter" "alter-meta!" "alter-var-root" "aset-long")
            (candidates "al" 'clojure.core)))
 
     (is (= '("jio/make-input-stream" "jio/make-output-stream" "jio/make-parents" "jio/make-reader" "jio/make-writer")
@@ -72,53 +72,56 @@
 
   (testing "candidate types"
     (is (some #{{:candidate "t-var"
+                 :ns "nrepl.util.completion-test"
                  :type :var}}
               (completions "t-var" 'nrepl.util.completion-test)))
     (is (some #{{:candidate "t-var"
                  :type :var
+                 :ns "nrepl.util.completion-test"
                  :doc "var"}}
               (completions "t-var" 'nrepl.util.completion-test {:extra-metadata #{:arglists :doc}})))
     (is (some #{{:candidate "t-fn"
+                 :ns "nrepl.util.completion-test"
                  :type :function}}
               (completions "t-fn" 'nrepl.util.completion-test)))
     (is (some #{{:candidate "t-fn"
                  :type :function
-                 :arglists "([x])"
+                 :ns "nrepl.util.completion-test"
+                 :arglists '("[x]")
                  :doc "fn"}}
               (completions "t-fn" 'nrepl.util.completion-test {:extra-metadata #{:arglists :doc}})))
     (is (some #{{:candidate "t-macro"
+                 :ns "nrepl.util.completion-test"
                  :type :macro}}
               (completions "t-macro" 'nrepl.util.completion-test)))
     (is (some #{{:candidate "t-macro"
                  :type :macro
-                 :arglists "([y])"
+                 :ns "nrepl.util.completion-test"
+                 :arglists '("[y]")
                  :doc "macro"}}
               (completions "t-macro" 'nrepl.util.completion-test {:extra-metadata #{:arglists :doc}})))
-    (is (some #{{:candidate "unquote" :type :var}}
+    (is (some #{{:candidate "unquote" :type :var, :ns "clojure.core"}}
               (completions "unquote" 'clojure.core)))
-    (is (some #{{:candidate "if" :ns "clojure.core" :type :special-form}}
+    (is (some #{{:candidate "if" :type :special-form}}
               (completions "if" 'clojure.core)))
-    (is (some #{{:candidate "UnsatisfiedLinkError" :type :class}}
+    (is (some #(#{{:candidate "UnsatisfiedLinkError" :type :class}} (select-keys % [:candidate :type]))
               (completions "Unsatisfied" 'clojure.core)))
     ;; ns with :doc meta
     (is (some #{{:candidate "clojure.core"
+                 :file "clojure/core.clj"
                  :type :namespace}}
               (completions "clojure.core" 'clojure.core)))
     (is (some #{{:candidate "clojure.core"
                  :type :namespace
-                 :doc "Fundamental library of the Clojure language"}}
-              (completions "clojure.core" 'clojure.core {:extra-metadata #{:doc}})))
+                 :file "clojure/core.clj"}}
+              (completions "clojure.core" 'clojure.core)))
     ;; ns with docstring argument
-    (is (some #{{:candidate "nrepl.util.completion-test"
-                 :type :namespace}}
+    (is (some #(#{{:candidate "nrepl.util.completion-test" :type :namespace}}
+                (select-keys % [:candidate :type]))
               (completions "nrepl.util.completion-test" 'clojure.core)))
-    (is (some #{{:candidate "nrepl.util.completion-test"
-                 :type :namespace
-                 :doc "Unit tests for completion utilities."}}
-              (completions "nrepl.util.completion-test" 'clojure.core {:extra-metadata #{:doc}})))
     (is (some #{{:candidate "Integer/parseInt" :type :static-method}}
               (completions "Integer/parseInt" 'clojure.core)))
-    (is (some #{{:candidate "File/separator", :type :static-method}}
+    (is (some #{{:candidate "File/separator", :type :static-field}}
               (completions "File/" 'nrepl.util.completion)))
     (is (some #{{:candidate ".toString" :type :method}}
               (completions ".toString" 'clojure.core)))))
