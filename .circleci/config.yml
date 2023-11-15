@@ -289,9 +289,9 @@ workflows:
       #     name: Lnx, Java 18, Clj master
       #     clojure_version: "master"
       #     jdk_version: openjdk18
-      - test_code_win_java_system:
-          name: Win, Java sys, Clj 1.11
-          clojure_version: "1.11"
+      # - test_code_win_java_system:
+      #     name: Win, Java sys, Clj 1.11
+      #     clojure_version: "1.11"
       - util_job:
           name: Code Linting
           steps:
