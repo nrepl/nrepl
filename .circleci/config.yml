@@ -33,6 +33,10 @@ executors:
     docker:
       - image: clojure:temurin-17-lein-2.10.0-jammy
     <<: *defaults
+  openjdk21:
+    docker:
+      - image: clojure:temurin-21-lein-2.10.0-jammy
+    <<: *defaults
 
 # Runs a given set of steps, with some standard pre- and post-
 # steps, including restoring of cache, saving of cache.
@@ -121,17 +125,17 @@ jobs:
   util_job:
     description: |
       Running utility commands/checks (linter etc.)
-      Always uses Java17 and Clojure 1.10
+      Always uses Java21 and Clojure 1.11
     parameters:
       steps:
         type: steps
-    executor: openjdk17
+    executor: openjdk21
     environment:
-      VERSION: "1.10"
+      VERSION: "1.11"
     steps:
       - checkout
       - with_cache:
-          cache_version: "1.10"
+          cache_version: "1.11"
           steps: << parameters.steps >>
 
 
@@ -180,7 +184,7 @@ jobs:
 #
 # - Linux
 #   - run tests against the target matrix
-#     - Java 8, 11 and 17
+#     - Java 8, 11, 17, and 21
 #     - Clojure 1.7, 1.8, 1.9, 1.10, 1.11 master
 #   - linter, eastwood and cljfmt
 #   - verifies cljdoc config
@@ -264,31 +268,30 @@ workflows:
           name: Lnx, Java 17, Clj master
           clojure_version: "master"
           jdk_version: openjdk17
-      # Add back in when Java 18 is released
-      # - test_code:
-      #     name: Lnx, Java 18, Clj 1.7
-      #     clojure_version: "1.7"
-      #     jdk_version: openjdk18
-      # - test_code:
-      #     name: Lnx, Java 18, Clj 1.8
-      #     clojure_version: "1.8"
-      #     jdk_version: openjdk18
-      # - test_code:
-      #     name: Lnx, Java 18, Clj 1.9
-      #     clojure_version: "1.9"
-      #     jdk_version: openjdk18
-      # - test_code:
-      #     name: Lnx, Java 18, Clj 1.10
-      #     clojure_version: "1.10"
-      #     jdk_version: openjdk18
-      # - test_code:
-      #     name: Lnx, Java 18, Clj 1.11
-      #     clojure_version: "1.11"
-      #     jdk_version: openjdk18
-      # - test_code:
-      #     name: Lnx, Java 18, Clj master
-      #     clojure_version: "master"
-      #     jdk_version: openjdk18
+      - test_code:
+          name: Lnx, Java 21, Clj 1.7
+          clojure_version: "1.7"
+          jdk_version: openjdk21
+      - test_code:
+          name: Lnx, Java 21, Clj 1.8
+          clojure_version: "1.8"
+          jdk_version: openjdk21
+      - test_code:
+          name: Lnx, Java 21, Clj 1.9
+          clojure_version: "1.9"
+          jdk_version: openjdk21
+      - test_code:
+          name: Lnx, Java 21, Clj 1.10
+          clojure_version: "1.10"
+          jdk_version: openjdk21
+      - test_code:
+          name: Lnx, Java 21, Clj 1.11
+          clojure_version: "1.11"
+          jdk_version: openjdk21
+      - test_code:
+          name: Lnx, Java 21, Clj master
+          clojure_version: "master"
+          jdk_version: openjdk21
       # - test_code_win_java_system:
       #     name: Win, Java sys, Clj 1.11
       #     clojure_version: "1.11"
