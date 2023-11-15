@@ -186,6 +186,7 @@ jobs:
 #   - run tests against the target matrix
 #     - Java 8, 11, 17, and 21
 #     - Clojure 1.7, 1.8, 1.9, 1.10, 1.11 master
+#     - Clojure 1.7-1.9 are only tested against Java 8.
 #   - linter, eastwood and cljfmt
 #   - verifies cljdoc config
 #   - runs code coverage report
@@ -221,18 +222,6 @@ workflows:
           clojure_version: "master"
           jdk_version: openjdk8
       - test_code:
-          name: Lnx, Java 11, Clj 1.7
-          clojure_version: "1.7"
-          jdk_version: openjdk11
-      - test_code:
-          name: Lnx, Java 11, Clj 1.8
-          clojure_version: "1.8"
-          jdk_version: openjdk11
-      - test_code:
-          name: Lnx, Java 11, Clj 1.9
-          clojure_version: "1.9"
-          jdk_version: openjdk11
-      - test_code:
           name: Lnx, Java 11, Clj 1.10
           clojure_version: "1.10"
           jdk_version: openjdk11
@@ -245,18 +234,6 @@ workflows:
           clojure_version: "master"
           jdk_version: openjdk11
       - test_code:
-          name: Lnx, Java 17, Clj 1.7
-          clojure_version: "1.7"
-          jdk_version: openjdk17
-      - test_code:
-          name: Lnx, Java 17, Clj 1.8
-          clojure_version: "1.8"
-          jdk_version: openjdk17
-      - test_code:
-          name: Lnx, Java 17, Clj 1.9
-          clojure_version: "1.9"
-          jdk_version: openjdk17
-      - test_code:
           name: Lnx, Java 17, Clj 1.10
           clojure_version: "1.10"
           jdk_version: openjdk17
@@ -268,18 +245,6 @@ workflows:
           name: Lnx, Java 17, Clj master
           clojure_version: "master"
           jdk_version: openjdk17
-      - test_code:
-          name: Lnx, Java 21, Clj 1.7
-          clojure_version: "1.7"
-          jdk_version: openjdk21
-      - test_code:
-          name: Lnx, Java 21, Clj 1.8
-          clojure_version: "1.8"
-          jdk_version: openjdk21
-      - test_code:
-          name: Lnx, Java 21, Clj 1.9
-          clojure_version: "1.9"
-          jdk_version: openjdk21
       - test_code:
           name: Lnx, Java 21, Clj 1.10
           clojure_version: "1.10"
