@@ -3,7 +3,7 @@
             [nrepl.misc :as misc]
             [nrepl.test-helpers :as th]
             [clojure.java.io :as io])
-  (:import [java.net URL]))
+  (:import [java.net URI]))
 
 (deftest sanitize-meta-test
   (is (not-empty (:file (misc/sanitize-meta {:file "clojure/core.clj"}))))
@@ -15,4 +15,4 @@
          (:file (misc/sanitize-meta {:file (io/file "/foo/bar/baz.clj")}))))
 
   (is (= "https://foo.bar"
-         (:file (misc/sanitize-meta {:file (URL. "https://foo.bar")})))))
+         (:file (misc/sanitize-meta {:file (.toURL (URI. "https://foo.bar"))})))))
