@@ -23,15 +23,15 @@ defaults: &defaults
 executors:
   openjdk8:
     docker:
-      - image: circleci/clojure:openjdk-8-lein-2.9.7-bullseye
+      - image: clojure:temurin-8-lein-2.10.0-jammy
     <<: *defaults
   openjdk11:
     docker:
-      - image: circleci/clojure:openjdk-11-lein-2.9.7-bullseye
+      - image: clojure:temurin-11-lein-2.10.0-jammy
     <<: *defaults
   openjdk17:
     docker:
-      - image: circleci/clojure:openjdk-17-lein-2.9.7-bullseye
+      - image: clojure:temurin-17-lein-2.10.0-jammy
     <<: *defaults
 
 # Runs a given set of steps, with some standard pre- and post-
@@ -64,7 +64,7 @@ commands:
           name: Install babashka latest
           command: |
             bash <(curl -s https://raw.githubusercontent.com/borkdude/babashka/master/install) --dir ~
-            sudo mv ~/bb /usr/local/bin/bb
+            mv ~/bb /usr/local/bin/bb
 
       - run:
           name: Generate Cache Checksum
@@ -72,7 +72,7 @@ commands:
             for file in << parameters.files >>
             do
               find . -name $file -exec cat {} +
-            done | shasum | awk '{print $1}' > /tmp/clojure_cache_seed
+            done | sha256sum | awk '{print $1}' > /tmp/clojure_cache_seed
       - restore_cache:
           key: clojure-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
       - steps: << parameters.steps >>
@@ -180,7 +180,7 @@ jobs:
 #
 # - Linux
 #   - run tests against the target matrix
-#     - Java 8, 11 and 15
+#     - Java 8, 11 and 17
 #     - Clojure 1.7, 1.8, 1.9, 1.10, 1.11 master
 #   - linter, eastwood and cljfmt
 #   - verifies cljdoc config
