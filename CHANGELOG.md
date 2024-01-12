@@ -2,6 +2,10 @@
 
 ## master (unreleased)
 
+### Bugs fixed
+
+* [#307](https://github.com/nrepl/nrepl/pull/307): Fix issue where TLS accept loop could sometimes exit prematurely. This caused tests to hang sometimes.
+
 ## 1.1.0 (2023-11-01)
 
 ### New Features
