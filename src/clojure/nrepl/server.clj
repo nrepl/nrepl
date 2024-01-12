@@ -64,9 +64,10 @@
                       nil)
                     (catch Throwable t
                       (consume-exception t)
-                      (if (.isClosed ^ServerSocket server-socket)
-                        nil
-                        (throw t))))]
+                      (when-not (.isClosed ^ServerSocket server-socket)
+                        (log "Unexpected exception of class" (class t) "with message" (.getMessage t))
+                        (safe-close server-socket) ; is this a good idea?
+                        (log "Shutting down server abruptly"))))]
     (if (= sock :tls-exception)
       ; if there was a TLS exception, e.g. bad client cert,
       ; we simply recur: accept new connections on the same thread.

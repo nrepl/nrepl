@@ -11,8 +11,7 @@
   (:require [clojure.java.io :as io :refer [input-stream]]
             [clojure.stacktrace]
             [clojure.string :as str])
-  (:import (java.io IOException)
-           (java.net InetSocketAddress)
+  (:import (java.net InetSocketAddress)
            (java.security KeyFactory
                           KeyStore)
            (java.security.cert Certificate
@@ -22,7 +21,7 @@
                           KeyManager
                           KeyManagerFactory
                           SSLContext
-                          SSLHandshakeException
+                          SSLException SSLHandshakeException
                           SSLSocket
                           TrustManager
                           TrustManagerFactory
@@ -176,7 +175,7 @@
     (try
       (.close sock)
       nil
-      (catch IOException _
+      (catch Throwable _
         nil))))
 
 (defn- ssl-str-context
@@ -245,12 +244,21 @@
     (.connect sock (InetSocketAddress. host ^int port) ^int connect-timeout-ms)
     sock))
 
+(def ^:dynamic *handshake-timeout-ms*
+  "Number of milliseconds to wait for the TLS handshake to complete."
+  30000)
+
 (defn accept
-  "Accepts a new TLS connection. Waits 30 000 milliseconds for the TLS handshake
+  "Accepts a new TLS connection. Waits `*handshake-timeout-ms*` (default: 30 000) milliseconds for the TLS handshake
   to complete. Requires that the client certificate is different from the server certificate."
   [^javax.net.ssl.SSLServerSocket server]
   (let [p (promise)
-        ^SSLSocket sock (.accept server)]
+        ^SSLSocket sock (try
+                          (.accept server)
+                          (catch Throwable t
+                            (if (instance? SSLException t)
+                              (throw t)
+                              (throw (SSLException. ^Throwable t)))))] ; wrap other exceptions in SSLException to make the server accept loop continue
     (.addHandshakeCompletedListener sock
                                     (reify HandshakeCompletedListener
                                       (handshakeCompleted [_ e]
@@ -259,11 +267,11 @@
                                           (deliver p :handshake-bad!)
                                           (deliver p :handshake-ok!)))))
     (future
-      (when (= :timeout (deref p 30000 :timeout))
-        (close-silently sock)
+      (when (= :timeout (deref p *handshake-timeout-ms* :timeout))
+        (close-silently sock) ; this will cause .startHandshake to terminate / throw exception
         (deliver p :handshake-timeout!)))
     (try
-      (.startHandshake sock)
+      (.startHandshake sock) ; can throw IOException
       (let [v @p]
         (cond
           (= v :handshake-bad!)
@@ -274,10 +282,13 @@
           (= v :handshake-timeout!)
           (do
             (close-silently sock)
-            (throw (SSLHandshakeException. "TLS handshake timed out (30000 ms)")))
+            (throw (SSLHandshakeException. "TLS handshake timed out")))
 
           :else
           sock))
       (catch Throwable t
+        (deliver p :caught-exception) ; stop the timeout thread
         (close-silently sock)
-        (throw t)))))
+        (if (instance? SSLException t)
+          (throw t)
+          (throw (SSLException. ^Throwable t))))))) ; wrap other exceptions in SSLException to make the server accept loop continue
