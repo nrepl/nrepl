@@ -6,6 +6,10 @@
 
 * [#307](https://github.com/nrepl/nrepl/pull/307): Fix issue where TLS accept loop could sometimes exit prematurely. This caused tests to hang sometimes.
 
+### Changes
+
+* [#304](https://github.com/nrepl/nrepl/pull/304): Improve `completions` op by switching internally to `compliment-lite`. The change is mostly transparent, but should result in more accurate completion results.
+
 ## 1.1.0 (2023-11-01)
 
 ### New Features
