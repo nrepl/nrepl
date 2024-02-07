@@ -5,6 +5,7 @@
 ### Bugs fixed
 
 * [#307](https://github.com/nrepl/nrepl/pull/307): Fix issue where TLS accept loop could sometimes exit prematurely. This caused tests to hang sometimes.
+* [#311](https://github.com/nrepl/nrepl/pull/311): Make `--interactive` option work when starting a server on a filesystem socket with `--socket PATH`.
 
 ### Changes
 

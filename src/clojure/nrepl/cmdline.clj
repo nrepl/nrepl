@@ -120,12 +120,12 @@ Exit:      Control+D or (exit) or (quit)"
 
 (defn- run-repl
   ([{:keys [server options]}]
-   (let [{:keys [host port socket] :or {host "127.0.0.1"}} server
+   (let [{:keys [host port unix-socket] :or {host "127.0.0.1"}} server
          {:keys [transport tls-keys-file tls-keys-str] :or {transport #'transport/bencode}} options]
      (run-repl-with-transport
       (cond
-        socket
-        (nrepl/connect :socket socket :transport-fn transport)
+        unix-socket
+        (nrepl/connect :socket unix-socket :transport-fn transport)
 
         (and host port)
         (nrepl/connect :host host :port port :transport-fn transport :tls-keys-file tls-keys-file :tls-keys-str tls-keys-str)
@@ -395,12 +395,12 @@ Exit:      Control+D or (exit) or (quit)"
   [server options]
   (let [transport (:transport options)
         repl-fn (:repl-fn options)
-        socket (:socket server)
+        unix-socket (:unix-socket server)
         host (:host server)
         port (:port server)]
     (when (= transport #'transport/tty)
       (die "The built-in client does not support the tty transport. Consider using `nc` or `telnet`.\n"))
-    (if socket
+    (if unix-socket
       (repl-fn {:server  server
                 :options (merge (when (:color options) colored-output)
                                 {:transport transport})})
@@ -416,7 +416,7 @@ Exit:      Control+D or (exit) or (quit)"
   [{:keys [host port socket] :as options}]
   (interactive-repl {:host   host
                      :port   port
-                     :socket socket}
+                     :unix-socket socket}
                     options)
   (exit 0))
 
