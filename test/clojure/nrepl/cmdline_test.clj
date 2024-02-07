@@ -308,6 +308,6 @@
           (with-redefs [cmd/clean-up-and-exit >devnull]
             (with-open [server (server/start-server :socket sock-path)]
               (let [results (atom [])]
-                (#'cmd/run-repl {:server  {:socket sock-path}
+                (#'cmd/run-repl {:server  server
                                  :options {:prompt >devnull :err >devnull :out >devnull :value #(swap! results conj %)}})
                 (is (= expected-output @results))))))))))
