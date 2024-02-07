@@ -2,6 +2,8 @@
 
 ## master (unreleased)
 
+* [TKTKTK](TKTKTK): Fix `--interactive` option when used with `--socket PATH`.
+
 ## 1.1.0 (2023-11-01)
 
 ### New Features

@@ -157,7 +157,7 @@
       (binding [dynamic-loader/*state* state]
         ((:handler @state) msg)))))
 
-(defrecord Server [server-socket port open-transports transport greeting handler]
+(defrecord Server [server-socket port socket open-transports transport greeting handler]
   java.io.Closeable
   (close [this] (stop-server this)))
 
@@ -211,6 +211,7 @@
                  (inet-socket bind port))
         server (Server. ss
                         (when-not socket (.getLocalPort ^java.net.ServerSocket ss))
+                        socket
                         (atom #{})
                         transport-fn
                         greeting-fn
