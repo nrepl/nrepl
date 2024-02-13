@@ -158,7 +158,23 @@
       (binding [dynamic-loader/*state* state]
         ((:handler @state) msg)))))
 
-(defrecord Server [server-socket host port socket open-transports transport greeting handler]
+(defrecord
+ Server
+ ;;A record representing an nREPL server.
+ [server-socket ;; A java.net.ServerSocket for underlying server connection
+  host ;; When starting an IP server, the hostname the server is bound to
+  port ;; When starting an IP server, the port the servfer is bound to
+  socket ;; When starting a filesystem socket server, the string path to the
+         ;; socket file
+  open-transports ;; An IDeref containing a set of nrepl.transport/Transport
+                  ;; objects representing open connections
+  transport ;; A function that, given a java.net.Socket corresponding to an
+            ;; incoming connection, will return a value satisfying the
+            ;; nrepl.transport/Transport protocol for that Socket
+  greeting  ;; A function called after a client connects but before the
+            ;; handler. Called with the connection's corresponding
+            ;; nrepl.transport/Transport object
+  handler]  ;; The message handler function to use for connected clients
   java.io.Closeable
   (close [this] (stop-server this)))
 
