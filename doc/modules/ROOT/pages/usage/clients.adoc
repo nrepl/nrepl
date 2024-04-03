@@ -26,6 +26,7 @@ NOTE: Both Leiningen and Boot use internally REPL-y, as their command-line nREPL
   for Eclipse)
 * https://github.com/sanel/monroe[monroe] (nREPL client for Emacs, works with non-Clojure servers)
 * https://github.com/Saikyun/miracle[miracle] (fork of `monroe` targeting Arcadia)
+* https://github.com/Sasanidas/Rail[Rail] (generic nREPL client for Emacs that should work with any nREPL server)
 * https://github.com/tpope/vim-fireplace[fireplace.vim] (Clojure + nREPL
   support for vim)
 * https://github.com/Olical/conjure[Conjure] (Clojure(Script) plugin for Neovim)
