@@ -29,7 +29,7 @@ documentation which clients are known to work well with them.
 
 * https://github.com/vspinu/R-nREPL[R-nREPL] - an nREPL server for R
 
-* https://gitlab.com/sasanidas/python-nrepl[nrepl-python] - an nREPL server for https://www.python.org/[Python]
+* https://codeberg.org/sasanidas/nrepl-python[nrepl-python] - an nREPL server for https://www.python.org/[Python]
 
 * https://github.com/clojure/clr.tools.nrepl[nREPL CLR] - an nREPL server for ClojureCLR. A 1:1 port of the reference Clojure nREPL. Unfortunately it has been abandoned a long time ago.
 
