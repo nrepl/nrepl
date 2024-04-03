@@ -43,4 +43,6 @@ documentation which clients are known to work well with them.
 
 * https://github.com/viesti/nrepl-cljs-sci[nrepl-cljs-sci] - a native Node.js nREPL server implementation using https://github.com/borkdude/sci[SCI].
 
+* https://git.sr.ht/~abcdw/guile-ares-rs[guile-ares-rs] -  an Asynchronous Reliable Extensible Sleek RPC Server for Guile based on the nREPL protocol. 
+
 As you can see nREPL has implementations for many popular Lisp dialects, but it's certainly not limited to Lisp dialects.
