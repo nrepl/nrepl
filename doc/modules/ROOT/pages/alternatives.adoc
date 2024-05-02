@@ -14,7 +14,7 @@ depending on your requirements and use-cases.
 == Socket REPL
 
 A https://clojure.org/reference/repl_and_main#_launching_a_socket_server[socket REPL server] was added in Clojure 1.8.
-In essence it's just a socket version of the standard REPL - the input in text (code) and the output is text.
+In essence it's just a socket version of the standard REPL - the input is text (code) and the output is text.
 Nothing more, nothing less.
 
 Here's a typical exchange between a client and a socket REPL server:
@@ -37,7 +37,7 @@ Hello, world!
 nil
 ----
 
-As you can see the main issue with the socket REPL is that it's hard to tell apart values from output in the evaluation
+As you can see the main issue with the socket REPL is that it's hard to tell apart values (results) from output in the evaluation
 responses. That's fine when you're interacting with a REPL directly, but is a big issue if you're using it programmatically.
 Still, I think it's fair to say that the main purpose of the socket REPL server is to give you a basic REPL, not building development tools on top of it.
 
