@@ -14,7 +14,6 @@ orbs:
 defaults: &defaults
   working_directory: ~/repo
   environment:
-    LEIN_ROOT: "true"   # we intended to run lein as root
     JVM_OPTS: -Xmx3200m # limit the maximum heap size to prevent out of memory errors
   resource_class: large # default is medium. large (may) give us more consistent CI results
 
@@ -117,15 +116,12 @@ commands:
 #
 ######################################################################
 
-# The jobs are relatively simple. One runs utility commands against
-# latest stable JDK + Clojure, the other against specified versions
-
 jobs:
 
   util_job:
     description: |
       Running utility commands/checks (linter etc.)
-      Always uses Java21 and Clojure 1.11
+      Always uses Java 21 and Clojure 1.11
     parameters:
       steps:
         type: steps
@@ -135,9 +131,8 @@ jobs:
     steps:
       - checkout
       - with_cache:
-          cache_version: "1.11"
+          cache_version: $VERSION
           steps: << parameters.steps >>
-
 
   test_code:
     description: |
@@ -155,7 +150,7 @@ jobs:
     steps:
       - checkout
       - with_cache:
-          cache_version: << parameters.clojure_version >>
+          cache_version: $VERSION
           steps:
             - run:
                 name: Running tests
@@ -163,7 +158,7 @@ jobs:
             - store_test_results:
                 path: test-results
 
-  test_code_win_java_system:
+  test_code_windows:
     description: |
       Run tests on MS-Windows using the system's JDK version and given
       CLOJURE_VERSION.
@@ -180,84 +175,22 @@ jobs:
             java -version; if(-not $?){exit 9}
             bb test      ; if(-not $?){exit 9}
 
-# The ci-test-matrix does the following:
-#
-# - Linux
-#   - run tests against the target matrix
-#     - Java 8, 11, 17, and 21
-#     - Clojure 1.7, 1.8, 1.9, 1.10, 1.11 master
-#     - Clojure 1.7-1.9 are only tested against Java 8.
-#   - linter, eastwood and cljfmt
-#   - verifies cljdoc config
-#   - runs code coverage report
-# - MS-Windows
-#   - run tests against installed java version and Clojure 1.11
-
 workflows:
-  version: 2.1
   ci-test-matrix:
     jobs:
       - test_code:
-          name: Lnx, Java 8, Clj 1.7
-          clojure_version: "1.7"
-          jdk_version: openjdk8
+          matrix:
+            parameters:
+              # Clojure versions 1.7-1.9 are tested only against JDK8 because of
+              # multiple incompatibilities of those versions with JDK9+.
+              clojure_version: ["1.7", "1.8", "1.9", "1.10", "1.11", "master"]
+              jdk_version: ["openjdk8"]
       - test_code:
-          name: Lnx, Java 8, Clj 1.8
-          clojure_version: "1.8"
-          jdk_version: openjdk8
-      - test_code:
-          name: Lnx, Java 8, Clj 1.9
-          clojure_version: "1.9"
-          jdk_version: openjdk8
-      - test_code:
-          name: Lnx, Java 8, Clj 1.10
-          clojure_version: "1.10"
-          jdk_version: openjdk8
-      - test_code:
-          name: Lnx, Java 8, Clj 1.11
-          clojure_version: "1.11"
-          jdk_version: openjdk8
-      - test_code:
-          name: Lnx, Java 8, Clj master
-          clojure_version: "master"
-          jdk_version: openjdk8
-      - test_code:
-          name: Lnx, Java 11, Clj 1.10
-          clojure_version: "1.10"
-          jdk_version: openjdk11
-      - test_code:
-          name: Lnx, Java 11, Clj 1.11
-          clojure_version: "1.11"
-          jdk_version: openjdk11
-      - test_code:
-          name: Lnx, Java 11, Clj master
-          clojure_version: "master"
-          jdk_version: openjdk11
-      - test_code:
-          name: Lnx, Java 17, Clj 1.10
-          clojure_version: "1.10"
-          jdk_version: openjdk17
-      - test_code:
-          name: Lnx, Java 17, Clj 1.11
-          clojure_version: "1.11"
-          jdk_version: openjdk17
-      - test_code:
-          name: Lnx, Java 17, Clj master
-          clojure_version: "master"
-          jdk_version: openjdk17
-      - test_code:
-          name: Lnx, Java 21, Clj 1.10
-          clojure_version: "1.10"
-          jdk_version: openjdk21
-      - test_code:
-          name: Lnx, Java 21, Clj 1.11
-          clojure_version: "1.11"
-          jdk_version: openjdk21
-      - test_code:
-          name: Lnx, Java 21, Clj master
-          clojure_version: "master"
-          jdk_version: openjdk21
-      # - test_code_win_java_system:
+          matrix:
+            parameters:
+              clojure_version: ["1.10", "1.11", "master"]
+              jdk_version: ["openjdk11", "openjdk17", "openjdk21"]
+      # - test_code_windows:
       #     name: Win, Java sys, Clj 1.11
       #     clojure_version: "1.11"
       - util_job:
