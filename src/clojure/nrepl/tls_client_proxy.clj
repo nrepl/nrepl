@@ -50,8 +50,8 @@
   (Thread/setDefaultUncaughtExceptionHandler
    (reify Thread$UncaughtExceptionHandler
      (uncaughtException [_ thread ex]
-       (.print (System/err) "Uncaught exception on ")
-       (.println (System/err) (.getName ^Thread thread))
+       (.print System/err "Uncaught exception on ")
+       (.println System/err (.getName ^Thread thread))
        (.printStackTrace ^Throwable ex)
        (error "Uncaught exception on" (.getName ^Thread thread))
        nil))))
