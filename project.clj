@@ -30,11 +30,11 @@
                                     :sign-releases false}]]
 
   :profiles {:fastlane {:dependencies [[nrepl/fastlane "0.1.0"]]}
-             :test {:dependencies [[com.github.ivarref/locksmith "0.1.6"]
+             :test {:dependencies [[com.github.ivarref/locksmith "0.1.9"]
                                    [com.hypirion/io "0.3.1"]
-                                   [commons-net/commons-net "3.6"]
-                                   [lambdaisland/kaocha "1.0.672"]
-                                   [lambdaisland/kaocha-junit-xml "0.0.76"]]
+                                   [commons-net/commons-net "3.10.0"]
+                                   [lambdaisland/kaocha "1.89.1380"]
+                                   [lambdaisland/kaocha-junit-xml "1.17.101"]]
                     :java-source-paths ["test/java"]
                     :plugins      [[test2junit "1.4.2"]]
                     :test2junit-output-dir "test-results"
@@ -43,16 +43,16 @@
                     :test-selectors {:default (complement :min-java-version)}
                     :aliases {"test" "test2junit"}}
              :junixsocket {:jvm-opts ["-Dnrepl.test.junixsocket=true"]
-                           :dependencies [[com.kohlschutter.junixsocket/junixsocket-core "2.5.1" :extension "pom"]]}
-             :clj-kondo {:dependencies [[clj-kondo "2022.01.15"]]}
+                           :dependencies [[com.kohlschutter.junixsocket/junixsocket-core "2.9.1" :extension "pom"]]}
+             :clj-kondo {:dependencies [[clj-kondo "2024.03.13"]]}
              ;; Clojure versions matrix
-             :provided {:dependencies [[org.clojure/clojure "1.11.1"]]}
+             :provided {:dependencies [[org.clojure/clojure "1.11.3"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :1.10 {:dependencies [[org.clojure/clojure "1.10.2"]]
                     :source-paths ["src/spec"]}
-             :1.11 {:dependencies [[org.clojure/clojure "1.11.1"]]
+             :1.11 {:dependencies [[org.clojure/clojure "1.11.3"]]
                     :source-paths ["src/spec"]}
              :master {:repositories [["snapshots"
                                       "https://oss.sonatype.org/content/repositories/snapshots"]]
@@ -64,11 +64,11 @@
              ;; generates the nREPL ops documentation from their descriptor
              ;; metadata.
              :maint {:source-paths ["src/maint"]
-                     :dependencies [[org.clojure/tools.cli "1.0.194"]]}
+                     :dependencies [[org.clojure/tools.cli "1.1.230"]]}
 
              ;; CI tools
-             :cloverage {:plugins [[lein-cloverage "1.2.2"]]
-                         :dependencies [[cloverage "1.2.2"]]
+             :cloverage {:plugins [[lein-cloverage "1.2.4"]]
+                         :dependencies [[cloverage "1.2.4"]]
                          :cloverage {:codecov? true
                                      ;; Cloverage can't handle some of the code
                                      ;; in this project

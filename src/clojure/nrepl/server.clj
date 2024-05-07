@@ -178,7 +178,7 @@
   java.io.Closeable
   (close [this] (stop-server this)))
 
-(defn ^Server start-server
+(defn start-server
   "Starts a socket-based nREPL server.  Configuration options include:
 
    * :port — defaults to 0, which autoselects an open port
@@ -209,6 +209,7 @@
    either via `stop-server`, (.close server), or automatically via `with-open`.
    The port that the server is open on is available in the :port slot of the
    server map (useful if the :port option is 0 or was left unspecified."
+  ^nrepl.server.Server
   [& {:keys [port bind socket tls? tls-keys-str tls-keys-file transport-fn handler ack-port greeting-fn consume-exception]
       :or {consume-exception (fn [_] nil)}}]
   (when (and socket (or port bind tls?))
