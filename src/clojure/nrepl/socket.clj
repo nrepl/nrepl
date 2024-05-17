@@ -29,22 +29,11 @@
 
 (defn inet-socket
   ([bind port]
-   (let [port (or port 0)
-         addr (fn [^String bind port] (InetSocketAddress. bind (int port)))
-         ;; We fallback to 127.0.0.1 instead of to localhost to avoid
-         ;; a dependency on the order of ipv4 and ipv6 records for
-         ;; localhost in /etc/hosts
-         bind (or bind "127.0.0.1")]
-     (doto (ServerSocket.)
-       (.setReuseAddress true)
-       (.bind (addr bind port)))))
+   (doto (ServerSocket.)
+     (.setReuseAddress true)
+     (.bind (InetSocketAddress. bind (int port)))))
   ([bind port tls-context]
-   (let [port (or port 0)
-         ;; We fallback to 127.0.0.1 instead of to localhost to avoid
-         ;; a dependency on the order of ipv4 and ipv6 records for
-         ;; localhost in /etc/hosts
-         bind (or bind "127.0.0.1")]
-     (tls/server-socket tls-context bind port))))
+   (tls/server-socket tls-context bind port)))
 
 ;; Unix domain sockets
 
