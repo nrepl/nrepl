@@ -218,6 +218,11 @@
       (log msg)
       (throw (ex-info msg {:nrepl/kind ::invalid-start-request}))))
   (let [transport-fn (or transport-fn t/bencode)
+        port (or port 0)
+        ;; We fallback to 127.0.0.1 instead of to localhost to avoid a
+        ;; dependency on the order of IPv4 and IPv6 records for localhost in
+        ;; /etc/hosts
+        bind (or bind "127.0.0.1")
         ss (cond socket
                  (unix-server-socket socket)
                  (or tls? (or tls-keys-str tls-keys-file))
