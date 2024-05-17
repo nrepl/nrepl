@@ -189,8 +189,9 @@
         (log msg)
         (throw (ex-info msg {:nrepl/kind ::no-filesystem-sockets}))))))
 
-(defn as-nrepl-uri [sock transport-scheme]
-  (let [get-local-addr (fn [^NetworkChannel c] (.getLocalAddress c))]
+(defn as-nrepl-uri ^URI [{:keys [host server-socket]} transport-scheme]
+  (let [sock server-socket
+        get-local-addr (fn [^NetworkChannel c] (.getLocalAddress c))]
     (if-let [addr (and (some-> jdk-unix-server-class (instance? sock))
                        (get-local-addr sock))]
       (URI. (str transport-scheme "+unix")
@@ -208,7 +209,7 @@
                      (when (instance? SSLServerSocket sock)
                        "s"))
                 nil ;; userInfo
-                (-> sock .getInetAddress .getHostName)
+                host
                 (.getLocalPort sock)
                 nil       ;; path
                 nil       ;; query
