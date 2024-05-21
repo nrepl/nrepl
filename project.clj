@@ -6,7 +6,9 @@
   :scm {:name "git" :url "https://github.com/nrepl/nrepl"}
   :min-lein-version "2.9.1"
   :source-paths ["src/clojure"]
+  :resource-paths ["res"]
   :java-source-paths ["src/java"]
+  :jvm-opts ["-Djdk.attach.allowAttachSelf"]
   :test-paths ["test/clojure"]
   :javac-options ["-target" "8" "-source" "8"]
 
