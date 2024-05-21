@@ -63,3 +63,45 @@ Or, add this to your Maven project's `pom.xml`:
   <version>1.1.2</version>
 </dependency>
 ----
+
+[[jvmti]]
+=== Enable libnrepl JVMTI agent
+
+Starting with Java 20, the previously deprecated
+https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Thread.html#stop()[Thread.stop]
+method has been
+https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/doc-files/threadPrimitiveDeprecation.html[disabled].
+This change made it impossible for the xref:ops.adoc#interrupt[interrupt]
+middleware to forcibly stop evaluation of forms which don't respond to the
+officially endorsed
+https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Thread.html#interrupt()[Thread.interrupt]
+calls. In response, nREPL introduced a native
+https://docs.oracle.com/en/java/javase/21/docs/specs/jvmti.html[JVMTI-based]
+agent to be able to stop threads on the latest Java again.
+
+nREPL ships with prebuilt JVMTI agent binaries for the following platforms:
+
+- Linux: *x64* and *arm64*
+- MacOS: *x64/arm64* (universal binary)
+
+NOTE: Other platforms and architectures not in this list are still supported by
+nREPL. Only the thread stopping capability and only on Java 20+ will not work
+there, the rest of nREPL functionality will still work as always.
+
+For the JVMTI agent to be able to attach to the running process, the JVM has to
+be started with the flag `-Djdk.attach.allowAttachSelf`. Depending on the built
+tool, this can be done like this:
+
+- With tools.deps, add `:jvm-opts ["-Djdk.attach.allowAttachSelf"]` to an alias
+in `deps.edn` and enable that alias, or add `-J-Djdk.attach.allowAttachSelf`
+explicitly to your REPL command.
+- With Leiningen, add `:jvm-opts ["-Djdk.attach.allowAttachSelf"]` to
+  `project.clj`.
+
+If `-Djdk.attach.allowAttachSelf` is not enabled, nREPL will not try to load the
+native agent and will not try to stop threads on Java 20 and newer if the
+regular `Thread.interrupt()` did not succeed.
+
+NOTE: Prior to Java 20, nREPL will not try to load libnrepl native agent regardless of
+the state of `-Djdk.attach.allowAttachSelf` flag and will use `Thread.stop()` to
+interrupt the evaluating thread.
