@@ -15,7 +15,7 @@ servers written in any language.
 * https://git.sr.ht/~technomancy/shevek/[shevek] (A command-line nREPL client written in https://fennel-lang.org/[Fennel], works with non-Clojure servers)
 * https://github.com/kanej/parle[Parle] (A command-line nREPL client using node.js written in ClojureScript)
 
-NOTE: Both Leiningen and Boot use internally REPL-y, as their command-line nREPL client.
+NOTE: Leiningen uses REPL-y internally as its command-line nREPL client.
 
 == Editors/IDEs
 

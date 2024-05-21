@@ -16,7 +16,7 @@ mostly targets `clj`. It's documented in the subsequent sections of this
 manual.
 ====
 
-All popular Clojure build tools (Leiningen, Boot, Gradle, Maven) have
+All popular Clojure build tools (Leiningen, Gradle, Maven) have
 the ability to run an nREPL server and most of the time you'll probably
 simply use nREPL through them and end up using whatever nREPL version
 they happen to ship.
@@ -36,8 +36,8 @@ nREPL is available in Clojars. Add this to your Leiningen
 
 [TIP]
 ====
-You can override the version of nREPL supplied by Leiningen and Boot by
-adding nREPL as a dependency to your project.
+You can override the version of nREPL supplied by Leiningen by adding nREPL as a
+dependency to your project.
 ====
 
 Or, add this to your Gradle project's `build.gradle`:
