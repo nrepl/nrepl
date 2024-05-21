@@ -35,10 +35,6 @@ requirements were bumped in nREPL 0.4.
 |===
 | nREPL | Required JDK | Required Clojure
 
-| 0.2.x
-| 5
-| 1.2
-
 | 0.3.x
 | 5
 | 1.2
@@ -76,6 +72,12 @@ requirements were bumped in nREPL 0.4.
 | 1.7
 
 |===
+
+== Java 20+ compatibility
+
+In general, nREPL behavior does not depend on the versions of Java and Clojure.
+As of now, there is one exception to this rule, see
+xref:installation.adoc#jvmti[JVMTI agent] page.
 
 == Backwards Compatibility
 

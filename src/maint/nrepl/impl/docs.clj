@@ -27,7 +27,7 @@
 (defn- usage [options-summary]
   (->> [(:doc (meta #'-main))
         ""
-        "Usage: lein -m +maint run nrepl.impl.docs [options]"
+        "Usage: lein with-profile +maint run -m nrepl.impl.docs [options]"
         ""
         "Options:"
         options-summary]

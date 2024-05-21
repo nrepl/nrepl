@@ -33,6 +33,31 @@ $ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.1.2"}}}' -M -m nrepl.cmdline 
 
 Now you can start playing the server you've built.
 
+=== Building libnrepl native agent
+
+NOTE: The reason why nREPL needs a native agent is explained
+xref:installation.adoc#jvmti[here].
+
+Native binaries of https://github.com/nrepl/nrepl/tree/master/libnrepl[libnrepl
+JVMTI agent] are built on
+https://github.com/nrepl/nrepl/actions/workflows/libnrepl.yml[CI] and then
+copied into the https://github.com/nrepl/nrepl/tree/master/res[res/] directory
+manually, so to do regular nREPL builds you don't have to recompile native code.
+However, if you want to experiment with the agent yourself, then you can rebuild
+the native library for your current platform like this:
+
+[source,shell]
+----
+$ cd libnrepl/
+$ make all
+----
+
+The Makefile will use the default C compiler for your OS (GCC on Linux, Clang on
+MacOS). You will also need `JAVA_HOME` environment variable to be pointing at
+the JDK installation. After the binary is built, copy it from `libnrepl/build/`
+directory into `res/` and restart the REPL. The new binary will be picked up
+automatically.
+
 == Interactive Hacking
 
 As nREPL is fundamental to the development workflows of many people it might be

@@ -107,10 +107,10 @@ The values in the `:handles` map are used to support the `"describe"` operation,
 which provides "a machine- and human-readable directory and documentation for
 the operations supported by an nREPL endpoint" (see
 `nrepl.impl.docs/generate-ops-info` and the results of
-`lein with-profile +maint run nrepl.impl.docs` xref:ops.adoc[here]).
+`lein with-profile +maint run -m nrepl.impl.docs` xref:ops.adoc[here]).
 
-TIP: There's also `lein with-profile +maint run nrepl.impl.docs --output md` if you'd like to
-generate an ops listing in Markdown format.
+TIP: There's also `lein with-profile +maint run -m nrepl.impl.docs --output md`
+if you'd like to generate an ops listing in Markdown format.
 
 The `:requires` and `:expects` entries control the order in which
 middleware is applied to a base handler.  In the `add-stdin` example above,
