@@ -524,6 +524,30 @@
         (is (= "Clean stop!"
                (read-string (last (:value r)))))))))
 
+(def-repl-test non-interruptible-stop-thread
+  (testing "non-interruptible code can still be interrupted"
+    (with-redefs [session/force-stop-delay-ms 500]
+      (let [resp (message session {:op "eval"
+                                   :code (code
+                                          (do (def vol (volatile! 0))
+                                              (def curr-t (Thread/currentThread))
+                                              ;; This never stops on its own.
+                                              (while (vswap! vol inc))))})]
+        (Thread/sleep 1000)
+        (is (= #{:done}
+               (->> session
+                    (#(message % {:op "interrupt"}))
+                    first
+                    clean-response
+                    :status)))
+        ;; Wait for CIDER forceful interrupt to trigger.
+        (Thread/sleep (+ 500 1000))
+        ;; Verify that volatile is not changed anymore.
+        (let [v (repl-values session "@vol")]
+          (Thread/sleep 1000)
+          (is (= v (repl-values session "@vol")))
+          (is (= ["TERMINATED"] (repl-values session "(str (.getState curr-t))"))))))))
+
 ;; NREPL-66: ensure that bindings of implementation vars aren't captured by user sessions
 ;; (https://github.com/clojure-emacs/cider/issues/785)
 (def-repl-test ensure-no-*msg*-capture

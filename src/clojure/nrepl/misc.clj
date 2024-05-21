@@ -121,6 +121,14 @@
   []
   (= java-version 8))
 
+(defn attach-self-enabled?
+  "Return true if the current process allows native agents to be attached from
+  within the JVM itself."
+  []
+  ;; -Djdk.attach.allowAttachSelf sets the property to "" if it is present,
+  ;; otherwise that property will be nil.
+  (boolean (System/getProperty "jdk.attach.allowAttachSelf")))
+
 (def safe-var-metadata
   "A list of var metadata attributes are safe to return to the clients.
   We need to guard ourselves against EDN data that's not encodeable/decodable

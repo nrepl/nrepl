@@ -5,7 +5,7 @@
    clojure.main
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.interruptible-eval :refer [*msg* evaluate]]
-   [nrepl.misc :refer [noisy-future uuid response-for]]
+   [nrepl.misc :as misc :refer [noisy-future uuid response-for]]
    [nrepl.transport :as t])
   (:import
    (clojure.lang DynamicClassLoader LineNumberingPushbackReader)
@@ -173,6 +173,11 @@
        (evaluate msg))
      the-session)))
 
+(defn- jvmti-stop-thread [t]
+  ((misc/requiring-resolve 'nrepl.util.jvmti/stop-thread) t))
+
+(def ^:private force-stop-delay-ms 5000)
+
 (defn- interrupt-stop
   "This works as follows
 
@@ -180,8 +185,9 @@
   2. Wait 100ms. This is mainly to allow thread that respond quickly to
      interrupts to send a message back in response to the interrupt. Significantly,
      this includes an exception thrown by `Thread/sleep`.
-  3. Asynchronously: wait another 5000ms for the thread to cleanly terminate.
-     Only calls `.stop` if it fails to do so (and risk state corruption)
+  3. Asynchronously: wait another `force-stop-delay-ms` (5000ms) for the thread
+     to cleanly terminate. Only calls `.stop` if it fails to do so (and risk
+     state corruption)
 
   This set of behaviours strikes a balance between allowing a thread to respond
   to an interrupt, but also ensuring we actually kill runaway processes.
@@ -192,10 +198,19 @@
   (.interrupt t)
   (Thread/sleep 100)
   (noisy-future
-   (Thread/sleep 5000)
-   (when-not (= (Thread$State/TERMINATED)
-                (.getState t))
-     (.stop t))))
+   (Thread/sleep (long force-stop-delay-ms))
+   (when-not (= (.getState t) Thread$State/TERMINATED)
+     (if (>= misc/java-version 20)
+       ;; Since JDK20, Thread.stop() no longer works. We must resort to using
+       ;; JVMTI native agent which luckily still supports Stop Thread command.
+       ;; Whether this is more dangerous than calling Thread.stop() in earlier
+       ;; JDKs is unknown, but assume the worst and never use this if you can't
+       ;; take the risk!
+       (if (misc/attach-self-enabled?)
+         (jvmti-stop-thread t)
+         (misc/log "Cannot stop thread on JDK20+ without jdk.attach.allowAttachSelf enabled."))
+
+       (.stop t)))))
 
 (defn session-exec
   "Takes a session id and returns a maps of three functions meant for interruptible-eval:
