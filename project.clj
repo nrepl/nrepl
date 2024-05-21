@@ -75,10 +75,7 @@
                                      :test-ns-regex [#"^((?!nrepl.sanity-test).)*$"]}}
 
              :cljfmt {:plugins [[lein-cljfmt "0.8.0"]]
-                      :cljfmt {:indents {as-> [[:inner 0]]
-                                         cache-last-result [[:block 2]]
-                                         with-debug-bindings [[:inner 0]]
-                                         merge-meta [[:inner 0]]
+                      :cljfmt {:indents {delay [[:inner 0]]
                                          returning [[:inner 0]]
                                          testing-dynamic [[:inner 0]]
                                          testing-print [[:inner 0]]}}}
