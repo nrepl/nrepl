@@ -90,17 +90,3 @@ If you experience problems running `lein repl` you have to make sure that:
 * Your project is using Clojure 1.7+.
 * Your project is using Java 8+.
 * You're not trying to load any middleware that haven't been updated for nREPL 0.4+.
-
-== Boot
-
-=== The REPL Task Crashes
-
-If you experience problems running `lein repl` you have to make sure that:
-
-* Your project is using Clojure 1.7+.
-* Your project is using Java 8+.
-* You're not trying to load any middleware that haven't been updated for nREPL 0.4+.
-
-=== nREPL Configuration Files are Ignored
-
-Boot currently (as of 2.8.2) doesn't yet support the configuration mechanism introduced in nREPL 0.5.
