@@ -17,7 +17,8 @@
             Flushable
             PushbackInputStream
             PushbackReader)
-   [java.net Socket SocketException]
+   [java.net SocketException]
+   [java.nio.channels ClosedChannelException]
    [java.util.concurrent BlockingQueue LinkedBlockingQueue SynchronousQueue TimeUnit]))
 
 (defprotocol Transport
@@ -87,6 +88,8 @@
   [s & body]
   `(try
      ~@body
+     (catch ClosedChannelException e#
+       (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server")))
      (catch RuntimeException e#
        (if (= "EOF while reading" (.getMessage e#))
          (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server"))
@@ -96,7 +99,8 @@
          (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server"))
          (throw e#)))
      (catch Throwable e#
-       (if (and ~s (instance? Socket ~s) (not (let [^Socket s# ~s] (.isConnected s#))))
+       (if (let [s# ~s]
+             (and (satisfies? socket/Connectable s#) (not (socket/is-connected? s#))))
          (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server"))
          (throw e#)))))
 

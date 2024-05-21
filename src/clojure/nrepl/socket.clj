@@ -235,6 +235,17 @@
       (throw (ClosedChannelException.)))
     (.accept s)))
 
+(defprotocol Connectable
+  (is-connected? [s]
+    "Returns true if socket-like thing `s` is currently connected."))
+
+(extend-protocol Connectable
+  SocketChannel
+  (is-connected? [s] (.isConnected s))
+
+  Socket
+  (is-connected? [s] (.isConnected s)))
+
 ;; We have to handle this ourselves for NIO because unfortunately read and write
 ;; hang if we use both Channels/newInputStream and Channels/newOutputStream.
 ;; Read and write deadlock on a shared channel input/output stream lock
