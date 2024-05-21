@@ -3,7 +3,8 @@
   useful for anyone extending it)."
   {:author "Chas Emerick"}
   (:refer-clojure :exclude [requiring-resolve])
-  (:require [clojure.java.io :as io]))
+  (:require [clojure.java.io :as io]
+            [clojure.string :as str]))
 
 (defn log
   [ex-or-msg & msgs]
@@ -101,12 +102,24 @@
            (finally
              (.setContextClassLoader (Thread/currentThread) ctxcl#)))))))
 
+(defn parse-java-version
+  "Parse Java version string according to JEP 223 and return version as a number."
+  []
+  (try (let [s (System/getProperty "java.specification.version")
+             [major minor _] (str/split s #"\.")
+             major (Integer/parseInt major)]
+         (if (> major 1)
+           major
+           (Integer/parseInt minor)))
+       (catch Exception _ 8)))
+
+(def java-version "Current Java version number." (parse-java-version))
+
 (defn java-8?
   "Util to check if we are using Java 8. Useful for features that behave
   differently after version 8."
   []
-  (.startsWith (System/getProperty "java.runtime.version")
-               "1.8"))
+  (= java-version 8))
 
 (def safe-var-metadata
   "A list of var metadata attributes are safe to return to the clients.
