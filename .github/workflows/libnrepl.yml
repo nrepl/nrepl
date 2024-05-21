@@ -1,0 +1,70 @@
+name: Build libnrepl native library
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+
+    - name: Compile native library
+      run: cd libnrepl/ && make all
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: libnrepl-linux-x64
+        path: libnrepl/build
+
+  build-linux-arm64:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+      with:
+        platforms: arm64
+
+    - name: Run the build process with Docker
+      uses: addnab/docker-run-action@v3
+      with:
+        image: eclipse-temurin:21
+        options: |
+          --platform linux/arm64
+          --volume ${{ github.workspace }}:/build
+        run: |
+          apt-get update && apt-get install -y make gcc
+          cd /build/libnrepl/ && make all
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: libnrepl-linux-arm64
+        path: libnrepl/build
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+
+    - name: Compile native library
+      run: cd libnrepl/ && make all
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: libnrepl-macos-universal
+        path: libnrepl/build
