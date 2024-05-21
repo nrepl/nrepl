@@ -54,31 +54,12 @@ Still, I think it's fair to say that the main purpose of the socket REPL server 
 * Updates are constrained to Clojure's development cycle
 * Clients have to support EDN, which is a problem in certain environments
 
-== unrepl
-
-https://github.com/Unrepl/unrepl[unrepl] builds on top of the built-socket REPL to provide framed responses. Clients feed `unrepl` text to be evaluated
-and receive the result as a map. That makes it much easier to use the REPL from development tools. It also includes provisions
-for upgrading a plain socket REPL to `unrepl`, injecting dependencies straight from the clients and printing huge data structures in an incremental manner.
-
-NOTE: ``unrepl``'s author Christophe Grand has been collaborating with nREPL's team to bring some of those advanced features to nREPL.
-
-=== Pros
-
-* Builds on top of the Socket REPL
-* Allows clients to inject dependencies
-* Has great provisions for printing big data structures
-* External project that's independent of Clojure's development cycle
-* Easy to leverage from Clojure(Script)/Java(Script) clients
-
-=== Cons
-
-* Streaming input means tooling has to be built on top of `eval`
-* Clients have to support EDN, which is a problem in certain environments
-* Clojure-only
-
 == prepl
 
-`prepl` is pretty similar to `unrepl` in terms of the way it operates (streaming input, framed output). Its main advantage is that it's part of Clojure since 1.10. `prepl` is rather spartan compared to `unrepl`, but as a result it's simpler.
+https://clojuredocs.org/clojure.core.server/prepl[prepl] is a structured REPL
+built into Clojure since version 1.0. Clients feed `prepl` text to be evaluated
+and receive the result as a map. That makes it much easier to use the REPL from
+development tools.
 
 Here's a typical exchange between a client and a `prepl` server:
 
@@ -149,7 +130,7 @@ an LSP server implementation that's powered by a REPL.
 
 == Comparison
 
-It's important to understand that while the socket REPL, unrepl and prepl are pure REPLs (meaning their
+It's important to understand that while the socket REPL and prepl are pure REPLs (meaning their
 sole focus is reading, evaluating and printing), nREPL is both a REPL and a development tooling
 protocol. In this sense it sits somewhere between all other REPL servers and LSP.
 
@@ -173,13 +154,6 @@ infinitely extensible when it comes to supported operations, data formats and co
 | Yes
 | No
 | No
-
-| unrepl
-| Streaming Input/Structured Output
-| EDN
-| No
-| No
-| Yes
 
 | prepl
 | Streaming Input/Structured Output
