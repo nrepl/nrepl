@@ -26,14 +26,6 @@ that essentially any non-JVM Clojure implementation should be able to
 implement it, with allowances for hosts that lack the concurrency primitives to
 support e.g. asynchronous evaluation, interrupts, etc.
 
-TIP: For more information about the motivation, architecture, use cases, and
-discussion related to nREPL, see the original design notes,
-available https://docs.google.com/document/edit?id=1dnb1ONTpK9ttO5W4thxiXkU5Ki89gK62anRqKEK4YZI&authkey=CMuszuMI&hl=en#[here],
-and the https://github.com/clojure/tools.nrepl/wiki/nREPL.Next[notes] and
-http://groups.google.com/group/clojure-dev/browse_frm/thread/6e366c1d0eaeec59[discussion]
-around its recent redesign.footnote:[It's not that recent anymore, as the
-redesign happened in 2012. It marked the beginning of the long-lived nREPL 0.2 series.]
-
 == Beyond Clojure
 
 While this site is mostly about nREPL's reference (canonical) Clojure implementation,
@@ -61,17 +53,11 @@ TIP: Check out the how you can help nREPL xref:about/contributing.adoc[here].
 
 == Status
 
-Despite its modest version number, nREPL is extremely stable at this
-point. Its communication protocol and API are rock-solid and battle
-tested and have been powering much of the existing Clojure tooling for
-several years now.footnote:[nREPL had virtually no alternatives before
-the introduction of the built-in Socket REPL in Clojure 1.8.]
+nREPL is extremely stable at this point. Its communication protocol and API are
+rock-solid and battle tested and have been powering much of the existing Clojure
+tooling for several years now.footnote:[nREPL had virtually no alternatives
+before the introduction of the built-in Socket REPL in Clojure 1.8.]
 
 Given the massive community investment in developing all sorts of
 tooling on top of nREPL, nREPL's team pledges to evolve the project only in
 a responsible manner and backwards-compatible ways.
-
-NOTE: The migration of nREPL out of Clojure Contrib is probably the
-only case where we were forced to make breaking changes.footnote:[Apart
-from removing deprecated code that is.] Those are documented in great
-detail xref:installation.adoc#upgrading[here].

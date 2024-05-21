@@ -2,8 +2,15 @@
 
 == What's the difference between contrib's nREPL and this one?
 
-See xref:about/history.adoc[our history].
-Very simply put - this project is the continuation of the contrib project.
+See xref:about/history.adoc[our history]. Very simply put - this project is the
+continuation of the contrib project. There were several major changes that
+happened during the migration:
+
+* The artifact id changed from `org.clojure/clojure.tools.nrepl` to `nrepl/nrepl`.
+* The namespace prefix changed from `clojure.tools.nrepl` to `nrepl`.
+* The namespace `clojure.tools.nrepl` was renamed to `nrepl.core`.
+* Minimal requirements changed from Java 6 and Clojure 1.2 to Java 8 and Clojure 1.7.
+* All the code which existed for compatibility with nREPL 0.0.x was removed.
 
 == What's the plural form of "middleware"?
 

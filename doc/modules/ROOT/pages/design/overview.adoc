@@ -7,6 +7,13 @@ important semantic differences. Finally, nREPL is fundamentally message-oriented
 and asynchronous (in contrast to most REPLs that build on top of streams
 provided by e.g.  terminals).
 
+TIP: If you are interested in historical context, check the
+https://docs.google.com/document/edit?id=1dnb1ONTpK9ttO5W4thxiXkU5Ki89gK62anRqKEK4YZI&authkey=CMuszuMI&hl=en#[original
+design notes], https://github.com/clojure/tools.nrepl/wiki/nREPL.Next[nrepl
+0.2.0 notes], and
+http://groups.google.com/group/clojure-dev/browse_frm/thread/6e366c1d0eaeec59[discussion]
+around 0.2.0 redesign.
+
 == Messages
 
 It is convention to express nREPL messages as EDN (Clojure) maps. For most purposes, it's
