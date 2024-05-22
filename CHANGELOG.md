@@ -2,6 +2,11 @@
 
 ## master (unreleased)
 
+### Changes
+
+* [#318](https://github.com/nrepl/nrepl/pull/318): Introduce custom JVMTI agent to restore Thread.stop() on JDK20+.
+* [#323](https://github.com/nrepl/nrepl/pull/323): Rewrite `nrepl.bencode` implementation to be more performant and use Clojure 1.7 features.
+
 ## 1.1.2 (2024-05-22)
 
 ### Changes
