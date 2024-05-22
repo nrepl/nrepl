@@ -1,4 +1,4 @@
-;; Copyright (c) Meikel Brandmeyer. All rights reserved.
+;; Copyright (c) Meikel Brandmeyer, Oleksandr Yakushev. All rights reserved.
 ;; The use and distribution terms for this software are covered by the
 ;; Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
 ;; which can be found in the file epl-v10.html at the root of this distribution.
@@ -9,13 +9,14 @@
 (ns nrepl.bencode
   "A netstring and bencode implementation for Clojure."
   {:author "Meikel Brandmeyer"}
-  (:require [clojure.java.io :as io])
-  (:import [java.io ByteArrayOutputStream
-            EOFException
-            InputStream
-            IOException
-            OutputStream
-            PushbackInputStream]))
+  (:require
+   [clojure.java.io :as io])
+  (:import
+   (clojure.lang IPersistentCollection IPersistentMap Named PersistentVector)
+   (java.io ByteArrayOutputStream EOFException InputStream IOException
+            OutputStream PushbackInputStream)
+   (java.nio.charset StandardCharsets)
+   (java.util Arrays)))
 
 ;; # Motivation
 ;;
@@ -70,62 +71,62 @@
 ;;
 ;; To remove some magic numbers from the code below.
 
-(def #^{:const true} i     105)
-(def #^{:const true} l     108)
-(def #^{:const true} d     100)
-(def #^{:const true} comma 44)
-(def #^{:const true} minus 45)
+(def ^:const i     105)
+(def ^:const l     108)
+(def ^:const d     100)
+(def ^:const e     101)
+(def ^:const comma 44)
+(def ^:const minus 45)
+(def ^:const colon 58)
 
-;; These two are only used boxed. So we keep them extra here.
+(defn- throw-eof []
+  (throw (EOFException. "Invalid netstring. Unexpected end of input.")))
 
-(def e     101)
-(def colon 58)
+;; This function is inline because it is used in a hot loop inside `read-long`.
 
-(defn #^{:private true} read-byte
-  #^long [#^InputStream input]
-  (let [c (.read input)]
-    (when (neg? c)
-      (throw (EOFException. "Invalid netstring. Unexpected end of input.")))
-    ;; Here we have a quirk for example. `.read` returns -1 on end of
-    ;; input. However the Java `Byte` has only a range from -128 to 127.
-    ;; How does the fit together?
-    ;;
-    ;; The whole thing is shifted. `.read` actually returns an int
-    ;; between zero and 255. Everything below the value 128 stands
-    ;; for itself. But larger values are actually negative byte values.
-    ;;
-    ;; So we have to do some translation here. `Byte/byteValue` would
-    ;; do that for us, but we want to avoid boxing here.
-    (if (< 127 c) (- c 256) c)))
+(definline ^:private read-byte [input]
+  ;; There is a quirk here. `.read` returns -1 on end of input. However, the
+  ;; Java `byte` has a range from -128 to 127. To accommodate for that, Java
+  ;; uses `Byte/toUnsignedInt` which offsets the byte value by 256. The result
+  ;; is an `int` that has a range 0-255. Everything below the value 128 stands
+  ;; for itself. But larger values are actually negative byte values. We have to
+  ;; translate it back here. Narrowing downcast to byte does precisely that.
+  `(let [c# (.read ~(with-meta input {:tag 'InputStream}))]
+     (when (neg? c#) (throw-eof))
+     ;; Cast back to int to avoid boxing and/or redundant casts for consumers.
+     (unchecked-int (unchecked-byte c#))))
 
-(defn #^{:private true :tag "[B"} read-bytes
-  #^Object [#^InputStream input n]
+(defn- read-bytes ^bytes [^InputStream input, ^long n]
   (let [content (byte-array n)]
-    (loop [offset (int 0)
-           len    (int n)]
-      (let [result (.read input content offset len)]
+    (loop [offset 0, len n]
+      (let [result (.read input content (unchecked-int offset)
+                          (unchecked-int len))]
         (when (neg? result)
           (throw
            (EOFException.
             "Invalid netstring. Less data available than expected.")))
-        (when (not= result len)
-          (recur (+ offset result) (- len result)))))
+        (when-not (= result len)
+          (recur (unchecked-add offset result) (unchecked-subtract len result)))))
     content))
 
 ;; `read-long` is used for reading integers from the stream as well
 ;; as the byte count prefixes of byte strings. The delimiter is \:
 ;; for byte count prefixes and \e for integers.
 
-(defn #^{:private true} read-long
-  #^long [#^InputStream input delim]
-  (loop [n (long 0)]
-    ;; We read repeatedly a byte from the input…
-    (let [b (read-byte input)]
-      ;; …and stop at the delimiter.
-      (cond
-        (= b minus) (- (read-long input delim))
-        (= b delim) n
-        :else       (recur (+ (* n (long 10)) (- (long b) (long  48))))))))
+(defn- read-long ^long [^PushbackInputStream input, ^long delim]
+  (let [first-byte (read-byte input)
+        ;; Only the first byte can be a minus.
+        negate? (if (= first-byte minus)
+                  true
+                  (do (.unread input first-byte)
+                      false))]
+    (loop [n 0]
+      ;; We read repeatedly a byte from the input...
+      (let [b (read-byte input)]
+        ;; ...and stop at the delimiter.
+        (if (= b delim)
+          (if negate? (- n) n)
+          (recur (+ (* n 10) (- b 48))))))))
 
 ;; ## Reading a netstring
 ;;
@@ -147,21 +148,17 @@
 ;;
 ;; With this in mind we define the inner helper function first.
 
-(declare #^"[B" string>payload
-         #^String string<payload)
-
-(defn #^{:private true} read-netstring*
-  [input]
+(defn- read-netstring* [input]
   (read-bytes input (read-long input colon)))
 
 ;; And the public facing API: `read-netstring`.
 
-(defn #^"[B" read-netstring
+(defn read-netstring
   "Reads a classic netstring from input—an InputStream. Returns the
   contained binary data as byte array."
-  [input]
+  ^bytes [input]
   (let [content (read-netstring* input)]
-    (when (not= (read-byte input) comma)
+    (when-not (= (read-byte input) comma)
       (throw (IOException. "Invalid netstring. ',' expected.")))
     content))
 
@@ -169,13 +166,11 @@
 ;; are defined as follows to simplify the conversion between strings
 ;; and byte arrays in various parts of the code.
 
-(defn #^{:private true :tag "[B"} string>payload
-  [#^String s]
-  (.getBytes s "UTF-8"))
+(defn- string>payload ^bytes [^String s]
+  (.getBytes s StandardCharsets/UTF_8))
 
-(defn #^{:private true :tag String} string<payload
-  [#^"[B" b]
-  (String. b "UTF-8"))
+(defn- string<payload ^String [^bytes b]
+  (String. b StandardCharsets/UTF_8))
 
 ;; ## Writing a netstring
 ;;
@@ -188,20 +183,19 @@
 ;; Similar to `read-netstring` we also split `write-netstring` into
 ;; the entry point itself and a helper function.
 
-(defn #^{:private true} write-netstring*
-  [#^OutputStream output #^"[B" content]
+(defn- write-netstring* [^OutputStream output, ^bytes content]
   (doto output
     (.write (string>payload (str (alength content))))
-    (.write (int colon))
+    (.write (unchecked-int colon))
     (.write content)))
 
 (defn write-netstring
   "Write the given binary data to the output stream in form of a classic
   netstring."
-  [#^OutputStream output content]
+  [^OutputStream output, content]
   (doto output
     (write-netstring* content)
-    (.write (int comma))))
+    (.write (unchecked-int comma))))
 
 ;; # Bencode
 ;;
@@ -229,73 +223,50 @@
 ;;
 ;; ## Reading bencode
 ;;
-;; Reading bencode encoded data is basically parsing a stream of tokens
-;; from the input. Hence we need a read-token helper which allows to
-;; retrieve the next token.
-
-(defn #^{:private true} read-token
-  [#^PushbackInputStream input]
-  (let [ch (read-byte input)]
-    (cond
-      (= (long e) ch) nil
-      (= i ch) :integer
-      (= l ch) :list
-      (= d ch) :map
-      :else    (do
-                 (.unread input (int ch))
-                 (read-netstring* input)))))
-
-;; To read the bencode encoded data we walk a long the sequence of tokens
+;; Reading bencode encoded data is basically parsing a stream of values from the
+;; input. To read the bencode encoded data we walk a long the sequence of values
 ;; and act according to the found tags.
 
-(declare read-integer read-list read-map)
+(declare read-bencode)
 
-(defn read-bencode
-  "Read bencode token from the input stream."
-  [input]
-  (let [token (read-token input)]
-    (case token
-      :integer (read-integer input)
-      :list    (read-list input)
-      :map     (read-map input)
-      token)))
+;; Integers consist of a sequence of decimal digits.
 
-;; Of course integers and the collection types are have to treated specially.
-;;
-;; Integers for example consist of a sequence of decimal digits.
-
-(defn #^{:private true} read-integer
-  [input]
+(defn- read-integer [input]
   (read-long input e))
 
-;; *Note:* integers are an ugly special case, which cannot be
-;; handled with `read-token` or `read-netstring*`.
-;;
 ;; Lists are just a sequence of other tokens.
 
-(declare token-seq)
-
-(defn #^{:private true} read-list
-  [input]
-  (vec (token-seq input)))
+(defn- read-list [input]
+  (loop [res (transient [])]
+    (if-some [val (read-bencode input)]
+      (recur (conj! res val))
+      (persistent! res))))
 
 ;; Maps are sequences of key/value pairs. The keys are always
 ;; decoded into strings. The values are kept as is.
 
-(defn #^{:private true} read-map
-  [input]
-  (->> (token-seq input)
-       (partition 2)
-       (map (fn [[k v]] [(string<payload k) v]))
-       (into {})))
+(defn- read-map [input]
+  (loop [m (transient {})]
+    (if-some [key (read-bencode input)]
+      (if-some [val (read-bencode input)]
+        (recur (assoc! m (string<payload key) val))
+        (throw (EOFException. "Invalid bencode map. Unexpected end of input.")))
+      (persistent! m))))
 
-;; The final missing piece is `token-seq`. This a just a simple
-;; sequence which reads tokens until the next `\e`.
+;; Note that we use `nil` to represent the terminator read from the input. It is
+;; safe because there is no way to encode `nil` into bencode, and thus it is
+;; impossible to read `nil` as a legal value out of the stream.
 
-(defn #^{:private true} token-seq
-  [input]
-  (->> (repeatedly #(read-bencode input))
-       (take-while identity)))
+(defn read-bencode
+  "Read bencode token from the input stream."
+  [^PushbackInputStream input]
+  (let [first-byte (read-byte input)]
+    (cond (= first-byte i) (read-integer input)
+          (= first-byte l) (read-list input)
+          (= first-byte d) (read-map input)
+          (= first-byte e) nil
+          :else (do (.unread input first-byte)
+                    (read-netstring* input)))))
 
 ;; ## Writing bencode
 ;;
@@ -303,130 +274,118 @@
 ;; takes a string, map, sequence or integer and writes it according to
 ;; the rules to the given OutputStream.
 
-(defmulti write-bencode
+(defprotocol BencodeSerializable
+  (write-bencode* [object output]))
+
+(defn write-bencode
   "Write the given thing to the output stream. “Thing” means here a
   string, map, sequence or integer. Alternatively an ByteArray may
   be provided whose contents are written as a bytestring. Similar
   the contents of a given InputStream are written as a byte string.
   Named things (symbols or keywords) are written in the form
   'namespace/name'."
-  (fn [_output thing]
-    (cond
-      (nil? thing) :list
-      ;; borrowed from Clojure 1.9's bytes? predicate:
-      (-> thing class .getComponentType (= Byte/TYPE)) :bytes
-      (instance? InputStream thing) :input-stream
-      (integer? thing) :integer
-      (string? thing)  :string
-      (symbol? thing)  :named
-      (keyword? thing) :named
-      (map? thing)     :map
-      (or (coll? thing) (.isArray (class thing))) :list
-      :else (type thing))))
-
-(defmethod write-bencode :default
-  [_output x]
-  (throw (IllegalArgumentException. (str "Cannot write value of type " (class x)))))
-
-;; The following methods should be pretty straight-forward.
-;;
-;; The easiest case is of course when we already have a byte array.
-;; We can simply pass it on to the underlying machinery.
-
-(defmethod write-bencode :bytes
-  [output bytes]
-  (write-netstring* output bytes))
-
-;; For strings we simply write the string as a netstring without
-;; trailing comma after encoding the string as UTF-8 bytes.
-
-(defmethod write-bencode :string
-  [output string]
-  (write-netstring* output (string>payload string)))
-
-;; Streaming does not really work, since we need to know the
-;; number of bytes to write upfront. So we read in everything
-;; for InputStreams and pass on the byte array.
-
-(defmethod write-bencode :input-stream
-  [output stream]
-  (let [bytes (ByteArrayOutputStream.)]
-    (io/copy stream bytes)
-    (write-netstring* output (.toByteArray bytes))))
-
-;; Integers are again the ugly special case.
-
-(defmethod write-bencode :integer
-  [#^OutputStream output n]
-  (doto output
-    (.write (int i))
-    (.write (string>payload (str n)))
-    (.write (int e))))
-
-;; Symbols and keywords are converted to a string of the
-;; form 'namespace/name' or just 'name' in case its not
-;; qualified. We do not add colons for keywords since the
-;; other side might not have the notion of keywords.
-
-(defmethod write-bencode :named
   [output thing]
-  (let [nspace (namespace thing)
-        name   (name thing)]
-    (->> (str (when nspace (str nspace "/")) name)
-         string>payload
-         (write-netstring* output))))
+  (write-bencode* thing output))
 
-;; Lists as well as maps work recursively to print their elements.
+(defn- throw-illegal-value [obj what]
+  (throw (IllegalArgumentException.
+          (format "Cannot write %s of type %s" what (class obj)))))
 
-(defmethod write-bencode :list
-  [#^OutputStream output lst]
-  (.write output (int l))
-  (doseq [elt lst]
-    (write-bencode output elt))
-  (.write output (int e)))
+;; Lists and maps work recursively to print their elements.
 
-;; However, maps are a bit special because their keys are sorted
-;; lexicographically based on their byte string representation.
+(defn- write-bencode-list [lst, ^OutputStream output]
+  (.write output (unchecked-int l))
+  (run! #(write-bencode output %) lst)
+  (.write output (unchecked-int e)))
 
-(declare lexicographically)
+;; However, maps are special because their keys are sorted lexicographically
+;; based on their byte string representation.
 
-(defn #^{:private true} thing>string
-  [thing]
-  (cond
-    (string? thing)
-    thing
-    (or (keyword? thing)
-        (symbol? thing))
-    (let [nspace (namespace thing)
-          name   (name thing)]
-      (str (when nspace (str nspace "/")) name))))
+(defn- named>string [named]
+  (cond (string? named) named
+        (symbol? named) (str named)
+        (keyword? named) (str (.sym ^clojure.lang.Keyword named))
+        :else (throw-illegal-value named "map key")))
 
-(defmethod write-bencode :map
-  [#^OutputStream output m]
-  (let [translation (into {} (map (juxt (comp string>payload
-                                              thing>string)
-                                        identity)
-                                  (keys m)))
-        key-strings (sort lexicographically (keys translation))
-        >value      (comp m translation)]
-    (.write output (int d))
-    (doseq [k key-strings]
-      (write-netstring* output k)
-      (write-bencode output (>value k)))
-    (.write output (int e))))
+(defn- write-bencode-map [^IPersistentMap m, ^OutputStream output]
+  ;; The implementation here is quite unidiomatic for performance reasons. We
+  ;; need to transform the keys of a map to strings, then sort the kvs
+  ;; lexicographically by key, then write to output. To avoid creating redundant
+  ;; data structures, we use array as the transitional structure that keeps
+  ;; stringified kvs that we sort and in the end efficiently foreach.
+  (let [n (.count m) ;; Because `clojure.core/count` is quite slow.
+        arr (object-array n)]
+    ;; Using reduce-kv as an efficient map iterator for side effects.
+    (reduce-kv (fn [i k v]
+                 (aset arr i [(named>string k) v])
+                 (inc i))
+               0 m)
 
-;; However, since byte arrays are not `Comparable` we need a custom
-;; comparator which we can feed to `sort`.
+    (Arrays/sort arr (fn [^PersistentVector x, ^PersistentVector y]
+                       (compare (.nth x 0) (.nth y 0))))
 
-(defn #^{:private true} lexicographically
-  [#^"[B" a #^"[B" b]
-  (let [alen (alength a)
-        blen (alength b)
-        len  (min alen blen)]
-    (loop [i 0]
-      (if (== i len)
-        (- alen blen)
-        (let [x (- (int (aget a i)) (int (aget b i)))]
-          (if (zero? x)
-            (recur (inc i))
-            x))))))
+    (.write output (unchecked-int d))
+    (dotimes [i n]
+      (let [^PersistentVector kv (aget arr i)]
+        (write-netstring* output (string>payload (.nth kv 0)))
+        (write-bencode output (.nth kv 1))))
+    (.write output (unchecked-int e))))
+
+(extend-protocol BencodeSerializable
+  nil
+  (write-bencode* [_ output]
+    ;; Treat nil as an empty list.
+    (write-bencode* [] output))
+
+  InputStream
+  (write-bencode* [stream output]
+    ;; Streaming does not really work, since we need to know the number of bytes
+    ;; to write upfront. So we read in everything for InputStreams and pass on
+    ;; the byte array.
+    (let [bytes (ByteArrayOutputStream.)]
+      (io/copy stream bytes)
+      (write-netstring* output (.toByteArray bytes))))
+
+  IPersistentMap
+  (write-bencode* [m output] (write-bencode-map m output))
+
+  IPersistentCollection
+  (write-bencode* [coll output] (write-bencode-list coll output))
+
+  Number
+  (write-bencode* [n, ^OutputStream output]
+    (if (integer? n)
+      (doto output
+        (.write (unchecked-int i))
+        (.write (string>payload (str n)))
+        (.write (unchecked-int e)))
+      (throw-illegal-value n "value")))
+
+  String
+  (write-bencode* [s output]
+    ;; For strings we simply write the string as a netstring without trailing
+    ;; comma after encoding the string as UTF-8 bytes.
+    (write-netstring* output (string>payload s)))
+
+  ;; Symbols and keywords are converted to a string of the form 'namespace/name'
+  ;; or just 'name' in case its not qualified. We do not add colons for keywords
+  ;; since the other side might not have the notion of keywords.
+
+  Named
+  (write-bencode* [named output] (write-bencode* (named>string named) output))
+
+  Object
+  (write-bencode* [o output]
+    ;; In the catch-all, check a few more conditions that are not easy to
+    ;; declare as separate types.
+    (cond
+      ;; The easiest case is of course when we already have a byte array.
+      ;; We can simply pass it on to the underlying machinery.
+      (-> o class .getComponentType (= Byte/TYPE))
+      (write-netstring* output o)
+
+      ;; Treat other arrays as lists.
+      (.isArray (class o))
+      (write-bencode-list o output)
+
+      :else (throw-illegal-value o "value"))))

@@ -36,7 +36,8 @@
                                    [com.hypirion/io "0.3.1"]
                                    [commons-net/commons-net "3.10.0"]
                                    [lambdaisland/kaocha "1.89.1380"]
-                                   [lambdaisland/kaocha-junit-xml "1.17.101"]]
+                                   [lambdaisland/kaocha-junit-xml "1.17.101"]
+                                   [org.clojure/test.check "1.1.1"]]
                     :java-source-paths ["test/java"]
                     :plugins      [[test2junit "1.4.2"]]
                     :test2junit-output-dir "test-results"
@@ -86,5 +87,6 @@
                         {:plugins [[jonase/eastwood "1.4.0"]]
                          :eastwood {:config-files ["eastwood.clj"]
                                     :ignored-faults {:non-dynamic-earmuffs {nrepl.middleware.load-file true}
-                                                     :unused-ret-vals {nrepl.util.completion-test true}
+                                                     :unused-ret-vals {nrepl.util.completion-test true
+                                                                       nrepl.bencode true}
                                                      :reflection {nrepl.socket.dynamic true}}}}]})
