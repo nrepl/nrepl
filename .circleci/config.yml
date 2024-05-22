@@ -131,7 +131,7 @@ jobs:
     steps:
       - checkout
       - with_cache:
-          cache_version: $VERSION
+          cache_version: "1.11"
           steps: << parameters.steps >>
 
   test_code:
@@ -150,7 +150,7 @@ jobs:
     steps:
       - checkout
       - with_cache:
-          cache_version: $VERSION
+          cache_version: << parameters.clojure_version >>
           steps:
             - run:
                 name: Running tests
