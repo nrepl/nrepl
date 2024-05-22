@@ -219,7 +219,11 @@
                                                           :max-elements 20})])
                      (gen/one-of [gen/string gen/large-integer])))
 
-(defspec generative-roundtrip-test {:num-tests 100}
+;; :num-tests is intentionally so small to avoid crashing with OOM on CI. When
+;; making any changes to `nrepl.bencode`, make sure to increase this number and
+;; extensively run this locally.
+
+(defspec generative-roundtrip-test {:num-tests 30}
   (tc.prop/for-all
    [value valid-bencode-input-generator]
    (= value (>input (>output value :writer write-bencode) :reader read-bencode))))
