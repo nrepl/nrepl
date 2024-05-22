@@ -2,6 +2,8 @@
 
 ## master (unreleased)
 
+## 1.1.2 (2024-05-22)
+
 ### Changes
 
 * [#317](https://github.com/nrepl/nrepl/pull/317): Update vendored `compliment-lite` to 0.5.5 ([changelog](https://github.com/alexander-yakushev/compliment/blob/master/CHANGELOG.md#055-2024-05-06)).
