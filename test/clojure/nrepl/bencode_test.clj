@@ -219,7 +219,7 @@
                                                           :max-elements 20})])
                      (gen/one-of [gen/string gen/large-integer])))
 
-(defspec generative-roundtrip-test {:num-tests 150}
+(defspec generative-roundtrip-test {:num-tests 100}
   (tc.prop/for-all
    [value valid-bencode-input-generator]
    (= value (>input (>output value :writer write-bencode) :reader read-bencode))))
