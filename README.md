@@ -37,18 +37,8 @@ Extremely stable. nREPL's protocol and API are rock-solid and battle
 tested. nREPL's team pledges to evolve them only in
 backwards-compatible ways.
 
-That being said, there were a few organizational changes related to
-the transition out of clojure-contrib that everyone has to keep in
-mind:
-
-* `[nrepl "0.3.1"]` is a drop-in replacement for
-  `[org.clojure/tools.nrepl "0.2.13"]` (notice the different artifact coordinates).
-* `[nrepl "0.4.0"]` changes the namespaces from `clojure.tools.nrepl.*` to
-`nrepl.*`.
-
-Future releases will focus on supporting
-the needs of the essential tools of the Clojure(Script) ecosystem
-(e.g. Leiningen, CIDER, Cursive).
+All experimental features are marked explicitly as such in nREPL's
+documentation, but even those are fairly stable by most standards.
 
 ## FAQ
 
