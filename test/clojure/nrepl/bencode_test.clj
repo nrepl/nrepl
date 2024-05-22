@@ -9,6 +9,9 @@
 
 (ns nrepl.bencode-test
   (:require [clojure.test :refer [are deftest is testing]]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as tc.prop]
+            [clojure.test.check.clojure-test :refer [defspec]]
             [nrepl.bencode :as bencode :refer [read-bencode
                                                read-netstring
                                                write-bencode
@@ -173,13 +176,9 @@
     {"cheese" 42 "ham" ["eggs"]} "d6:cheesei42e3:haml4:eggsee"))
 
 (deftest test-lexicographic-sorting
-  (let [source   ["ham" "eggs" "hamburg" "hamburger" "cheese"]
-        expected ["cheese" "eggs" "ham" "hamburg" "hamburger"]
-        to-test  (->> source
-                      (map >bytes)
-                      (sort @#'nrepl.bencode/lexicographically)
-                      (map <bytes))]
-    (is (= to-test expected))))
+  (let [source (zipmap ["ham" "eggs" "hamburger" "hamburg" "cheese"] (range))]
+    (is (= "d6:cheesei4e4:eggsi1e3:hami0e7:hamburgi3e9:hamburgeri2ee"
+           (>output source :writer write-bencode)))))
 
 (deftest unencoded-values
   ;; just some PNG data that won't round-trip cleanly through UTF-8 encoding, so
@@ -206,3 +205,42 @@
       (is (thrown? IllegalArgumentException
                    (write-bencode out {"obj" (Object.)})))
       (is (= "d3:obj" (String. (.toByteArray out)))))))
+
+;; ## Generative testing.
+;;
+;; Verify that any valid value remains the same after encode-decode roundtrip.
+
+(def valid-bencode-input-generator
+  "This is a recursive test.check generator that can generate a string, a number,
+  or a list or a map that contains any other valid value."
+  (gen/recursive-gen #(gen/one-of [%
+                                   (gen/vector % 0 20)
+                                   (gen/map gen/string % {:min-elements 0
+                                                          :max-elements 20})])
+                     (gen/one-of [gen/string gen/large-integer])))
+
+(defspec generative-roundtrip-test {:num-tests 150}
+  (tc.prop/for-all
+   [value valid-bencode-input-generator]
+   (= value (>input (>output value :writer write-bencode) :reader read-bencode))))
+
+;; ## Performance testing
+;;
+;; This code is to be run manually, so it is in a comment block. Evaluate the
+;; performance of bencode encoding and decoding when making changes to bencode
+;; implementation, and compare it to the previous version.
+
+(comment
+  (def data (gen/generate valid-bencode-input-generator 5000 4))
+  (count (str data)) ;; Sanity-check data size.
+
+  ;; Writing benchmark
+  (time+ (write-bencode (ByteArrayOutputStream.) data))
+
+  ;; Reading benchmark
+  (let [baos (doto (ByteArrayOutputStream.)
+               (write-bencode data))
+        arr (.toByteArray baos)]
+    (time+
+     (nrepl.bencode/read-bencode (PushbackInputStream. (java.io.ByteArrayInputStream. arr)))
+     nil)))
