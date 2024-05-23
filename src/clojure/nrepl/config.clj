@@ -22,12 +22,12 @@
   "nREPL's configuration directory.
   By default it's ~/.nrepl, but this can be overridden
   with the NREPL_CONFIG_DIR env variable."
-  (or (System/getenv "NREPL_CONFIG_DIR")
-      (str home-dir java.io.File/separator ".nrepl")))
+  (or (some-> (System/getenv "NREPL_CONFIG_DIR") io/file)
+      (io/file home-dir ".nrepl")))
 
 (def config-file
   "nREPL's config file."
-  (str config-dir java.io.File/separator "nrepl.edn"))
+  (io/file config-dir "nrepl.edn"))
 
 (defn- load-edn
   "Load edn from an io/reader source (filename or io/resource)."
@@ -36,14 +36,13 @@
     (edn/read (java.io.PushbackReader. r))))
 
 (defn- load-config
-  "Load the configuration file identified by `filename`.
+  "Load the configuration file identified by `file`.
   Return its contents as EDN if the file exists,
   or an empty map otherwise."
-  [filename]
-  (let [file (io/file filename)]
-    (if (.exists file)
-      (load-edn file)
-      {})))
+  [^java.io.File file]
+  (if (.exists file)
+    (load-edn file)
+    {}))
 
 (def config
   "Configuration map.
@@ -53,4 +52,4 @@
   nREPL."
   (merge
    (load-config config-file)
-   (load-config ".nrepl.edn")))
+   (load-config (io/file ".nrepl.edn"))))
