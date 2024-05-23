@@ -5,6 +5,7 @@
 ### Changes
 
 * [#318](https://github.com/nrepl/nrepl/pull/318): Introduce custom JVMTI agent to restore `Thread.stop()` (needed by the `interrupt` op) on JDK20+.
+  - [#326](https://github.com/nrepl/nrepl/pull/326): Add explicit opt-out for libnrepl agent.
 * [#323](https://github.com/nrepl/nrepl/pull/323): Rewrite `nrepl.bencode` implementation to be more performant and use Clojure 1.7 features.
 
 ## 1.1.2 (2024-05-22)

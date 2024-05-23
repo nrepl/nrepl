@@ -4,7 +4,8 @@
   {:author "Chas Emerick"}
   (:refer-clojure :exclude [requiring-resolve])
   (:require [clojure.java.io :as io]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [nrepl.config :refer [config]]))
 
 (defn log
   [ex-or-msg & msgs]
@@ -128,6 +129,15 @@
   ;; -Djdk.attach.allowAttachSelf sets the property to "" if it is present,
   ;; otherwise that property will be nil.
   (boolean (System/getProperty "jdk.attach.allowAttachSelf")))
+
+(defn jvmti-agent-enabled?
+  "Return true if nREPL is allowed to load its JVMTI agent at runtime."
+  []
+  (and (attach-self-enabled?)
+       ;; JVMTI agent is a "soft opt-in" — if attachSelf is enabled, then we
+       ;; consider this a permission to load the agent, UNLESS the user
+       ;; explicitly opts out of it in the config.
+       (boolean (:enable-jvmti-agent config true))))
 
 (def safe-var-metadata
   "A list of var metadata attributes are safe to return to the clients.

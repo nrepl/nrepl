@@ -206,7 +206,7 @@
        ;; Whether this is more dangerous than calling Thread.stop() in earlier
        ;; JDKs is unknown, but assume the worst and never use this if you can't
        ;; take the risk!
-       (if (misc/attach-self-enabled?)
+       (if (misc/jvmti-agent-enabled?)
          (jvmti-stop-thread t)
          (misc/log "Cannot stop thread on JDK20+ without jdk.attach.allowAttachSelf enabled."))
 

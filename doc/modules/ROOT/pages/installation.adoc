@@ -102,6 +102,16 @@ If `-Djdk.attach.allowAttachSelf` is not enabled, nREPL will not try to load the
 native agent and will not try to stop threads on Java 20 and newer if the
 regular `Thread.interrupt()` did not succeed.
 
-NOTE: Prior to Java 20, nREPL will not try to load libnrepl native agent regardless of
-the state of `-Djdk.attach.allowAttachSelf` flag and will use `Thread.stop()` to
+You can explicitly disable the JVMTI agent so that it does not load even with
+`-Djdk.attach.allowAttachSelf` enabled. To do that, add this line to
+xref:usage/server.adoc#server-configuration[nREPL config]:
+
+[source,clojure]
+----
+ :enable-jvmti-agent false
+----
+
+NOTE: Prior to Java 20, nREPL will not try to load libnrepl native agent
+regardless of the state of `-Djdk.attach.allowAttachSelf` flag or
+`:enable-jvmti-agent` configuration option, and will use `Thread.stop()` to
 interrupt the evaluating thread.
