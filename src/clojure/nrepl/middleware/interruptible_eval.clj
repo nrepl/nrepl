@@ -12,7 +12,8 @@
    [nrepl.misc :as misc :refer [response-for with-session-classloader]]
    [nrepl.transport :as t])
   (:import
-   (clojure.lang Compiler$CompilerException LineNumberingPushbackReader)
+   (clojure.lang Compiler$CompilerException DynamicClassLoader
+                 LineNumberingPushbackReader)
    (java.io StringReader Writer)
    (java.lang.reflect Field)))
 
@@ -52,6 +53,20 @@
   (or (instance? ThreadDeath (clojure.main/root-cause e))
       (and (instance? Compiler$CompilerException e)
            (instance? ThreadDeath (.getCause e)))))
+
+(defn- maybe-restore-original-context-classloader
+  "Because `clojure.main/repl` always wraps the current context classloader into
+  an additional DynamicClassLoader, the chain of DCLs will grow with each eval.
+  This function resets the CCL if the CCL after the eval is exactly a one-level
+  DCL wrapper over previous CCL. If that's not true, then the eval code itself
+  has changed the CCL, and we shouldn't touch it then."
+  [original-cl]
+  (let [t (Thread/currentThread)
+        ccl (.getContextClassLoader t)]
+    (when (and (instance? DynamicClassLoader ccl)
+               (instance? DynamicClassLoader original-cl)
+               (identical? (.getParent ccl) original-cl))
+      (.setContextClassLoader t original-cl))))
 
 (defn evaluate
   "Evaluates a msg's code within the dynamic context of its session.
@@ -131,8 +146,7 @@
                                    :root-ex (str (class (clojure.main/root-cause e)))}]
                          (t/send transport (response-for msg resp))))))
           (finally
-            (when (= misc/java-version 8)
-              (.setContextClassLoader (Thread/currentThread) ctxcl))
+            (maybe-restore-original-context-classloader ctxcl)
             (.flush err)
             (.flush out)))))))
 

@@ -8,6 +8,10 @@
   - [#326](https://github.com/nrepl/nrepl/pull/326): Add explicit opt-out for libnrepl agent.
 * [#323](https://github.com/nrepl/nrepl/pull/323): Rewrite `nrepl.bencode` implementation to be more performant and use Clojure 1.7 features.
 
+### Bugs fixed
+
+* [#327](https://github.com/nrepl/nrepl/issues/327): Prevent classloader chain from growing after each eval.
+
 ## 1.1.2 (2024-05-22)
 
 ### Changes
