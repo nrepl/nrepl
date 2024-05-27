@@ -1192,24 +1192,53 @@
         (iterate #(.getParent ^ClassLoader %))
         (take-while boolean))))
 
-;; This test is broken for Java 8 at the moment.
-(def-repl-test ^{:min-java-version "11.0"} hotloading-common-classloader-test
+(def captured-values-atom (atom {}))
+
+(defn capture-value [key value]
+  (swap! captured-values-atom assoc key value)
+  nil)
+
+(def-repl-test hotloading-common-classloader-test
   (testing "Check if RT/baseLoader and ContexClassLoader have a common DCL ancestor"
-    (let [dcls (fn [str] ;; parses the string output of classloader-hierarch
-                 (set (map (fn [[_ id]] id)
-                           (re-seq #"DynamicClassLoader@([0-9a-f]{8})" (or str "")))))
-          resp1 (->> (message session {:op   "eval"
-                                       :code "(#'nrepl.core-test/classloader-hierarchy (clojure.lang.RT/baseLoader))"})
-                     (map clean-response)
-                     combine-responses)
-          resp2 (->> (message session {:op   "eval"
-                                       :code "(#'nrepl.core-test/classloader-hierarchy (.. Thread currentThread getContextClassLoader))"})
-                     (map clean-response)
-                     combine-responses)]
-      (is (not-empty
-           (set/intersection
-            (dcls (first (:value resp2)))
-            (dcls (first (:value resp1)))))))))
+    (repl-values session (code (nrepl.core-test/capture-value
+                                "base-loader"
+                                (#'nrepl.core-test/classloader-hierarchy (clojure.lang.RT/baseLoader)))))
+    (repl-values session (code (nrepl.core-test/capture-value
+                                "ccl"
+                                (#'nrepl.core-test/classloader-hierarchy (.. Thread currentThread getContextClassLoader)))))
+    (let [base-loader-dcls (->> (@captured-values-atom "base-loader")
+                                (filter #(instance? clojure.lang.DynamicClassLoader %))
+                                set)
+          ccl-dcls (->> (@captured-values-atom "ccl")
+                        (filter #(instance? clojure.lang.DynamicClassLoader %))
+                        set)]
+      (is (seq (set/intersection base-loader-dcls ccl-dcls))
+          (str "Base loader DCLs: " base-loader-dcls "\nCCL DCLs: " ccl-dcls)))))
+
+(def-repl-test classloader-chain-doesnt-grow-test
+  (testing "after doing regular evals, the classloader chain remains of the same length"
+    (let [[chain-length] (repl-values session (code (count
+                                                     (#'nrepl.core-test/classloader-hierarchy))))]
+      ;; Eval some things.
+      (dotimes [_ 10] (repl-values session (code (+ 1 2))))
+      (is (= chain-length
+             (first (repl-values session (code (count
+                                                (#'nrepl.core-test/classloader-hierarchy))))))))))
+
+(def-repl-test custom-context-classloader-is-not-overwritten
+  (testing "if user eval code has set the custom context classloader, then it persists"
+    (repl-values session
+                 (code
+                  (let [t (Thread/currentThread)
+                        new-cl (clojure.lang.DynamicClassLoader.
+                                (.getContextClassLoader t))]
+                    (.setContextClassLoader t new-cl)
+                    (nrepl.core-test/capture-value "new-cl" new-cl))))
+    (let [[good?] (repl-values session
+                               (code
+                                (contains? (set (#'nrepl.core-test/classloader-hierarchy))
+                                           (@nrepl.core-test/captured-values-atom "new-cl"))))]
+      (is good?))))
 
 (deftest base64-decode-test
   (testing "base64-decode ignores invalid characters such as newlines"
