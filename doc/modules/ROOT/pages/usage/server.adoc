@@ -117,8 +117,8 @@ Some additional details on the subject can be found https://ask.clojure.org/inde
 
 === Using Leiningen
 
-https://github.com/technomancy/leiningen[Leiningen] has built-in support for nREPL since
-version 2. Just do:
+https://github.com/technomancy/leiningen[Leiningen] has built-in support for
+nREPL. Just do:
 
 [source,shell]
 ----
@@ -148,7 +148,7 @@ Alternatively you bind nREPL to an Unix domain socket like this:
 $ lein repl :headless :socket path/to/socket
 ----
 
-NOTE: You'll need Leiningen 2.99 or newer for the command above to work.
+NOTE: You'll need Leiningen 2.9.9 or newer for the command above to work.
 
 IMPORTANT: As noted earlier - using Unix sockets improves your security, as that's a connection that's guaranteed to be local. You should always be careful not to start nREPL on a public host and port.
 

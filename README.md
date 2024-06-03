@@ -25,7 +25,7 @@ nREPL powers [many well-known development tools](https://nrepl.org/nrepl/usage/c
 * Connect to the server using any nREPL client (e.g. CIDER, Calva, vim-fireplace)
 * Start hacking!
 
-See the [documentation](https://nrepl.org/nrepl/usage/server.html) for way information on the subject.
+See the [documentation](https://nrepl.org/nrepl/usage/server.html) for way more information on the subject.
 
 ## API Documentation
 

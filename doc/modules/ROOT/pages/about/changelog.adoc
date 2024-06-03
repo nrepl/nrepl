@@ -1,7 +1,5 @@
 = Changelog
 
-NOTE: The changelog format changed in nREPL 0.3.
-
 An extensive changelog is available https://github.com/nrepl/nrepl/blob/master/CHANGELOG.md[here].
 
 The changelog documents only user-visible changes. We take extra care to annotate properly breaking changes (which
