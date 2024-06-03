@@ -30,3 +30,4 @@ nREPL.
 
 * https://docs.google.com/document/edit?id=1dnb1ONTpK9ttO5W4thxiXkU5Ki89gK62anRqKEK4YZI&authkey=CMuszuMI&hl=en#[Original Design Notes]
 * https://github.com/clojure/tools.nrepl/wiki/nREPL.Next[nREPL 0.1 Design Notes]
+* http://groups.google.com/group/clojure-dev/browse_frm/thread/6e366c1d0eaeec59[nREPL.Next discussion]

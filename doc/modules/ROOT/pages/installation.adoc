@@ -65,7 +65,7 @@ Or, add this to your Maven project's `pom.xml`:
 ----
 
 [[jvmti]]
-=== Enable libnrepl JVMTI agent
+== Enable libnrepl JVMTI agent
 
 Starting with Java 20, the previously deprecated
 https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Thread.html#stop()[Thread.stop]
@@ -89,7 +89,7 @@ nREPL. Only the thread stopping capability and only on Java 20+ will not work
 there, the rest of nREPL functionality will still work as always.
 
 For the JVMTI agent to be able to attach to the running process, the JVM has to
-be started with the flag `-Djdk.attach.allowAttachSelf`. Depending on the built
+be started with the flag `-Djdk.attach.allowAttachSelf`. Depending on the build
 tool, this can be done like this:
 
 - With tools.deps, add `:jvm-opts ["-Djdk.attach.allowAttachSelf"]` to an alias
@@ -100,7 +100,7 @@ explicitly to your REPL command.
 
 If `-Djdk.attach.allowAttachSelf` is not enabled, nREPL will not try to load the
 native agent and will not try to stop threads on Java 20 and newer if the
-regular `Thread.interrupt()` did not succeed.
+regular `Thread.interrupt()` does not succeed.
 
 You can explicitly disable the JVMTI agent so that it does not load even with
 `-Djdk.attach.allowAttachSelf` enabled. To do that, add this line to
