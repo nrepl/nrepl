@@ -176,6 +176,19 @@
 (defn- jvmti-stop-thread [t]
   ((misc/requiring-resolve 'nrepl.util.jvmti/stop-thread) t))
 
+(defn- try-stop-thread [^Thread t]
+  (cond
+    (<= misc/java-version 19) (.stop t)
+    ;; Since JDK20, Thread.stop() no longer works. We must resort to using
+    ;; JVMTI native agent which luckily still supports Stop Thread command.
+    ;; Whether this is more dangerous than calling Thread.stop() in earlier
+    ;; JDKs is unknown, but assume the worst and never use this if you can't
+    ;; take the risk!
+    (misc/jvmti-agent-enabled?) (jvmti-stop-thread t)
+
+    (not (misc/attach-self-enabled?))
+    (misc/log "Cannot stop thread on JDK20+ without -Djdk.attach.allowAttachSelf enabled, see https://nrepl.org/nrepl/installation.html#jvmti.")))
+
 (def ^:private force-stop-delay-ms 5000)
 
 (defn- interrupt-stop
@@ -200,17 +213,7 @@
   (noisy-future
    (Thread/sleep (long force-stop-delay-ms))
    (when-not (= (.getState t) Thread$State/TERMINATED)
-     (if (>= misc/java-version 20)
-       ;; Since JDK20, Thread.stop() no longer works. We must resort to using
-       ;; JVMTI native agent which luckily still supports Stop Thread command.
-       ;; Whether this is more dangerous than calling Thread.stop() in earlier
-       ;; JDKs is unknown, but assume the worst and never use this if you can't
-       ;; take the risk!
-       (if (misc/jvmti-agent-enabled?)
-         (jvmti-stop-thread t)
-         (misc/log "Cannot stop thread on JDK20+ without jdk.attach.allowAttachSelf enabled."))
-
-       (.stop t)))))
+     (try-stop-thread t))))
 
 (defn session-exec
   "Takes a session id and returns a maps of three functions meant for interruptible-eval:
