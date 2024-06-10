@@ -2,6 +2,8 @@
 
 ## master (unreleased)
 
+## 1.2.0 (2024-06-10)
+
 ### Changes
 
 * [#318](https://github.com/nrepl/nrepl/pull/318): Introduce custom JVMTI agent to restore `Thread.stop()` (needed by the `interrupt` op) on JDK20+.

@@ -63,9 +63,9 @@ and connect with it using the built-in client.
 
 [source,shell]
 ----
-$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.1.2"}}}' -M -m nrepl.cmdline --interactive
+$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.2.0"}}}' -M -m nrepl.cmdline --interactive
 nREPL server started on port 59403 on host 127.0.0.1 - nrepl://127.0.0.1:59403
-nREPL 1.1.2
+nREPL 1.2.0
 Clojure 1.9.0
 Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
 user=> (+ 1 2)
@@ -76,8 +76,8 @@ If you want to connect to a server that's already running you can do it like thi
 
 [source,shell]
 ----
-$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.1.2"}}}' -M -m nrepl.cmdline --connect --host host --port port
-nREPL 1.1.2
+$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.2.0"}}}' -M -m nrepl.cmdline --connect --host host --port port
+nREPL 1.2.0
 Clojure 1.9.0
 Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
 user=> (+ 1 2)
@@ -88,8 +88,8 @@ If you want to connect to a unix domain socket, you can do it like this:
 
 [source,shell]
 ----
-$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.1.2"}}}' -M -m nrepl.cmdline --connect --socket /some/where/safe/nrepl
-nREPL 1.1.2
+$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.2.0"}}}' -M -m nrepl.cmdline --connect --socket /some/where/safe/nrepl
+nREPL 1.2.0
 Clojure 1.9.0
 Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
 user=> (+ 1 2)

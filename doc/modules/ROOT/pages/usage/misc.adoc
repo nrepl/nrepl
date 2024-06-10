@@ -259,7 +259,7 @@ this with `tools.deps` or `pomegranate`. Let's start with a `tools.deps` example
 
 [source,shell]
 ----
-$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.1.2"}
+$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.2.0"}
                       org.clojure/tools.deps.alpha {:git/url "https://github.com/clojure/tools.deps.alpha.git"
                                                     :sha "d492e97259c013ba401c5238842cd3445839d020"}}}' -M -m nrepl.cmdline --interactive
 network-repl
@@ -278,7 +278,7 @@ Alternatively with `pomegranate` you can do the following:
 
 [source,shell]
 ----
-$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.1.2"} com.cemerick/pomegranate {:mvn/version "1.1.2"}}}' -M -m nrepl.cmdline --interactive
+$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.2.0"} com.cemerick/pomegranate {:mvn/version "1.2.0"}}}' -M -m nrepl.cmdline --interactive
 network-repl
 Clojure 1.9.0
 user=> (require '[cemerick.pomegranate :refer [add-dependencies]])
