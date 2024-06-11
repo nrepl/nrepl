@@ -9,7 +9,7 @@
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.caught :as caught]
    [nrepl.middleware.print :as print]
-   [nrepl.misc :as misc :refer [response-for with-session-classloader]]
+   [nrepl.misc :as misc :refer [response-for with-classloader]]
    [nrepl.transport :as t])
   (:import
    (clojure.lang Compiler$CompilerException DynamicClassLoader
@@ -76,9 +76,9 @@
    (resolved via `find-ns`).  The map MUST contain a Transport implementation
    in :transport; expression results and errors will be sent via that Transport.
 
-   Note: we are doubling up on restoring of ctxcl in a `catch` block both here
-   and within `misc/with-session-classloader`. Not too sure why this is needed,
-   but it does seem to be a fix for https://github.com/nrepl/nrepl/issues/206"
+   Note: we are doubling up on restoring of ctxcl in a `catch` block. Not too
+  sure why this is needed, but it does seem to be a fix for
+  https://github.com/nrepl/nrepl/issues/206"
   [{:keys [transport session eval ns code file line column out-limit]
     :as msg}]
   (let [explicit-ns (and ns (-> ns symbol find-ns))
@@ -99,7 +99,7 @@
           (clojure.main/repl
            :eval (let [eval-fn (if eval (find-var (symbol eval)) clojure.core/eval)]
                    (fn [form]
-                     (with-session-classloader session (eval-fn form))))
+                     (with-classloader (eval-fn form))))
            :init #(let [bindings
                         (-> (get-thread-bindings)
                             (into caught/default-bindings)

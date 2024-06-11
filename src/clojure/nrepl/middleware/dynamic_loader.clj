@@ -11,7 +11,7 @@
   (:require [clojure.string :as str]
             [nrepl.middleware :refer [linearize-middleware-stack set-descriptor!]]
             [nrepl.middleware.session :as middleware.session]
-            [nrepl.misc :as misc :refer [response-for with-session-classloader]]
+            [nrepl.misc :as misc :refer [response-for with-classloader]]
             [nrepl.transport :as t]))
 
 (def ^:dynamic *state* nil)
@@ -22,8 +22,8 @@
   (t/send transport (response-for msg :status #{:error :unknown-op :done} :op op)))
 
 (defn- update-stack!
-  [session middleware]
-  (with-session-classloader session
+  [middleware]
+  (with-classloader
     (let [resolved (map (fn [middleware-str-or-var]
                           (if (var? middleware-str-or-var)
                             middleware-str-or-var
@@ -41,8 +41,8 @@
                            (zipmap middleware resolved))}))))
 
 (defn- require-namespaces
-  [session namespaces]
-  (with-session-classloader session
+  [namespaces]
+  (with-classloader
     (run! (fn [namespace]
             (try
               (require (symbol namespace))
@@ -62,16 +62,16 @@
 
   Note that if `*state*` is not rebound, this middleware will not work."
   [h]
-  (fn [{:keys [op transport session middleware extra-namespaces] :as msg}]
+  (fn [{:keys [op transport middleware extra-namespaces] :as msg}]
     (when-not (instance? clojure.lang.IAtom *state*)
       (throw (ex-info "dynamic-loader/*state* is not bond to an atom. This is likely a bug"
                       {:state-class (class *state*)})))
     (case op
       "add-middleware"
       (do
-        (require-namespaces session extra-namespaces)
+        (require-namespaces extra-namespaces)
         (let [{:keys [unresolved]}
-              (update-stack! session (concat middleware (:stack @*state*)))]
+              (update-stack! (concat middleware (:stack @*state*)))]
           (if-not unresolved
             (t/send transport (response-for msg {:status :done}))
             (t/send transport (response-for msg {:status                #{:done :error}
@@ -79,8 +79,8 @@
 
       "swap-middleware"
       (do
-        (require-namespaces session extra-namespaces)
-        (let [{:keys [unresolved]} (update-stack! session middleware)]
+        (require-namespaces extra-namespaces)
+        (let [{:keys [unresolved]} (update-stack! middleware)]
           (when transport
             (if-not unresolved
               (t/send transport (response-for msg {:status :done}))
