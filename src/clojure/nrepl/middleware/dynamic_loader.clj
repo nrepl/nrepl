@@ -5,10 +5,7 @@
 
   It can also be used to load extra namespaces, in addition to the ones that new
   middleware are defined in, to handle existing middleware that performs
-  deferred loading.
-
-  When combined with the sideloader, this could be used to inject middleware
-  that are unknown to the server prior to connection."
+  deferred loading."
   {:author "Shen Tian"
    :added  "0.8"}
   (:require [clojure.string :as str]

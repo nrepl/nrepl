@@ -10,7 +10,6 @@
    nrepl.middleware.load-file
    nrepl.middleware.lookup
    nrepl.middleware.session
-   nrepl.middleware.sideloader
    [nrepl.misc :refer [log noisy-future response-for returning]]
    [nrepl.socket :as socket :refer [inet-socket unix-server-socket]]
    [nrepl.tls :as tls]
@@ -121,7 +120,6 @@
    #'nrepl.middleware.lookup/wrap-lookup
    #'nrepl.middleware.session/add-stdin
    #'nrepl.middleware.session/session
-   #'nrepl.middleware.sideloader/wrap-sideloader
    #'nrepl.middleware.dynamic-loader/wrap-dynamic-loader])
 
 (def built-in-ops
@@ -136,9 +134,8 @@
   default-middleware)
 
 (defn default-handler
-  "A default handler supporting interruptible evaluation, stdin, sessions,
-   readable representations of evaluated expressions via `pr`, sideloading, and
-   dynamic loading of middleware.
+  "A default handler supporting interruptible evaluation, stdin, sessions, and
+   other basic operations (see `default-middleware`).
 
    Additional middleware to mix into the default stack may be provided; these
    should all be values (usually vars) that have an nREPL middleware descriptor
