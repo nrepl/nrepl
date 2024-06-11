@@ -329,51 +329,22 @@ If a middleware descriptor's `:requires` set contains
   `:nrepl.middleware.caught/caught-fn`, whose value is a function that can be
   called on a `java.lang.Throwable` to convey errors interactively.
 
-== Sideloading
-
-NOTE: Sideloading support was added in nREPL 0.7 and the API is still
-considered experimental, and may change.
-
-nREPL includes `sideloader` middleware. This provides a Java Class Loader that is able to dynamically load classes and resources at runtime by interacting with the nREPL client (as opposed to using the classpath of the JVM hosting nREPL server).
-
-This performs a similar functionality as the `load-file` operation, where we can load Clojure namespaces (as source files) or Java classes (as bytecode) by simply `require` or `import` them.
-
-This allows a client to add new functionality to an already running instance of nREPL, and paves the way for a more client configurable nREPL.
-
-=== Starting the sideloader
-
-The sideloader is initialised by a new operation: `sideloader-start`. This will never return with status `:done`, but its message ID will be used for all future sideloading requests.
-
-As additional resources/classes are looked up, server will send messages to the client with status `:sideloader-lookup`, and the following parameters
-
-* `:type`, being `resource` or `class`
-* `:name`, being a string (e.g. `foo/bar.clj` or `foo.bar`)
-
-The client is responsible for responding to the lookup. It does so by replying with the operation `sideloader-provide`, and parameters
-
-* `:type` and `:name` the same as the lookup.
-* `:content` base-64 encoded byte array of the resource or class. An empty response indicates "resource/class not found."
-
-See xref:building_clients.adoc[Building Clients] on how to implement the server side of this functionality.
-
-=== Triggering the sideloader
-
-Once the sideloader has been started, it can be triggered by an ordinary `eval` or `load-file` operation. The nREPL server will first try to find a resource/class on the classpath of its own JVM. Failing this, it will attempt to request it from the nREPL client by the above described mechanism. Should this still fail, expect a `ClassNotFoundException` as usual.
-
-TIP: Once a class has been loaded, it will become available to all sessions on nREPL server.
-
 == Dynamic middleware loading
 
 NOTE: Dynamic middleware loading support was added in nREPL 0.8 and the API is still
 considered experimental, and may change.
 
 nREPL includes a `dynamic-loader` middleware, which can be used, at runtime,
-query and change the middleware stack the nREPL server is using. This is especially
-powerful when combined with sideloading, as it allows a client to configure the
-server after connecting, and provides an alternative to having to specify the middleware required by the client as startup time.
+query and change the middleware stack the nREPL server is using.
 
 This introduces three new operations:
 
 * `ls-middleware`, to return a list of active middleware, ordered from inside outwards.
-* `add-middleware`, which adds a middleware to the stack. Optionally, a list of `extra-namespaces` could be provided for loading. This is useful when adding middleware that implement some form of deferred loading. Examples include `cider-nrepl` and `refactor-nrepl`. In these cases, some of the required namespaces might only be loaded upon first use, which may occur outside of a sideloading session, and thus fail. This feature allows us to pre-load namespaces when we add a middleware. If loading of any particular middleware fails, the stack will be unchanged.
-* `swap-middleware`, similar to `add-`, but replaces all existing middleware. Note that this _may_ remove the `dynamic-loader` itself.
+* `add-middleware`, which adds a middleware to the stack. Optionally, a list of
+  `extra-namespaces` could be provided for loading. This is useful when adding
+  middleware that implement some form of deferred loading. Examples include
+  `cider-nrepl` and `refactor-nrepl`. This feature allows us to pre-load
+  namespaces when we add a middleware. If loading of any particular middleware
+  fails, the stack will be unchanged.
+* `swap-middleware`, similar to `add-`, but replaces all existing middleware.
+  Note that this _may_ remove the `dynamic-loader` itself.

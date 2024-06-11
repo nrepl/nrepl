@@ -66,62 +66,6 @@ your client Clojure-agnostic.
 * Use sequential message ids in the scope of a session - this makes it easier to track the flow of messages.
 * Provide some debug mode where you can see a dump of the requests and the responses.
 
-== Implementing sideloading
-
-NOTE: Sideloading is a feature specific to the reference Clojure nREPL server.
-
-Let's start by looking at an exchange of messages while using sideloading:
-
-[source,clojure]
-----
-;; -> init sideloading
-{:op      "sideloader-start"
- :id      "1"
- :session "x"}
-
-;; -> try to require a namespace that's not available locally
-{:op      "eval"
- :id      "2"
- :session "x"
- :code    (quote (require '[foo.bar :as bar])
-                 (bar/qaz))}
-
-;; <- lookup for foo.bar
-{:id      "1"
- :session "x"
- :status  :sideloader-lookup
- :type    "resource"
- :name    "foo/bar.clj"}
-
-;; -> providing resource
-{:id      "3"
- :session "x"
- :op      "sideloader-provide"
- :type    "resource"
- :name    "foo/bar.clj"
- :content "<base64 package>"}
-
-;; <- ack of provided resource
-{:id      "3"
- :session "x"
- :status  :done}
-
-;; <- result of eval
-{:id      "2"
- :session "x"
- :value   "Qaz"
- :status  :done}
-----
-
-Note that between sending the `eval` op in message `2` and receiving the result, two other messages were dealt with:
-
-- We received a response from message `1`, requesting a resource. This indicates that the the resource was not found on the server JVM, and evaluation is blocked until we provide it, or respond with an empty package (`:content` should be an empty string).
-- We provide the resource/file using message `3`, to which the server responds with a `:done`.
-
-This unblocks the `eval` command, which returns the value `Qaz` in the final message.
-
-It's thus important, once sideloading has started, to asynchronously handle lookup requests, without these being blocked by waiting on a response from another message.
-
 == Modifying middleware
 
 To add a middleware that's already available on the server's classpath, it's as
@@ -133,24 +77,6 @@ simple as sending the message
  :middleware ["cider.nrepl.middleware/wrap-version"]}
 ----
 
-However, if the middleware is loaded, it's very likely that it hasn't been included
-as a dependency on the server, and thus unavailable on its classpath. Furthermore.
-In this case, we can use the `dynamic-loader` in conjunction with the `sideloader`:
-
-[source,clojure]
-----
-{:op "sideloader-start"}
-;; handle sideloading separately...
-;; now we add the middleware
-{:op "add-middleware"
- :middleware ["cider.nrepl.middleware/wrap-version"]}
-;; confirm it's being loaded..
-{:op "ls-middleware"}
-;; and we should get something like...
-{:status #{:done}
- :middleware [... "#'cider.nrepl.middleware/wrap-version" ...]}
-----
-
 However, if we tried to use the middleware with an `cider-version` op, we'd get an
 error, because the middleware is implemented in a different namespace, which is
 only loaded on the first use of the `cider-version` op. This is a practice in
@@ -159,12 +85,12 @@ is to request the extra namespace to be loaded at `add-middleware` time too:
 
 [source,clojure]
 ----
-;; after starting the sideloader...
 {:op "add-middleware"
  :middleware ["cider.nrepl.middleware/wrap-version"]
  :extra-namespaces ["cider.nrepl.middleware.version"]}
- ;; now, the following should work
- {:op "cider-version"}
+
+;; now, the following should work
+{:op "cider-version"}
 ----
 
 There is no operation to remove a single middleware, but it's possible to reset
@@ -172,7 +98,9 @@ the stack to a baseline with the `swap-middleware` operation. If the goal is to
 simply reset the middleware stack, use this in conjunction with
 `nrepl.server/default-middleware`.
 
-Also note that updating the middleware stack may also destroy/re-create middleware state. As an example, sideloading would need to be re-started. The impact on each middleware differs, however, as some of them, e.g. `session` holds their state globally.
+Also note that updating the middleware stack may also destroy/re-create
+middleware state. The impact on each middleware differs, however, as some of
+them, e.g. `session` holds their state globally.
 
 == Debugging the Communication with nREPL
 
@@ -192,7 +120,7 @@ J <=== 1 #{:done} {:new-session "002914a8-db79-408d-807a-c5b3955ab6f9"}
 nil ---> 2 clone {}
 X <=== 2 #{:done} {:new-session "6a7e7b99-1b8e-4008-bbe5-ddddf46672a9"}
 Y ---> 3 describe {}
-Y <=== 3 #{:done} {:aux {:current-ns "user"}, :ops {:stdin {}, :add-middleware {}, :lookup {}, :swap-middleware {}, :sideloader-start {}, :ls-middleware {}, :close {}, :sideloader-provide {}, :load-file {}, :ls-sessions {}, :clone {}, :describe {}, :interrupt {}, :completions {}, :eval {}}, :versions {:clojure {:incremental 3, :major 1, :minor 10, :version-string "1.10.3"}, :java {:version-string "17"}, :nrepl {:incremental 0, :major 0, :minor 9, :version-string "0.9.0"}}}
+Y <=== 3 #{:done} {:aux {:current-ns "user"}, :ops {:stdin {}, :add-middleware {}, :lookup {}, :swap-middleware {}, :ls-middleware {}, :close {}, :load-file {}, :ls-sessions {}, :clone {}, :describe {}, :interrupt {}, :completions {}, :eval {}}, :versions {:clojure {:incremental 3, :major 1, :minor 10, :version-string "1.10.3"}, :java {:version-string "17"}, :nrepl {:incremental 0, :major 0, :minor 9, :version-string "0.9.0"}}}
 Y ---> 4 eval {:nrepl.middleware.print/buffer-size 4096, :file "*cider-repl lambdaisland/nrepl-proxy:localhost:5424(clj)*", :nrepl.middleware.print/quota 1048576, :nrepl.middleware.print/print "cider.nrepl.pprint/pprint", :column 1, :line 10, :code "(clojure.core/apply clojure.core/require clojure.main/repl-requires)", :inhibit-cider-middleware "true", :nrepl.middleware.print/stream? "1", :nrepl.middleware.print/options {:right-margin 80}}
 G ---> 5 eval {:code "(seq (.split (System/getProperty \"java.class.path\") \":\"))"}
 Y <--- 4 #{:nrepl.middleware.print/error} #:nrepl.middleware.print{:error "Couldn't resolve print-var cider.nrepl.pprint/pprint"}
