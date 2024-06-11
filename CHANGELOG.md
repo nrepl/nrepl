@@ -2,6 +2,12 @@
 
 ## master (unreleased)
 
+### Changes
+
+* [#335](https://github.com/nrepl/nrepl/pull/335): Remove support for sideloading and `wrap-sideloader` middleware.
+
+### Bugs fixed
+
 ## 1.2.0 (2024-06-10)
 
 ### Changes

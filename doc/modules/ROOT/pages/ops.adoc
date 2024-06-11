@@ -225,40 +225,6 @@ Returns::
 
 
 
-=== `sideloader-provide`
-
-Provides a requested class or resource.
-
-Required parameters::
-* `:content` base64 string
-* `:name` the class or resource name
-* `:session` the id of the session
-* `:type` "class" or "resource"
-
-
-Optional parameters::
-{blank}
-
-Returns::
-{blank}
-
-
-=== `sideloader-start`
-
-Starts a sideloading session.
-
-Required parameters::
-* `:session` the id of the session
-
-
-Optional parameters::
-{blank}
-
-Returns::
-* `:status` "sideloader-lookup", never ever returns "done".
-
-
-
 === `stdin`
 
 Add content from the value of "stdin" to \*in* in the current session.
