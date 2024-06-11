@@ -78,30 +78,13 @@
           (when log?
             (log e))))))
 
-(defmacro with-session-classloader
-  "This macro does two things:
-
-   1. If the session has a classloader set, then execute the body using that.
-      This is typically used to trigger the sideloader, when active.
-
-   2. Bind `clojure.lang.Compiler/LOADER` to the context classloader, which
-      might also be the sideloader. This is required to get hotloading with
-      pomegranate working under certain conditions."
-  [session & body]
-  `(let [ctxcl#  (.getContextClassLoader (Thread/currentThread))
-         alt-cl# (when-let [classloader# (:classloader (meta ~session))]
-                   (classloader#))
-         cl#     (or alt-cl# ctxcl#)]
-     (if (= ctxcl# cl#)
-       (with-bindings {clojure.lang.Compiler/LOADER cl#}
-         ~@body)
-       (do
-         (.setContextClassLoader (Thread/currentThread) cl#)
-         (try
-           (with-bindings {clojure.lang.Compiler/LOADER cl#}
-             ~@body)
-           (finally
-             (.setContextClassLoader (Thread/currentThread) ctxcl#)))))))
+(defmacro with-classloader
+  "Bind `clojure.lang.Compiler/LOADER` to the context classloader. This is
+  required to get hotloading with pomegranate working under certain conditions."
+  [& body]
+  `(let [cl# (.getContextClassLoader (Thread/currentThread))]
+     (with-bindings {clojure.lang.Compiler/LOADER cl#}
+       ~@body)))
 
 (defn parse-java-version
   "Parse Java version string according to JEP 223 and return version as a number."
