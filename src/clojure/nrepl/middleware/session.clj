@@ -181,7 +181,7 @@
        ;; JVMTI agent is a "soft opt-in" — if attachSelf is enabled, then we
        ;; consider this a permission to load the agent, UNLESS the user
        ;; explicitly opts out of it in the config.
-       (boolean (:enable-jvmti-agent config/config true))))
+       (boolean (:enable-jvmti-agent (config/get-config) true))))
 
 (defn- jvmti-stop-thread [t]
   ((misc/requiring-resolve 'nrepl.util.jvmti/stop-thread) t))
