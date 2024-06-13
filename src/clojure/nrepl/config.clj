@@ -88,6 +88,11 @@
    :tls-keys-str       {:type :string}
    :tls-keys-file      {:type :string}
 
+   :lookup-fn          {:type :var-delay
+                        :default 'nrepl.util.lookup/lookup}
+   :complete-fn        {:type :var-delay
+                        :default 'nrepl.util.completion/completions}
+
    :enable-jvmti-agent {:type :boolean, :default true}})
 
 (def ^:private config-state "Configuration state." (atom {}))
