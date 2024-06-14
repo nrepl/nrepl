@@ -7,6 +7,7 @@
    [nrepl.ack :as ack]
    [nrepl.bencode :refer [write-bencode]]
    [nrepl.cmdline :as cmd]
+   [nrepl.config :as config]
    [nrepl.core :as nrepl]
    [nrepl.core-test :refer [*server* *transport-fn* transport-fns]]
    [nrepl.server :as server]
@@ -41,12 +42,11 @@
       (set! *print-length* nil)
       (set! *print-level* nil))))
 
-(defn- server-cmdline-fixture
-  [f]
-  (doseq [transport-fn transport-fns]
-    (start-server-for-transport-fn transport-fn f)))
-
-(use-fixtures :each server-cmdline-fixture)
+(defmacro deftest-with-all-transports [name & body]
+  `(deftest ~name
+     (let [f# (fn [] ~@body)]
+       (doseq [transport-fn# transport-fns]
+         (start-server-for-transport-fn transport-fn# f#)))))
 
 (defn- var->str
   [sym]
@@ -75,47 +75,35 @@
 (deftest help
   (is (re-find #"Usage:" (cmd/help))))
 
-(deftest parse-cli-values
-  (is (= {:other "string"
-          :middleware :middleware
-          :handler :handler
-          :transport :transport}
-         (cmd/parse-cli-values {:other "string"
-                                :middleware ":middleware"
-                                :handler ":handler"
-                                :transport ":transport"}))))
+(deftest args->options
+  (#'config/reset-state)
+  (is (= [{:middleware [#'clojure.core/identity], :repl "true"} ["extra" "args"]]
+         (update (cmd/args->options ["-m" "clojure.core/identity" "-r" "true" "extra" "args"]) 0
+                 select-keys [:middleware :repl])))
 
-(deftest args->cli-options
-  (is (= [{:middleware :middleware :repl "true"} ["extra" "args"]]
-         (cmd/args->cli-options ["-m" ":middleware" "-r" "true" "extra" "args"]))))
-
-(deftest connection-opts
+  (#'config/reset-state)
   (is (= {:port 5000
           :host "0.0.0.0"
-          :socket nil
-          :transport #'transport/bencode
-          :repl-fn #'nrepl.cmdline/run-repl
-          :tls-keys-str nil
-          :tls-keys-file nil}
-         (cmd/connection-opts {:port "5000"
-                               :host "0.0.0.0"
-                               :transport nil}))))
+          :repl-fn #'nrepl.cmdline/run-repl,
+          :transport-fn #'nrepl.transport/bencode}
+         (-> (cmd/args->options ["-p" "5000" "-h" "0.0.0.0"])
+             first
+             (select-keys [:port :host :repl-fn :transport-fn]))))
 
-(deftest server-opts
+  (#'config/reset-state)
   (is (= {:bind "0.0.0.0"
           :port 5000
-          :transport #'transport/bencode
+          :transport-fn #'transport/bencode
           :handler #'clojure.core/identity
           :repl-fn #'clojure.core/identity
-          :greeting nil
-          :ack-port 2000}
-         (select-keys
-          (cmd/server-opts {:bind "0.0.0.0"
-                            :port 5000
-                            :ack 2000
-                            :handler 'clojure.core/identity
-                            :repl-fn 'clojure.core/identity})
-          [:bind :port :transport :greeting :handler :ack-port :repl-fn]))))
+          :ack 2000}
+         (-> (cmd/args->options ["-b" "0.0.0.0" "-p" "5000" "--ack" "2000"
+                                 "--handler" "clojure.core/identity"
+                                 "--repl-fn" "clojure.core/identity"])
+             first
+             (select-keys [:bind :port :transport-fn :handler :ack :repl-fn]))))
+
+  (#'config/reset-state))
 
 (deftest ack-server
   (with-redefs [ack/send-ack (fn [_ _ _] true)]
@@ -141,7 +129,7 @@
                   server
                   {:transport #'transport/bencode})))))
 
-(deftest ^:slow ack
+(deftest-with-all-transports ^:slow ack
   (let [ack-port (:port *server*)
         ^Process
         server-process (apply sh ["java" "-Dnreplacktest=y"
@@ -167,7 +155,7 @@
       (finally
         (.destroy server-process)))))
 
-(deftest ^:slow explicit-port-argument
+(deftest-with-all-transports ^:slow explicit-port-argument
   (let [ack-port (:port *server*)
         free-port (with-open [ss (java.net.ServerSocket.)]
                     (.bind ss nil)
@@ -225,12 +213,8 @@
       (catch Exception _e
         false))))
 
-(deftest ^:slow basic-fs-socket-behavior
-  (if-not unix-domain-flavor
-    (binding [*out* *err*]
-      ;; Otherwise kaocha treats no tests as an error
-      (testing "Skipping UNIX domain socket tests for JDK < 16 without junixsocket dependency"
-        (is (not unix-domain-flavor))))
+(when unix-domain-flavor
+  (deftest ^:slow basic-fs-socket-behavior
     (let [tmpdir (create-tmpdir "target" "socket-test-")
           sock-path (str tmpdir "/socket")
           sock-file (as-file sock-path)]
@@ -238,7 +222,8 @@
         ;; Use a Process rather than sh so we can see server errors
         (let [cmd (into-array ["java"
                                "-cp" (System/getProperty "java.class.path")
-                               "nrepl.main" "-s" sock-path])
+                               "nrepl.main" "--socket" sock-path])
+              _ (println "CMD" (seq cmd))
               server (.start (doto (ProcessBuilder. ^"[Ljava.lang.String;" cmd)
                                (.redirectOutput ProcessBuilder$Redirect/INHERIT)
                                (.redirectError ProcessBuilder$Redirect/INHERIT)))]
@@ -284,13 +269,9 @@
               (#'cmd/run-repl (:host server) (:port server) {:prompt >devnull :err >devnull :out >devnull :value #(swap! results conj %)})
               (is (= expected-output @results)))))))))
 
-(deftest ^:slow can-connect-to-unix-socket
-  (testing "We can connect to unix domain socker from the cli."
-    (if-not unix-domain-flavor
-      (binding [*out* *err*]
-          ;; Otherwise kaocha treats no tests as an error
-        (testing "Skipping UNIX domain socket tests for JDK < 16 without junixsocket dependency"
-          (is (not unix-domain-flavor))))
+(when unix-domain-flavor
+  (deftest ^:slow can-connect-to-unix-socket
+    (testing "We can connect to unix domain socker from the cli."
       (let [test-input      (str/join \newline ["::a"
                                                 "(ns a)" "::a"
                                                 "(ns b)" "::a"
