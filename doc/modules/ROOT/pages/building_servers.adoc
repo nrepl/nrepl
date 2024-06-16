@@ -13,7 +13,7 @@ not on specifics of the references nREPL server implementation for Clojure.
 To build a server compatible with the nREPL protocol all you need to do is build a solution
 that handles the xref:ops.adoc[protocol ops] and uses `bencode` as the default data exchange format.
 
-You can completely ignore concepts like middleware, handles and so on - those are just
+You can completely ignore concepts like middleware, handlers and so on - those are just
 implementation details from the references implementation. If you want to leverage them that'd be great,
 but if you don't - it's not a big deal.
 
