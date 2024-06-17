@@ -66,8 +66,7 @@
 (deftest no-tty-client
   (testing "Trying to connect with the tty transport should fail."
     (with-open [^Server server (server/start-server :transport-fn #'transport/tty)]
-      (let [options (cmd/connection-opts {:port      (:port server)
-                                          :host      "localhost"
-                                          :transport 'nrepl.transport/tty})]
+      (let [[options] (cmd/args->options ["-p" (str (:port server)) "-h" "localhost"
+                                          "--transport" "nrepl.transport/tty"])]
         (is (thrown? clojure.lang.ExceptionInfo
                      (cmd/interactive-repl server options)))))))

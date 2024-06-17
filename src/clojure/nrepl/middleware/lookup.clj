@@ -12,25 +12,20 @@
   {:author "Bozhidar Batsov"
    :added "0.8"}
   (:require
+   [nrepl.config :as config]
    [nrepl.middleware :as middleware :refer [set-descriptor!]]
    [nrepl.misc :refer [response-for] :as misc]
    [nrepl.util.lookup :as lookup]
    [nrepl.transport :as t])
   (:import nrepl.transport.Transport))
 
-(def ^:dynamic *lookup-fn*
-  "Function to use for lookup. Takes two arguments:
-
-  * `ns`, the namespace in which to do the lookup.
-  * `sym`, the symbol to lookup "
-  lookup/lookup)
-
 (defn lookup-reply
   [{:keys [session sym ns lookup-fn] :as msg}]
   (try
     (let [ns (if ns (symbol ns) (symbol (str (@session #'*ns*))))
           sym (symbol sym)
-          lookup-fn (or (and lookup-fn (misc/requiring-resolve (symbol lookup-fn))) *lookup-fn*)]
+          lookup-fn (or (some-> lookup-fn symbol misc/requiring-resolve)
+                        @(:lookup-fn (config/get-config)))]
       (response-for msg {:status :done :info (lookup-fn ns sym)}))
     (catch Exception _e
       (if (nil? ns)

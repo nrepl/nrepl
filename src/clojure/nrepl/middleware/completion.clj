@@ -14,17 +14,12 @@
    :added "0.8"}
   (:require
    [clojure.walk :as walk]
+   [nrepl.config :as config]
    [nrepl.util.completion :as complete]
    [nrepl.middleware :as middleware :refer [set-descriptor!]]
    [nrepl.misc :refer [response-for] :as misc]
    [nrepl.transport :as t])
   (:import nrepl.transport.Transport))
-
-(def ^:dynamic *complete-fn*
-  "Function to use for completion. Takes three arguments: `prefix`, the completion prefix,
-  `ns`, the namespace in which to look for completions, and `options`, a map of additional
-  options for the completion function."
-  complete/completions)
 
 (def ^:private parse-options
   (memoize
@@ -34,7 +29,8 @@
 (defn completion-reply
   [{:keys [session prefix ns complete-fn options] :as msg}]
   (let [ns (if ns (symbol ns) (symbol (str (@session #'*ns*))))
-        completion-fn (or (and complete-fn (misc/requiring-resolve (symbol complete-fn))) *complete-fn*)]
+        completion-fn (or (some-> complete-fn symbol misc/requiring-resolve)
+                          @(:complete-fn (config/get-config)))]
     (try
       (response-for msg {:status :done :completions (completion-fn prefix ns (parse-options options))})
       (catch Exception _e

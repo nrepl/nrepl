@@ -189,7 +189,9 @@
    * :tls-keys-str - A string that contains the certificates and private key.
      :tls-keys-file or :tls-keys-str must be given if :tls? is true.
    * :handler — the nREPL message handler to use for each incoming connection;
-       defaults to the result of `(default-handler)`
+       defaults to the result of `(default-handler)`.
+   * :middleware — list of additional middleware to use with `default-handler`,
+       does nothing if explicit `:handler` is specified.
    * :transport-fn — a function that, given a java.net.Socket corresponding
        to an incoming connection, will return a value satisfying the
        nrepl.Transport protocol for that Socket.
@@ -207,7 +209,8 @@
    The port that the server is open on is available in the :port slot of the
    server map (useful if the :port option is 0 or was left unspecified."
   ^nrepl.server.Server
-  [& {:keys [port bind socket tls? tls-keys-str tls-keys-file transport-fn handler ack-port greeting-fn consume-exception]
+  [& {:keys [port bind socket tls? tls-keys-str tls-keys-file transport-fn
+             handler middleware ack-port greeting-fn consume-exception]
       :or {consume-exception (fn [_] nil)}}]
   (when (and socket (or port bind tls?))
     (let [msg "Cannot listen on both port and filesystem socket"]
@@ -231,7 +234,7 @@
                         (atom #{})
                         transport-fn
                         greeting-fn
-                        (or handler (default-handler)))]
+                        (or handler (apply default-handler middleware)))]
     (noisy-future
      (accept-connection server consume-exception))
     (when ack-port
