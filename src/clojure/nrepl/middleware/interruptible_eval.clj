@@ -54,20 +54,6 @@
       (and (instance? Compiler$CompilerException e)
            (instance? ThreadDeath (.getCause e)))))
 
-(defn- maybe-restore-original-context-classloader
-  "Because `clojure.main/repl` always wraps the current context classloader into
-  an additional DynamicClassLoader, the chain of DCLs will grow with each eval.
-  This function resets the CCL if the CCL after the eval is exactly a one-level
-  DCL wrapper over previous CCL. If that's not true, then the eval code itself
-  has changed the CCL, and we shouldn't touch it then."
-  [original-cl]
-  (let [t (Thread/currentThread)
-        ccl (.getContextClassLoader t)]
-    (when (and (instance? DynamicClassLoader ccl)
-               (instance? DynamicClassLoader original-cl)
-               (identical? (.getParent ccl) original-cl))
-      (.setContextClassLoader t original-cl))))
-
 (defmacro with-repl-bindings
   "Executes body in the context of thread-local bindings for several vars
   that often need to be set!: *ns* *warn-on-reflection* *math-context*
@@ -114,107 +100,92 @@
     (if (and ns (not explicit-ns))
       (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}
                                            :ns ns}))
-      (let [ctxcl (.getContextClassLoader (Thread/currentThread))
-            ;; TODO: out-limit -> out-buffer-size | err-buffer-size
+      (let [;; TODO: out-limit -> out-buffer-size | err-buffer-size
             ;; TODO: new options: out-quota | err-quota
             opts {::print/buffer-size (or out-limit (get (meta session) :out-limit))}
             out (print/replying-PrintWriter :out msg opts)
             err (print/replying-PrintWriter :err msg opts)]
         (try
-          (let [cl (.getContextClassLoader (Thread/currentThread))]
-            (.setContextClassLoader (Thread/currentThread) (clojure.lang.DynamicClassLoader. cl)))
-          (let [init #(let [bindings
-                            (-> (get-thread-bindings)
-                                (into caught/default-bindings)
-                                (into print/default-bindings)
-                                (into @session)
-                                (into {#'*out* out
-                                       #'*err* err
-                                       ;; clojure.test captures *out* at load-time, so we need to make sure
-                                       ;; runtime output of test status/results is redirected properly
-                                       ;; TODO: is this something we need to consider in general, or is this
-                                       ;; specific hack reasonable?
-                                       #'clojure.test/*test-out* out})
-                                (cond-> explicit-ns (assoc #'*ns* explicit-ns)
-                                        file (assoc #'*file* file)))]
-                        (pop-thread-bindings)
-                        (push-thread-bindings bindings))
-                need-prompt (constantly true)
-                prompt #(reset! session (maybe-restore-original-ns (capture-thread-bindings)))
-                flush flush
+          ;; TODO: assert DCL
+          (let [eof (Object.)
                 read (if (string? code)
                        (let [reader (source-logging-pushback-reader code line column)
                              read-cond (or (-> msg :read-cond keyword)
                                            :allow)]
-                         #(try (read {:read-cond read-cond :eof %2} reader)
-                               (catch RuntimeException e
-                                 ;; If error happens during reading the string, we
-                                 ;; don't want eval to start reading and executing the
-                                 ;; rest of it. So we skip over the remaining text.
-                                 (.skip ^LineNumberingPushbackReader reader Long/MAX_VALUE)
-                                 (throw e))))
+                         #(read {:read-cond read-cond :eof eof} reader))
                        (let [code (.iterator ^Iterable code)]
-                         #(or (and (.hasNext code) (.next code)) %2)))
-                eval (let [eval-fn (if eval (find-var (symbol eval)) clojure.core/eval)]
-                       (fn [form]
-                         (with-classloader (eval-fn form))))
-                print (fn [value]
-                        ;; *out* has :tag metadata; *err* does not
-                        (.flush ^Writer *err*)
-                        (.flush *out*)
-                        (t/send transport (response-for msg {:ns (str (ns-name *ns*))
-                                                             :value value
-                                                             ::print/keys #{:value}})))
+                         #(if (.hasNext code)
+                            (.next code)
+                            eof)))
+                eval-fn (if eval (find-var (symbol eval)) clojure.core/eval)
                 caught (fn [^Throwable e]
+                         (set! *e e)
                          (when-not (interrupted? e)
                            (let [resp {::caught/throwable e
                                        :status :eval-error
                                        :ex (str (class e))
                                        :root-ex (str (class (clojure.main/root-cause e)))}]
-                             (t/send transport (response-for msg resp)))))
-                request-prompt (Object.)
-                request-exit (Object.)
-                read-eval-print
-                (fn []
-                  (try
-                    (let [read-eval *read-eval*
-                          input (try
-                                  (clojure.main/with-read-known (read request-prompt request-exit))
-                                  (catch LispReader$ReaderException e
-                                    (throw (ex-info nil {:clojure.error/phase :read-source} e))))]
-                      (or (#{request-prompt request-exit} input)
-                          (let [value (binding [*read-eval* read-eval] (eval input))]
-                            (set! *3 *2)
-                            (set! *2 *1)
-                            (set! *1 value)
-                            (try
-                              (print value)
-                              (catch Throwable e
-                                (throw (ex-info nil {:clojure.error/phase :print-eval-result} e)))))))
-                    (catch Throwable e
-                      (caught e)
-                      (set! *e e))))]
+                             (t/send transport (response-for msg resp)))))]
             (with-repl-bindings
               (try
-                (init)
+                (let [bindings
+                      (-> (get-thread-bindings)
+                          (into caught/default-bindings)
+                          (into print/default-bindings)
+                          (into @session)
+                          (into {#'*out* out
+                                 #'*err* err
+                                 ;; clojure.test captures *out* at load-time, so we need to make sure
+                                 ;; runtime output of test status/results is redirected properly
+                                 ;; TODO: is this something we need to consider in general, or is this
+                                 ;; specific hack reasonable?
+                                 #'clojure.test/*test-out* out})
+                          (cond-> explicit-ns (assoc #'*ns* explicit-ns)
+                                  file (assoc #'*file* file)))]
+                  (pop-thread-bindings)
+                  (push-thread-bindings bindings))
+
+                (loop []
+                  (let [read-eval *read-eval*
+                        input (try
+                                (clojure.main/with-read-known (read))
+                                (catch Throwable e
+                                  (let [e (if (instance? LispReader$ReaderException e)
+                                            (ex-info nil {:clojure.error/phase :read-source} e)
+                                            e)]
+                                    ;; If error happens during read phase, call
+                                    ;; caught-hook but don't continue executing.
+                                    (caught e)
+                                    eof)))]
+                    (when-not (identical? input eof)
+                      (try
+                        (let [value (binding [*read-eval* read-eval]
+                                      (with-session-classloader (eval-fn input)))]
+                          (set! *3 *2)
+                          (set! *2 *1)
+                          (set! *1 value)
+                          (try
+                            ;; *out* has :tag metadata; *err* does not
+                            (.flush ^Writer *err*)
+                            (.flush *out*)
+                            (t/send transport (response-for msg {:ns (str (ns-name *ns*))
+                                                                 :value value
+                                                                 ::print/keys #{:value}}))
+                            (catch Throwable e
+                              (throw (ex-info nil {:clojure.error/phase :print-eval-result} e)))))
+                        (catch Throwable e
+                          (caught e)))
+                      ;; Otherwise, when errors happen during eval/print phase,
+                      ;; report the exception but continue executing the
+                      ;; remaining readable forms.
+                      (recur))))
+
                 (catch Throwable e
-                  (caught e)
-                  (set! *e e)))
-              (prompt)
-              (flush)
-              (loop []
-                (when-not
-                    (try (identical? (read-eval-print) request-exit)
-                         (catch Throwable e
-                           (caught e)
-                           (set! *e e)
-                           nil))
-                    (when (need-prompt)
-                      (prompt)
-                      (flush))
-                    (recur)))))
+                  (caught e)))
+
+              (reset! session (maybe-restore-original-ns (capture-thread-bindings)))
+              (flush)))
           (finally
-            (maybe-restore-original-context-classloader ctxcl)
             (.flush err)
             (.flush out)))))))
 
