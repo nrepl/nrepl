@@ -35,8 +35,6 @@ documentation which clients are known to work well with them.
 
 * https://github.com/arcadia-unity/Arcadia/blob/master/Editor/NRepl.cs[Arcadia nREPL] - an nREPL server implemented in C# for Arcadia. An actively maintained alternative of nREPL CLR.
 
-* https://github.com/borkdude/nrepl-server[nREPL Prototype] - a simple nREPL implementation in Clojure. Used as the basis of the `babashka` implementation.
-
 * https://github.com/babashka/babashka.nrepl[Babashka nREPL] - an nREPL server bundled with https://github.com/borkdude/babashka[babashka]
 
 * https://github.com/djblue/nrepl-cljs[nrepl-cljs] - a native ClojureScript nREPL server implementation

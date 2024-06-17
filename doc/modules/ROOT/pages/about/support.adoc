@@ -5,20 +5,6 @@ nREPL currently has several official & unofficial support channels.
 For questions, suggestions and support refer to one of them.  Please, don't
 use the support channels to report issues, as this makes them harder to track.
 
-== Freenode
-
-We've got an unofficial Freenode channel - `#nrepl`. It's not actively
-monitored by the nREPL maintainers themselves, but still you can get support
-from other nREPL users there.
-
-== Discord
-
-nREPL has its own channel (`#nrepl`) on CIDER's official Discord chat server, created by CIDER's
-author/nREPL's maintainer Bozhidar. You can join the Discord server
-https://discord.com/invite/nFPpynQPME[here].
-
-NOTE: As of 2021, Discord is Bozhidar's preferred chat for nREPL.
-
 == Slack
 
 We've got an official https://clojurians.slack.com/[Clojurians Slack] -
