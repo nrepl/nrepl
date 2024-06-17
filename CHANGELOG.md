@@ -5,6 +5,7 @@
 ### Changes
 
 * [#335](https://github.com/nrepl/nrepl/pull/335): Remove support for sideloading and `wrap-sideloader` middleware.
+* [#339](https://github.com/nrepl/nrepl/pull/339): Introduce custom REPL implementation instead `clojure.main/repl`.
 
 ### Bugs fixed
 
