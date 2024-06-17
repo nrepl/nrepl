@@ -2,12 +2,6 @@
 
 Here's a list of notable nREPL extensions (middleware or transports) you might encounter in the wild.
 
-[WARNING]
-====
-Make sure you're using the latest versions of those middleware, as
-all of them added support for nREPL 0.4+ fairly recently.
-====
-
 == Official
 
 Official extensions are developed and maintained by nREPL's Core Team and are
@@ -57,25 +51,3 @@ hosted outside the nREPL GitHub organization.
 
 * https://clojure-emacs.github.io/sayid/[sayid]: A powerful tracing/debugging tool. It is a great alternative of CIDER-nREPL's basic tracing functionality.
 * https://github.com/vvvvalvalval/scope-capture-nrepl[scope-capture-nrepl]: A companion library to scope-capture, providing an nREPL middleware that lets you put your REPL in the context of an Execution Point.
-
-==== Deprecated
-
-This section lists middleware that were somewhat prominent in the
-past, but were replaced by alternatives down the road.
-
-* https://github.com/pallet/ritz/tree/develop/nrepl-middleware[nrepl-middleware],
-  part of https://github.com/pallet/ritz[ritz] that provides a
-  variety of nREPL middleware supporting various enhanced REPL
-  operations (including apropos, javadoc lookup, code completion, and
-  an alternative eval implementation). **(superseded by `cider-nrepl`)**
-* https://github.com/technomancy/javert[Javert] provides a basic
-  object inspector. **(superseded by `cider-nrepl`)**
-* https://github.com/thunknyc/nrepl-profile[nrepl-profile]: profiling middleware,
-which was eventually integrated into `cider-nrepl`.
-
-
-[NOTE]
-====
-This list doesn't aim to be complete. You can find more 3rd-party middleware listed
-https://github.com/nrepl/nrepl/wiki/Extensions[here].
-====

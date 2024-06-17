@@ -7,9 +7,8 @@ group of long-term contributors manages releases, evaluates pull-requests, and
 does a lot of the groundwork on major new features.
 
 * https://github.com/bbatsov[Bozhidar Batsov] (maintainer)
-* https://github.com/SevereOverfl0w[Dominic Monroe]
-* https://github.com/arrdem[Reid McKenzie]
-* https://github.com/cgrand[Christophe Grand]
+* https://github.com/cichli[Michael Griffiths]
+* https://github.com/alexander-yakushev[Oleksandr Yakushev]
 
 == nREPL Alumni
 
@@ -17,6 +16,7 @@ In addition, we'd like to extend a special thanks the following retired nREPL
 core team members. Lovingly known as The Alumni:
 
 * https://github.com/cemerick[Chas Emerick] (author)
+* https://github.com/shen-tian[Shen Tian]
 
 == Thanks
 
@@ -34,3 +34,4 @@ initial design phases of nREPL:
 * Colin Jones
 * Laurent Petit
 * Eric Thorsen
+* Dominic Monroe
