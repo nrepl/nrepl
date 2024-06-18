@@ -12,19 +12,14 @@
    [nrepl.misc :as misc :refer [response-for with-classloader]]
    [nrepl.transport :as t])
   (:import
-   (clojure.lang Compiler$CompilerException DynamicClassLoader
-                 LineNumberingPushbackReader)
+   (clojure.lang Compiler$CompilerException
+                 LineNumberingPushbackReader LispReader$ReaderException)
    (java.io StringReader Writer)
    (java.lang.reflect Field)))
 
 (def ^:dynamic *msg*
   "The message currently being evaluated."
   nil)
-
-(defn- capture-thread-bindings
-  "Capture thread bindings, excluding nrepl implementation vars."
-  []
-  (dissoc (get-thread-bindings) #'*msg*))
 
 (defn- set-line!
   [^LineNumberingPushbackReader reader line]
@@ -54,20 +49,6 @@
       (and (instance? Compiler$CompilerException e)
            (instance? ThreadDeath (.getCause e)))))
 
-(defn- maybe-restore-original-context-classloader
-  "Because `clojure.main/repl` always wraps the current context classloader into
-  an additional DynamicClassLoader, the chain of DCLs will grow with each eval.
-  This function resets the CCL if the CCL after the eval is exactly a one-level
-  DCL wrapper over previous CCL. If that's not true, then the eval code itself
-  has changed the CCL, and we shouldn't touch it then."
-  [original-cl]
-  (let [t (Thread/currentThread)
-        ccl (.getContextClassLoader t)]
-    (when (and (instance? DynamicClassLoader ccl)
-               (instance? DynamicClassLoader original-cl)
-               (identical? (.getParent ccl) original-cl))
-      (.setContextClassLoader t original-cl))))
-
 (defn evaluate
   "Evaluates a msg's code within the dynamic context of its session.
 
@@ -79,76 +60,73 @@
    Note: we are doubling up on restoring of ctxcl in a `catch` block. Not too
   sure why this is needed, but it does seem to be a fix for
   https://github.com/nrepl/nrepl/issues/206"
-  [{:keys [transport session eval ns code file line column out-limit]
+  [{:keys [transport session eval ns code line column out-limit]
     :as msg}]
-  (let [explicit-ns (and ns (-> ns symbol find-ns))
-        original-ns (@session #'*ns*)
-        maybe-restore-original-ns (if explicit-ns
-                                    #(assoc % #'*ns* original-ns)
-                                    identity)]
+  (let [explicit-ns (and ns (-> ns symbol find-ns))]
     (if (and ns (not explicit-ns))
       (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}
                                            :ns ns}))
-      (let [ctxcl (.getContextClassLoader (Thread/currentThread))
-            ;; TODO: out-limit -> out-buffer-size | err-buffer-size
-            ;; TODO: new options: out-quota | err-quota
-            opts {::print/buffer-size (or out-limit (get (meta session) :out-limit))}
-            out (print/replying-PrintWriter :out msg opts)
-            err (print/replying-PrintWriter :err msg opts)]
-        (try
-          (clojure.main/repl
-           :eval (let [eval-fn (if eval (find-var (symbol eval)) clojure.core/eval)]
-                   (fn [form]
-                     (with-classloader (eval-fn form))))
-           :init #(let [bindings
-                        (-> (get-thread-bindings)
-                            (into caught/default-bindings)
-                            (into print/default-bindings)
-                            (into @session)
-                            (into {#'*out* out
-                                   #'*err* err
-                                   ;; clojure.test captures *out* at load-time, so we need to make sure
-                                   ;; runtime output of test status/results is redirected properly
-                                   ;; TODO: is this something we need to consider in general, or is this
-                                   ;; specific hack reasonable?
-                                   #'clojure.test/*test-out* out})
-                            (cond-> explicit-ns (assoc #'*ns* explicit-ns)
-                                    file (assoc #'*file* file)))]
-                    (pop-thread-bindings)
-                    (push-thread-bindings bindings))
-           :read (if (string? code)
+      (let [eof (Object.)
+            read (if (string? code)
                    (let [reader (source-logging-pushback-reader code line column)
                          read-cond (or (-> msg :read-cond keyword)
                                        :allow)]
-                     #(try (read {:read-cond read-cond :eof %2} reader)
-                           (catch RuntimeException e
-                             ;; If error happens during reading the string, we
-                             ;; don't want eval to start reading and executing the
-                             ;; rest of it. So we skip over the remaining text.
-                             (.skip ^LineNumberingPushbackReader reader Long/MAX_VALUE)
-                             (throw e))))
+                     #(read {:read-cond read-cond :eof eof} reader))
                    (let [code (.iterator ^Iterable code)]
-                     #(or (and (.hasNext code) (.next code)) %2)))
-           :prompt #(reset! session (maybe-restore-original-ns (capture-thread-bindings)))
-           :need-prompt (constantly true)
-           :print (fn [value]
-                    ;; *out* has :tag metadata; *err* does not
-                    (.flush ^Writer *err*)
-                    (.flush *out*)
-                    (t/send transport (response-for msg {:ns (str (ns-name *ns*))
-                                                         :value value
-                                                         ::print/keys #{:value}})))
-           :caught (fn [^Throwable e]
+                     #(if (.hasNext code)
+                        (.next code)
+                        eof)))
+            eval-fn (if eval (find-var (symbol eval)) clojure.core/eval)
+            caught (fn [^Throwable e]
+                     (set! *e e)
                      (when-not (interrupted? e)
                        (let [resp {::caught/throwable e
                                    :status :eval-error
                                    :ex (str (class e))
                                    :root-ex (str (class (clojure.main/root-cause e)))}]
-                         (t/send transport (response-for msg resp))))))
-          (finally
-            (maybe-restore-original-context-classloader ctxcl)
-            (.flush err)
-            (.flush out)))))))
+                         (t/send transport (response-for msg resp)))))]
+        ;; TODO: assert DCL
+        (try
+          (with-bindings (if explicit-ns
+                           {#'*ns* explicit-ns}
+                           {})
+            (loop []
+              (let [input (try
+                            (clojure.main/with-read-known (read))
+                            (catch Throwable e
+                              (let [e (if (instance? LispReader$ReaderException e)
+                                        (ex-info nil {:clojure.error/phase :read-source} e)
+                                        e)]
+                                ;; If error happens during read phase, call
+                                ;; caught-hook but don't continue executing.
+                                (caught e)
+                                eof)))]
+                (when-not (identical? input eof)
+                  (try
+                    (let [value (eval-fn input)]
+                      (set! *3 *2)
+                      (set! *2 *1)
+                      (set! *1 value)
+                      (try
+                        ;; *out* has :tag metadata; *err* does not
+                        (.flush ^Writer *err*)
+                        (.flush *out*)
+                        (t/send transport (response-for msg {:ns (str (ns-name *ns*))
+                                                             :value value
+                                                             ::print/keys #{:value}}))
+                        (catch Throwable e
+                          (throw (ex-info nil {:clojure.error/phase :print-eval-result} e)))))
+                    (catch Throwable e
+                      (caught e)))
+                  ;; Otherwise, when errors happen during eval/print phase,
+                  ;; report the exception but continue executing the
+                  ;; remaining readable forms.
+                  (recur)))))
+
+          (catch Throwable e
+            (caught e)))
+
+        (flush)))))
 
 (defn interruptible-eval
   "Evaluation middleware that supports interrupts.  Returns a handler that supports
@@ -162,9 +140,9 @@
         (if-not (:code msg)
           (t/send transport (response-for msg :status #{:error :no-code :done}))
           (exec id
-                #(binding [*msg* msg]
-                   (evaluate msg))
-                #(t/send transport (response-for msg :status :done))))
+                #(evaluate msg)
+                #(t/send transport (response-for msg :status :done))
+                msg))
         (h msg)))))
 
 (set-descriptor! #'interruptible-eval
