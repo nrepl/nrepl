@@ -4,7 +4,9 @@
   (:require
    clojure.main
    [nrepl.middleware :refer [set-descriptor!]]
-   [nrepl.middleware.interruptible-eval :refer [*msg* evaluate]]
+   [nrepl.middleware.interruptible-eval :refer [*msg*]]
+   [nrepl.middleware.print :as print]
+   [nrepl.middleware.caught :as caught]
    [nrepl.misc :as misc :refer [noisy-future uuid response-for]]
    [nrepl.transport :as t])
   (:import
@@ -87,17 +89,6 @@
 
 (def default-executor "Delay containing the default Executor." (delay (configure-executor)))
 
-(defn default-exec
-  "Submits a task for execution using #'default-executor.
-   The submitted task is made of:
-   * an id (typically the message id),
-   * thunk, a Runnable, the task itself,
-   * ack, another Runnable, ran to notify of successful execution of thunk.
-   The thunk/ack split is meaningful for interruptible eval: only the thunk can be interrupted."
-  [_id ^Runnable thunk ^Runnable ack]
-  (let [^Runnable f #(do (.run thunk) (.run ack))]
-    (.submit ^ExecutorService @default-executor f)))
-
 (defn- session-in
   "Returns a LineNumberingPushbackReader suitable for binding to *in*.
    When something attempts to read from it, it will (if empty) send a
@@ -151,27 +142,115 @@
     {:input-queue input-queue
      :stdin-reader reader}))
 
+(defn- gather-initial-bindings
+  "Return a map of dynamic vars that have to be establihed for the underlying
+  `interruptible-eval` middleware. This should be called when creating a session
+  from scratch. The bound vars in this map can be reused across messages within
+  one session."
+  [_msg]
+  (as-> (transient
+         ;; Unconditional clojure.main/with-bindings bindings
+         {#'*warn-on-reflection*     *warn-on-reflection*
+          #'*math-context*           *math-context*
+          #'*print-meta*             *print-meta*
+          #'*print-length*           *print-length*
+          #'*print-level*            *print-level*
+          #'*data-readers*           *data-readers*
+          #'*default-data-reader-fn* *default-data-reader-fn*
+          #'*compile-path*           (System/getProperty "clojure.compile.path" "classes")
+          #'*command-line-args*      *command-line-args*
+          #'*unchecked-math*         *unchecked-math*
+          #'*assert*                 *assert*
+          #'*1                       nil
+          #'*2                       nil
+          #'*3                       nil
+          #'*e                       nil
+          #'*read-eval*              *read-eval*})
+        m
+
+    ;; Conditional bindings for compatibility with older Clojure.
+    (let [print-ns-maps (resolve '*print-namespace-maps*)
+          explain-out (resolve 'clojure.spec.alpha/*explain-out*)
+          repl (resolve '*repl*)]
+      (cond-> m
+        print-ns-maps (assoc! print-ns-maps true)
+        explain-out   (assoc! explain-out (var-get explain-out))
+        repl          (assoc! repl true)))
+
+    ;; This may contain other bindings established when
+    ;; `nrepl.server/start-server` was called.
+    (reduce conj! m (get-thread-bindings))
+
+    ;; Bindings required for other nREPL middleware to work.
+    (reduce conj! m print/default-bindings)
+    (reduce conj! m caught/default-bindings)
+
+    (persistent! m)))
+
+(defn- add-per-message-bindings
+  "Add dynamic bindings to `bindings-map` that must be rebound for each message."
+  [{:keys [session file out-limit] :as msg} bindings-map]
+  (let [;; *out* and *err* must be rebound on each new message.
+        ;; TODO: out-limit -> out-buffer-size | err-buffer-size
+        ;; TODO: new options: out-quota | err-quota
+        opts {::print/buffer-size (or out-limit (get (meta session) :out-limit))}
+        out (print/replying-PrintWriter :out msg opts)
+        err (print/replying-PrintWriter :err msg opts)]
+    (-> bindings-map
+        (assoc #'*out* out
+               #'*err* err
+               ;; clojure.test captures *out* at load-time, so we need to make
+               ;; sure runtime output of test status/results is redirected
+               ;; properly. There might be more cases like this, but we can't do
+               ;; much about it besides patching like this.
+               (resolve 'clojure.test/*test-out*) out)
+        (cond->
+         file (assoc #'*file* file)))))
+
+(defn make-ephemeral-exec-fn
+  "Return an exec function that should be attached to ephemeral sessions.
+  Ephemeral exec fn does not persist dynamic bindings and uses
+  `default-executor`. The submitted task is made of:
+
+  - an id (typically the message id)
+  - thunk, a Runnable, the task itself
+  - ack, another Runnable, ran to notify of successful execution of thunk
+  - msg, the currently handled nREPL message
+
+  The thunk/ack split is meaningful for interruptible eval: only the thunk can be
+  interrupted."
+  [session]
+  (fn [_id ^Runnable thunk ^Runnable ack & [msg]]
+    (let [f #(let [ctxcl (.getContextClassLoader (Thread/currentThread))
+                   bindings (assoc (add-per-message-bindings msg @session)
+                                   #'*msg* msg
+                                   clojure.lang.Compiler/LOADER ctxcl)]
+               (push-thread-bindings bindings)
+               (try (.run thunk)
+                    (some-> ack .run)
+                    (finally (pop-thread-bindings))))]
+      (.submit ^ExecutorService @default-executor ^Runnable f))))
+
 (defn- create-session
-  "Returns a new atom containing a map of bindings as per
-  `clojure.core/get-thread-bindings`. *in* is obtained using `session-in`, *ns*
-  defaults to 'user, and other bindings as optionally provided in
-  `session` are merged in."
-  ([{:keys [transport session out-limit]}]
+  "Return a new session atom that contains a map of dynamic variables needed for
+  `interruptable-eval`. If `session` is present in the message, base the new
+  session on it, otherwise make one from scratch. The returned session is always
+  an ephemeral one, with an ephemeral `:exec` function. To make it persistent,
+  `register-session` has to be called next."
+  ([{:keys [transport session out-limit] :as msg}]
    (let [id (uuid)
          {:keys [input-queue stdin-reader]} (session-in id transport)
-         the-session (atom (into (or (some-> session deref) {})
-                                 {#'*in* stdin-reader
-                                  #'*ns* (create-ns 'user)})
+         new-session (atom (assoc (if session
+                                    @session
+                                    (gather-initial-bindings msg))
+                                  #'*in* stdin-reader
+                                  #'*ns* (create-ns 'user))
                            :meta {:id id
                                   :out-limit (or out-limit (:out-limit (meta session)))
                                   :stdin-reader stdin-reader
-                                  :input-queue input-queue
-                                  :exec default-exec})
-         msg {:code "" :session the-session}]
-     ;; to fully initialize bindings
-     (binding [*msg* msg]
-       (evaluate msg))
-     the-session)))
+                                  :input-queue input-queue})]
+     (alter-meta! new-session assoc :exec (make-ephemeral-exec-fn new-session))
+     new-session)))
 
 (defn- jvmti-stop-thread [t]
   ((misc/requiring-resolve 'nrepl.util.jvmti/stop-thread) t))
@@ -216,52 +295,72 @@
      (try-stop-thread t))))
 
 (defn session-exec
-  "Takes a session id and returns a maps of three functions meant for interruptible-eval:
-   * :exec, takes an id (typically a msg-id), a thunk and an ack runnables (see #'default-exec for ampler
-     context). Executions are serialized and occurs on a single thread.
-   * :interrupt, takes an id and tries to interrupt the matching execution (submitted with :exec above).
-     A nil id is meant to match the currently running execution. The return value can be either:
-     :idle (no running execution), the interrupted id, or nil when the running id doesn't match the id argument.
-     Upon successful interruption the backing thread is replaced.
-   * :close, terminates the backing thread."
-  [id]
-  (let [queue (LinkedBlockingQueue.)
-        running (atom nil)
-        thread (atom nil)
-        main-loop #(try
-                     (loop []
-                       (let [[exec-id ^Runnable r ^Runnable ack] (.take queue)]
-                         (reset! running exec-id)
-                         (when (try
-                                 (.run r)
-                                 (compare-and-set! running exec-id nil)
-                                 (finally
-                                   (compare-and-set! running exec-id nil)))
-                           (some-> ack .run)
-                           (recur))))
-                     (catch InterruptedException _e))
-        spawn-thread #(doto (Thread. main-loop (str "nREPL-session-" id))
+  "Takes a session and returns a maps of three functions meant for
+  interruptible-eval:
+  - `:exec` - takes an id (typically a msg-id), a thunk and an ack runnables,
+    and an optional message (see `make-ephemeral-exec-fn` for ampler context).
+    Executions are serialized and occurs on a single thread.
+  - `:interrupt` - takes an id and tries to interrupt the matching execution
+    (submitted with :exec above). A nil id is meant to match the currently
+    running execution. The return value can be either: `:idle` (no running
+    execution), the interrupted id, or nil when the running id doesn't match the
+    id argument. Upon successful interruption the backing thread is replaced.
+  - `:close` - terminates the backing thread."
+  [session]
+  (let [id (:id (meta session))
+        state (atom nil)
+        main-loop
+        #(try
+           (loop []
+             (let [[exec-id ^Runnable r ^Runnable ack msg]
+                   (.take ^LinkedBlockingQueue (:queue @state))
+                   bindings (add-per-message-bindings msg @session)]
+               (swap! state assoc :running exec-id)
+               (push-thread-bindings bindings)
+               (try
+                 ;; *msg* is bound separately here because we
+                 ;; don't want to persist it into session.
+                 (with-bindings {#'*msg* msg
+                                 clojure.lang.Compiler/LOADER (.getContextClassLoader (Thread/currentThread))}
+                   (.run r))
+                 ;; Save the running thread bindings (which could
+                 ;; have been rebound by the eval) into session.
+                 (reset! session (get-thread-bindings))
+                 (finally (pop-thread-bindings)))
+               (let [state-d @state]
+                 (when (and (= (:running state-d) exec-id)
+                            (compare-and-set! state state-d
+                                              (assoc state-d :running nil)))
+                   (some-> ack .run)
+                   (recur)))))
+           (catch InterruptedException _e))
+        reset-state
+        #(let [thread (doto (Thread. main-loop (str "nREPL-session-" id))
                         (.setDaemon true)
-                        (.setContextClassLoader (dynamic-classloader))
-                        .start)]
-    (reset! thread (spawn-thread))
+                        (.setContextClassLoader (dynamic-classloader)))]
+           (reset! state {:queue (LinkedBlockingQueue.)
+                          :running nil
+                          :thread thread})
+           (.start thread))]
+    (reset-state)
     ;; This map is added to the meta of the session object by `register-session`,
     ;; it contains functions that are accessed by `interrupt-session` and `close-session`.
     {:interrupt (fn [exec-id]
                   ;; nil means interrupt whatever is running
                   ;; returns :idle, interrupted id or nil
-                  (let [current @running]
+                  (let [{:keys [running thread] :as state-d} @state]
                     (cond
-                      (nil? current) :idle
-                      (and (or (nil? exec-id) (= current exec-id)) ; `compare-and-set!` only checks identity, so check equality first
-                           (compare-and-set! running current nil))
+                      (nil? running) :idle
+                      (and (or (nil? exec-id) (= running exec-id))
+                           (compare-and-set! state state-d
+                                             (assoc state-d :running nil)))
                       (do
-                        (interrupt-stop @thread)
-                        (reset! thread (spawn-thread))
-                        current))))
-     :close #(interrupt-stop @thread)
-     :exec (fn [exec-id r ack]
-             (.put queue [exec-id r ack]))}))
+                        (interrupt-stop thread)
+                        (reset-state)
+                        running))))
+     :close #(interrupt-stop (:thread @state))
+     :exec (fn [exec-id r ack & [msg]]
+             (.put ^LinkedBlockingQueue (:queue @state) [exec-id r ack msg]))}))
 
 (defn- register-session
   "Registers a new session containing the baseline bindings contained in the
@@ -269,7 +368,7 @@
   [{:keys [transport] :as msg}]
   (let [session (create-session msg)
         {:keys [id]} (meta session)]
-    (alter-meta! session into (session-exec id))
+    (alter-meta! session into (session-exec session))
     (swap! sessions assoc id session)
     (t/send transport (response-for msg :status :done :new-session id))))
 
