@@ -520,8 +520,7 @@
                    clean-response)]
         (is (= #{:done :interrupted}
                (:status r)))
-        (is (= "Clean stop!"
-               (read-string (last (:value r)))))))))
+        (is (= "\"Clean stop!\"" (last (:value r))))))))
 
 (def-repl-test non-interruptible-stop-thread
   (testing "non-interruptible code can still be interrupted"
@@ -1015,3 +1014,40 @@
                                 (contains? (set (#'nrepl.core-test/classloader-hierarchy))
                                            (@nrepl.core-test/captured-values-atom "new-cl"))))]
       (is good?))))
+
+(def-repl-test sanity-tests
+  (testing "eval"
+    (are [expr result] (= result (first (repl-values session (code expr))))
+      (+ 1 2) 3
+      *1 3
+      (set! *print-length* 42) 42
+      *print-length* 42))
+
+  (testing "specified-namespace"
+    (is (= {:ns "user", :value ["3"], :status #{:done}}
+           (->> (message session {:op "eval"
+                                  :ns "user"
+                                  :code (code (+ 1 2))})
+                (mapv clean-response)
+                combine-responses)))
+    (is (= {:ns "user", :value ["[\"user\" \"++\"]"], :status #{:done}}
+           (->> (message session {:op "eval"
+                                  :ns "user"
+                                  :code "(do
+                                           (def ^{:dynamic true} ++ +)
+                                           (mapv #(-> #'++ meta % str) [:ns :name]))"})
+                (mapv clean-response)
+                combine-responses)))
+    (is (= {:ns "user", :value ["5"], :status #{:done}}
+           (->> (message session {:op "eval"
+                                  :ns "user"
+                                  :code (code
+                                         (binding [++ -]
+                                           (++ 8 3)))})
+                (mapv clean-response)
+                combine-responses))))
+
+  (testing "multiple-expressions"
+    (is (= [4 65536.0] (repl-values session "(+ 1 3) (Math/pow 2 16)")))
+    (is (= [4 20 1 0] (repl-values session "(+ 2 2) (* *1 5) (/ *2 4) (- *3 4)")))
+    (is (= [0] (repl-values session "*1")))))
