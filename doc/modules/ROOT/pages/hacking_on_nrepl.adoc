@@ -16,7 +16,7 @@ nREPL shouldn't ever be necessary (unless you're hacking on it).
 Building nREPL locally is a very simple process:
 
 . Clone the repo
-. Make sure you have Leingingen installed
+. Make sure you have Leiningen installed
 . Run the build:
 
 [source,shell]
