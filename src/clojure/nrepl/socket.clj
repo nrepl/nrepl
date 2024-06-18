@@ -55,6 +55,16 @@
 (def ^Class jdk-unix-class
   (find-class 'java.nio.channels.SocketChannel))
 
+(defn- junix-server-socket?
+  [x]
+  (boolean (when junixsocket-server-class
+             (instance? junixsocket-server-class x))))
+
+(defn- jdk-unix-server-socket?
+  [x]
+  (boolean (when jdk-unix-server-class
+             (instance? jdk-unix-server-class x))))
+
 (def ^:private test-junixsocket?
   ;; Make it possible to test junixsocket even when JDK >= 16
   (= "true" (System/getProperty "nrepl.test.junixsocket")))
@@ -179,30 +189,29 @@
         (throw (ex-info msg {:nrepl/kind ::no-filesystem-sockets}))))))
 
 (defn as-nrepl-uri ^URI [{:keys [host server-socket]} transport-scheme]
-  (let [sock server-socket
-        get-local-addr (fn [^NetworkChannel c] (.getLocalAddress c))]
-    (if-let [addr (and (some-> jdk-unix-server-class (instance? sock))
-                       (get-local-addr sock))]
-      (URI. (str transport-scheme "+unix")
-            (let [^Path path (get-path addr)]
-              (-> path .toAbsolutePath str))
-            nil)
-      (if-let [addr (and (some-> junixsocket-server-class (instance? sock))
-                         (.getLocalSocketAddress ^ServerSocket sock))]
-        (URI. (str transport-scheme "+unix")
-              (get-path addr)
-              nil)
-        ;; Assume it's an InetAddress socket
-        (let [sock ^ServerSocket sock]
-          (URI. (str transport-scheme
-                     (when (instance? SSLServerSocket sock)
-                       "s"))
-                nil ;; userInfo
-                host
-                (.getLocalPort sock)
-                nil       ;; path
-                nil       ;; query
-                nil)))))) ;; fragment
+  (cond
+    (jdk-unix-server-socket? server-socket)
+    (URI. (str transport-scheme "+unix")
+          (let [addr (.getLocalAddress ^NetworkChannel server-socket)
+                ^Path path (get-path addr)]
+            (str (.toAbsolutePath path)))
+          nil)
+
+    (junix-server-socket? server-socket)
+    (URI. (str transport-scheme "+unix")
+          (get-path (.getLocalSocketAddress ^ServerSocket server-socket))
+          nil)
+
+    :else
+    (URI. (str transport-scheme
+               (when (instance? SSLServerSocket server-socket)
+                 "s"))
+          nil
+          host
+          (.getLocalPort ^ServerSocket server-socket)
+          nil
+          nil
+          nil)))
 
 (defprotocol Acceptable
   (accept [s]
