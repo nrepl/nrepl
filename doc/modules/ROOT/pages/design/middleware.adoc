@@ -142,6 +142,17 @@ unhandled messages will always produce a response message with an `:unknown-op`
 `linearize-middleware-stack` to obtain a ordered sequence of middleware vars)
 should do the same, or use a similar alternative base handler.
 
+== Evaluation
+
+Core evaluation functionality is provided by
+`nrepl.middleware.interruptible-eval/interruptible-eval` middleware. It drives
+the REPL process using custom implementation instead of `clojure.main/repl`.
+When a message with `eval` op reaches this middleware, the forms in `:code` are
+read (the code can contain multiple forms), evaluated, and the result sent to
+the transport. If an error happens at any point during read phase, the whole
+evaluation is stopped. Otherwise, each separate form in the message is evaluated
+and printed even if some of them throw an exception.
+
 == Sessions
 
 Each nREPL message is evaluated within a session. There are two types of sessions:
