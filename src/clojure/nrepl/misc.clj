@@ -78,7 +78,7 @@
           (when log?
             (log e))))))
 
-(defmacro with-classloader
+(defmacro with-session-classloader
   "Bind `clojure.lang.Compiler/LOADER` to the context classloader. This is
   required to get hotloading with pomegranate working under certain conditions."
   [& body]

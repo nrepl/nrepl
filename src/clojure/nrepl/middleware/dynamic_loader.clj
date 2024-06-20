@@ -11,7 +11,7 @@
   (:require [clojure.string :as str]
             [nrepl.middleware :refer [linearize-middleware-stack set-descriptor!]]
             [nrepl.middleware.session :as middleware.session]
-            [nrepl.misc :as misc :refer [response-for with-classloader]]
+            [nrepl.misc :as misc :refer [response-for with-session-classloader]]
             [nrepl.transport :as t]))
 
 (def ^:dynamic *state* nil)
@@ -23,7 +23,7 @@
 
 (defn- update-stack!
   [middleware]
-  (with-classloader
+  (with-session-classloader
     (let [resolved (map (fn [middleware-str-or-var]
                           (if (var? middleware-str-or-var)
                             middleware-str-or-var
@@ -42,7 +42,7 @@
 
 (defn- require-namespaces
   [namespaces]
-  (with-classloader
+  (with-session-classloader
     (run! (fn [namespace]
             (try
               (require (symbol namespace))
