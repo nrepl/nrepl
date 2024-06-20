@@ -9,7 +9,7 @@
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.caught :as caught]
    [nrepl.middleware.print :as print]
-   [nrepl.misc :as misc :refer [response-for with-classloader]]
+   [nrepl.misc :as misc :refer [response-for with-session-classloader]]
    [nrepl.transport :as t])
   (:import
    (clojure.lang Compiler$CompilerException DynamicClassLoader
@@ -99,7 +99,7 @@
           (clojure.main/repl
            :eval (let [eval-fn (if eval (find-var (symbol eval)) clojure.core/eval)]
                    (fn [form]
-                     (with-classloader (eval-fn form))))
+                     (with-session-classloader (eval-fn form))))
            :init #(let [bindings
                         (-> (get-thread-bindings)
                             (into caught/default-bindings)
