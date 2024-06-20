@@ -15,9 +15,6 @@
          ops :ops} (nrepl/combine-responses
                     (nrepl/message timeout-client {:op "describe"}))]
     (testing "versions"
-      (when-not (every? #(contains? java %) [:major :minor :incremental :update])
-        (println "Got less information out of `java.version` than we'd like:"
-                 (System/getProperty "java.version") "=>" java))
       (is (= (#'middleware/safe-version version/version) nrepl))
       (is (= (#'middleware/safe-version *clojure-version*) (dissoc clojure :version-string)))
       (is (= (clojure-version) (:version-string clojure)))

@@ -35,12 +35,8 @@
 
 (defn- java-version
   []
-  (let [version-string (System/getProperty "java.version")
-        version-seq (re-seq #"\d+" version-string)
-        version-map (if (<= 3 (count version-seq))
-                      (zipmap [:major :minor :incremental :update] version-seq)
-                      {})]
-    (assoc version-map :version-string version-string)))
+  {:major misc/java-version
+   :version-string (System/getProperty "java.version")})
 
 (defn wrap-describe
   [h]
