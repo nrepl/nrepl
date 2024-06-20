@@ -68,11 +68,15 @@
              :middleware ["nrepl.middleware/wrap-describe"]})
     ;; Sanity test the describe works
     (is (some? (:versions (handle {:op "describe"}))))
-    (let [resp (handle {:op         "add-middleware"
-                        :middleware ["unknown-middleware/wrap-wot?"]})]
+    (let [sw (java.io.StringWriter.)
+          resp (binding [*err* sw]
+                 (handle {:op         "add-middleware"
+                          :middleware ["unknown-middleware/wrap-wot?"]}))]
       (is (contains? (:status resp)
                      :error))
       (is (contains? (set (:unresolved-middleware resp))
                      "unknown-middleware/wrap-wot?"))
+      (is (.contains (str sw)
+                     "java.io.FileNotFoundException: Could not locate"))
       ;; The handler still works
       (is (some? (:versions (handle {:op "describe"})))))))
