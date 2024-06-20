@@ -13,7 +13,7 @@
         msgs (if ex msgs (filter identity (cons ex-or-msg msgs)))]
     (binding [*out* *err*]
       (apply println "ERROR:" msgs)
-      (when ex (.printStackTrace ^Throwable ex)))))
+      (when ex (.printStackTrace ^Throwable ex (java.io.PrintWriter. *out*))))))
 
 (defmacro noisy-future
   "Executes body in a future, logging any exceptions that make it to the
