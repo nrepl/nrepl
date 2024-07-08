@@ -237,7 +237,7 @@ Here you can see that Leiningen has started an nREPL 1.2.0 server and has connec
 The https://github.com/clojurephant/clojurephant[Clojurephant] plugin provides
 Clojure/ClojureScript support for Gradle, including built-in nREPL support:
 
-[source, shell]
+[source,shell]
 ---
 $ ./gradlew clojureRepl
 ---

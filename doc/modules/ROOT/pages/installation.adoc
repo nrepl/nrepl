@@ -42,7 +42,7 @@ dependency to your project.
 
 Or, add this to your Gradle project's `build.gradle`:
 
-[source, groovy]
+[source,groovy]
 ----
 dependencies {
   // to use as a library in your code
