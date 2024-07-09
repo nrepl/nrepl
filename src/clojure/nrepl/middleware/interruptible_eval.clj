@@ -49,41 +49,43 @@
       (and (instance? Compiler$CompilerException e)
            (instance? ThreadDeath (.getCause e)))))
 
-(defn evaluate
-  "Evaluate msg's `:code` (either a string or a seq of forms to be evaluated)
-  within the dynamic context of its session. `:ns` can be optionally
-  specified (resolved via `find-ns`). The message MUST contain a Transport
-  implementation in :transport; expression results and errors will be sent via
-  that Transport."
-  [{:keys [transport eval ns code line column]
-    :as msg}]
-  (let [explicit-ns (and ns (-> ns symbol find-ns))]
-    (if (and ns (not explicit-ns))
-      (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}
-                                           :ns ns}))
-      (let [eof (Object.)
-            read (if (string? code)
-                   (let [reader (source-logging-pushback-reader code line column)
-                         read-cond (or (-> msg :read-cond keyword)
-                                       :allow)]
-                     #(read {:read-cond read-cond :eof eof} reader))
-                   (let [code (.iterator ^Iterable code)]
-                     #(if (.hasNext code)
-                        (.next code)
-                        eof)))
-            eval-fn (if eval (find-var (symbol eval)) clojure.core/eval)
-            caught (fn [^Throwable e]
-                     (set! *e e)
-                     (when-not (interrupted? e)
-                       (let [resp {::caught/throwable e
-                                   :status :eval-error
-                                   :ex (str (class e))
-                                   :root-ex (str (class (clojure.main/root-cause e)))}]
-                         (t/send transport (response-for msg resp)))))]
-        (try
-          (with-bindings (if explicit-ns
-                           {#'*ns* explicit-ns}
-                           {})
+(defn evaluator
+  "Return a closure that evaluates msg's `:code` (either a string or a seq of
+  forms to be evaluated) within the dynamic context of its session. `:ns` can be
+  optionally specified (resolved via `find-ns`). The message MUST contain a
+  Transport implementation in :transport; expression results and errors will be
+  sent via that Transport."
+  [msg]
+  (fn run []
+    (let [{:keys [transport eval ns code line column]} msg
+          explicit-ns (some-> ns symbol find-ns)]
+      (if (and (some? ns) (nil? explicit-ns))
+        (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}
+                                             :ns ns}))
+        (let [eof (Object.)
+              read (if (string? code)
+                     (let [reader (source-logging-pushback-reader code line column)
+                           read-cond (or (-> msg :read-cond keyword)
+                                         :allow)]
+                       #(read {:read-cond read-cond :eof eof} reader))
+                     (let [code (.iterator ^Iterable code)]
+                       #(if (.hasNext code)
+                          (.next code)
+                          eof)))
+              eval-fn (when eval (find-var (symbol eval)))
+              ;; eval-fn (if eval (find-var (symbol eval)) clojure.core/eval)
+              caught (fn [^Throwable e]
+                       (set! *e e)
+                       (when-not (interrupted? e)
+                         (let [resp {::caught/throwable e
+                                     :status :eval-error
+                                     :ex (str (class e))
+                                     :root-ex (str (class (clojure.main/root-cause e)))}]
+                           (t/send transport (response-for msg resp)))))]
+          (push-thread-bindings (if explicit-ns
+                                  {#'*ns* explicit-ns}
+                                  {}))
+          (try
             (loop []
               (let [input (try
                             (clojure.main/with-read-known (read))
@@ -97,7 +99,11 @@
                                 eof)))]
                 (when-not (identical? input eof)
                   (try
-                    (let [value (eval-fn input)]
+                    (let [value (if eval-fn
+                                  (eval-fn input)
+                                  ;; If eval-fn is not provided, call
+                                  ;; Compiler/eval directly for slimmer stack.
+                                  (Compiler/eval input true))]
                       (set! *3 *2)
                       (set! *2 *1)
                       (set! *1 value)
@@ -115,12 +121,13 @@
                   ;; Otherwise, when errors happen during eval/print phase,
                   ;; report the exception but continue executing the
                   ;; remaining readable forms.
-                  (recur)))))
+                  (recur))))
 
-          (catch Throwable e
-            (caught e)))
-
-        (flush)))))
+            (catch Throwable e
+              (caught e))
+            (finally
+              (flush)
+              (pop-thread-bindings))))))))
 
 (defn interruptible-eval
   "Evaluation middleware that supports interrupts.  Returns a handler that supports
@@ -134,7 +141,7 @@
         (if-not (:code msg)
           (t/send transport (response-for msg :status #{:error :no-code :done}))
           (exec id
-                #(evaluate msg)
+                (evaluator msg)
                 #(t/send transport (response-for msg :status :done))
                 msg))
         (h msg)))))

@@ -10,13 +10,14 @@
    [nrepl.misc :as misc :refer [noisy-future uuid response-for]]
    [nrepl.transport :as t])
   (:import
-   (clojure.lang DynamicClassLoader LineNumberingPushbackReader)
+   (clojure.lang Compiler DynamicClassLoader LineNumberingPushbackReader)
    (java.io Reader)
    (java.util.concurrent.atomic AtomicLong)
    (java.util.concurrent BlockingQueue LinkedBlockingQueue SynchronousQueue
                          ExecutorService
                          ThreadFactory ThreadPoolExecutor
-                         TimeUnit)))
+                         TimeUnit)
+   (nrepl SessionThread)))
 
 (def ^{:private true} sessions (atom {}))
 
@@ -195,9 +196,12 @@
         ;; TODO: new options: out-quota | err-quota
         opts {::print/buffer-size (or out-limit (get (meta session) :out-limit))}
         out (print/replying-PrintWriter :out msg opts)
-        err (print/replying-PrintWriter :err msg opts)]
+        err (print/replying-PrintWriter :err msg opts)
+        ctxcl (.getContextClassLoader (Thread/currentThread))]
     (-> bindings-map
-        (assoc #'*out* out
+        (assoc #'*msg* msg
+               Compiler/LOADER ctxcl
+               #'*out* out
                #'*err* err
                ;; clojure.test captures *out* at load-time, so we need to make
                ;; sure runtime output of test status/results is redirected
@@ -221,10 +225,7 @@
   interrupted."
   [session]
   (fn [_id ^Runnable thunk ^Runnable ack & [msg]]
-    (let [f #(let [ctxcl (.getContextClassLoader (Thread/currentThread))
-                   bindings (assoc (add-per-message-bindings msg @session)
-                                   #'*msg* msg
-                                   clojure.lang.Compiler/LOADER ctxcl)]
+    (let [f #(let [bindings (add-per-message-bindings msg @session)]
                (push-thread-bindings bindings)
                (try (.run thunk)
                     (some-> ack .run)
@@ -309,7 +310,7 @@
   [session]
   (let [id (:id (meta session))
         state (atom nil)
-        main-loop
+        session-loop
         #(try
            (loop []
              (let [[exec-id ^Runnable r ^Runnable ack msg]
@@ -317,16 +318,16 @@
                    bindings (add-per-message-bindings msg @session)]
                (swap! state assoc :running exec-id)
                (push-thread-bindings bindings)
-               (try
-                 ;; *msg* is bound separately here because we
-                 ;; don't want to persist it into session.
-                 (with-bindings {#'*msg* msg
-                                 clojure.lang.Compiler/LOADER (.getContextClassLoader (Thread/currentThread))}
-                   (.run r))
-                 ;; Save the running thread bindings (which could
-                 ;; have been rebound by the eval) into session.
-                 (reset! session (get-thread-bindings))
-                 (finally (pop-thread-bindings)))
+               (if (fn? r)
+                 (r) ;; -1 stack frame this way.
+                 (.run r))
+               ;; Remove vars that we don't want to save into the session.
+               (reset! session (dissoc (get-thread-bindings)
+                                       #'*msg* Compiler/LOADER))
+               ;; We don't use try/finally here because if the eval throws an
+               ;; exception, we're going to discard the whole thread. This makes
+               ;; the stack cleaner.
+               (pop-thread-bindings)
                (let [state-d @state]
                  (when (and (= (:running state-d) exec-id)
                             (compare-and-set! state state-d
@@ -335,9 +336,8 @@
                    (recur)))))
            (catch InterruptedException _e))
         reset-state
-        #(let [thread (doto (Thread. main-loop (str "nREPL-session-" id))
-                        (.setDaemon true)
-                        (.setContextClassLoader (dynamic-classloader)))]
+        #(let [thread (SessionThread. session-loop (str "nREPL-session-" id)
+                                      (dynamic-classloader))]
            (reset! state {:queue (LinkedBlockingQueue.)
                           :running nil
                           :thread thread})
