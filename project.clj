@@ -80,6 +80,7 @@
              :cljfmt {:plugins [[lein-cljfmt "0.8.0"]]
                       :cljfmt {:indents {delay [[:inner 0]]
                                          returning [[:inner 0]]
+                                         run-with [[:inner 0]]
                                          testing-dynamic [[:inner 0]]
                                          testing-print [[:inner 0]]}}}
 

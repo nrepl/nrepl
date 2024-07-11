@@ -15,16 +15,19 @@
       (apply println "ERROR:" msgs)
       (when ex (.printStackTrace ^Throwable ex (java.io.PrintWriter. *out*))))))
 
+(defmacro log-exceptions [& body]
+  `(try
+     ~@body
+     (catch Throwable ex#
+       (log ex#)
+       (throw ex#))))
+
 (defmacro noisy-future
   "Executes body in a future, logging any exceptions that make it to the
   top level."
+  {:deprecated "1.3"}
   [& body]
-  `(future
-     (try
-       ~@body
-       (catch Throwable ex#
-         (log ex#)
-         (throw ex#)))))
+  `(future (log-exceptions ~@body)))
 
 (defmacro returning
   "Executes `body`, returning `x`."

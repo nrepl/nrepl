@@ -10,10 +10,11 @@
    nrepl.middleware.load-file
    nrepl.middleware.lookup
    nrepl.middleware.session
-   [nrepl.misc :refer [log noisy-future response-for returning]]
+   [nrepl.misc :refer [log log-exceptions response-for returning]]
    [nrepl.socket :as socket :refer [inet-socket unix-server-socket]]
    [nrepl.tls :as tls]
-   [nrepl.transport :as t])
+   [nrepl.transport :as t]
+   [nrepl.util.threading :as threading])
   (:import
    (java.net ServerSocket SocketException)
    (javax.net.ssl SSLException)
@@ -35,11 +36,14 @@
     (keyword? (:op msg)) (update :op name)))
 
 (defn handle
-  "Handles requests received via [transport] using [handler].
-   Returns nil when [recv] returns nil for the given transport."
+  "Run a handle loop that receives requests from `transport` and
+  asynchronously (on a separate thread) handles them using `handler`. Thus,
+  multiple requests can be handled simultaneously. The loop stops when the
+  `recv` from transport returns nil."
   [handler transport]
   (when-let [msg (normalize-msg (t/recv transport))]
-    (noisy-future (handle* msg handler transport))
+    (threading/run-with @threading/handle-executor
+      (handle* msg handler transport))
     (recur handler transport)))
 
 (defn- safe-close
@@ -49,45 +53,41 @@
     (catch java.io.IOException e
       (log e "Failed to close " x))))
 
-(defn- accept-connection
-  [{:keys [server-socket open-transports transport greeting handler]
-    :as   server}
+(defn- accept-connection-loop
+  [{:keys [server-socket open-transports transport greeting handler]}
    consume-exception]
-  (when-let [sock (try
-                    (socket/accept server-socket)
-                    (catch SSLException ssl-exception
-                      (consume-exception ssl-exception)
-                      :tls-exception)
-                    (catch ClosedChannelException cce
-                      (consume-exception cce)
-                      nil)
-                    (catch Throwable t
-                      (consume-exception t)
-                      (when-not (.isClosed ^ServerSocket server-socket)
-                        (log "Unexpected exception of class" (class t) "with message" (.getMessage t))
-                        (safe-close server-socket) ; is this a good idea?
-                        (log "Shutting down server abruptly"))))]
-    (if (= sock :tls-exception)
-      ; if there was a TLS exception, e.g. bad client cert,
-      ; we simply recur: accept new connections on the same thread.
-      (recur server consume-exception)
-      (do
-        (noisy-future
-         (let [transport (transport sock)]
-           (try
-             (swap! open-transports conj transport)
-             (when greeting (greeting transport))
-             (handle handler transport)
-             (catch SocketException _
-               nil)
-             (finally
-               (swap! open-transports disj transport)
-               (safe-close transport)))))
-        (noisy-future
-         (try
-           (accept-connection server consume-exception)
-           (catch SocketException _
-             nil)))))))
+  (loop []
+    (when-let [sock (try
+                      (socket/accept server-socket)
+                      (catch SSLException ssl-exception
+                        (consume-exception ssl-exception)
+                        :tls-exception)
+                      (catch ClosedChannelException cce
+                        (consume-exception cce)
+                        nil)
+                      (catch Throwable t
+                        (consume-exception t)
+                        (when-not (.isClosed ^ServerSocket server-socket)
+                          (log t "Unexpected exception in server loop")
+                          (safe-close server-socket) ; is this a good idea?
+                          (log "Shutting down server abruptly"))
+                        nil))]
+      ;; If socket was closed (hence `sock` was nil), the loop is stopped. If
+      ;; there was a TLS exception, e.g. bad client cert, skip the error but
+      ;; continue the loop.
+      (when-not (= sock :tls-exception)
+        (threading/run-with @threading/handle-executor
+          (log-exceptions
+           (let [transport (transport sock)]
+             (try
+               (swap! open-transports conj transport)
+               (when greeting (greeting transport))
+               (handle handler transport)
+               (catch SocketException _)
+               (finally
+                 (swap! open-transports disj transport)
+                 (safe-close transport)))))))
+      (recur))))
 
 (defn stop-server
   "Stops a server started via `start-server`."
@@ -232,8 +232,9 @@
                         transport-fn
                         greeting-fn
                         (or handler (default-handler)))]
-    (noisy-future
-     (accept-connection server consume-exception))
+    (threading/run-with @threading/listen-executor
+      (log-exceptions
+       (accept-connection-loop server consume-exception)))
     (when ack-port
       (ack/send-ack (:port server) ack-port transport-fn))
     server))

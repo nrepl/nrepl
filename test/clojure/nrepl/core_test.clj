@@ -22,6 +22,7 @@
    [nrepl.misc :refer [uuid]]
    [nrepl.server :as server]
    [nrepl.test-helpers :as th]
+   [nrepl.util.threading :as threading]
    [nrepl.transport :as transport])
   (:import
    (java.io File Writer)
@@ -524,7 +525,7 @@
 
 (def-repl-test non-interruptible-stop-thread
   (testing "non-interruptible code can still be interrupted"
-    (with-redefs [session/force-stop-delay-ms 500]
+    (with-redefs [threading/force-stop-delay-ms 500]
       (let [resp (message session {:op "eval"
                                    :code (code
                                           (do (def vol (volatile! 0))
