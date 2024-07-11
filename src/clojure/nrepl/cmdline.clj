@@ -10,10 +10,10 @@
    [nrepl.config :as config]
    [nrepl.core :as nrepl]
    [nrepl.ack :refer [send-ack]]
-   [nrepl.misc :refer [noisy-future]]
    [nrepl.server :as nrepl-server]
    [nrepl.socket :as socket]
    [nrepl.transport :as transport]
+   [nrepl.util.threading :as threading]
    [nrepl.version :as version])
   (:import
    [java.net URI]))
@@ -97,9 +97,11 @@ Exit:      Control+D or (exit) or (quit)"
     (println (repl-intro))
     ;; We take 50ms to listen to any greeting messages, and display the value
     ;; in the `:out` slot.
-    (noisy-future (->> (client)
-                       (take-while #(nil? (:id %)))
-                       (run! #(when-let [msg (:out %)] (print msg)))))
+    (threading/run-with @threading/transport-executor
+      ;; Doesn't matter which executor we hijack here, just don't use `future`.
+      (->> (client)
+           (take-while #(nil? (:id %)))
+           (run! #(when-let [msg (:out %)] (print msg)))))
     (Thread/sleep 50)
     (let [session (nrepl/client-session client)]
       (swap! running-repl assoc :transport transport)

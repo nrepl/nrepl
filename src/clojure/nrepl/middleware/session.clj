@@ -7,16 +7,14 @@
    [nrepl.middleware.interruptible-eval :refer [*msg*]]
    [nrepl.middleware.print :as print]
    [nrepl.middleware.caught :as caught]
-   [nrepl.misc :as misc :refer [noisy-future uuid response-for]]
-   [nrepl.transport :as t])
+   [nrepl.misc :as misc :refer [uuid response-for]]
+   [nrepl.transport :as t]
+   [nrepl.util.classloader :as classloader]
+   [nrepl.util.threading :as threading])
   (:import
-   (clojure.lang Compiler DynamicClassLoader LineNumberingPushbackReader)
+   (clojure.lang Compiler LineNumberingPushbackReader)
    (java.io Reader)
-   (java.util.concurrent.atomic AtomicLong)
-   (java.util.concurrent BlockingQueue LinkedBlockingQueue SynchronousQueue
-                         ExecutorService
-                         ThreadFactory ThreadPoolExecutor
-                         TimeUnit)
+   (java.util.concurrent Executors ExecutorService LinkedBlockingQueue)
    (nrepl SessionThread)))
 
 (def ^{:private true} sessions (atom {}))
@@ -41,54 +39,10 @@
 
 (def ^{:dynamic true :private true} *skipping-eol* false)
 
-(defn has-dcl?
-  "Is this classloader or any of its ancestors a DynamicClassLoader?"
-  ^clojure.lang.DynamicClassLoader
-  [^ClassLoader cl]
-  (loop [loader cl]
-    (when loader
-      (if (instance? DynamicClassLoader loader)
-        true
-        (recur (.getParent loader))))))
-
-(defn dynamic-classloader
-  "Return a DynamicClassLoader, or a classloader with a DCL as ancestor, based on
-  the current context classloader."
-  []
-  (let [context-loader (.getContextClassLoader (Thread/currentThread))]
-    (if (has-dcl? context-loader)
-      context-loader
-      (DynamicClassLoader. context-loader))))
-
-(defn- configure-thread-factory
-  "Returns a new ThreadFactory for the given session.  This implementation
-   generates daemon threads, with names that include the session id."
-  []
-  (let [session-thread-counter (AtomicLong. 0)
-        ;; Create a constant dcl for use across evaluations. This allows
-        ;; modifications to the classloader to persist.
-        cl (dynamic-classloader)]
-    (reify ThreadFactory
-      (newThread [_ runnable]
-        (doto (Thread. runnable
-                       (format "nREPL-worker-%s" (.getAndIncrement session-thread-counter)))
-          (.setDaemon true)
-          (.setContextClassLoader cl))))))
-
-(defn- configure-executor
-  "Returns a ThreadPoolExecutor, configured (by default) to
-   have 1 core thread, use an unbounded queue, create only daemon threads,
-   and allow unused threads to expire after 30s."
-  [& {:keys [keep-alive queue thread-factory]
-      :or {keep-alive 30000
-           queue (SynchronousQueue.)}}]
-  (let [^ThreadFactory thread-factory (or thread-factory (configure-thread-factory))]
-    (ThreadPoolExecutor. 1 Integer/MAX_VALUE
-                         (long keep-alive) TimeUnit/MILLISECONDS
-                         ^BlockingQueue queue
-                         thread-factory)))
-
-(def default-executor "Delay containing the default Executor." (delay (configure-executor)))
+(def ephemeral-executor
+  "Executor for running eval requests in ephemeral sessions."
+  (delay (Executors/newCachedThreadPool
+          (threading/thread-factory "nREPL-ephemeral-session-%d"))))
 
 (defn- session-in
   "Returns a LineNumberingPushbackReader suitable for binding to *in*.
@@ -214,7 +168,7 @@
 (defn make-ephemeral-exec-fn
   "Return an exec function that should be attached to ephemeral sessions.
   Ephemeral exec fn does not persist dynamic bindings and uses
-  `default-executor`. The submitted task is made of:
+  `ephemeral-executor`. The submitted task is made of:
 
   - an id (typically the message id)
   - thunk, a Runnable, the task itself
@@ -230,7 +184,7 @@
                (try (.run thunk)
                     (some-> ack .run)
                     (finally (pop-thread-bindings))))]
-      (.submit ^ExecutorService @default-executor ^Runnable f))))
+      (.submit ^ExecutorService @ephemeral-executor ^Runnable f))))
 
 (defn- create-session
   "Return a new session atom that contains a map of dynamic variables needed for
@@ -252,48 +206,6 @@
                                   :input-queue input-queue})]
      (alter-meta! new-session assoc :exec (make-ephemeral-exec-fn new-session))
      new-session)))
-
-(defn- jvmti-stop-thread [t]
-  ((misc/requiring-resolve 'nrepl.util.jvmti/stop-thread) t))
-
-(defn- try-stop-thread [^Thread t]
-  (cond
-    (<= misc/java-version 19) (.stop t)
-    ;; Since JDK20, Thread.stop() no longer works. We must resort to using
-    ;; JVMTI native agent which luckily still supports Stop Thread command.
-    ;; Whether this is more dangerous than calling Thread.stop() in earlier
-    ;; JDKs is unknown, but assume the worst and never use this if you can't
-    ;; take the risk!
-    (misc/jvmti-agent-enabled?) (jvmti-stop-thread t)
-
-    (not (misc/attach-self-enabled?))
-    (misc/log "Cannot stop thread on JDK20+ without -Djdk.attach.allowAttachSelf enabled, see https://nrepl.org/nrepl/installation.html#jvmti.")))
-
-(def ^:private force-stop-delay-ms 5000)
-
-(defn- interrupt-stop
-  "This works as follows
-
-  1. Calls interrupt
-  2. Wait 100ms. This is mainly to allow thread that respond quickly to
-     interrupts to send a message back in response to the interrupt. Significantly,
-     this includes an exception thrown by `Thread/sleep`.
-  3. Asynchronously: wait another `force-stop-delay-ms` (5000ms) for the thread
-     to cleanly terminate. Only calls `.stop` if it fails to do so (and risk
-     state corruption)
-
-  This set of behaviours strikes a balance between allowing a thread to respond
-  to an interrupt, but also ensuring we actually kill runaway processes.
-
-  If required, a future feature could make both timeouts configurable, either
-  as a server config or parameters provided by the `interrupt` message."
-  [^Thread t]
-  (.interrupt t)
-  (Thread/sleep 100)
-  (noisy-future
-   (Thread/sleep (long force-stop-delay-ms))
-   (when-not (= (.getState t) Thread$State/TERMINATED)
-     (try-stop-thread t))))
 
 (defn session-exec
   "Takes a session and returns a maps of three functions meant for
@@ -337,7 +249,7 @@
            (catch InterruptedException _e))
         reset-state
         #(let [thread (SessionThread. session-loop (str "nREPL-session-" id)
-                                      (dynamic-classloader))]
+                                      (classloader/dynamic-classloader))]
            (reset! state {:queue (LinkedBlockingQueue.)
                           :running nil
                           :thread thread})
@@ -355,10 +267,10 @@
                            (compare-and-set! state state-d
                                              (assoc state-d :running nil)))
                       (do
-                        (interrupt-stop thread)
+                        (threading/interrupt-stop thread)
                         (reset-state)
                         running))))
-     :close #(interrupt-stop (:thread @state))
+     :close #(threading/interrupt-stop (:thread @state))
      :exec (fn [exec-id r ack & [msg]]
              (.put ^LinkedBlockingQueue (:queue @state) [exec-id r ack msg]))}))
 

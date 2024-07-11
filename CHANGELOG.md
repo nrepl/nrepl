@@ -8,6 +8,7 @@
 * [#339](https://github.com/nrepl/nrepl/pull/339): Introduce custom REPL implementation instead `clojure.main/repl`.
 * [#341](https://github.com/nrepl/nrepl/pull/341): Make session middleware handle all dynamic bindings.
 * [#342](https://github.com/nrepl/nrepl/pull/342): Make the stack of the eval handler shorter.
+* [#345](https://github.com/nrepl/nrepl/pull/345): Use customized executors for all asynchronous tasks.
 
 ### Bugs fixed
 

@@ -7,7 +7,8 @@
    [nrepl.bencode :as bencode]
    [nrepl.socket :as socket]
    [clojure.edn :as edn]
-   [nrepl.misc :refer [noisy-future uuid]]
+   [nrepl.misc :refer [uuid]]
+   [nrepl.util.threading :as threading]
    nrepl.version)
   (:import
    clojure.lang.RT
@@ -44,25 +45,28 @@
   ([transport-read write] (fn-transport transport-read write nil))
   ([transport-read write close]
    (let [read-queue (SynchronousQueue.)
-         msg-pump (noisy-future
-                   (try
-                     (try
-                       (while true
-                         (.put read-queue (transport-read)))
-                       (catch Throwable t
-                         (.put read-queue t)))
-                     (catch InterruptedException _
-                       nil)))]
+         fut (threading/run-with @threading/transport-executor
+               (while (not (Thread/interrupted))
+                 (try
+                   (.put read-queue (transport-read))
+                   (catch InterruptedException _
+                     ;; Interrupted flag will end the loop.
+                     (.put read-queue nil))
+                   (catch Throwable t
+                     (.put read-queue t)
+                     (.interrupt (Thread/currentThread))))))]
      (FnTransport.
       (let [failure (atom nil)]
         #(if @failure
            (throw @failure)
            (let [msg (.poll read-queue % TimeUnit/MILLISECONDS)]
              (if (instance? Throwable msg)
-               (do (reset! failure msg) (throw msg))
+               (do (reset! failure msg)
+                   (.cancel fut true)
+                   (throw msg))
                msg))))
       write
-      (fn [] (close) (future-cancel msg-pump))))))
+      (fn [] (close) (.cancel fut true))))))
 
 (defmulti #^{:private true} <bytes class)
 
