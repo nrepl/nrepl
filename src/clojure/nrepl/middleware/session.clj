@@ -3,6 +3,7 @@
   {:author "Chas Emerick"}
   (:require
    clojure.main
+   [nrepl.config :as config]
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.interruptible-eval :refer [*msg*]]
    [nrepl.middleware.print :as print]
@@ -252,6 +253,15 @@
      (alter-meta! new-session assoc :exec (make-ephemeral-exec-fn new-session))
      new-session)))
 
+(defn- jvmti-agent-enabled?
+  "Return true if nREPL is allowed to load its JVMTI agent at runtime."
+  []
+  (and (misc/attach-self-enabled?)
+       ;; JVMTI agent is a "soft opt-in" — if attachSelf is enabled, then we
+       ;; consider this a permission to load the agent, UNLESS the user
+       ;; explicitly opts out of it in the config.
+       (boolean (:enable-jvmti-agent (config/get-config) true))))
+
 (defn- jvmti-stop-thread [t]
   ((misc/requiring-resolve 'nrepl.util.jvmti/stop-thread) t))
 
@@ -263,7 +273,7 @@
     ;; Whether this is more dangerous than calling Thread.stop() in earlier
     ;; JDKs is unknown, but assume the worst and never use this if you can't
     ;; take the risk!
-    (misc/jvmti-agent-enabled?) (jvmti-stop-thread t)
+    (jvmti-agent-enabled?) (jvmti-stop-thread t)
 
     (not (misc/attach-self-enabled?))
     (misc/log "Cannot stop thread on JDK20+ without -Djdk.attach.allowAttachSelf enabled, see https://nrepl.org/nrepl/installation.html#jvmti.")))

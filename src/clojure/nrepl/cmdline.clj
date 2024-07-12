@@ -68,10 +68,8 @@
 (def running-repl (atom {:transport nil
                          :client nil}))
 
-(defn- done?
-  [input]
-  (some (partial = input)
-        ['exit 'quit '(exit) '(quit)]))
+(defn- done? [input]
+  (contains? #{'exit 'quit '(exit) '(quit)} input))
 
 (defn repl-intro
   "Returns nREPL interactive repl intro copy and version info as a new-line
@@ -121,14 +119,16 @@ Exit:      Control+D or (exit) or (quit)"
 (defn- run-repl
   ([{:keys [server options]}]
    (let [{:keys [host port socket] :or {host "127.0.0.1"}} server
-         {:keys [transport tls-keys-file tls-keys-str] :or {transport #'transport/bencode}} options]
+         {:keys [transport-fn tls-keys-file tls-keys-str]
+          :or {transport-fn #'transport/bencode}} options]
      (run-repl-with-transport
       (cond
         socket
-        (nrepl/connect :socket socket :transport-fn transport)
+        (nrepl/connect :socket socket :transport-fn transport-fn)
 
         (and host port)
-        (nrepl/connect :host host :port port :transport-fn transport :tls-keys-file tls-keys-file :tls-keys-str tls-keys-str)
+        (nrepl/connect :host host :port port :transport-fn transport-fn
+                       :tls-keys-file tls-keys-file :tls-keys-str tls-keys-str)
 
         :else
         (die "Must supply host/port or socket."))
@@ -169,10 +169,16 @@ Exit:      Control+D or (exit) or (quit)"
   (map (fn [arg] (or (option-shorthands arg) arg)) args))
 
 (defn- keywordize-options [options]
-  (reduce-kv
-   #(assoc %1 (keyword (str/replace-first %2 "--" "")) %3)
-   {}
-   options))
+  (let [options (reduce-kv
+                 #(assoc %1 (keyword (str/replace-first %2 "--" "")) %3)
+                 {}
+                 options)
+        ;; Rename CLI arg --transport canonical *-fn keys.
+        transport-fn (:transport options)
+        ack-port (:ack options)]
+    (cond-> (dissoc options :transport)
+      transport-fn (assoc :transport-fn transport-fn)
+      ack-port (assoc :ack-port ack-port))))
 
 (defn- split-args
   "Convert `args` into a map of options + a list of args.
@@ -249,54 +255,35 @@ Exit:      Control+D or (exit) or (quit)"
         (mapcat handle-seq-var)))
 
 (defn- ->mw-list
-  [middleware-var-strs]
-  (into [] mw-xf middleware-var-strs))
-
-(defn- build-handler
-  "Build an nREPL handler from `middleware`.
-  `middleware` is a sequence of vars or string which can be resolved
-  to vars, representing middleware you wish to mix in to the nREPL
-  handler. Vars can resolve to a sequence of vars, in which case
-  they'll be flattened into the list of middleware."
+  "Flatten `middleware` which is a sequence of vars that representing middleware
+  you wish to mix in to the nREPL handler. Vars can resolve to a sequence of
+  vars, in which case they'll be flattened into the list of middleware."
   [middleware]
-  (apply nrepl.server/default-handler (->mw-list middleware)))
+  (into [] mw-xf middleware))
 
-(defn- ->int [x]
-  (cond
-    (nil? x) x
-    (number? x) x
-    :else (Integer/parseInt x)))
-
-(defn- sanitize-middleware-option
-  "Sanitize the middleware option.  In the config it can be either a
-  symbol or a vector of symbols."
-  [mw-opt]
-  (if (symbol? mw-opt)
-    [mw-opt]
-    mw-opt))
-
-(defn parse-cli-values
-  "Converts relevant command line argument values to their config
-  representation."
-  [options]
-  (reduce-kv (fn [result k v]
-               (case k
-                 (:handler :transport :middleware) (assoc result k (edn/read-string v))
-                 result))
-             options
-             options))
-
-(defn args->cli-options
-  "Takes CLI args list and returns vector of parsed options map and
-  remaining args."
+(defn args->options
+  "Takes CLI args list and returns vector of parsed options map merged with global
+  config and remaining args. Resolves delayed vars in the options map."
   [args]
-  (let [[options _args] (split-args (expand-shorthands args))
-        merge-config (partial merge config/config)
-        options (-> options
-                    (keywordize-options)
-                    (parse-cli-values)
-                    (merge-config))]
-    [options _args]))
+  (let [[cli-options _args] (split-args (expand-shorthands args))
+        cli-options (keywordize-options cli-options)]
+    (config/fill-from-map cli-options)
+    (let [options (merge cli-options (config/get-config))
+          middleware (some-> (:middleware options) force ->mw-list)
+          handler (some-> (:handler options) force)
+          repl-fn @(:repl-fn options)
+          transport-fn @(:transport-fn options)
+          ack-port (:ack-port options)
+          options (cond-> (assoc options
+                                 :repl-fn repl-fn
+                                 :transport-fn transport-fn
+                                 :greeting-fn (when (= transport-fn #'transport/tty)
+                                                #'transport/tty-greeting))
+                    handler (assoc :handler handler)
+                    middleware (assoc :middleware middleware)
+                    ;; Compatibility
+                    ack-port (assoc :ack ack-port))]
+      [options _args])))
 
 (defn display-help
   "Prints the help copy to the screen and exits the program with exit code 0."
@@ -310,103 +297,21 @@ Exit:      Control+D or (exit) or (quit)"
   (println (:version-string version/version))
   (exit 0))
 
-(defn- options->transport
-  "Takes a map of nREPL CLI options.
-  Returns either a default transport or the value of :transport."
-  [options]
-  (or (some->> options
-               (:transport)
-               (require-and-resolve :transport))
-      #'transport/bencode))
-
-(defn- options->handler
-  "Takes a map of nREPL CLI options and list of middleware.
-  Returns a request handler function.
-  If some handler was explicitly passed we'll use it, otherwise we'll build
-  one from whatever was passed via --middleware"
-  [options middleware]
-  (or (some->> options
-               (:handler)
-               (require-and-resolve :handler))
-      (build-handler middleware)))
-
-(defn- options->ack-port
-  "Takes a map of nREPL CLI options.
-  Returns integer ack port or nil."
-  [options]
-  (some-> options
-          (:ack)
-          (->int)))
-
-(defn- options->repl-fn
-  "Takes a map of nREPL CLI options.
-  Returns either the :repl-fn config option or uses run-repl."
-  [options]
-  (or (some->> options
-               (:repl-fn)
-               (symbol)
-               (require-and-resolve :repl-fn))
-      #'run-repl))
-
-(defn- options->greeting
-  "Takes a map of nREPL CLI options and the selected transport for the server.
-  Returns a greeting function or nil."
-  [_options transport]
-  (when (= transport #'transport/tty)
-    #'transport/tty-greeting))
-
-(defn connection-opts
-  "Takes map of nREPL CLI options
-  Returns map of processed options used to connect or start a nREPL server."
-  [options]
-  {:port (->int (:port options))
-   :host (:host options)
-   :socket (:socket options)
-   :transport (options->transport options)
-   :repl-fn (options->repl-fn options)
-   :tls-keys-str (:tls-keys-str options)
-   :tls-keys-file (:tls-keys-file options)})
-
-(defn server-opts
-  "Takes a map of nREPL CLI options
-  Returns map of processed options to start an nREPL server."
-  [options]
-  (let [middleware (sanitize-middleware-option (:middleware options))
-        {:keys [host port socket transport tls-keys-str tls-keys-file]} (connection-opts options)]
-    (merge options
-           {:host host
-            :port port
-            :socket socket
-            :transport transport
-            :bind (:bind options)
-            :middleware middleware
-            :tls-keys-str tls-keys-str
-            :tls-keys-file tls-keys-file
-            :handler (options->handler options middleware)
-            :greeting (options->greeting options transport)
-            :ack-port (options->ack-port options)
-            :repl-fn (options->repl-fn options)})))
-
 (defn interactive-repl
-  "Runs an interactive repl if :interactive CLI option is true otherwise
-  puts the current thread to sleep
-  Takes nREPL server map and processed CLI options map.
-  Returns nil."
-  [server options]
-  (let [transport (:transport options)
-        repl-fn (:repl-fn options)
-        socket (:socket server)
-        host (:host server)
-        port (:port server)]
-    (when (= transport #'transport/tty)
+  "Runs an interactive repl. Takes nREPL server map and processed options map."
+  [server {:keys [transport-fn repl-fn color] :as options}]
+  (let [repl-options (merge (when color colored-output)
+                            {:transport-fn transport-fn
+                             ;; Left for backcompat.
+                             :transport transport-fn})
+        {:keys [host port socket]} server]
+    (when (= transport-fn #'transport/tty)
       (die "The built-in client does not support the tty transport. Consider using `nc` or `telnet`.\n"))
     (if socket
       (repl-fn {:server  server
-                :options (merge (when (:color options) colored-output)
-                                {:transport transport})})
+                :options repl-options})
       (repl-fn host port
-               (merge (when (:color options) colored-output)
-                      {:transport transport}
+               (merge repl-options
                       (select-keys options [:tls-keys-str :tls-keys-file]))))))
 
 (defn connect-to-server
@@ -422,28 +327,23 @@ Exit:      Control+D or (exit) or (quit)"
 
 (defn ack-server
   "Acknowledge the port of this server to another nREPL server running on
-  :ack port.
-  Takes nREPL server map and processed CLI options map.
-  Prints a message describing the acknowledgement between servers.
-  Returns nil."
-  [server options]
-  (when-let [ack-port (:ack-port options)]
-    (let [port (:port server)
-          transport (:transport options)]
-      (when (:verbose options)
+  `:ack-port`. Takes nREPL server map and processed CLI options map."
+  [server {:keys [ack-port transport-fn verbose] :as _options}]
+  (when ack-port
+    (let [port (:port server)]
+      (when verbose
         (println (format "ack'ing my port %d to other server running on port %d"
                          port ack-port)))
-      (send-ack port ack-port transport))))
+      (send-ack port ack-port transport-fn))))
 
 (defn server-started-message
   "Returns nREPL server started message that some tools rely on to parse the
   connection details from.
   Takes nREPL server map and processed CLI options map.
   Returns connection header string."
-  [server options]
-  (let [transport (:transport options)
-        ^java.net.ServerSocket ssocket (:server-socket server)
-        ^URI uri (socket/as-nrepl-uri ssocket (transport/uri-scheme transport))]
+  [server {:keys [transport-fn] :as _options}]
+  (let [^java.net.ServerSocket ssocket (:server-socket server)
+        ^URI uri (socket/as-nrepl-uri ssocket (transport/uri-scheme transport-fn))]
     ;; The format here is important, as some tools (e.g. CIDER) parse the string
     ;; to extract from it the host and the port to connect to
     (if-let [host (.getHost uri)]
@@ -467,14 +367,16 @@ Exit:      Control+D or (exit) or (quit)"
   "Creates an nREPL server instance.
   Takes map of CLI options.
   Returns nREPL server map."
-  [{:keys [port bind socket handler transport greeting tls-keys-str tls-keys-file]}]
+  [{:keys [port bind socket handler middleware transport-fn greeting-fn
+           tls-keys-str tls-keys-file]}]
   (nrepl-server/start-server
    :port port
    :bind bind
    :socket socket
    :handler handler
-   :transport-fn transport
-   :greeting-fn greeting
+   :middleware middleware
+   :transport-fn transport-fn
+   :greeting-fn greeting-fn
    :tls-keys-str tls-keys-str
    :tls-keys-file tls-keys-file))
 
@@ -484,23 +386,21 @@ Exit:      Control+D or (exit) or (quit)"
   [options]
   (cond (:help options)    (display-help)
         (:version options) (display-version)
-        (:connect options) (connect-to-server (connection-opts options))
-        :else (let [options (server-opts options)
-                    server (start-server options)]
+        (:connect options) (connect-to-server options)
+        :else (let [server (start-server options)]
                 (ack-server server options)
                 (println (server-started-message server options))
                 (save-port-file server options)
                 (if (:interactive options)
                   (interactive-repl server options)
                   ;; need to hold process open with a non-daemon thread
-                  ;;   -- this should end up being super-temporary
-                  (Thread/sleep Long/MAX_VALUE)))))
+                  @(promise)))))
 
 (defn -main
   [& args]
   (try
     (set-signal-handler! "INT" handle-interrupt)
-    (let [[options _args] (args->cli-options args)]
+    (let [[options _args] (args->options args)]
       (dispatch-commands options))
     (catch clojure.lang.ExceptionInfo ex
       (let [{:keys [:nrepl/kind ::status]} (ex-data ex)]
