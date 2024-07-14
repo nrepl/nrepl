@@ -11,6 +11,8 @@
 
 ### Bugs fixed
 
+* [#348](https://github.com/nrepl/nrepl/pull/348): Fail with helpful error if incorrect bencode is written through the transport.
+
 ## 1.2.0 (2024-06-10)
 
 ### Changes

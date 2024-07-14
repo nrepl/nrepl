@@ -123,7 +123,7 @@
    (let [in (PushbackInputStream. (socket/buffered-input in))
          out (socket/buffered-output out)]
      (fn-transport
-      #(let [payload (rethrow-on-disconnection s (bencode/read-bencode in))
+      #(let [payload (rethrow-on-disconnection s (bencode/read-nrepl-message in))
              unencoded (<bytes (payload "-unencoded"))
              to-decode (apply dissoc payload "-unencoded" unencoded)]
          (walk/keywordize-keys (merge (dissoc payload "-unencoded")
