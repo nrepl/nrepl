@@ -268,6 +268,16 @@
           :else (do (.unread input first-byte)
                     (read-netstring* input)))))
 
+(defn read-nrepl-message
+  "Sames as `read-bencode`, but ensure that the top-level value is a map as
+  expected by the nREPL protocol."
+  [^PushbackInputStream input]
+  (let [first-byte (read-byte input)]
+    (if (= first-byte d)
+      (read-map input)
+      (throw (ex-info (format "nREPL message must be a map.
+Wrong first byte: %s (must be %d)." first-byte d) {})))))
+
 ;; ## Writing bencode
 ;;
 ;; Writing bencode is similar easy as reading it. The main entry point
