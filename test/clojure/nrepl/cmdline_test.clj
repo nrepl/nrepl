@@ -139,7 +139,37 @@
     (is (re-find #"nREPL server started on port \d+ on host .* - .*//.*:\d+"
                  (cmd/server-started-message
                   server
-                  {:transport #'transport/bencode})))))
+                  {:transport #'transport/bencode}))))
+
+  (with-open [^Server server (server/start-server
+                              :transport-fn #'transport/bencode
+                              :handler server/default-handler
+                              :bind "127.0.0.1"
+                              :port 60000)]
+    (is (= "nREPL server started on port 60000 on host 127.0.0.1 - nrepl://127.0.0.1:60000"
+           (cmd/server-started-message
+            server
+            {:transport #'transport/bencode}))))
+
+  (with-open [^Server server (server/start-server
+                              :transport-fn #'transport/bencode
+                              :handler server/default-handler
+                              :bind "localhost"
+                              :port 60000)]
+    (is (= "nREPL server started on port 60000 on host localhost - nrepl://localhost:60000"
+           (cmd/server-started-message
+            server
+            {:transport #'transport/bencode}))))
+
+  (with-open [^Server server (server/start-server
+                              :transport-fn #'transport/bencode
+                              :handler server/default-handler
+                              :bind "::1"
+                              :port 60000)]
+    (is (= "nREPL server started on port 60000 on host ::1 - nrepl://[::1]:60000"
+           (cmd/server-started-message
+            server
+            {:transport #'transport/bencode})))))
 
 (deftest ^:slow ack
   (let [ack-port (:port *server*)
