@@ -3,14 +3,13 @@
 </p>
 
 ----------
-[![CircleCI](https://circleci.com/gh/nrepl/nrepl/tree/master.svg?style=svg)](https://circleci.com/gh/nrepl/nrepl/tree/master)
+[![CircleCI](https://img.shields.io/circleci/build/github/nrepl/nrepl/master.svg)](https://circleci.com/gh/nrepl/nrepl/tree/master)
 [![Spell-check Status](https://github.com/nrepl/nrepl/actions/workflows/spell_checking.yml/badge.svg)](https://github.com/nrepl/nrepl/actions/workflows/spell_checking.yml)
-[![Clojars Project](https://img.shields.io/clojars/v/nrepl.svg)](https://clojars.org/nrepl)
+[![Clojars Project](https://img.shields.io/clojars/v/nrepl.svg)](https://clojars.org/nrepl/nrepl)
 [![cljdoc badge](https://cljdoc.org/badge/nrepl/nrepl)](https://cljdoc.org/d/nrepl/nrepl/CURRENT)
-[![downloads badge](https://versions.deps.co/nrepl/nrepl/downloads.svg)](https://clojars.org/nrepl)
+[![Downloads](https://img.shields.io/clojars/dt/nrepl/nrepl?color=cornflowerblue)](https://clojars.org/nrepl/nrepl)
 [![Backers on Open Collective](https://opencollective.com/nrepl/backers/badge.svg)](#backers)
 [![Sponsors on Open Collective](https://opencollective.com/nrepl/sponsors/badge.svg)](#sponsors)
-[![Discord](https://img.shields.io/badge/chat-on%20discord-7289da.svg?sanitize=true)](https://discord.com/invite/nFPpynQPME)
 
 nREPL is a Clojure *n*etwork REPL that
 provides a REPL server and client, along with some common APIs
