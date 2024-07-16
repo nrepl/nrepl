@@ -16,7 +16,7 @@
   (:import
    (com.hypirion.io Pipe ClosingPipe)
    (java.lang ProcessBuilder$Redirect)
-   (java.net Socket SocketAddress)
+   (java.net ServerSocket Socket SocketAddress)
    (java.nio.channels Channels SocketChannel)
    (java.nio.file Files)
    (nrepl.server Server)))
@@ -28,25 +28,30 @@
   (let [nio-path (.toPath (as-file parent))]
     (Files/createTempDirectory nio-path prefix (into-array java.nio.file.attribute.FileAttribute []))))
 
-(defn- start-server-for-transport-fn
-  [transport-fn f]
-  (with-open [^Server server (server/start-server
-                              :transport-fn transport-fn
-                              :handler (ack/handle-ack (server/default-handler)))]
-    (binding [*server* server
-              *transport-fn* transport-fn]
-      (testing (str (-> transport-fn meta :name) " transport")
-        (ack/reset-ack-port!)
-        (f))
-      (set! *print-length* nil)
-      (set! *print-level* nil))))
+(defn- free-port []
+  (let [sock (ServerSocket. 0)
+        port (.getLocalPort sock)]
+    (.close sock)
+    port))
 
-(defn- server-cmdline-fixture
-  [f]
+(defn- run-f-with-server-and-every-transport [server-opts-fn f]
   (doseq [transport-fn transport-fns]
-    (start-server-for-transport-fn transport-fn f)))
+    (with-open [^Server server
+                (apply server/start-server
+                       (apply concat (assoc (if server-opts-fn (server-opts-fn) {})
+                                            :transport-fn transport-fn
+                                            :handler (ack/handle-ack (server/default-handler)))))]
+      (binding [*transport-fn* transport-fn
+                *server* server
+                *print-level* *print-level*
+                *print-length* *print-length*]
+        (ack/reset-ack-port!)
+        (f)))))
 
-(use-fixtures :each server-cmdline-fixture)
+(defmacro with-server-every-transport
+  {:style/indent 1}
+  [server-opts-fn & body]
+  `(run-f-with-server-and-every-transport ~server-opts-fn (fn [] ~@body)))
 
 (defn- var->str
   [sym]
@@ -142,49 +147,47 @@
                   {:transport #'transport/bencode})))))
 
 (deftest ^:slow ack
-  (let [ack-port (:port *server*)
-        ^Process
-        server-process (apply sh ["java" "-Dnreplacktest=y"
-                                  "-cp" (System/getProperty "java.class.path")
-                                  "nrepl.main"
-                                  "--ack" (str ack-port)
-                                  "--transport" (var->str *transport-fn*)])
-        acked-port (ack/wait-for-ack 100000)]
-    (try
-      (is acked-port "Timed out waiting for ack")
-      (when acked-port
-        (with-open [^nrepl.transport.FnTransport
-                    transport-2 (nrepl/connect :port acked-port
-                                               :transport-fn *transport-fn*)]
-          (let [client (nrepl/client transport-2 1000)]
-            ;; just a sanity check
-            (is (= "y"
-                   (-> (nrepl/message client {:op "eval"
-                                              :code "(System/getProperty \"nreplacktest\")"})
-                       first
-                       nrepl/read-response-value
-                       :value))))))
-      (finally
-        (.destroy server-process)))))
+  (with-server-every-transport nil
+    (let [^Process
+          acker-process (apply sh ["java" "-Dnreplacktest=y"
+                                   "-cp" (System/getProperty "java.class.path")
+                                   "nrepl.main"
+                                   "--ack" (str (:port *server*))
+                                   "--transport" (var->str *transport-fn*)])
+          acked-port (ack/wait-for-ack 100000)]
+      (try
+        (is acked-port "Timed out waiting for ack")
+        (when acked-port
+          (with-open [^nrepl.transport.FnTransport
+                      transport-2 (nrepl/connect :port acked-port
+                                                 :transport-fn *transport-fn*)]
+            (let [client (nrepl/client transport-2 1000)]
+              ;; just a sanity check
+              (is (= "y"
+                     (-> (nrepl/message client {:op "eval"
+                                                :code "(System/getProperty \"nreplacktest\")"})
+                         first
+                         nrepl/read-response-value
+                         :value))))))
+        (finally
+          (.destroy acker-process))))))
 
 (deftest ^:slow explicit-port-argument
-  (let [ack-port (:port *server*)
-        free-port (with-open [ss (java.net.ServerSocket.)]
-                    (.bind ss nil)
-                    (.getLocalPort ss))
-        ^Process
-        server-process (apply sh ["java" "-Dnreplacktest=y"
-                                  "-cp" (System/getProperty "java.class.path")
-                                  "nrepl.main"
-                                  "--port" (str free-port)
-                                  "--ack" (str ack-port)
-                                  "--transport" (var->str *transport-fn*)])
-        acked-port (ack/wait-for-ack 100000)]
-    (try
-      (is (= acked-port free-port))
-      (finally
-        (Thread/sleep 2000)
-        (.destroy server-process)))))
+  (with-server-every-transport nil
+    (let [ack-port (:port *server*)
+          bind-port (free-port)
+          ^Process
+          acker-process (apply sh ["java" "-Dnreplacktest=y"
+                                   "-cp" (System/getProperty "java.class.path")
+                                   "nrepl.main"
+                                   "--port" (str bind-port)
+                                   "--ack" (str ack-port)
+                                   "--transport" (var->str *transport-fn*)])
+          acked-port (ack/wait-for-ack 100000)]
+      (try
+        (is (= acked-port bind-port))
+        (finally
+          (.destroy acker-process))))))
 
 ;;; Unix domain socket tests
 
@@ -225,12 +228,8 @@
       (catch Exception _e
         false))))
 
-(deftest ^:slow basic-fs-socket-behavior
-  (if-not unix-domain-flavor
-    (binding [*out* *err*]
-      ;; Otherwise kaocha treats no tests as an error
-      (testing "Skipping UNIX domain socket tests for JDK < 16 without junixsocket dependency"
-        (is (not unix-domain-flavor))))
+(when unix-domain-flavor
+  (deftest ^:slow basic-fs-socket-behavior
     (let [tmpdir (create-tmpdir "target" "socket-test-")
           sock-path (str tmpdir "/socket")
           sock-file (as-file sock-path)]
@@ -264,7 +263,7 @@
           (.delete sock-file)
           (Files/delete tmpdir))))))
 
-(deftest ^:slow cmdline-namespace-resolution
+(deftest cmdline-namespace-resolution
   (testing "Ensuring that namespace resolution works in the cmdline repl"
     (let [test-input (str/join \newline ["::a"
                                          "(ns a)" "::a"
@@ -277,20 +276,21 @@
                            "nil" ":user/a"
                            "nil" ":a/a"]
           >devnull (fn [& _] nil)]
-      (binding [*in* (java.io.PushbackReader. (java.io.StringReader. test-input))]
-        (with-redefs [cmd/clean-up-and-exit >devnull]
-          (with-open [server (server/start-server)]
+      (with-redefs [cmd/clean-up-and-exit >devnull]
+        (with-server-every-transport nil
+          (binding [*in* (java.io.PushbackReader. (java.io.StringReader. test-input))]
             (let [results (atom [])]
-              (#'cmd/run-repl (:host server) (:port server) {:prompt >devnull :err >devnull :out >devnull :value #(swap! results conj %)})
+              (#'cmd/run-repl (:host *server*) (:port *server*)
+                              {:transport *transport-fn*
+                               :prompt >devnull
+                               :err >devnull
+                               :out >devnull
+                               :value #(swap! results conj %)})
               (is (= expected-output @results)))))))))
 
-(deftest ^:slow can-connect-to-unix-socket
-  (testing "We can connect to unix domain socker from the cli."
-    (if-not unix-domain-flavor
-      (binding [*out* *err*]
-          ;; Otherwise kaocha treats no tests as an error
-        (testing "Skipping UNIX domain socket tests for JDK < 16 without junixsocket dependency"
-          (is (not unix-domain-flavor))))
+(when unix-domain-flavor
+  (deftest ^:slow can-connect-to-unix-socket
+    (testing "We can connect to unix domain socker from the cli."
       (let [test-input      (str/join \newline ["::a"
                                                 "(ns a)" "::a"
                                                 "(ns b)" "::a"
@@ -301,13 +301,17 @@
                              "nil" ":b/a"
                              "nil" ":user/a"
                              "nil" ":a/a"]
-            >devnull        (fn [& _] nil)
-            tmpdir          (create-tmpdir "target" "socket-test-")
-            sock-path       (str tmpdir "/socket")]
-        (binding [*in* (java.io.PushbackReader. (java.io.StringReader. test-input))]
-          (with-redefs [cmd/clean-up-and-exit >devnull]
-            (with-open [server (server/start-server :socket sock-path)]
+            >devnull        (fn [& _] nil)]
+        (with-redefs [cmd/clean-up-and-exit >devnull
+                      ;; EDN transport doesn't work here because of a bug (#351).
+                      transport-fns [#'nrepl.transport/bencode]]
+          (with-server-every-transport (fn [] {:socket (str (create-tmpdir "target" "socket-test-") "/socket")})
+            (binding [*in* (java.io.PushbackReader. (java.io.StringReader. test-input))]
               (let [results (atom [])]
-                (#'cmd/run-repl {:server  server
-                                 :options {:prompt >devnull :err >devnull :out >devnull :value #(swap! results conj %)}})
+                (#'cmd/run-repl {:server  *server*
+                                 :options {:transport *transport-fn*
+                                           :prompt >devnull
+                                           :err >devnull
+                                           :out >devnull
+                                           :value #(swap! results conj %)}})
                 (is (= expected-output @results))))))))))
