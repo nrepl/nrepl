@@ -11,6 +11,7 @@
 
 ### Bugs fixed
 
+* [#271](https://github.com/nrepl/nrepl/pull/271): Fix not being able to define dynamic variables from terminal REPL.
 * [#348](https://github.com/nrepl/nrepl/pull/348): Fail with helpful error if incorrect bencode is written through the transport.
 
 ## 1.2.0 (2024-06-10)

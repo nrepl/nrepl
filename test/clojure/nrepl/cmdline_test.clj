@@ -189,6 +189,24 @@
         (finally
           (.destroy acker-process))))))
 
+(deftest can-define-dynamic-vars
+  (with-server-every-transport nil
+    (testing "when a dynamic var is defined from CLI client, it stays dynamic (#271)"
+      (let [test-input      (str/join "\n" ["(def ^:dynamic *dyn* 1)"
+                                            "(binding [*dyn* 2] *dyn*)"])
+            expected-output ["#'user/*dyn*" "2"]
+            >devnull        (fn [& _] nil)]
+        (binding [*in* (java.io.PushbackReader. (java.io.StringReader. test-input))]
+          (with-redefs [cmd/clean-up-and-exit >devnull]
+            (let [results (atom [])]
+              (#'cmd/run-repl (:host *server*) (:port *server*)
+                              {:transport *transport-fn*
+                               :prompt >devnull
+                               :err >devnull
+                               :out >devnull
+                               :value #(swap! results conj %)})
+              (is (= expected-output @results)))))))))
+
 ;;; Unix domain socket tests
 
 (defn send-jdk-socket-message [message path]
