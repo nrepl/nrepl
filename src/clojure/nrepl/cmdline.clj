@@ -111,12 +111,16 @@ Exit:      Control+D or (exit) or (quit)"
           (let [input (read *in* false 'exit)]
             (if (done? input)
               (clean-up-and-exit 0)
-              (do (doseq [res (nrepl/message session {:op "eval" :code (pr-str input)})]
-                    (when (:value res) (value (:value res)))
-                    (when (:out res) (out (:out res)))
-                    (when (:err res) (err (:err res)))
-                    (when (:ns res) (set! *ns* (create-ns (symbol (:ns res))))))
-                  (recur)))))))))
+              ;; Make sure the metadata read from *in* is preserved when we feed
+              ;; the form to nREPL.
+              (let [code-str (binding [*print-meta* true]
+                               (pr-str input))]
+                (doseq [res (nrepl/message session {:op "eval" :code code-str})]
+                  (some-> (:value res) value)
+                  (some-> (:out res) out)
+                  (some-> (:err res) err)
+                  (when (:ns res) (set! *ns* (create-ns (symbol (:ns res))))))
+                (recur)))))))))
 
 (defn- run-repl
   ([{:keys [server options]}]
