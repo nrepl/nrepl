@@ -10,23 +10,15 @@
    [nrepl.transport :as transport])
   (:import
    (java.io BufferedWriter PrintWriter StringWriter Writer)
-   (nrepl QuotaExceeded)
+   (nrepl CallbackWriter QuotaBoundWriter QuotaExceeded)
    (nrepl.transport Transport)))
-
-;; private in clojure.core
-(defn- pr-on
-  [x w]
-  (if *print-dup*
-    (print-dup x w)
-    (print-method x w))
-  nil)
 
 (def ^:dynamic *print-fn*
   "Function to use for printing. Takes two arguments: `value`, the value to print,
   and `writer`, the `java.io.PrintWriter` to print on.
 
   Defaults to the equivalent of `clojure.core/pr`."
-  pr-on)
+  @#'clojure.core/pr-on) ;; Private in clojure.core
 
 (def ^:dynamic *stream?*
   "If logical true, the result of printing each value will be streamed to the
@@ -60,41 +52,14 @@
 (def configuration-keys
   [::print-fn ::stream? ::buffer-size ::quota ::keys])
 
-(defn- to-char-array
-  ^chars
-  [x]
-  (cond
-    (string? x) (.toCharArray ^String x)
-    (integer? x) (char-array [(char x)])
-    :else x))
-
-(defn with-quota-writer
+(defn with-quota-bound-writer
   "Returns a `java.io.Writer` that wraps `writer` and throws `QuotaExceeded` once
   it has written more than `quota` bytes."
   ^java.io.Writer
   [^Writer writer quota]
-  (if-not quota
-    writer
-    (let [total (volatile! 0)]
-      (proxy [Writer] []
-        (toString []
-          (.toString writer))
-        (write
-          ([x]
-           (let [cbuf (to-char-array x)]
-             (.write ^Writer this cbuf (int 0) (count cbuf))))
-          ([x off len]
-           (locking total
-             (let [cbuf (to-char-array x)
-                   rem (- quota @total)]
-               (vswap! total + len)
-               (.write writer cbuf ^int off ^int (min len rem))
-               (when (neg? (- rem len))
-                 (throw (QuotaExceeded.)))))))
-        (flush []
-          (.flush writer))
-        (close []
-          (.close writer))))))
+  (if quota
+    (QuotaBoundWriter. writer quota)
+    writer))
 
 (defn replying-PrintWriter
   "Returns a `java.io.PrintWriter` suitable for binding as `*out*` or `*err*`. All
@@ -102,74 +67,68 @@
   transport of `msg`, keyed by `key`."
   ^java.io.PrintWriter
   [key {:keys [transport] :as msg} {:keys [::buffer-size ::quota]}]
-  (-> (proxy [Writer] []
-        (write
-          ([x]
-           (let [cbuf (to-char-array x)]
-             (.write ^Writer this cbuf (int 0) (count cbuf))))
-          ([x off len]
-           (let [cbuf (to-char-array x)
-                 text (str (doto (StringWriter.)
-                             (.write cbuf ^int off ^int len)))]
-             (when (pos? (count text))
-               (transport/send transport (misc/response-for msg key text))))))
-        (flush [])
-        (close []))
+  (-> (CallbackWriter. #(transport/send transport (misc/response-for msg key %)))
       (BufferedWriter. (or buffer-size 1024))
-      (with-quota-writer quota)
+      (with-quota-bound-writer quota)
       (PrintWriter. true)))
 
 (defn- send-streamed
   [{:keys [transport] :as msg}
    resp
-   {:keys [::print-fn ::keys] :as opts}]
-  (let [print-key (fn [key]
-                    (let [value (get resp key)]
-                      (try
-                        (with-open [writer (replying-PrintWriter key msg opts)]
-                          (print-fn value writer))
-                        (catch QuotaExceeded _
-                          (transport/send
-                           transport
-                           (misc/response-for msg :status ::truncated))))))]
-    (run! print-key keys))
+   {:keys [::print-fn ::keys] :as opts :or {keys []}}]
+  ;; Iterator is used instead of reduce for cleaner stacktrace if an exception
+  ;; gets thrown during printing.
+  (let [it (.iterator ^Iterable keys)]
+    (while (.hasNext it)
+      (let [key (.next it)
+            value (get resp key)]
+        (try (with-open [writer (replying-PrintWriter key msg opts)]
+               (print-fn value writer))
+             (catch QuotaExceeded _
+               (transport/send
+                transport
+                (misc/response-for msg :status ::truncated)))))))
   (transport/send transport (apply dissoc resp keys)))
 
 (defn- send-nonstreamed
   [{:keys [transport]}
    resp
-   {:keys [::print-fn ::quota ::keys]}]
-  (let [print-key (fn [key]
-                    (let [value (get resp key)
-                          writer (-> (StringWriter.)
-                                     (with-quota-writer quota))
-                          truncated? (volatile! false)]
-                      (try
-                        (print-fn value writer)
-                        (catch QuotaExceeded _
-                          (vreset! truncated? true)))
-                      [key (str writer) @truncated?]))
-        rf (completing
-            (fn [resp [key printed-value truncated?]]
-              (cond-> (assoc resp key printed-value)
-                truncated? (update ::truncated-keys (fnil conj []) key))))
-        resp (transduce (map print-key) rf resp keys)]
-    (transport/send transport (cond-> resp
-                                (::truncated-keys resp)
-                                (update :status #(set (conj % ::truncated)))))))
+   {:keys [::print-fn ::quota ::keys] :or {keys []}}]
+  ;; Iterator is used instead of reduce for cleaner stacktrace if an exception
+  ;; gets thrown during printing.
+  (let [it (.iterator ^Iterable keys)]
+    (loop [resp resp]
+      (if (.hasNext it)
+        (let [key (.next it)
+              value (get resp key)
+              writer (with-quota-bound-writer (StringWriter.) quota)
+              truncated? (volatile! false)]
+          (try (print-fn value writer)
+               (catch QuotaExceeded _
+                 (vreset! truncated? true)))
+          (recur (cond-> (assoc resp key (str writer))
+                   @truncated? (update ::truncated-keys (fnil conj []) key))))
+
+        (transport/send transport (cond-> resp
+                                    (::truncated-keys resp)
+                                    (update :status #(set (conj % ::truncated)))))))))
 
 (defn- printing-transport
-  [{:keys [transport] :as msg} opts]
+  [{:keys [transport] :as msg}]
   (reify Transport
     (recv [_this]
       (transport/recv transport))
     (recv [_this timeout]
       (transport/recv transport timeout))
     (send [this resp]
-      (let [{:keys [::stream?] :as opts} (-> (merge msg (bound-configuration) resp opts)
-                                             (select-keys configuration-keys))
+      (let [resp-pr (::print-fn resp)
+            ;; Request config has priority over response config, but if the
+            ;; request didn't have explicit ::print set, prefer ::print-fn from
+            ;; the response.
+            opts (cond-> (merge (bound-configuration) resp msg)
+                   (and resp-pr (nil? (::print msg))) (assoc ::print-fn resp-pr))
             resp (apply dissoc resp configuration-keys)]
-        (if stream?
+        (if (::stream? opts)
           (send-streamed msg resp opts)
           (send-nonstreamed msg resp opts)))
       this)))
@@ -183,6 +142,12 @@
                     ::error (str "Couldn't resolve var " var-sym)}]
           (transport/send transport (misc/response-for msg resp))))
       print-var)))
+
+(defn- booleanize-bencode-val [m key]
+  (if (contains? m key)
+    ;; As a convention, empty list is treated as logical false.
+    (update m key #(if (= % []) false (boolean %)))
+    m))
 
 (defn wrap-print
   "Middleware that provides printing functionality to other middlewares.
@@ -219,19 +184,14 @@
   [handler]
   (fn [{:keys [::options] :as msg}]
     (let [print-var (resolve-print msg)
-          print (fn [value writer]
-                  (if print-var
-                    (print-var value writer options)
-                    (pr-on value writer)))
-          msg (assoc msg ::print-fn print)
-          opts (cond-> (select-keys msg configuration-keys)
-                 ;; no print-fn provided in the request, so defer to the response
-                 (nil? print-var)
-                 (dissoc ::print-fn)
-                 ;; in bencode empty list is logical false
-                 (contains? msg ::stream?)
-                 (update ::stream? #(if (= [] %) false (boolean %))))]
-      (handler (assoc msg :transport (printing-transport msg opts))))))
+          print-fn (if print-var
+                     (fn [value writer]
+                       (print-var value writer options))
+                     *print-fn*)
+          msg (-> msg
+                  (assoc ::print-fn print-fn)
+                  (booleanize-bencode-val ::stream?))]
+      (handler (assoc msg :transport (printing-transport msg))))))
 
 (set-descriptor! #'wrap-print {:requires #{}
                                :expects #{}

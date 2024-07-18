@@ -1,5 +1,5 @@
 package nrepl;
 
-public class QuotaExceeded extends Throwable {
+public class QuotaExceeded extends Error {
 
 }
