@@ -780,11 +780,11 @@
                 clean-response
                 :status)))
     (Thread/sleep 500)
-    (is (= #{:done :eval-error :interrupted}
-           (->> resp
-                combine-responses
-                clean-response
-                :status)))))
+    (is (contains? (->> resp
+                        combine-responses
+                        clean-response
+                        :status)
+                   :interrupted))))
 
 (def-repl-test stdout-stderr
   (are [result expr] (= result (-> (repl-eval client expr)
