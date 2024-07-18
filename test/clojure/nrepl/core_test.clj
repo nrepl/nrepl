@@ -779,6 +779,7 @@
                 first
                 clean-response
                 :status)))
+    (Thread/sleep 500)
     (is (= #{:done :eval-error :interrupted}
            (->> resp
                 combine-responses
