@@ -75,10 +75,11 @@
 (defn- send-streamed
   [{:keys [transport] :as msg}
    resp
-   {:keys [::print-fn ::keys] :as opts :or {keys []}}]
+   {:keys [::print-fn ::keys] :as opts}]
   ;; Iterator is used instead of reduce for cleaner stacktrace if an exception
   ;; gets thrown during printing.
-  (let [it (.iterator ^Iterable keys)]
+  (let [^Iterable keys (or keys [])
+        it (.iterator keys)]
     (while (.hasNext it)
       (let [key (.next it)
             value (get resp key)]
@@ -93,10 +94,11 @@
 (defn- send-nonstreamed
   [{:keys [transport]}
    resp
-   {:keys [::print-fn ::quota ::keys] :or {keys []}}]
+   {:keys [::print-fn ::quota ::keys]}]
   ;; Iterator is used instead of reduce for cleaner stacktrace if an exception
   ;; gets thrown during printing.
-  (let [it (.iterator ^Iterable keys)]
+  (let [^Iterable keys (or keys [])
+        it (.iterator keys)]
     (loop [resp resp]
       (if (.hasNext it)
         (let [key (.next it)
