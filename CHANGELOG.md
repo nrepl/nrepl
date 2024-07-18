@@ -9,6 +9,7 @@
 * [#341](https://github.com/nrepl/nrepl/pull/341): Make session middleware handle all dynamic bindings.
 * [#342](https://github.com/nrepl/nrepl/pull/342): Make the stack of the eval handler shorter.
 * [#345](https://github.com/nrepl/nrepl/pull/345): Use customized executors for all asynchronous tasks.
+* [#347](https://github.com/nrepl/nrepl/pull/347): Refactor print middleware to have tidier stack and use Java classes instead of proxies.
 
 ### Bugs fixed
 
