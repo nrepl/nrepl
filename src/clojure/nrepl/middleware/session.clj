@@ -7,7 +7,7 @@
    [nrepl.middleware.interruptible-eval :refer [*msg*]]
    [nrepl.middleware.print :as print]
    [nrepl.middleware.caught :as caught]
-   [nrepl.misc :as misc :refer [uuid response-for]]
+   [nrepl.misc :as misc :refer [uuid response-for log]]
    [nrepl.transport :as t]
    [nrepl.util.classloader :as classloader]
    [nrepl.util.threading :as threading])
@@ -172,13 +172,9 @@
 
   - an id (typically the message id)
   - thunk, a Runnable, the task itself
-  - ack, another Runnable, ran to notify of successful execution of thunk
-  - msg, the currently handled nREPL message
-
-  The thunk/ack split is meaningful for interruptible eval: only the thunk can be
-  interrupted."
-  [session]
-  (fn [_id ^Runnable thunk ^Runnable ack & [msg]]
+  - ack, another Runnable, ran to notify of successful execution of thunk"
+  [session msg]
+  (fn [_id ^Runnable thunk ^Runnable ack]
     (let [f #(let [bindings (add-per-message-bindings msg @session)]
                (push-thread-bindings bindings)
                (try (.run thunk)
@@ -204,15 +200,14 @@
                                   :out-limit (or out-limit (:out-limit (meta session)))
                                   :stdin-reader stdin-reader
                                   :input-queue input-queue})]
-     (alter-meta! new-session assoc :exec (make-ephemeral-exec-fn new-session))
+     (alter-meta! new-session assoc :exec (make-ephemeral-exec-fn new-session msg))
      new-session)))
 
 (defn session-exec
-  "Takes a session and returns a maps of three functions meant for
-  interruptible-eval:
-  - `:exec` - takes an id (typically a msg-id), a thunk and an ack runnables,
-    and an optional message (see `make-ephemeral-exec-fn` for ampler context).
-    Executions are serialized and occurs on a single thread.
+  "Takes a session and returns a map of three functions:
+  - `:exec` - takes an id (typically a msg-id), a thunk and an ack runnables.
+    Only thunk can be interrupted. Executions are serialized and occur on a
+    single thread.
   - `:interrupt` - takes an id and tries to interrupt the matching execution
     (submitted with :exec above). A nil id is meant to match the currently
     running execution. The return value can be either: `:idle` (no running
@@ -225,8 +220,8 @@
         session-loop
         #(try
            (loop []
-             (let [[exec-id ^Runnable r ^Runnable ack msg]
-                   (.take ^LinkedBlockingQueue (:queue @state))
+             (let [{:keys [^LinkedBlockingQueue queue]} @state
+                   [exec-id ^Runnable r ^Runnable ack msg] (.take queue)
                    bindings (add-per-message-bindings msg @session)]
                (swap! state assoc :running exec-id)
                (push-thread-bindings bindings)
@@ -271,8 +266,12 @@
                         (reset-state)
                         running))))
      :close #(threading/interrupt-stop (:thread @state))
-     :exec (fn [exec-id r ack & [msg]]
-             (.put ^LinkedBlockingQueue (:queue @state) [exec-id r ack msg]))}))
+     :exec (fn [exec-id r ack]
+             ;; Here, *msg* is bound by session middleware on the server/handler
+             ;; thread. We have to convey it to the executor thread.
+             (if *msg*
+               (.put ^LinkedBlockingQueue (:queue @state) [exec-id r ack *msg*])
+               (log "*msg* is unbound in a persistent session.")))}))
 
 (defn- register-session
   "Registers a new session containing the baseline bindings contained in the
@@ -351,7 +350,10 @@
             "close" (close-session msg)
             "ls-sessions" (t/send transport (response-for msg :status :done
                                                           :sessions (or (keys @sessions) [])))
-            (h msg)))))))
+            (binding [*msg* msg]
+              ;; Bind *msg* so it can later be accessed by persistent session
+              ;; functions like session-exec.
+              (h msg))))))))
 
 (set-descriptor! #'session
                  {:requires #{}
