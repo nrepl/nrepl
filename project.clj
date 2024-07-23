@@ -82,7 +82,8 @@
                                          returning [[:inner 0]]
                                          run-with [[:inner 0]]
                                          testing-dynamic [[:inner 0]]
-                                         testing-print [[:inner 0]]}}}
+                                         testing-print [[:inner 0]]
+                                         when-require [[:inner 0]]}}}
 
              :eastwood [:test
                         {:plugins [[jonase/eastwood "1.4.0"]]
@@ -90,5 +91,4 @@
                                     :ignored-faults {:non-dynamic-earmuffs {nrepl.middleware.load-file true}
                                                      :unused-ret-vals {nrepl.util.completion-test true
                                                                        nrepl.bencode true}
-                                                     :reflection {nrepl.socket.dynamic true}
-                                                     :implicit-dependencies {nrepl.middleware.interruptible-eval true}}}}]})
+                                                     :reflection {nrepl.socket.dynamic true}}}}]})
