@@ -60,12 +60,6 @@
 (def ^Class jdk-unix-address-class
   (find-class 'java.net.UnixDomainSocketAddress))
 
-(def ^Class jdk-unix-server-class
-  (find-class 'java.nio.channels.ServerSocketChannel))
-
-(def ^Class jdk-unix-class
-  (find-class 'java.nio.channels.SocketChannel))
-
 (def ^:private test-junixsocket?
   ;; Make it possible to test junixsocket even when JDK >= 16
   (= "true" (System/getProperty "nrepl.test.junixsocket")))
@@ -78,7 +72,7 @@
                         (binding [*out* *err*]
                           (println "nrepl.test: insisting on junixsocket support"))
                         :junixsocket)
-    (and jdk-unix-address-class jdk-unix-server-class) :jdk
+    jdk-unix-address-class :jdk
     (and junixsocket-address-class junixsocket-server-class) :junixsocket
     :else nil))
 
@@ -191,7 +185,7 @@
 
 (defn as-nrepl-uri [sock transport-scheme]
   (let [get-local-addr (fn [^NetworkChannel c] (.getLocalAddress c))]
-    (if-let [addr (and (some-> jdk-unix-server-class (instance? sock))
+    (if-let [addr (and (instance? ServerSocketChannel sock)
                        (get-local-addr sock))]
       (URI. (str transport-scheme "+unix")
             (let [^Path path (get-path addr)]
