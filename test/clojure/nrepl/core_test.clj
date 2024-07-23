@@ -1,4 +1,5 @@
 (ns nrepl.core-test
+  (:refer-clojure :exclude [requiring-resolve])
   (:require
    [clojure.java.io :as io]
    [clojure.main]
@@ -19,7 +20,7 @@
    [nrepl.middleware.caught :as middleware.caught]
    [nrepl.middleware.print :as middleware.print]
    [nrepl.middleware.session :as session]
-   [nrepl.misc :refer [uuid]]
+   [nrepl.misc :refer [uuid requiring-resolve]]
    [nrepl.server :as server]
    [nrepl.test-helpers :as th]
    [nrepl.util.threading :as threading]
@@ -44,11 +45,11 @@
 ;; There is a profile that adds the fastlane dependency and test
 ;; its transports.
 (when-require 'fastlane.core
-              (def transport-fn->protocol
-                (merge transport-fn->protocol
-                       {(find-var 'fastlane.core/transit+msgpack) "transit+msgpack"
-                        (find-var 'fastlane.core/transit+json) "transit+json"
-                        (find-var 'fastlane.core/transit+json-verbose) "transit+json-verbose"})))
+  (def transport-fn->protocol
+    (merge transport-fn->protocol
+           {(requiring-resolve 'fastlane.core/transit+msgpack) "transit+msgpack"
+            (requiring-resolve 'fastlane.core/transit+json) "transit+json"
+            (requiring-resolve 'fastlane.core/transit+json-verbose) "transit+json-verbose"})))
 
 (def ^File project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
 
@@ -97,16 +98,15 @@
   ;; TODO: add transit here.
   (or (= *transport-fn* #'transport/edn)
       (when-require 'fastlane.core
-                    (or (= *transport-fn* #'fastlane.core/transit+msgpack)
-                        (= *transport-fn* #'fastlane.core/transit+json)
-                        (= *transport-fn* #'fastlane.core/transit+json-verbose)))))
+        (or (= *transport-fn* (requiring-resolve 'fastlane.core/transit+msgpack))
+            (= *transport-fn* (requiring-resolve 'fastlane.core/transit+json))
+            (= *transport-fn* (requiring-resolve 'fastlane.core/transit+json-verbose))))))
 
 (defn- check-response-format
   "checks response against spec, if available it to do a spec check later"
   [resp]
   (when-require 'nrepl.spec
-                (when-not (#'clojure.spec.alpha/valid? :nrepl.spec/message resp)
-                  (throw (Exception. ^String (#'clojure.spec.alpha/explain-str :nrepl.spec/message resp)))))
+    ((requiring-resolve 'clojure.spec.alpha/assert*) :nrepl.spec/message resp))
   resp)
 
 (defn clean-response
