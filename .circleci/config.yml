@@ -1,11 +1,5 @@
 version: 2.1
 
-######################################################################
-#
-# Start of general purpose config. These can plausibly go into orbs
-#
-######################################################################
-
 # Default settings for executors
 
 orbs:
@@ -20,21 +14,25 @@ defaults: &defaults
 # Runners for OpenJDK
 
 executors:
-  openjdk8:
+  jdk8:
     docker:
       - image: clojure:temurin-8-lein-2.11.2-jammy
     <<: *defaults
-  openjdk11:
+  jdk11:
     docker:
       - image: clojure:temurin-11-lein-2.11.2-jammy
     <<: *defaults
-  openjdk17:
+  jdk17:
     docker:
       - image: clojure:temurin-17-lein-2.11.2-jammy
     <<: *defaults
-  openjdk21:
+  jdk21:
     docker:
       - image: clojure:temurin-21-lein-2.11.2-jammy
+    <<: *defaults
+  jdk22:
+    docker:
+      - image: clojure:temurin-22-lein-2.11.2-jammy
     <<: *defaults
 
 # Runs a given set of steps, with some standard pre- and post-
@@ -54,21 +52,18 @@ commands:
     parameters:
       steps:
         type: steps
+      clojure_version:
+        description: Will be used as part of the cache key
+        type: string
       files:
         description: Files to consider when creating the cache key
         type: string
-        default: "deps.edn project.clj build.boot"
+        default: "deps.edn project.clj"
       cache_version:
         type: string
         description: "Change this value to force a cache update"
         default: "1"
     steps:
-      - run:
-          name: Install babashka latest
-          command: |
-            bash <(curl -s https://raw.githubusercontent.com/borkdude/babashka/master/install) --dir ~
-            mv ~/bb /usr/local/bin/bb
-
       - run:
           name: Generate Cache Checksum
           command: |
@@ -77,14 +72,22 @@ commands:
               find . -name $file -exec cat {} +
             done | sha256sum | awk '{print $1}' > /tmp/clojure_cache_seed
       - restore_cache:
-          key: clojure-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
+          key: cache-<< parameters.cache_version >>-<< parameters.clojure_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
+      - run:
+          name: Install babashka if not present
+          command: |
+            [ -e /usr/local/bin/bb ] && exit
+            # Install curl explicitly because jdk22 doesn't have it.
+            apt update && apt install -y curl
+            bash <(curl -s https://raw.githubusercontent.com/borkdude/babashka/master/install) --dir ~
+            mv ~/bb /usr/local/bin/bb
       - steps: << parameters.steps >>
       - save_cache:
           paths:
             - ~/.m2
             - .cpcache
-            - repo
-          key: clojure-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
+            - /usr/local/bin/bb
+          key: cache-<< parameters.cache_version >>-<< parameters.clojure_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
 
   setup-windows:
     steps:
@@ -110,47 +113,43 @@ commands:
           command:
             scoop install leiningen
 
-######################################################################
-#
-# End general purpose configs
-#
-######################################################################
-
 jobs:
 
   util_job:
     description: |
       Running utility commands/checks (linter etc.)
-      Always uses Java 21 and Clojure 1.11
     parameters:
       steps:
         type: steps
-    executor: openjdk21
+      clojure_version:
+        type: string
+        default: "1.11"
+    executor: jdk21
     environment:
-      VERSION: "1.11"
+      CLOJURE_VERSION: << parameters.clojure_version >>
     steps:
       - checkout
       - with_cache:
-          cache_version: "1.11"
+          cache_version: "util_v1"
+          clojure_version: << parameters.clojure_version >>
           steps: << parameters.steps >>
 
-  test_code:
+  test:
     description: |
       Run tests against given version of JDK and Clojure
     parameters:
       jdk_version:
-        description: Version of JDK to test against
         type: string
       clojure_version:
-        description: Version of Clojure to test against
         type: string
     executor: << parameters.jdk_version >>
     environment:
-      VERSION: << parameters.clojure_version >>
+      CLOJURE_VERSION: << parameters.clojure_version >>
     steps:
       - checkout
       - with_cache:
-          cache_version: << parameters.clojure_version >>
+          cache_version: "test_v1"
+          clojure_version: << parameters.clojure_version >>
           steps:
             - run:
                 name: Running tests
@@ -158,38 +157,38 @@ jobs:
             - store_test_results:
                 path: test-results
 
-  test_code_windows:
-    description: |
-      Run tests on MS-Windows using the system's JDK version and given
-      CLOJURE_VERSION.
-    executor: win/default
-    parameters:
-      clojure_version:
-        description: Version of Clojure to test against
-        type: string
-    steps:
-      - setup-windows
-      - run:
-          name: run tests
-          command: |
-            java -version; if(-not $?){exit 9}
-            bb test      ; if(-not $?){exit 9}
+  ## Commented out because windows tests are kinda broken right now.
+  # test_windows:
+  #   description: |
+  #     Run tests on MS-Windows using the system's JDK version and given
+  #     CLOJURE_VERSION.
+  #   executor: win/default
+  #   parameters:
+  #     clojure_version:
+  #       type: string
+  #   steps:
+  #     - setup-windows
+  #     - run:
+  #         name: run tests
+  #         command: |
+  #           java -version; if(-not $?){exit 9}
+  #           bb test      ; if(-not $?){exit 9}
 
 workflows:
   ci-test-matrix:
     jobs:
-      - test_code:
+      - test:
           matrix:
             parameters:
               # Clojure versions 1.7-1.9 are tested only against JDK8 because of
               # multiple incompatibilities of those versions with JDK9+.
-              clojure_version: ["1.7", "1.8", "1.9", "1.10", "1.11", "master"]
-              jdk_version: ["openjdk8"]
-      - test_code:
+              clojure_version: ["1.7", "1.8", "1.9", "1.10", "1.11", "1.12"]
+              jdk_version: ["jdk8"]
+      - test:
           matrix:
             parameters:
-              clojure_version: ["1.10", "1.11", "master"]
-              jdk_version: ["openjdk11", "openjdk17", "openjdk21"]
+              clojure_version: ["1.10", "1.11", "1.12"]
+              jdk_version: ["jdk11", "jdk17", "jdk21", "jdk22"]
       # - test_code_windows:
       #     name: Win, Java sys, Clj 1.11
       #     clojure_version: "1.11"
