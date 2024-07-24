@@ -3,7 +3,7 @@
              [babashka.process :as p]]
   :init (do (def clj-version
               "The clj version to use with lein tasks."
-              (or (first *command-line-args*) (System/getenv "VERSION") "1.11"))
+              (or (first *command-line-args*) (System/getenv "CLOJURE_VERSION") "1.11"))
             (def bump
               "The release BUMP field."
               (or (second *command-line-args*) (System/getenv "BUMP") "patch"))
@@ -13,12 +13,12 @@
               (str (or (fs/which "lein")
                        (throw (Exception. "Cannot find lein in PATH."))))))
 
-  *DEFAULTS* {:doc "[Clojure VERSION]: the VERSION env var or \"1.11\". [BUMP field]: the BUMP env var or \"patch\"."}
+  *DEFAULTS* {:doc "[CLOJURE_VERSION]: the CLOJURE_VERSION env var or \"1.11\". [BUMP field]: the BUMP env var or \"patch\"."}
 
   kaocha {:doc "Run the kaocha test runner with [kaocha ARGS...]."
           :task (apply shell lein "kaocha" *command-line-args*)}
 
-  test  {:doc "Run tests for [Clojure VERSION]."
+  test  {:doc "Run tests for [CLOJURE_VERSION]."
          :task
          ;; We use kaocha on Clojure 1.9+, but revert to lein's built in
          ;; runner with Clojure 1.7 and 1.8.
@@ -31,19 +31,19 @@
              (shell lein
                     "with-profile" (str "-user,+" clj-version ",+test,+junixsocket") "run" "-m" "kaocha.runner")))}
 
-  eastwood {:doc "Run eastwood for [Clojure VERSION]."
+  eastwood {:doc "Run eastwood for [CLOJURE_VERSION]."
             :task (shell lein "with-profile" (str "-user,+" clj-version ",+eastwood") "eastwood")}
 
-  cljfmt {:doc "Run cljfmt for [Clojure VERSION]."
+  cljfmt {:doc "Run cljfmt for [CLOJURE_VERSION]."
           :task (shell lein "with-profile" (str "-user,+" clj-version ",+cljfmt") "cljfmt" "check")}
 
-  kondo {:doc "Run clj-kondo for [Clojure VERSION]."
+  kondo {:doc "Run clj-kondo for [CLOJURE_VERSION]."
          :task (shell lein "with-profile" "+clj-kondo" "run" "-m" "clj-kondo.main" "--lint" "src")}
 
-  cloverage {:doc "Run cloverage for [Clojure VERSION]."
+  cloverage {:doc "Run cloverage for [CLOJURE_VERSION]."
              :task (shell lein "with-profile" (str "-user,+" clj-version ",+cloverage") "cloverage" "--codecov")}
 
-  check {:doc "Run all tests and linters for [Clojure VERSION]."
+  check {:doc "Run all tests and linters for [CLOJURE_VERSION]."
          ;; Roughly match what runs in CI using the current JVM check
          :task (doseq [task '[test eastwood kondo cljfmt cloverage]]
                  (println :running-task task)
@@ -53,10 +53,10 @@
                              "curl -fsSL https://raw.githubusercontent.com/cljdoc/cljdoc/master/script/verify-cljdoc-edn")
                     (p/shell "bash -s doc/cljdoc.edn"))
 
-  release  {:doc "Perform lein release tasks for [Clojure VERSION] and [BUMP field]. BUMP controls which field in the version string will be incremented in the *next* snapshot version. Typically this is either \"major\", \"minor\", or \"patch\"."
+  release  {:doc "Perform lein release tasks for [CLOJURE_VERSION] and [BUMP field]. BUMP controls which field in the version string will be incremented in the *next* snapshot version. Typically this is either \"major\", \"minor\", or \"patch\"."
             :tasks (shell lein "with-profile" (str "-user,+" clj-version) "release" bump)}
 
-  deploy  {:doc "Deploy to clojars for [Clojure VERSION]. Auth is controlled by the `clojars_username` and `clojars_password` env vars."
+  deploy  {:doc "Deploy to clojars for [CLOJURE_VERSION]. Auth is controlled by the `clojars_username` and `clojars_password` env vars."
            ;; Deploying requires the caller to set environment variables as
            ;; specified in project.clj to provide a login and password to the
            ;; artifact repository.

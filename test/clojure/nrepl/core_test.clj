@@ -30,6 +30,11 @@
    java.net.SocketException
    (nrepl.server Server)))
 
+(deftest version-sanity-check
+  (is (let [v (System/getenv "CLOJURE_VERSION")]
+        (println "Running on Clojure" (clojure-version) ", expected:" v)
+        (or (nil? v) (.startsWith ^String (clojure-version) v)))))
+
 (defmacro when-require [n & body]
   (let [nn (eval n)]
     (try (require nn)

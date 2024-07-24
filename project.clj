@@ -57,9 +57,10 @@
                     :source-paths ["src/spec"]}
              :1.11 {:dependencies [[org.clojure/clojure "1.11.3"]]
                     :source-paths ["src/spec"]}
-             :master {:repositories [["snapshots"
-                                      "https://oss.sonatype.org/content/repositories/snapshots"]]
-                      :dependencies [[org.clojure/clojure "1.12.0-master-SNAPSHOT"]]}
+             :1.12 {:dependencies [[org.clojure/clojure "LATEST"]]
+                    :source-paths ["src/spec"]}
+
+
 
              ;;; Maintenance profile
              ;;
