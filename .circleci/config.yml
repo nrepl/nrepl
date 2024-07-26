@@ -16,23 +16,23 @@ defaults: &defaults
 executors:
   jdk8:
     docker:
-      - image: clojure:temurin-8-lein-2.11.2-jammy
+      - image: clojure:temurin-8-lein-2.11.2-noble
     <<: *defaults
   jdk11:
     docker:
-      - image: clojure:temurin-11-lein-2.11.2-jammy
+      - image: clojure:temurin-11-lein-2.11.2-noble
     <<: *defaults
   jdk17:
     docker:
-      - image: clojure:temurin-17-lein-2.11.2-jammy
+      - image: clojure:temurin-17-lein-2.11.2-noble
     <<: *defaults
   jdk21:
     docker:
-      - image: clojure:temurin-21-lein-2.11.2-jammy
+      - image: clojure:temurin-21-lein-2.11.2-noble
     <<: *defaults
   jdk22:
     docker:
-      - image: clojure:temurin-22-lein-2.11.2-jammy
+      - image: clojure:temurin-22-lein-2.11.2-noble
     <<: *defaults
 
 # Runs a given set of steps, with some standard pre- and post-
