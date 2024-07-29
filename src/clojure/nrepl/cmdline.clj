@@ -4,12 +4,13 @@
   https://github.com/trptcolin/reply/"
   {:author "Chas Emerick"}
   (:require
-   [clojure.java.io :as io]
    [clojure.edn :as edn]
+   [clojure.java.io :as io]
    [clojure.string :as str]
+   [nrepl.ack :refer [send-ack]]
    [nrepl.config :as config]
    [nrepl.core :as nrepl]
-   [nrepl.ack :refer [send-ack]]
+   [nrepl.misc :refer [uuid]]
    [nrepl.server :as nrepl-server]
    [nrepl.socket :as socket]
    [nrepl.transport :as transport]
@@ -93,15 +94,23 @@ Exit:      Control+D or (exit) or (quit)"
                      err    print
                      out    print
                      value  println}}]
-  (let [client (nrepl/client transport Long/MAX_VALUE)]
+  (let [client (nrepl/client transport Long/MAX_VALUE)
+        awaiting (atom {})]
     (println (repl-intro))
-    ;; We take 50ms to listen to any greeting messages, and display the value
-    ;; in the `:out` slot.
     (threading/run-with @threading/transport-executor
       ;; Doesn't matter which executor we hijack here, just don't use `future`.
-      (->> (client)
-           (take-while #(nil? (:id %)))
-           (run! #(when-let [msg (:out %)] (print msg)))))
+      (doseq [res (client)]
+        (some-> (:out res) out)
+        (some-> (:err res) err)
+        (when-let [p (and (some #{:done "done"} (:status res))
+                          (get @awaiting (:id res)))]
+          (deliver p true))
+        (when (some-> ^String (:id res)
+                      (.startsWith "nrepl.cmdline-"))
+          (some-> (:value res) value))
+        (flush)))
+    ;; We take 50ms to listen to any greeting messages, and display the value
+    ;; in the `:out` slot.
     (Thread/sleep 50)
     (let [session (nrepl/client-session client)]
       (swap! running-repl assoc :transport transport)
@@ -116,12 +125,13 @@ Exit:      Control+D or (exit) or (quit)"
               ;; Make sure the metadata read from *in* is preserved when we feed
               ;; the form to nREPL.
               (let [code-str (binding [*print-meta* true]
-                               (pr-str input))]
-                (doseq [res (nrepl/message session {:op "eval" :code code-str})]
-                  (some-> (:value res) value)
-                  (some-> (:out res) out)
-                  (some-> (:err res) err)
+                               (pr-str input))
+                    id (str "nrepl.cmdline-" (uuid))]
+                (swap! awaiting assoc id (promise))
+                (doseq [res (nrepl/message session {:op "eval" :code code-str :id id})]
                   (when (:ns res) (set! *ns* (create-ns (symbol (:ns res))))))
+                @(get @awaiting id)
+                (swap! awaiting dissoc id)
                 (recur)))))))))
 
 (defn- run-repl
