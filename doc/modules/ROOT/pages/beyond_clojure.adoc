@@ -21,8 +21,6 @@ documentation which clients are known to work well with them.
 
 * https://gitlab.com/technomancy/ogion[Ogion] - an nREPL server for https://racket-lang.org/[Racket]
 
-* http://wiki.call-cc.org/eggref/5/nrepl[Chicken NREPL] - an nREPL server for https://call-cc.org/[Chicken Scheme]
-
 * https://github.com/sjl/cl-nrepl[cl-nrepl] - an nREPL server for Common Lisp
 
 * https://github.com/bodil/cljs-noderepl[cljs-noderepl] - an nREPL server for ClojureScript running on Node.js
