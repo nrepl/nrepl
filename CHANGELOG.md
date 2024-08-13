@@ -2,27 +2,29 @@
 
 ## master (unreleased)
 
+## 1.3.0 (2024-08-13)
+
 ### Changes
 
 * [#335](https://github.com/nrepl/nrepl/pull/335): Remove support for sideloading and `wrap-sideloader` middleware.
 * [#339](https://github.com/nrepl/nrepl/pull/339): Introduce custom REPL implementation instead `clojure.main/repl`.
-* [#341](https://github.com/nrepl/nrepl/pull/341): Make session middleware handle all dynamic bindings.
-* [#342](https://github.com/nrepl/nrepl/pull/342): Make the stack of the eval handler shorter.
+* [#341](https://github.com/nrepl/nrepl/pull/341): Make `session` middleware handle all dynamic bindings.
+* [#342](https://github.com/nrepl/nrepl/pull/342): Make the stack of the `eval` handler shorter. (this makes stacktraces easier to understand)
 * [#345](https://github.com/nrepl/nrepl/pull/345): Use customized executors for all asynchronous tasks.
-* [#347](https://github.com/nrepl/nrepl/pull/347): Refactor print middleware to have tidier stack and use Java classes instead of proxies.
-* [#356](https://github.com/nrepl/nrepl/pull/347): The built-in client now prints all output
+* [#347](https://github.com/nrepl/nrepl/pull/347): Refactor `print` middleware to have tidier stack and use Java classes instead of proxies.
 
 ### Bugs fixed
 
 * [#271](https://github.com/nrepl/nrepl/pull/271): Fix not being able to define dynamic variables from terminal REPL.
 * [#348](https://github.com/nrepl/nrepl/pull/348): Fail with helpful error if incorrect bencode is written through the transport.
+* [#356](https://github.com/nrepl/nrepl/pull/347): The built-in client now prints all output.
 
 ## 1.2.0 (2024-06-10)
 
 ### Changes
 
 * [#318](https://github.com/nrepl/nrepl/pull/318): Introduce custom JVMTI agent to restore `Thread.stop()` (needed by the `interrupt` op) on JDK20+.
-  - [#326](https://github.com/nrepl/nrepl/pull/326): Add explicit opt-out for libnrepl agent.
+  - [#326](https://github.com/nrepl/nrepl/pull/326): Add explicit opt-out for `libnrepl` agent.
 * [#323](https://github.com/nrepl/nrepl/pull/323): Rewrite `nrepl.bencode` implementation to be more performant and use Clojure 1.7 features.
 
 ### Bugs fixed
@@ -37,7 +39,7 @@
 
 ### Bugs fixed
 
-* [#299](https://github.com/nrepl/nrepl/pull/299): Fix ClassCastException on re-connect to Unix socket.
+* [#299](https://github.com/nrepl/nrepl/pull/299): Fix `ClassCastException` on re-connect to Unix socket.
 
 ## 1.1.1 (2024-02-20)
 

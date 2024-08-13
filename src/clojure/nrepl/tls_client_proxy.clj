@@ -3,7 +3,7 @@
   Can be used if your editor/IDE does not (yet) support TLS connections.
 
   Example usage:
-  $ clojure -Sdeps '{:aliases {:proxy {:deps {nrepl/nrepl {:mvn/version \"1.2.0\"}} :exec-fn nrepl.tls-client-proxy/start-tls-proxy :exec-args {:remote-host \"localhost\" :remote-port 4001 :bind 9001 :tls-keys-file \"client.keys\"}}}}' -T:proxy
+  $ clojure -Sdeps '{:aliases {:proxy {:deps {nrepl/nrepl {:mvn/version \"1.3.0\"}} :exec-fn nrepl.tls-client-proxy/start-tls-proxy :exec-args {:remote-host \"localhost\" :remote-port 4001 :bind 9001 :tls-keys-file \"client.keys\"}}}}' -T:proxy
 
   This will start a standalone program that will forward local TCP connections on 127.0.0.1:9001
   to the remote TLS TCP connection at 127.0.0.1:4001 using the key provided in the file `client.keys`."
