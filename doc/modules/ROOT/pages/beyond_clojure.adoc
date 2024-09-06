@@ -27,7 +27,7 @@ documentation which clients are known to work well with them.
 
 * https://github.com/vspinu/R-nREPL[R-nREPL] - an nREPL server for R
 
-* https://codeberg.org/sasanidas/nrepl-python[nrepl-python] - an nREPL server for https://www.python.org/[Python]
+* https://git.sr.ht/~ngraves/nrepl-python[nrepl-python] - an nREPL server for https://www.python.org/[Python]
 
 * https://github.com/clojure/clr.tools.nrepl[nREPL CLR] - an nREPL server for ClojureCLR. A 1:1 port of the reference Clojure nREPL. Unfortunately it has been abandoned a long time ago.
 
@@ -40,5 +40,7 @@ documentation which clients are known to work well with them.
 * https://github.com/viesti/nrepl-cljs-sci[nrepl-cljs-sci] - a native Node.js nREPL server implementation using https://github.com/borkdude/sci[SCI].
 
 * https://git.sr.ht/~abcdw/guile-ares-rs[guile-ares-rs] -  an Asynchronous Reliable Extensible Sleek RPC Server for Guile based on the nREPL protocol. 
+
+* https://git.sr.ht/~ngraves/nrepl-scilab[nrepl-scilab] - an nREPL server for https://www.scilab.org/[Scilab]
 
 As you can see nREPL has implementations for many popular Lisp dialects, but it's certainly not limited to Lisp dialects.
