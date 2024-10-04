@@ -30,9 +30,9 @@ executors:
     docker:
       - image: clojure:temurin-21-lein-2.11.2-noble
     <<: *defaults
-  jdk22:
+  jdk23:
     docker:
-      - image: clojure:temurin-22-lein-2.11.2-noble
+      - image: clojure:temurin-23-lein-2.11.2-noble
     <<: *defaults
 
 # Runs a given set of steps, with some standard pre- and post-
@@ -77,7 +77,7 @@ commands:
           name: Install babashka if not present
           command: |
             [ -e /usr/local/bin/bb ] && exit
-            # Install curl explicitly because jdk22 doesn't have it.
+            # Install curl explicitly because jdk23 doesn't have it.
             apt update && apt install -y curl
             bash <(curl -s https://raw.githubusercontent.com/borkdude/babashka/master/install) --dir ~
             mv ~/bb /usr/local/bin/bb
@@ -181,14 +181,14 @@ workflows:
           matrix:
             parameters:
               # Clojure versions 1.7-1.9 are tested only against JDK8 because of
-              # multiple incompatibilities of those versions with JDK9+.
+              # multiple incompatibilities of those versions with JDK11+.
               clojure_version: ["1.7", "1.8", "1.9", "1.10", "1.11", "1.12"]
-              jdk_version: ["jdk8"]
+              jdk_version: [jdk8]
       - test:
           matrix:
             parameters:
               clojure_version: ["1.10", "1.11", "1.12"]
-              jdk_version: ["jdk11", "jdk17", "jdk21", "jdk22"]
+              jdk_version: [jdk11, jdk17, jdk21, jdk23]
       # - test_code_windows:
       #     name: Win, Java sys, Clj 1.11
       #     clojure_version: "1.11"
