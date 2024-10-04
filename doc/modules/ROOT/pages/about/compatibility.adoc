@@ -9,7 +9,7 @@ nREPL officially targets LTS releases and the most recent rapid
 release version.  More generally speaking - we aim to support all
 Java releases that are currently officially supported by Oracle.
 
-This is currently Java 8, 11, 17, 21, and 22.
+This is currently Java 8, 11, 17, 21, and 23.
 
 == Clojure
 
