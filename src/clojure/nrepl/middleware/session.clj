@@ -174,8 +174,9 @@
   - thunk, a Runnable, the task itself
   - ack, another Runnable, ran to notify of successful execution of thunk"
   [session msg]
-  (fn [_id ^Runnable thunk ^Runnable ack]
-    (let [f #(let [bindings (add-per-message-bindings msg @session)]
+  (fn [_id ^Runnable thunk ^Runnable ack & [explicit-msg]]
+    (let [f #(let [bindings (add-per-message-bindings (or explicit-msg msg)
+                                                      @session)]
                (push-thread-bindings bindings)
                (try (.run thunk)
                     (some-> ack .run)
@@ -268,12 +269,19 @@
                         (reset-state)
                         running))))
      :close #(threading/interrupt-stop (:thread @state))
-     :exec (fn [exec-id r ack]
-             ;; Here, *msg* is bound by session middleware on the server/handler
-             ;; thread. We have to convey it to the executor thread.
-             (if *msg*
-               (.put ^LinkedBlockingQueue (:queue @state) [exec-id r ack *msg*])
-               (log "*msg* is unbound in a persistent session.")))}))
+     ;; :exec has two arities — one with explicit msg argument (proper) and one
+     ;; without (for compatibility). The compat arity takes message from *msg*
+     ;; dynvar which isn't correct if some middleware modifies the message
+     ;; before calling :exec (see https://github.com/nrepl/nrepl/issues/363).
+     :exec (fn
+             ([exec-id r ack]
+              ;; Here, *msg* is bound by session middleware on the server/handler
+              ;; thread. We have to convey it to the executor thread.
+              (if *msg*
+                (.put ^LinkedBlockingQueue (:queue @state) [exec-id r ack *msg*])
+                (log "*msg* is unbound in a persistent session.")))
+             ([exec-id r ack msg]
+              (.put ^LinkedBlockingQueue (:queue @state) [exec-id r ack msg])))}))
 
 (defn- register-session
   "Registers a new session containing the baseline bindings contained in the
