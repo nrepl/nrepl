@@ -142,7 +142,8 @@
           (t/send transport (response-for msg :status #{:error :no-code :done}))
           (exec id
                 (evaluator msg)
-                #(t/send transport (response-for msg :status :done))))
+                #(t/send transport (response-for msg :status :done))
+                msg))
         (h msg)))))
 
 (set-descriptor! #'interruptible-eval
