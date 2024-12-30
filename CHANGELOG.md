@@ -2,6 +2,8 @@
 
 ## master (unreleased)
 
+* [#364](https://github.com/nrepl/nrepl/pull/364): Retain explicitly added session values.
+
 ## 1.3.0 (2024-08-13)
 
 ### Changes

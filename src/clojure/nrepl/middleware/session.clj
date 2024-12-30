@@ -228,9 +228,11 @@
                (if (fn? r)
                  (r) ;; -1 stack frame this way.
                  (.run r))
-               ;; Remove vars that we don't want to save into the session.
-               (reset! session (dissoc (get-thread-bindings)
-                                       #'*msg* Compiler/LOADER))
+               (swap! session (fn [current]
+                                (-> (merge current (get-thread-bindings))
+                                    ;; Remove vars that we don't want to save
+                                    ;; into the session.
+                                    (dissoc #'*msg* Compiler/LOADER))))
                ;; We don't use try/finally here because if the eval throws an
                ;; exception, we're going to discard the whole thread. This makes
                ;; the stack cleaner.
