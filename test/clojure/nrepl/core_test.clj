@@ -4,6 +4,7 @@
    [clojure.java.io :as io]
    [clojure.main]
    [clojure.set :as set]
+   [clojure.stacktrace :refer [root-cause]]
    [clojure.test :refer [are deftest is testing use-fixtures]]
    [nrepl.core :as nrepl :refer [client
                                  client-session
@@ -595,22 +596,12 @@
   (Thread/sleep 100)
   (is (thrown? java.net.ConnectException (connect :port (:port *server*)))))
 
-;; wasn't added until Clojure 1.3.0
-(defn- root-cause
-  "Returns the initial cause of an exception or error by peeling off all of
-  its wrappers"
-  ^Throwable
-  [^Throwable t]
-  (loop [cause t]
-    (if-let [cause (.getCause cause)]
-      (recur cause)
-      cause)))
-
 (defn- disconnection-exception?
   [e]
   ;; thrown? should check for the root cause!
-  (and (instance? SocketException (root-cause e))
-       (re-matches #".*(lost.*connection|socket closed).*" (.getMessage (root-cause e)))))
+  (let [^Throwable cause (root-cause e)]
+    (and (instance? SocketException cause)
+         (re-matches #".*(lost.*connection|socket closed).*" (.getMessage cause)))))
 
 (deftest transports-fail-on-disconnects
   (testing "Ensure that transports fail ASAP when the server they're connected to goes down."
