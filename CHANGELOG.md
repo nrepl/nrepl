@@ -2,6 +2,8 @@
 
 ## master (unreleased)
 
+### Bugs fixed
+
 * [#363](https://github.com/nrepl/nrepl/pull/363): Pass the up-to-date `msg` to interruptible eval.
 * [#364](https://github.com/nrepl/nrepl/pull/364): Retain explicitly added session values.
 
