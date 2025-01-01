@@ -4,7 +4,7 @@ This file is _generated_ by #'nrepl.impl.docs/-main
 ////
 = Supported nREPL operations
 
-[small]#generated from a verbose 'describe' response (nREPL v1.3.0)#
+[small]#generated from a verbose 'describe' response (nREPL v1.3.1)#
 
 == Operations
 
