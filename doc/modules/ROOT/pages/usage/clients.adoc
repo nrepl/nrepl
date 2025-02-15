@@ -11,6 +11,7 @@ servers written in any language.
 
 * https://leiningen.org/grench.html[grenchman] (command-line nREPL client written in OCaml, works with non-Clojure servers)
 * https://github.com/trptcolin/reply/[REPL-y] (command-line client for nREPL)
+* https://github.com/bhauman/rebel-readline/tree/master/rebel-readline-nrepl[rebel-readline] (advanced command-line client for nREPL)
 * https://github.com/eraserhd/rep[rep] (A single-shot nREPL client designed for shell invocation.)
 * https://git.sr.ht/~technomancy/shevek/[shevek] (A command-line nREPL client written in https://fennel-lang.org/[Fennel], works with non-Clojure servers)
 * https://github.com/kanej/parle[Parle] (A command-line nREPL client using node.js written in ClojureScript)
