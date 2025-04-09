@@ -28,9 +28,15 @@
 ;; Parameters for Clone
 
 ;; `session` is optionally provided.
+;; `client-name`, is optionally provided
+;; `client-version`, is optionally provided
 ;; `new-session`, an UUID, is returned
 
 (s/def ::new-session ::uuid-str)
+
+(s/def ::client-name string?)
+
+(s/def ::client-version string?)
 
 ;; Parameters for Describe
 
@@ -121,7 +127,7 @@
 
 ;; Message map def
 
-(s/def ::message (s/keys :opt-un [::session ::id ::status
+(s/def ::message (s/keys :opt-un [::session ::id ::status ::client-name ::client-version
                                   ::new-session
                                   ::op ::code ::out ::value ::file ::line ::column
                                   ::ex ::root-ex ::ns

@@ -35,7 +35,8 @@ Required parameters::
 
 Optional parameters::
 * `:session` The ID of the session to be cloned; if not provided, a new session with default bindings is created, and mapped to the returned session ID.
-
+* `:client-name` The nREPL client name, e.g. "CIDER"
+* `:client-version` The nREPL client version, e.g. "1.17.0"
 
 Returns::
 * `:new-session` The ID of the new session.

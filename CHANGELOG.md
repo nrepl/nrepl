@@ -2,6 +2,11 @@
 
 ## master (unreleased)
 
+### Changes
+
+* [#363](https://github.com/nrepl/nrepl/pull/363): Pass the up-to-date `msg` to interruptible eval.
+
+
 ## 1.3.1 (2025-01-01)
 
 ### Bugs fixed
