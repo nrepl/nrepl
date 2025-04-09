@@ -374,7 +374,9 @@
                   :handles {"clone"
                             {:doc "Clones the current session, returning the ID of the newly-created session."
                              :requires {}
-                             :optional {"session" "The ID of the session to be cloned; if not provided, a new session with default bindings is created, and mapped to the returned session ID."}
+                             :optional {"session" "The ID of the session to be cloned; if not provided, a new session with default bindings is created, and mapped to the returned session ID."
+                                        "client-name" "The nREPL client name. e.g. \"CIDER\""
+                                        "client-version" "The nREPL client version. e.g. \"1.2.3\""}
                              :returns {"new-session" "The ID of the new session."}}
                             "interrupt"
                             {:doc "Attempts to interrupt some executing request. When interruption succeeds, the thread used for execution is killed, and a new thread spawned for the session. While the session middleware ensures that Clojure dynamic bindings are preserved, other ThreadLocals are not. Hence, when running code intimately tied to the current thread identity, it is best to avoid interruptions. On Java 20 and later, if `-Djdk.attach.allowAttachSelf` is enabled, the JVMTI agent will be used to attempt to stop the thread."

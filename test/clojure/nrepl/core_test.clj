@@ -743,6 +743,8 @@
                      last
                      :session)
         new-sess-id (->> (sess {:session sess-id
+                                :client-name "nREPL test"
+                                :client-version "1.2.3"
                                 :op "clone"})
                          last
                          :session)
