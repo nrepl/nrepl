@@ -4,8 +4,7 @@
 
 ### Changes
 
-* [#363](https://github.com/nrepl/nrepl/pull/363): Pass the up-to-date `msg` to interruptible eval.
-
+* [#370](https://github.com/nrepl/nrepl/pull/3370): accept `:client-name` and `:client-version` in `clone` op.
 
 ## 1.3.1 (2025-01-01)
 
