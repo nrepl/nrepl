@@ -99,7 +99,9 @@
    of an existing retained session, the id of which must be provided as a :clone
    kwarg.  Returns the new session's id."
   [client & {:keys [clone]}]
-  (let [resp (first (message client (merge {:op "clone"} (when clone {:session clone}))))]
+  (let [resp (first (message client (merge {:op "clone"}
+                                           (when clone
+                                             (select-keys clone [:client-name :client-version :session])))))]
     (or (:new-session resp)
         (throw (IllegalStateException.
                 (str "Could not open new session; :clone response: " resp))))))
