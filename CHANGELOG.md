@@ -4,7 +4,7 @@
 
 ### Changes
 
-* [#370](https://github.com/nrepl/nrepl/pull/3370): accept `:client-name` and `:client-version` in `clone` op.
+* [#370](https://github.com/nrepl/nrepl/pull/3370): Accept `:client-name` and `:client-version` in `clone` op.
 
 ## 1.3.1 (2025-01-01)
 
