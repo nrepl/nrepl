@@ -4,7 +4,8 @@
 
 ### Changes
 
-* [#370](https://github.com/nrepl/nrepl/pull/3370): Accept `:client-name` and `:client-version` in `clone` op.
+* [#370](https://github.com/nrepl/nrepl/pull/370): Accept `:client-name` and `:client-version` in `clone` op.
+* [#374](https://github.com/nrepl/nrepl/pull/374): Add support for dynamic var defaults.
 
 ## 1.3.1 (2025-01-01)
 
