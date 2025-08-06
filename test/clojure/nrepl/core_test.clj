@@ -85,20 +85,23 @@
 
 (use-fixtures :each repl-server-fixture)
 
+(defmacro with-repl-server [& body]
+  `(with-open [^nrepl.transport.FnTransport
+               transport# (connect :port (:port *server*)
+                                   :transport-fn *transport-fn*)]
+     (let [~'transport transport#
+           ~'client (client transport# Long/MAX_VALUE)
+           ~'session (client-session ~'client)
+           ~'timeout-client (client transport# 1000)
+           ~'timeout-session (client-session ~'timeout-client)
+           ~'repl-eval #(message % {:op "eval" :code %2})
+           ~'repl-values (comp response-values ~'repl-eval)]
+       ~@body)))
+
 (defmacro def-repl-test
   [name & body]
   `(deftest ~name
-     (with-open [^nrepl.transport.FnTransport
-                 transport# (connect :port (:port *server*)
-                                     :transport-fn *transport-fn*)]
-       (let [~'transport transport#
-             ~'client (client transport# Long/MAX_VALUE)
-             ~'session (client-session ~'client)
-             ~'timeout-client (client transport# 1000)
-             ~'timeout-session (client-session ~'timeout-client)
-             ~'repl-eval #(message % {:op "eval" :code %2})
-             ~'repl-values (comp response-values ~'repl-eval)]
-         ~@body))))
+     (with-repl-server ~@body)))
 
 (defn- strict-transport? []
   ;; TODO: add transit here.

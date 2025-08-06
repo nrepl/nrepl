@@ -3,6 +3,7 @@
   {:author "Chas Emerick"}
   (:require
    clojure.main
+   [nrepl.config :refer [config]]
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.interruptible-eval :refer [*msg*]]
    [nrepl.middleware.print :as print]
@@ -97,6 +98,25 @@
     {:input-queue input-queue
      :stdin-reader reader}))
 
+(let [state (atom {})]
+  (defn- dynvar-defaults-from-config []
+    ;; Use simple one-value cache if config hasn't changed (config can currently
+    ;; only change in tests).
+    (second
+     (if (identical? (first @state) config)
+       @state
+       (let [m (when-some [dynvars-map (:dynamic-vars config)]
+                 (if-not (map? dynvars-map)
+                   (log ":dynamic-vars should be a map")
+                   (reduce-kv (fn [m k default]
+                                (let [var (try (resolve k) (catch Exception _))]
+                                  (if (var? var)
+                                    (assoc m var default)
+                                    (do (log "Could not resolve var:" (str k))
+                                        m))))
+                              {} dynvars-map)))]
+         (reset! state [config m]))))))
+
 (defn- gather-initial-bindings
   "Return a map of dynamic vars that have to be establihed for the underlying
   `interruptible-eval` middleware. This should be called when creating a session
@@ -139,6 +159,9 @@
     ;; Bindings required for other nREPL middleware to work.
     (reduce conj! m print/default-bindings)
     (reduce conj! m caught/default-bindings)
+
+    ;; Dynamic var defaults specified in the server config file.
+    (reduce conj! m (dynvar-defaults-from-config))
 
     (persistent! m)))
 

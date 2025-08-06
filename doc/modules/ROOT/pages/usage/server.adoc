@@ -409,3 +409,22 @@ And this is an example of a local config file:
  :handler      some.ns/awesome-handler
  :transport    nrepl.transport/bencode}
 ----
+
+=== Dynamic var defaults
+
+You can use the server configuration file (either project-local or system-wide)
+to specify the default values for any dynamic variable whenever a new client is
+connected (note that the variable's namespace has to be already loaded at that
+point). This serves two important purposes:
+
+- Gives a starting value to the dynamic variable.
+- Makes it rebindable thread-locally via `set!`.
+
+For example, you can use this feature to enable reflection warnings in all your
+local projects by putting this into your global config:
+
+..nrepl/nrepl.edn
+[source,clojure]
+----
+{:dynamic-vars {clojure.core/*warn-on-reflection* true}}
+----
