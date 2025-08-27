@@ -92,4 +92,5 @@
                                     :ignored-faults {:non-dynamic-earmuffs {nrepl.middleware.load-file true}
                                                      :unused-ret-vals {nrepl.util.completion-test true
                                                                        nrepl.bencode true}
+                                                     :deprecations {nrepl.helpers true}
                                                      :reflection {nrepl.socket.dynamic true}}}}]})
