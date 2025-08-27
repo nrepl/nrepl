@@ -66,3 +66,13 @@
                                        :file-path "/path/to/source.clj"
                                        :file-name "source.clj"}))
                       :ns))))
+
+(def-repl-test load-file-huge-file
+  (let [very-long-code (clojure.string/join "\n" (repeat 3000 "(+ 1 2 3 4 5 6 7 8 9 0)"))]
+    (is (< 65536 (count very-long-code)))
+    (is (= [45] (nrepl/response-values
+                 (nrepl/message session
+                                {:op "load-file"
+                                 :file very-long-code
+                                 :file-path "/path/to/source.clj"
+                                 :file-name "source.clj"}))))))

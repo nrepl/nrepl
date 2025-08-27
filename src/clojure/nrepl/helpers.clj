@@ -41,4 +41,5 @@
                           abspath)
                         (-> abspath File. .getName))))
   ([code file-path file-name]
+   #_{:clj-kondo/ignore [:deprecated-var]}
    (load-file/load-file-code code file-path file-name)))

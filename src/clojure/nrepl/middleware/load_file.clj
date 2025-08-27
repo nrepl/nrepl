@@ -5,53 +5,18 @@
    [nrepl.middleware.caught :as caught]
    [nrepl.middleware.interruptible-eval :as eval]
    [nrepl.middleware.print :as print])
-  (:import nrepl.transport.Transport))
+  (:import clojure.lang.Compiler
+           java.io.StringReader
+           nrepl.transport.Transport))
 
-;; need to hold file contents "out of band" so as to avoid JVM method
-;; size limitations (cannot eval an expression larger than some size
-;; [64k?]), so the naive approach of just interpolating file contents
-;; into an expression to be evaluated doesn't work
-;; see http://code.google.com/p/counterclockwise/issues/detail?id=429
-;; and http://groups.google.com/group/clojure/browse_thread/thread/f54044da06b9939f
-(defonce ^{:private true
-           :doc "An atom that temporarily holds the contents of files to
-be loaded."} file-contents (atom {}))
+;; Be vary of JVM method size limit (can't eval an expression larger than 64KB).
+;; http://groups.google.com/group/clojure/browse_thread/thread/f54044da06b9939f
 
-(defn- load-large-file-code
-  "A variant of `load-file-code` that returns an
-   expression that will only work if evaluated within the same process
-   where it was called.  Here to work around the JVM method size limit
-   so that (by default, for those tools using the load-file middleware)
-   loading files of any size will work when the nREPL server is running
-   remotely or locally."
-  [file file-path file-name]
-  ;; mini TTL impl so that any code orphaned by errors that occur
-  ;; between here and the evaluation of the Compiler/load expression
-  ;; below are cleaned up on subsequent loads
-  (let [t (System/currentTimeMillis)
-        file-key ^{:t t} [file-path (gensym)]]
-    (swap! file-contents
-           (fn [file-contents]
-             (let [expired-keys
-                   (filter
-                    (comp #(and %
-                                (< 10000 (- (System/currentTimeMillis) %)))
-                          :t meta)
-                    (keys file-contents))]
-               (assoc (apply dissoc file-contents expired-keys)
-                      file-key file))))
-    (binding [*print-length* nil
-              *print-level* nil]
-      (pr-str `(try
-                 (clojure.lang.Compiler/load
-                  (java.io.StringReader. (@@(var file-contents) '~file-key))
-                  ~file-path
-                  ~file-name)
-                 (finally
-                   (swap! @(var file-contents) dissoc '~file-key)))))))
+(defn ^{:dynamic true, :deprecated "1.4.0"}
+  load-file-code
+  "You should use the approach implemented in `load-file-eval-msg` instead.
 
-(defn ^{:dynamic true} load-file-code
-  "Given the contents of a file, its _source-path-relative_ path,
+   Given the contents of a file, its _source-path-relative_ path,
    and its filename, returns a string of code containing a single
    expression that, when evaluated, will load those contents with
    appropriate filename references and line numbers in metadata, etc.
@@ -68,6 +33,36 @@ be loaded."} file-contents (atom {}))
                   (pr-str item)))
               [file file-path file-name])))
 
+(defn- load-file-contents [[file file-path file-name]]
+  (Compiler/load (StringReader. file) file-path file-name))
+
+#_{:clj-kondo/ignore [:deprecated-var]}
+(defn- load-file-eval-msg
+  [{:keys [file file-path file-name ^Transport transport] :as msg}]
+  (let [transport (reify Transport
+                    (recv [_this] (.recv transport))
+                    (recv [_this timeout] (.recv transport timeout))
+                    (send [this resp]
+                      ;; *ns* is always 'user' after loading a file, so
+                      ;; *remove it to avoid confusing tools that assume any
+                      ;; *:ns always reports *ns*
+                      (.send transport (dissoc resp :ns))
+                      this))
+        eval-msg (-> (dissoc msg :file :file-name :file-path)
+                     (assoc :op "eval", :transport transport))]
+    (if (thread-bound? #'load-file-code)
+      ;; This approach is left for backward compatibility
+      (assoc eval-msg :code (load-file-code file file-path file-name))
+      ;; This is a bit of hack to make `eval` mw just call the code we want.
+      ;; `:code` receives a tuple of the required arguments, wrapped in another
+      ;; vector on top (so `eval` doesn't try to read anything and just use it
+      ;; as input to `:eval` function), and we also provide a custom `:eval` to
+      ;; delegate loading to `Compiler/load`. This approach sidesteps the method
+      ;; size issue.
+      (assoc eval-msg
+             :code [[file file-path file-name]]
+             :eval `load-file-contents))))
+
 (defn wrap-load-file
   "Middleware that evaluates a file's contents, as per load-file,
    but with all data supplied in the sent message (i.e. safe for use
@@ -76,24 +71,10 @@ be loaded."} file-contents (atom {}))
    This middleware depends on the availability of an :op \"eval\"
    middleware below it (such as interruptible-eval)."
   [h]
-  (fn [{:keys [op file file-name file-path ^Transport transport] :as msg}]
+  (fn [{:keys [op] :as msg}]
     (if (not= op "load-file")
       (h msg)
-      (h (assoc (dissoc msg :file :file-name :file-path)
-                :op "eval"
-                :code ((if (thread-bound? #'load-file-code)
-                         load-file-code
-                         load-large-file-code)
-                       file file-path file-name)
-                :transport (reify Transport
-                             (recv [_this] (.recv transport))
-                             (recv [_this timeout] (.recv transport timeout))
-                             (send [this resp]
-                               ;; *ns* is always 'user' after loading a file, so
-                               ;; *remove it to avoid confusing tools that assume any
-                               ;; *:ns always reports *ns*
-                               (.send transport (dissoc resp :ns))
-                               this)))))))
+      (h (load-file-eval-msg msg)))))
 
 (set-descriptor! #'wrap-load-file
                  {:requires #{#'caught/wrap-caught #'print/wrap-print}
@@ -106,8 +87,5 @@ be loaded."} file-contents (atom {}))
                                               {"file-path" "Source-path-relative path of the source file, e.g. clojure/java/io.clj"
                                                "file-name" "Name of source file, e.g. io.clj"})
                              :returns (-> (meta #'eval/interruptible-eval)
-                                          ::middleware/descriptor
-                                          :handles
-                                          (get "eval")
-                                          :returns
+                                          (get-in [::middleware/descriptor :handles "eval" :returns])
                                           (dissoc "ns"))}}})
