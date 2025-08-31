@@ -10,7 +10,7 @@
    nrepl.middleware.load-file
    nrepl.middleware.lookup
    nrepl.middleware.session
-   [nrepl.misc :refer [log log-exceptions response-for returning]]
+   [nrepl.misc :refer [log log-exceptions response-for]]
    [nrepl.socket :as socket :refer [inet-socket unix-server-socket]]
    [nrepl.tls :as tls]
    [nrepl.transport :as t]
@@ -92,18 +92,18 @@
 (defn stop-server
   "Stops a server started via `start-server`."
   [{:keys [open-transports ^java.io.Closeable server-socket] :as server}]
-  (returning server
-    (.close server-socket)
-    (swap! open-transports
-           #(reduce
-             (fn [s t]
-               ;; should always be true for the socket server...
-               (if (instance? java.io.Closeable t)
-                 (do
-                   (safe-close t)
-                   (disj s t))
-                 s))
-             % %))))
+  (.close server-socket)
+  (swap! open-transports
+         #(reduce
+           (fn [s t]
+             ;; should always be true for the socket server...
+             (if (instance? java.io.Closeable t)
+               (do
+                 (safe-close t)
+                 (disj s t))
+               s))
+           % %))
+  server)
 
 (defn unknown-op
   "Sends an :unknown-op :error for the given message."
