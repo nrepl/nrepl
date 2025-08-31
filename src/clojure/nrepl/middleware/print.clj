@@ -34,12 +34,6 @@
   limit will be used if not set."
   nil)
 
-(def default-bindings
-  {#'*print-fn* *print-fn*
-   #'*stream?* *stream?*
-   #'*buffer-size* *buffer-size*
-   #'*quota* *quota*})
-
 (defn- bound-configuration
   "Returns a map, suitable for merging into responses handled by this middleware,
   of the currently-bound dynamic vars used for configuration."
@@ -195,9 +189,11 @@
                   (booleanize-bencode-val ::stream?))]
       (handler (assoc msg :transport (printing-transport msg))))))
 
-(set-descriptor! #'wrap-print {:requires #{}
+(set-descriptor! #'wrap-print {:requires #{"clone"}
                                :expects #{}
-                               :handles {}})
+                               :handles {}
+                               :session-dynvars #{#'*print-fn* #'*stream?*
+                                                  #'*buffer-size* #'*quota*}})
 
 (def wrap-print-optional-arguments
   {"nrepl.middleware.print/print" "A fully-qualified symbol naming a var whose function to use for printing. Must point to a function with signature [value writer options]."

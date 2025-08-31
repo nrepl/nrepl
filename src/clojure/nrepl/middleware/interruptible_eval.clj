@@ -147,7 +147,7 @@
         (h msg)))))
 
 (set-descriptor! #'interruptible-eval
-                 {:requires #{"clone" "close" #'caught/wrap-caught  #'print/wrap-print}
+                 {:requires #{"clone" "close" #'caught/wrap-caught #'print/wrap-print}
                   :expects #{}
                   :handles {"eval"
                             {:doc "Evaluates code. Note that unlike regular stream-based Clojure REPLs, nREPL's `\"eval\"` short-circuits on first read error and will not try to read and execute the remaining code in the message."

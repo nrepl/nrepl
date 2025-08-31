@@ -7,7 +7,6 @@
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.interruptible-eval :refer [*msg*]]
    [nrepl.middleware.print :as print]
-   [nrepl.middleware.caught :as caught]
    [nrepl.misc :as misc :refer [uuid response-for log]]
    [nrepl.transport :as t]
    [nrepl.util.classloader :as classloader]
@@ -18,7 +17,7 @@
    (java.util.concurrent Executors ExecutorService LinkedBlockingQueue)
    (nrepl SessionThread)))
 
-(def ^{:private true} sessions (atom {}))
+(def ^:private sessions (atom {}))
 
 (defn close-all-sessions!
   "Use this fn to manually shut down all sessions. Since each new session spanws
@@ -38,7 +37,7 @@
 ;; depending upon the expectations of the client/user.  I'm not sure at the moment
 ;; how best to make it configurable though...
 
-(def ^{:dynamic true :private true} *skipping-eol* false)
+(def ^:dynamic ^:private *skipping-eol* false)
 
 (def ephemeral-executor
   "Executor for running eval requests in ephemeral sessions."
@@ -157,8 +156,7 @@
     (reduce conj! m (get-thread-bindings))
 
     ;; Bindings required for other nREPL middleware to work.
-    (reduce conj! m print/default-bindings)
-    (reduce conj! m caught/default-bindings)
+    (reduce (fn [m v] (assoc! m v @v)) m @@#'nrepl.middleware/per-session-dynvars)
 
     ;; Dynamic var defaults specified in the server config file.
     (reduce conj! m (dynvar-defaults-from-config))
