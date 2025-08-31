@@ -59,4 +59,5 @@
                              :requires {"sym" "The symbol to lookup."}
                              :optional {"ns" "The namespace in which we want to do lookup. Defaults to `*ns*`."
                                         "lookup-fn" "The fully qualified name of a lookup function to use instead of the default one (e.g. `my.ns/lookup`)."}
-                             :returns {"info" "A map of the symbol's info."}}}})
+                             :returns {"info" "A map of the symbol's info."}}}
+                  :session-dynvars #{#'*lookup-fn*}})

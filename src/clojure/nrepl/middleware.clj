@@ -6,6 +6,14 @@
    [nrepl.transport :as transport]
    [nrepl.version :as version]))
 
+;; Registering dynvars that are used to configure middleware. This lives here
+;; and not in nrepl.middleware.session to avoid circular dependencies.
+
+(def ^:private per-session-dynvars
+  "Set of dynamic variables that always have to be established for a new session
+  to their initial values."
+  (atom #{}))
+
 (defn- var-name
   [^clojure.lang.Var v]
   (str (.ns v) \/ (.sym v)))
@@ -18,13 +26,16 @@
          (assoc msg :descriptors (merge descriptor-map descriptors))))))
 
 (defn set-descriptor!
-  "Sets the given [descriptor] map as the ::descriptor metadata on
-   the provided [middleware-var], after assoc'ing in the var's
-   fully-qualified name as the descriptor's \"implemented-by\" value."
+  "Sets the given [descriptor] map as the ::descriptor metadata on the
+  provided [middleware-var], after assoc'ing in the var's fully-qualified name
+  as the descriptor's \"implemented-by\" value. The value of `:session-dynvars`
+  should be a set of dynamic variables that the middleware expects to be made
+  rebindable for each new session."
   [middleware-var descriptor]
   (let [descriptor (-> descriptor
                        (assoc :implemented-by (-> middleware-var var-name symbol))
                        (update-in [:expects] (fnil conj #{}) "describe"))]
+    (swap! per-session-dynvars into (:session-dynvars descriptor))
     (alter-meta! middleware-var assoc ::descriptor descriptor)
     (alter-var-root middleware-var #(comp (partial wrap-conj-descriptor
                                                    {middleware-var descriptor}) %))))

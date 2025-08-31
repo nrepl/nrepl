@@ -19,9 +19,6 @@
   `*err*`). Takes one argument, a `java.lang.Throwable`."
   clojure.main/repl-caught)
 
-(def default-bindings
-  {#'*caught-fn* *caught-fn*})
-
 (defn- bound-configuration
   []
   {::caught-fn *caught-fn*})
@@ -96,9 +93,10 @@
                  (update ::print? #(if (= [] %) false (boolean %))))]
       (handler (assoc msg :transport (caught-transport msg opts))))))
 
-(set-descriptor! #'wrap-caught {:requires #{#'print/wrap-print}
+(set-descriptor! #'wrap-caught {:requires #{"clone" #'print/wrap-print}
                                 :expects #{}
-                                :handles {}})
+                                :handles {}
+                                :session-dynvars #{#'*caught-fn*}})
 
 (def wrap-caught-optional-arguments
   {"nrepl.middleware.caught/caught" "A fully-qualified symbol naming a var whose function to use to convey interactive errors. Must point to a function that takes a `java.lang.Throwable` as its sole argument."
