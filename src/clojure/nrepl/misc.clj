@@ -22,16 +22,10 @@
        (log ex#)
        (throw ex#))))
 
-(defmacro noisy-future
-  "Executes body in a future, logging any exceptions that make it to the
-  top level."
-  {:deprecated "1.3"}
-  [& body]
-  `(future (log-exceptions ~@body)))
-
 (defmacro returning
   "Executes `body`, returning `x`."
-  {:style/indent 1}
+  {:deprecated "1.4"
+   :style/indent 1}
   [x & body]
   `(let [x# ~x] ~@body x#))
 
