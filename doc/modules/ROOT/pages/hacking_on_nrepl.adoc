@@ -131,7 +131,7 @@ $ bb kaocha --watch --skip-meta :slow
 
 as it will re-run tests on changes, but also skip a handful of slower tests.
 
-=== Running test for Clojure 1.7 and 1.8
+=== Running test for Clojure 1.8
 
 Kaocha only supports Clojure 1.9 and up. For earlier versions, we can still use
 Leiningen's test runner. To run the tests only for a specific version of Clojure,
@@ -142,7 +142,7 @@ use a command like this:
 $ lein with-profile 1.8 test
 ----
 
-To run tests for all Clojure versions from 1.7 to latest configured.
+To run tests for all Clojure versions from 1.8 to latest configured.
 
 [source,shell]
 ----

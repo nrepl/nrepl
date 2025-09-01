@@ -4,6 +4,7 @@
 
 ### Changes
 
+* [#378](https://github.com/nrepl/nrepl/pull/378): **BREAKING:** Raise minimal supported Clojure version to 1.8.
 * [#370](https://github.com/nrepl/nrepl/pull/370): Accept `:client-name` and `:client-version` in `clone` op.
 * [#374](https://github.com/nrepl/nrepl/pull/374): Add support for dynamic var defaults.
 * [#375](https://github.com/nrepl/nrepl/pull/375): Refactor and simplify load-file middleware.

@@ -180,9 +180,9 @@ workflows:
       - test:
           matrix:
             parameters:
-              # Clojure versions 1.7-1.9 are tested only against JDK8 because of
+              # Clojure versions 1.8-1.9 are tested only against JDK8 because of
               # multiple incompatibilities of those versions with JDK11+.
-              clojure_version: ["1.7", "1.8", "1.9", "1.10", "1.11", "1.12"]
+              clojure_version: ["1.8", "1.9", "1.10", "1.11", "1.12"]
               jdk_version: [jdk8]
       - test:
           matrix:

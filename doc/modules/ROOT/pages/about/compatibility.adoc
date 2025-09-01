@@ -9,11 +9,11 @@ nREPL officially targets LTS releases and the most recent rapid
 release version.  More generally speaking - we aim to support all
 Java releases that are currently officially supported by Oracle.
 
-This is currently Java 8, 11, 17, 21, and 23.
+This is currently Java 8, 11, 17, 21, and 24.
 
 == Clojure
 
-nREPL targets Clojure 1.7+. As Clojure doesn't have the concept of supported releases
+nREPL targets Clojure 1.8+. As Clojure doesn't have the concept of supported releases
 we have to get a bit creative to determine the minimum version to target.
 
 The minimum required Clojure version is currently derived using data
@@ -27,9 +27,7 @@ big nREPL improvements.
 
 == Compatibility Matrix
 
-Below you can find the official compatibility matrix for nREPL. For a
-very long time the project targeted JDK 5 and Clojure 1.2, but the
-requirements were bumped in nREPL 0.4.
+Below you can find the official compatibility matrix for nREPL.
 
 .Compatibility Matrix
 |===
@@ -43,13 +41,17 @@ requirements were bumped in nREPL 0.4.
 | 8
 | 1.7
 
-| 1.0+
+| 1.0.x - 1.3.x
 | 8
 | 1.7
 
+| 1.4+
+| 8
+| 1.8
+
 |===
 
-== Java 20+ compatibility
+== Java 21+ compatibility
 
 In general, nREPL behavior does not depend on the versions of Java and Clojure.
 As of now, there is one exception to this rule, see

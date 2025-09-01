@@ -56,6 +56,6 @@ required early in your projects (e.g. in `user.clj`).
 If you experience problems running `lein repl` you have to make sure that:
 
 * You're not using Leiningen 2.8.2 (a bug there rendered the `repl` task unusable - it was addressed in 2.8.3).
-* Your project is using Clojure 1.7+.
+* Your project is using Clojure 1.8+.
 * Your project is using Java 8+.
 * You're using the latest versions of nREPL middleware.

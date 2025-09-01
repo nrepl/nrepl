@@ -2,7 +2,7 @@
 
 [NOTE]
 ====
-nREPL is compatible with Clojure 1.7.0+ and Java 8+.
+nREPL is compatible with Clojure 1.8+ and Java 8+.
 ====
 
 nREPL is a library (as opposed to it being an application), so it's
@@ -67,7 +67,7 @@ Or, add this to your Maven project's `pom.xml`:
 [[jvmti]]
 == Enable libnrepl JVMTI agent
 
-Starting with Java 20, the previously deprecated
+Starting with Java 21, the previously deprecated
 https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Thread.html#stop()[Thread.stop]
 method has been
 https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/doc-files/threadPrimitiveDeprecation.html[disabled].
@@ -85,7 +85,7 @@ nREPL ships with prebuilt JVMTI agent binaries for the following platforms:
 - MacOS: *x64/arm64* (universal binary)
 
 NOTE: Other platforms and architectures not in this list are still supported by
-nREPL. Only the thread stopping capability and only on Java 20+ will not work
+nREPL. Only the thread stopping capability and only on Java 21+ will not work
 there, the rest of nREPL functionality will still work as always.
 
 For the JVMTI agent to be able to attach to the running process, the JVM has to
@@ -99,7 +99,7 @@ explicitly to your REPL command.
   `project.clj`.
 
 If `-Djdk.attach.allowAttachSelf` is not enabled, nREPL will not try to load the
-native agent and will not try to stop threads on Java 20 and newer if the
+native agent and will not try to stop threads on Java 21 and newer if the
 regular `Thread.interrupt()` does not succeed.
 
 You can explicitly disable the JVMTI agent so that it does not load even with
@@ -111,7 +111,7 @@ xref:usage/server.adoc#server-configuration[nREPL config]:
  :enable-jvmti-agent false
 ----
 
-NOTE: Prior to Java 20, nREPL will not try to load libnrepl native agent
+NOTE: Prior to Java 21, nREPL will not try to load libnrepl native agent
 regardless of the state of `-Djdk.attach.allowAttachSelf` flag or
 `:enable-jvmti-agent` configuration option, and will use `Thread.stop()` to
 interrupt the evaluating thread.
