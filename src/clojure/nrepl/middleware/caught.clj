@@ -83,7 +83,8 @@
   [handler]
   (fn [msg]
     (let [caught-var (resolve-caught msg)
-          msg (assoc msg ::caught-fn (or caught-var *caught-fn*))
+          msg (assoc msg ::caught-fn (or caught-var
+                                         (misc/resolve-in-session msg *caught-fn*)))
           opts (cond-> (select-keys msg configuration-keys)
                  ;; no caught-fn provided in the request, so defer to the response
                  (nil? caught-var)

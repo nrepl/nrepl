@@ -30,7 +30,8 @@
   (try
     (let [ns (if ns (symbol ns) (symbol (str (@session #'*ns*))))
           sym (symbol sym)
-          lookup-fn (or (and lookup-fn (misc/requiring-resolve (symbol lookup-fn))) *lookup-fn*)]
+          lookup-fn (or (some-> lookup-fn symbol misc/requiring-resolve)
+                        (misc/resolve-in-session msg *lookup-fn*))]
       (response-for msg {:status :done :info (lookup-fn ns sym)}))
     (catch Exception _e
       (if (nil? ns)

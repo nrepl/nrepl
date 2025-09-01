@@ -34,7 +34,8 @@
 (defn completion-reply
   [{:keys [session prefix ns complete-fn options] :as msg}]
   (let [ns (if ns (symbol ns) (symbol (str (@session #'*ns*))))
-        completion-fn (or (and complete-fn (misc/requiring-resolve (symbol complete-fn))) *complete-fn*)]
+        completion-fn (or (some-> complete-fn symbol misc/requiring-resolve)
+                          (misc/resolve-in-session msg *complete-fn*))]
     (try
       (response-for msg {:status :done :completions (completion-fn prefix ns (parse-options options))})
       (catch Exception _e
