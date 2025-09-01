@@ -60,14 +60,15 @@
 (def ^File project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
 
 (def ^:dynamic ^nrepl.server.Server  *server* nil)
-(def ^{:dynamic true} *transport-fn* nil)
+(def ^:dynamic *transport-fn* nil)
+(def ^:dynamic *sessions-to-close*)
 
 (defn start-server-for-transport-fn
   [transport-fn f]
   (with-open [^Server server (server/start-server :transport-fn transport-fn)]
     (binding [*server* server
               *transport-fn* transport-fn]
-      (testing (str (-> transport-fn meta :name) " transport")
+      (testing (format "transport:%s -" (-> transport-fn meta :name))
         (f))
       (set! *print-length* nil)
       (set! *print-level* nil))))
@@ -80,10 +81,16 @@
    runs the test against that server, then cleans up all sessions."
   [f]
   (doseq [transport-fn transport-fns]
-    (start-server-for-transport-fn transport-fn f)
-    (session/close-all-sessions!)))
+    (binding [*sessions-to-close* #{}]
+      (start-server-for-transport-fn transport-fn f)
+      (run! session/close-session *sessions-to-close*))))
 
 (use-fixtures :each repl-server-fixture)
+
+(defn closeable-session [client]
+  (let [session (client-session client)]
+    (set! *sessions-to-close* (conj *sessions-to-close* session))
+    session))
 
 (defmacro with-repl-server [& body]
   `(with-open [^nrepl.transport.FnTransport
@@ -91,9 +98,9 @@
                                    :transport-fn *transport-fn*)]
      (let [~'transport transport#
            ~'client (client transport# Long/MAX_VALUE)
-           ~'session (client-session ~'client)
+           ~'session (closeable-session ~'client)
            ~'timeout-client (client transport# 1000)
-           ~'timeout-session (client-session ~'timeout-client)
+           ~'timeout-session (closeable-session ~'timeout-client)
            ~'repl-eval #(message % {:op "eval" :code %2})
            ~'repl-values (comp response-values ~'repl-eval)]
        ~@body)))

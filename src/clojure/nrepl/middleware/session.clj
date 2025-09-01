@@ -19,7 +19,7 @@
 
 (def ^:private sessions (atom {}))
 
-(defn close-all-sessions!
+(defn ^{:deprecated "1.4.0"} close-all-sessions!
   "Use this fn to manually shut down all sessions. Since each new session spanws
    a new thread, and sessions need to be otherwise explicitly closed, we can
    accumulate too many active sessions for the JVM. This occurs when we are
@@ -335,13 +335,18 @@
                            :session session-id})
         (t/send transport (response-for msg :status #{:done}))))))
 
-(defn- close-session
-  "Drops the session associated with the given message."
-  [{:keys [session transport] :as msg}]
+(defn close-session
+  "Close the given session."
+  [session]
   (let [{:keys [close] session-id :id} (meta session)]
     (when close (close))
-    (swap! sessions dissoc session-id)
-    (t/send transport (response-for msg :status #{:done :session-closed}))))
+    (swap! sessions dissoc session-id)))
+
+(defn- handle-session-close
+  "Close the session associated with the given message and notify the user."
+  [{:keys [session transport] :as msg}]
+  (close-session session)
+  (t/send transport (response-for msg :status #{:done :session-closed})))
 
 (defn session
   "Session middleware.  Returns a handler which supports these :op-erations:
@@ -378,7 +383,7 @@
           (case op
             "clone" (register-session msg)
             "interrupt" (interrupt-session msg)
-            "close" (close-session msg)
+            "close" (handle-session-close msg)
             "ls-sessions" (t/send transport (response-for msg :status :done
                                                           :sessions (or (keys @sessions) [])))
             (binding [*msg* msg]
