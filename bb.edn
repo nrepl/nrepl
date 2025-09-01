@@ -21,8 +21,8 @@
   test  {:doc "Run tests for [CLOJURE_VERSION]."
          :task
          ;; We use kaocha on Clojure 1.9+, but revert to lein's built in
-         ;; runner with Clojure 1.7 and 1.8.
-         (if (#{"1.7" "1.8"} clj-version)
+         ;; runner with Clojure 1.8.
+         (if (= clj-version "1.8")
            (do
              (shell lein "with-profile" (str "-user,+" clj-version ",+test") "test")
              (shell lein "with-profile" (str "-user,+" clj-version ",+test,+junixsocket") "test"))

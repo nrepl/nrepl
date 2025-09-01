@@ -5,7 +5,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Thread factory that constructs daemon threads and names them sequentially.
- * Rewritten from reify because of some weird issue with Clojure 1.7.
  */
 public class DaemonThreadFactory implements ThreadFactory {
 
