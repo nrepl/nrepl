@@ -183,7 +183,7 @@
           print-fn (if print-var
                      (fn [value writer]
                        (print-var value writer options))
-                     *print-fn*)
+                     (misc/resolve-in-session msg *print-fn*))
           msg (-> msg
                   (assoc ::print-fn print-fn)
                   (booleanize-bencode-val ::stream?))]

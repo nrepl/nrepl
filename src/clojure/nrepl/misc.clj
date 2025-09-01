@@ -62,6 +62,17 @@
                                                session)}))]
     (merge basis response)))
 
+(defmacro resolve-in-session
+  "Given an nREPL message and a dynamic variable, return the value of that dynamic
+  variable within the message's session, and only if override is missing, then
+  get the current dynvar's value.. It is important to use this macro inside
+  middleware that accesses dynamic variables and expects user to be able to
+  rebind those variables inside user's session and the middleware to observe the
+  effect. If you just dereference the dynamic variable, you'll get its value in
+  the nREPL server context, not in the user session context."
+  [msg dynvar]
+  `(get (some-> (:session ~msg) deref) (var ~dynvar) ~dynvar))
+
 (defn requiring-resolve
   "Resolves namespace-qualified sym per 'resolve'. If initial resolve fails,
   attempts to require sym's namespace and retries. Returns nil if sym could not

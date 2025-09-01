@@ -6,7 +6,8 @@
 
 * [#370](https://github.com/nrepl/nrepl/pull/370): Accept `:client-name` and `:client-version` in `clone` op.
 * [#374](https://github.com/nrepl/nrepl/pull/374): Add support for dynamic var defaults.
-* [#375](https://github.com/nrepl/nrepl/pull/374): Refactor and simplify load-file middleware.
+* [#375](https://github.com/nrepl/nrepl/pull/375): Refactor and simplify load-file middleware.
+* [#377](https://github.com/nrepl/nrepl/pull/377): Resolve dynamic variables in middleware from a user session instead of server context.
 
 ## 1.3.1 (2025-01-01)
 
