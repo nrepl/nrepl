@@ -11,7 +11,7 @@
    [nrepl.core-test :refer [*server* *transport-fn* transport-fns]]
    [nrepl.server :as server]
    [nrepl.socket :refer [find-class unix-domain-flavor unix-socket-address]]
-   [nrepl.test-helpers :as th]
+   [nrepl.test-helpers :as th :refer [is+]]
    [nrepl.transport :as transport])
   (:import
    (com.hypirion.io Pipe ClosingPipe)
@@ -75,52 +75,50 @@
     proc))
 
 (deftest repl-intro
-  (is (re-find #"nREPL" (cmd/repl-intro))))
+  (is+ #"nREPL" (cmd/repl-intro)))
 
 (deftest help
-  (is (re-find #"Usage:" (cmd/help))))
+  (is+ #"Usage:" (cmd/help)))
 
 (deftest parse-cli-values
-  (is (= {:other "string"
-          :middleware :middleware
-          :handler :handler
-          :transport :transport}
-         (cmd/parse-cli-values {:other "string"
-                                :middleware ":middleware"
-                                :handler ":handler"
-                                :transport ":transport"}))))
+  (is+ {:other "string"
+        :middleware :middleware
+        :handler :handler
+        :transport :transport}
+       (cmd/parse-cli-values {:other "string"
+                              :middleware ":middleware"
+                              :handler ":handler"
+                              :transport ":transport"})))
 
 (deftest args->cli-options
-  (is (= [{:middleware :middleware :repl "true"} ["extra" "args"]]
-         (cmd/args->cli-options ["-m" ":middleware" "-r" "true" "extra" "args"]))))
+  (is+ [{:middleware :middleware :repl "true"} ["extra" "args"]]
+       (cmd/args->cli-options ["-m" ":middleware" "-r" "true" "extra" "args"])))
 
 (deftest connection-opts
-  (is (= {:port 5000
-          :host "0.0.0.0"
-          :socket nil
-          :transport #'transport/bencode
-          :repl-fn #'nrepl.cmdline/run-repl
-          :tls-keys-str nil
-          :tls-keys-file nil}
-         (cmd/connection-opts {:port "5000"
-                               :host "0.0.0.0"
-                               :transport nil}))))
+  (is+ {:port 5000
+        :host "0.0.0.0"
+        :socket nil
+        :transport #'transport/bencode
+        :repl-fn #'nrepl.cmdline/run-repl
+        :tls-keys-str nil
+        :tls-keys-file nil}
+       (cmd/connection-opts {:port "5000"
+                             :host "0.0.0.0"
+                             :transport nil})))
 
 (deftest server-opts
-  (is (= {:bind "0.0.0.0"
-          :port 5000
-          :transport #'transport/bencode
-          :handler #'clojure.core/identity
-          :repl-fn #'clojure.core/identity
-          :greeting nil
-          :ack-port 2000}
-         (select-keys
-          (cmd/server-opts {:bind "0.0.0.0"
-                            :port 5000
-                            :ack 2000
-                            :handler 'clojure.core/identity
-                            :repl-fn 'clojure.core/identity})
-          [:bind :port :transport :greeting :handler :ack-port :repl-fn]))))
+  (is+ {:bind "0.0.0.0"
+        :port 5000
+        :transport #'transport/bencode
+        :handler #'clojure.core/identity
+        :repl-fn #'clojure.core/identity
+        :greeting nil
+        :ack-port 2000}
+       (cmd/server-opts {:bind "0.0.0.0"
+                         :port 5000
+                         :ack 2000
+                         :handler 'clojure.core/identity
+                         :repl-fn 'clojure.core/identity})))
 
 (deftest ack-server
   (with-redefs [ack/send-ack (fn [_ _ _] true)]
@@ -141,10 +139,10 @@
   (with-open [^Server server (server/start-server
                               :transport-fn #'transport/bencode
                               :handler server/default-handler)]
-    (is (re-find #"nREPL server started on port \d+ on host .* - .*//.*:\d+"
-                 (cmd/server-started-message
-                  server
-                  {:transport #'transport/bencode})))))
+    (is+ #"nREPL server started on port \d+ on host .* - .*//.*:\d+"
+         (cmd/server-started-message
+          server
+          {:transport #'transport/bencode}))))
 
 (deftest ^:slow ack
   (with-server-every-transport nil

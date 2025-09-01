@@ -1,6 +1,7 @@
 (ns nrepl.util.lookup-test
   (:require [clojure.test :refer :all]
             [nrepl.bencode :as bencode]
+            [nrepl.test-helpers :refer [is+]]
             [nrepl.util.lookup :as l :refer [lookup]])
   (:import (java.io ByteArrayOutputStream)))
 
@@ -17,27 +18,32 @@
   (testing "non-qualified lookup"
     (is (not-empty (lookup 'clojure.core 'map)))
 
-    (is (= {:ns "clojure.core"
-            :name "map"
-            :arglists "([f] [f coll] [f c1 c2] [f c1 c2 c3] [f c1 c2 c3 & colls])"
-            :arglists-str "([f] [f coll] [f c1 c2] [f c1 c2 c3] [f c1 c2 c3 & colls])"}
-           (select-keys (lookup 'nrepl.util.lookup 'map) [:ns :name :arglists :arglists-str])
-           (select-keys (lookup 'clojure.core 'map) [:ns :name :arglists :arglists-str]))))
+    (is+ {:ns "clojure.core"
+          :name "map"
+          :arglists "([f] [f coll] [f c1 c2] [f c1 c2 c3] [f c1 c2 c3 & colls])"
+          :arglists-str "([f] [f coll] [f c1 c2] [f c1 c2 c3] [f c1 c2 c3 & colls])"}
+         (lookup 'nrepl.util.lookup 'map))
+
+    (is+ {:ns "clojure.core"
+          :name "map"
+          :arglists "([f] [f coll] [f c1 c2] [f c1 c2 c3] [f c1 c2 c3 & colls])"
+          :arglists-str "([f] [f coll] [f c1 c2] [f c1 c2 c3] [f c1 c2 c3 & colls])"}
+         (lookup 'clojure.core 'map)))
 
   (testing "macro lookup"
-    (is (= {:ns "clojure.core"
-            :name "future"
-            :macro "true"}
-           (select-keys (lookup 'clojure.core 'future) [:ns :name :macro]))))
+    (is+ {:ns "clojure.core"
+          :name "future"
+          :macro "true"}
+         (lookup 'clojure.core 'future)))
 
   (testing "special form lookup"
-    (is (= {:ns "clojure.core"
-            :name "let"
-            :special-form "true"}
-           (select-keys (lookup 'clojure.core 'let) [:ns :name :special-form]))))
+    (is+ {:ns "clojure.core"
+          :name "let"
+          :special-form "true"}
+         (lookup 'clojure.core 'let)))
 
   (testing "Java sym lookup"
-    (is (empty? (lookup 'clojure.core 'String)))))
+    (is+ nil (lookup 'clojure.core 'String))))
 
 (defn- bencode-str
   "Bencode a thing and write it into a string."

@@ -1,5 +1,7 @@
 (ns nrepl.test-helpers
-  (:require [clojure.string :as str])
+  (:require [clojure.string :as str]
+            [clojure.test :refer [is]]
+            [matcher-combinators.test])
   (:import [java.io File]))
 
 (def sys-newline
@@ -35,3 +37,12 @@
   (if-not (= sys-file-sep "/")
     (str/replace path "/" sys-file-sep)
     path))
+
+;; matcher-combinators.test is needed for `match?`
+
+(defmacro is+
+  "Like `is` but wraps expected value in matcher-combinators's `match?`."
+  ([expected actual]
+   `(is+ ~expected ~actual nil))
+  ([expected actual message]
+   `(is (~'match? ~expected ~actual) ~message)))

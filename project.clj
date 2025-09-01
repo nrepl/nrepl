@@ -1,3 +1,14 @@
+(def dev-test-common-profile
+  {:dependencies '[[com.github.ivarref/locksmith "0.1.9"]
+                   [com.hypirion/io "0.3.1"]
+                   [commons-net/commons-net "3.10.0"]
+                   [lambdaisland/kaocha "1.89.1380"]
+                   [lambdaisland/kaocha-junit-xml "1.17.101"]
+                   [org.clojure/test.check "1.1.1"]
+                   [nubank/matcher-combinators "3.9.1"
+                    :exclusions [org.clojure/clojure]]]
+   :java-source-paths ["test/java"]})
+
 (defproject nrepl "1.3.1"
   :description "nREPL is a Clojure *n*etwork REPL."
   :url "https://nrepl.org"
@@ -32,19 +43,15 @@
                                     :sign-releases false}]]
 
   :profiles {:fastlane {:dependencies [[nrepl/fastlane "0.1.0"]]}
-             :test {:dependencies [[com.github.ivarref/locksmith "0.1.9"]
-                                   [com.hypirion/io "0.3.1"]
-                                   [commons-net/commons-net "3.10.0"]
-                                   [lambdaisland/kaocha "1.89.1380"]
-                                   [lambdaisland/kaocha-junit-xml "1.17.101"]
-                                   [org.clojure/test.check "1.1.1"]]
-                    :java-source-paths ["test/java"]
-                    :plugins      [[test2junit "1.4.2"]]
-                    :test2junit-output-dir "test-results"
-                    ;; This skips any tests that doesn't work on all java versions
-                    ;; TODO: replicate koacha's version filter logic here
-                    :test-selectors {:default (complement :min-java-version)}
-                    :aliases {"test" "test2junit"}}
+             :dev ~dev-test-common-profile
+             :test ~(merge
+                     dev-test-common-profile
+                     {:plugins      '[[test2junit "1.4.2"]]
+                      :test2junit-output-dir "test-results"
+                      ;; This skips any tests that doesn't work on all java versions
+                      ;; TODO: replicate koacha's version filter logic here
+                      :test-selectors {:default '(complement :min-java-version)}
+                      :aliases {"test" "test2junit"}})
              :junixsocket {:jvm-opts ["-Dnrepl.test.junixsocket=true"]
                            :dependencies [[com.kohlschutter.junixsocket/junixsocket-core "2.9.1" :extension "pom"]]}
              :clj-kondo {:dependencies [[clj-kondo "2024.03.13"]]}
@@ -61,7 +68,7 @@
 
 
 
-             ;;; Maintenance profile
+;;; Maintenance profile
              ;;
              ;; It contains the small CLI utility (aliased to "lein docs") that
              ;; generates the nREPL ops documentation from their descriptor

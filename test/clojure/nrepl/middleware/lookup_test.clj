@@ -3,7 +3,8 @@
   (:require
    [clojure.test :refer :all]
    [nrepl.core :as nrepl]
-   [nrepl.core-test :refer [def-repl-test repl-server-fixture project-base-dir clean-response]])
+   [nrepl.core-test :refer [def-repl-test repl-server-fixture project-base-dir clean-response]]
+   [nrepl.test-helpers :refer [is+]])
   (:import
    (java.io File)))
 
@@ -28,21 +29,19 @@
               {:op "lookup" :sym "future" :ns "nrepl.core"}
               {:op "lookup" :sym "protocol-method" :ns "nrepl.middleware.lookup-test"}
               {:op "lookup" :sym "fn-with-coll-in-arglist" :ns "nrepl.middleware.lookup-test"}]]
-    (let [result (-> (nrepl/message session op)
-                     nrepl/combine-responses
-                     clean-response)]
-      (is (= #{:done} (:status result)))
-      (is (not-empty (:info result))))))
+    (is+ {:status #{:done}, :info not-empty}
+         (-> (nrepl/message session op)
+             nrepl/combine-responses
+             clean-response))))
 
 (def-repl-test lookup-op-error
-  (let [result (-> (nrepl/message session {:op "lookup"})
-                   nrepl/combine-responses
-                   clean-response)]
-    (is (= #{:done :lookup-error :namespace-not-found} (:status result)))))
+  (is+ {:status #{:done :lookup-error :namespace-not-found}}
+       (-> (nrepl/message session {:op "lookup"})
+           nrepl/combine-responses
+           clean-response)))
 
 (def-repl-test lookup-op-custom-fn
-  (let [result (-> (nrepl/message session {:op "lookup" :sym "map" :ns "clojure.core" :lookup-fn "nrepl.middleware.lookup-test/dummy-lookup"})
-                   nrepl/combine-responses
-                   clean-response)]
-    (is (= #{:done} (:status result)))
-    (is (= {:foo 1 :bar 2} (:info result)))))
+  (is+ {:status #{:done}, :info {:foo 1 :bar 2}}
+       (-> (nrepl/message session {:op "lookup" :sym "map" :ns "clojure.core" :lookup-fn "nrepl.middleware.lookup-test/dummy-lookup"})
+           nrepl/combine-responses
+           clean-response)))
