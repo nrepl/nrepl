@@ -9,7 +9,7 @@
                     :exclusions [org.clojure/clojure]]]
    :java-source-paths ["test/java"]})
 
-(defproject nrepl "1.3.1"
+(defproject nrepl "1.4.0"
   :description "nREPL is a Clojure *n*etwork REPL."
   :url "https://nrepl.org"
   :license {:name "Eclipse Public License"
