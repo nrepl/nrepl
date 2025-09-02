@@ -70,31 +70,14 @@
                       :ns "nrepl.util.completion-test"
                       :type :var}])
          (completions "t-var" 'nrepl.util.completion-test))
-    (is+ (mc/embeds [{:candidate "t-var"
-                      :type :var
-                      :ns "nrepl.util.completion-test"
-                      :doc "var"}])
-         (completions "t-var" 'nrepl.util.completion-test {:extra-metadata #{:arglists :doc}}))
     (is+ (mc/embeds [{:candidate "t-fn"
                       :ns "nrepl.util.completion-test"
                       :type :function}])
          (completions "t-fn" 'nrepl.util.completion-test))
-    (is+ (mc/embeds [{:candidate "t-fn"
-                      :type :function
-                      :ns "nrepl.util.completion-test"
-                      :arglists '("[x]")
-                      :doc "fn"}])
-         (completions "t-fn" 'nrepl.util.completion-test {:extra-metadata #{:arglists :doc}}))
     (is+ (mc/embeds [{:candidate "t-macro"
                       :ns "nrepl.util.completion-test"
                       :type :macro}])
          (completions "t-macro" 'nrepl.util.completion-test))
-    (is+ (mc/embeds [{:candidate "t-macro"
-                      :type :macro
-                      :ns "nrepl.util.completion-test"
-                      :arglists '("[y]")
-                      :doc "macro"}])
-         (completions "t-macro" 'nrepl.util.completion-test {:extra-metadata #{:arglists :doc}}))
     (is+ (mc/embeds [{:candidate "unquote" :type :var, :ns "clojure.core"}])
          (completions "unquote" 'clojure.core))
     (is+ (mc/embeds [{:candidate "if" :type :special-form}])
@@ -144,7 +127,7 @@
              (candidates "::core/ali" *ns*))))
 
   (testing "namespace aliases"
-    (is+ (mc/embeds ["::set"])
+    (is+ (mc/embeds ["::set/"])
          (candidates "::s" 'nrepl.util.completion-test)))
 
   (testing "namespace aliases without namespace"

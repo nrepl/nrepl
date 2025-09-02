@@ -5,24 +5,26 @@
   (https://github.com/alexander-yakushev/compliment/tree/master/lite)
 
   The functionality here is experimental and the API is subject to changes."
-  {:author "Oleksandr Yakushev, Bozhidar Batsov"
+  {:clj-kondo/config '{:linters {:unused-binding {:level :off}}}
+   :author "Oleksandr Yakushev, Bozhidar Batsov"
    :added  "0.8"}
+  (:require [clojure.string :as str])
   (:import java.io.File
            java.nio.file.Files
            (java.util.function Function Predicate)
            java.util.concurrent.locks.ReentrantLock
            (java.util.jar JarEntry JarFile)
            java.util.stream.Collectors
-           (java.lang.reflect Field Member Method Modifier)
-           (java.util Comparator HashSet)))
+           (java.lang.reflect Field Member Method Modifier Constructor)
+           java.util.HashSet))
 
-;; Compliment lite was generated at Mon May 06 15:50:29 EEST 2024
+;; Compliment lite was generated at Wed Sep 03 02:16:02 EEST 2025
 ;; SPDX-License-Identifier: EPL-1.0
 
 ;; compliment/utils.clj
 
 (def ^{:dynamic true} *extra-metadata*
-  "Signals to downstream sources which additional information about completion\n  candidates they should attach . Should be a set of keywords."
+  "Signals to downstream sources which additional information about completion\n  candidates they should attach. Should be a set of keywords."
   nil)
 
 (defn split-by-leading-literals
@@ -40,20 +42,18 @@
     (cond (zero? pn) true
           (zero? sn) false
           (not (= (.charAt prefix 0) (.charAt symbol 0))) false
-          :else
-          (loop [pi 1
-                 si 1
-                 skipping false]
-            (cond (>= pi pn) true
-                  (>= si sn) false
-                  :else
-                  (let [pc (.charAt prefix pi)
-                        sc (.charAt symbol si)
-                        match (= pc sc)]
-                    (cond (= sc separator)
-                          (recur (if match (inc pi) pi) (inc si) false)
-                          (or skipping (not match)) (recur pi (inc si) true)
-                          match (recur (inc pi) (inc si) false))))))))
+          :else (loop [pi 1
+                       si 1
+                       skipping false]
+                  (cond (>= pi pn) true
+                        (>= si sn) false
+                        :else (let [pc (.charAt prefix pi)
+                                    sc (.charAt symbol si)
+                                    match (= pc sc)]
+                                (cond (= sc separator)
+                                      (recur (if match (inc pi) pi) (inc si) false)
+                                      (or skipping (not match)) (recur pi (inc si) true)
+                                      match (recur (inc pi) (inc si) false))))))))
 
 (defn fuzzy-matches-no-skip?
   "Tests if symbol matches the prefix where separator? checks whether character\n  is a separator. Unlike `fuzzy-matches?` requires separator characters to be\n  present in prefix."
@@ -81,8 +81,7 @@
 (defn resolve-class
   "Tries to resolve a classname from the given symbol, or returns nil\n  if classname can't be resolved."
   [ns sym]
-  (when-let [val (try (ns-resolve ns sym)
-                      (catch ClassNotFoundException _))]
+  (when-let [val (try (ns-resolve ns sym) (catch ClassNotFoundException _))]
     (when (class? val) val)))
 
 (defn resolve-namespace
@@ -96,8 +95,7 @@
   []
   (into []
         (keep #(System/getProperty %))
-        ["sun.boot.class.path" "java.ext.dirs" "java.class.path"
-         "fake.class.path"]))
+        ["sun.boot.class.path" "java.ext.dirs" "java.class.path" "fake.class.path"]))
 
 (let [lock (ReentrantLock.)]
   (defn with-classpath-cache*
@@ -112,15 +110,14 @@
              (let [value (value-fn)]
                (reset! primitive-cache (assoc (if same-cp?
                                                 cache
-                                                {:compliment.lite/classpath-hash
-                                                 cp-hash})
-                                              key value))
+                                                {:compliment.lite/classpath-hash cp-hash})
+                                              key
+                                              value))
                value)))
          (finally (.unlock lock)))))
 
 (defmacro with-classpath-cache
-  "If cache for `name` is absent, or `key` doesn't match the key in the cache,
-  calculate `v` and return it. Else return value from cache."
+  "If cache for `name` is absent, or `key` doesn't match the key in the cache,\n  calculate `v` and return it. Else return value from cache."
   {:style/indent 1}
   [key value]
   `(with-classpath-cache* ~key (fn [] ~value)))
@@ -133,8 +130,7 @@
 (defn- file-seq-nonr
   "A tree seq on java.io.Files, doesn't resolve symlinked directories to avoid\n  infinite sequence resulting from recursive symlinked directories."
   [dir]
-  (tree-seq (fn [^File f]
-              (and (.isDirectory f) (not (Files/isSymbolicLink (.toPath f)))))
+  (tree-seq (fn [^File f] (and (.isDirectory f) (not (Files/isSymbolicLink (.toPath f)))))
             (fn [^File d] (seq (.listFiles d)))
             dir))
 
@@ -150,8 +146,7 @@
           (try (-> (.stream (JarFile. path))
                    (.filter (reify
                               Predicate
-                              (test [_ entry]
-                                (not (.isDirectory ^JarEntry entry)))))
+                              (test [_ entry] (not (.isDirectory ^JarEntry entry)))))
                    (.map (reify
                            Function
                            (apply [_ entry] (.getName ^JarEntry entry))))
@@ -170,19 +165,15 @@
                 (.startsWith filename "/") (.substring filename 1)))))))
 
 (defmacro list-jdk9-base-classfiles
-  "Because on JDK9+ the classfiles are stored not in rt.jar on classpath, but in
-  modules, we have to do extra work to extract them."
+  "Because on JDK9+ the classfiles are stored not in rt.jar on classpath, but in\n  modules, we have to do extra work to extract them."
   []
-  (if (resolve-class *ns* 'java.lang.module.ModuleFinder)
-    `(try (-> (.findAll (java.lang.module.ModuleFinder/ofSystem))
-              (.stream)
-              (.flatMap (reify Function
-                          (apply [_ mref#]
-                            (.list (.open ^java.lang.module.ModuleReference mref#)))))
-              (.collect (Collectors/toList)))
-          ;; Due to a bug in Clojure before 1.10, the above may fail.
-          (catch IncompatibleClassChangeError _# []))
-    ()))
+  (when (resolve-class *ns* 'java.lang.module.ModuleFinder)
+    `(-> (.findAll (java.lang.module.ModuleFinder/ofSystem))
+         (.stream)
+         (.flatMap (reify Function
+                     (apply [_ mref#]
+                       (.list (.open ^java.lang.module.ModuleReference mref#)))))
+         (.collect (Collectors/toList)))))
 
 (defn- all-files-on-classpath*
   "Given a list of files on the classpath, returns the list of all files,\n  including those located inside jar files."
@@ -204,9 +195,7 @@
                           (.equals file "module-info.class"))
               (let [c (-> (subs file 0 (- (.length file) 6))
                           (.replace "/" "."))]
-                (vswap! roots
-                        conj
-                        (subs c 0 (max (.indexOf ^String c ".") 0)))
+                (vswap! roots conj (subs c 0 (max (.indexOf ^String c ".") 0)))
                 c))))
         classes (into [] (keep filename->classname) files)
         roots (set (remove empty? @roots))]
@@ -259,19 +248,23 @@
   ([source-kws] (select-keys @sources source-kws)))
 
 (defn defsource
-  "Define a source with the given name and completion function:\n  `:candidates` - a function of prefix, namespace and context."
-  [name & {:keys [candidates], :as kw-args}]
+  "Define a source with the given name and completion functions:\n  `:candidates` - a function of prefix, namespace and context;\n  `:doc` - a function of symbol name and namespace."
+  [name & {:keys [candidates doc], :as kw-args}]
   {:pre [candidates]}
   (swap! sources assoc name (assoc kw-args :enabled true)))
 
 ;; compliment/sources/class_members.clj
+
+(defn- clojure-1-12+?
+  []
+  (or (> (:major *clojure-version*) 1) (>= (:minor *clojure-version*) 12)))
 
 (defn static?
   "Tests if class member is static."
   [^Member member]
   (Modifier/isStatic (.getModifiers member)))
 
-(def members-cache
+(def global-members-cache
   "Stores cache of all non-static members for every namespace."
   (atom {}))
 
@@ -282,131 +275,152 @@
     (.replaceAll name "_" "-")
     name))
 
-(defn populate-members-cache
-  "Populate members cache of class members for `ns` from the given list of\n  classes. `imported-classes-cnt` is a number that indicates the current number\n  of imported classes in this namespace."
-  [ns classes imported-classes-cnt]
-  (let [members
-        (for [^Class class classes
-              ^Member member (concat (.getMethods class) (.getFields class))
-              :when (not (static? member))]
-          (let [dc (.getDeclaringClass member)
-                name (.getName member)
-                demunged-name (demunge-deftype-field-name member dc name)]
-            [demunged-name
-             (if (= dc class)
-               member
-               (if (instance? Method member)
-                 (.getMethod dc name (.getParameterTypes ^Method member))
-                 (.getField dc name)))]))
+(defn populate-global-members-cache
+  "Populate members cache of class members for `ns` from the given set of classes."
+  [ns classes]
+  (let [members (for [^Class class classes
+                      ^Member member (concat (.getMethods class) (.getFields class))
+                      :when (not (static? member))]
+                  (let [dc (.getDeclaringClass member)
+                        name (.getName member)
+                        demunged-name (demunge-deftype-field-name member dc name)]
+                    [demunged-name
+                     (if (= dc class)
+                       member
+                       (if (instance? Method member)
+                         (.getMethod dc name (.getParameterTypes ^Method member))
+                         (.getField dc name)))]))
         cache (reduce (fn [cache [full-name m]]
                         (assoc! cache full-name (conj (cache full-name []) m)))
                       (transient {})
                       members)]
-    (swap! members-cache assoc
+    (swap! global-members-cache assoc
            ns
-           {:classes (set classes),
-            :imported-classes-cnt imported-classes-cnt,
-            :members (persistent! cache)})))
+           {:classes (set classes), :members (persistent! cache)})))
 
-(defn update-cache
+(defn update-global-cache
   "Updates members cache for a given namespace if necessary."
-  ([ns] (update-cache ns nil))
-  ([ns context-class]
-   (let [imported-classes (reduce-kv
-                           (fn [acc _ mapping]
-                             (if (class? mapping) (conj acc mapping) acc))
-                           []
-                           (ns-map ns))
-         imported-classes-cnt (count imported-classes)
-         cache (@members-cache ns)]
-     (when (or (nil? cache)
-               (not= (:imported-classes-cnt cache) imported-classes-cnt)
-               (and context-class
-                    (not (contains? (:classes cache) context-class))))
-       (let [classes (cond-> (into (set imported-classes) (:classes cache))
-                       context-class (conj context-class))]
-         (populate-members-cache ns classes imported-classes-cnt))))))
+  [ns]
+  (let [imported-classes (reduce-kv (fn [acc _ mapping]
+                                      (if (class? mapping) (conj acc mapping) acc))
+                                    #{}
+                                    (ns-map ns))
+        cache (@global-members-cache ns)]
+    (when (or (nil? cache) (not= (count (:classes cache)) (count imported-classes)))
+      (populate-global-members-cache ns imported-classes))))
 
 (defn get-all-members
   "Returns all non-static members for a given namespace."
-  [ns context-class]
-  (update-cache ns context-class)
-  (get-in @members-cache [ns :members]))
+  [ns]
+  (update-global-cache ns)
+  (get-in @global-members-cache [ns :members]))
+
+(def ^{:private true} class-members-cache "Members by class" (atom {}))
+
+(defn- populate-class-members-cache
+  "Populates qualified methods cache for a given class."
+  [^Class class]
+  (swap! class-members-cache assoc
+         class
+         (let [methods&fields (concat (.getMethods class) (.getFields class))
+               constructors (.getConstructors class)
+               member->type #(if (instance? Field %)
+                               (if (static? %) :static-field :field)
+                               (if (static? %) :static-method :method))
+               update-cache (fn [cache member name type]
+                              (update cache
+                                      name
+                                      (fn [members]
+                                        (vary-meta (-> (or members [])
+                                                       (conj member))
+                                                   update
+                                                   :types
+                                                   (fnil conj #{})
+                                                   type))))
+               cache (reduce (fn [cache ^Member m]
+                               (update-cache cache m (.getName m) (member->type m)))
+                             {}
+                             methods&fields)]
+           (reduce (fn [cache ^Member m] (update-cache cache m "new" :constructor))
+                   cache
+                   constructors))))
+
+(defn- get-all-class-members
+  [klass]
+  (or (@class-members-cache klass) (get (populate-class-members-cache klass) klass)))
+
+(defn qualified-member-symbol?
+  [x]
+  (some-> (re-matches #"([^\/\:\.][^\:]*)(?<!\.)\/(.*)" (str x))
+          (subvec 1)))
 
 (defn class-member-symbol?
-  "Tests if a symbol name looks like a non-static class member."
-  [^String x]
-  (.startsWith x "."))
+  "Tests if `x` looks like a non-static class member,\n  e.g. \".getMonth\" or \"java.util.Date/.getMonth\" (for Clojure v1.12+).\n\n  When true, yields `[klass-name method-name]`."
+  [x]
+  (cond (str/starts-with? x ".") [nil x]
+        (clojure-1-12+?)
+        (when-let [[_klass method :as parts] (qualified-member-symbol? x)]
+          (when (or (empty? method) (str/starts-with? method ".")) parts))))
 
 (defn camel-case-matches?
   "Tests if prefix matches the member name following camel case rules.\n  Thus, prefix `getDeF` matches member `getDeclaredFields`."
   [prefix member-name]
-  (fuzzy-matches-no-skip? prefix
-                          member-name
-                          (fn [ch] (Character/isUpperCase ^char ch))))
+  (fuzzy-matches-no-skip? prefix member-name (fn [ch] (Character/isUpperCase ^char ch))))
 
 (defn members-candidates
   "Returns a list of Java non-static fields and methods candidates."
-  [prefix ns _]
-  (when (class-member-symbol? prefix)
-    (let [prefix (subs prefix 1)
+  [prefix ns context]
+  (when-let [[klass-name prefix] (class-member-symbol? prefix)]
+    (let [prefix (str/replace prefix #"^\." "")
+          qualified? (some? klass-name)
           inparts? (re-find #"[A-Z]" prefix)
-          klass nil]
-      (for [[member-name members] (get-all-members ns klass)
+          klass (if qualified? (resolve-class ns (symbol klass-name)) nil)
+          exact-class? (or qualified? klass)]
+      (for [[member-name members] (if exact-class?
+                                    (some-> klass
+                                            get-all-class-members)
+                                    (get-all-members ns))
             :when (and (if inparts?
                          (camel-case-matches? prefix member-name)
                          (.startsWith ^String member-name prefix))
-                       true)]
-        {:candidate (str "." member-name),
-         :type (if (instance? Method (first members)) :method :field)}))))
-
-(defsource :compliment.lite/members :candidates #'members-candidates)
+                       (if exact-class?
+                         (some (:types (meta members)) [:method :field])
+                         true))]
+        {:candidate
+         (if qualified? (str klass-name "/." member-name) (str "." member-name)),
+         :type (cond exact-class? (first (:types (meta members)))
+                     (instance? Method (first members)) :method
+                     :else :field),
+         :priority 0}))))
 
 (defn static-member-symbol?
   "Tests if prefix looks like a static member symbol, returns parsed parts."
   [x]
-  (re-matches #"([^\/\:\.][^\:]*)\/(.*)" x))
-
-(def static-members-cache
-  "Stores cache of all static members for every class."
-  (atom {}))
-
-(defn populate-static-members-cache
-  "Populates static members cache for a given class."
-  [^Class class]
-  (swap! static-members-cache assoc
-         class
-         (reduce (fn [cache ^Member c]
-                   (if (static? c)
-                     (update cache (.getName c) (fnil conj []) c)
-                     cache))
-                 {}
-                 (concat (.getMethods class) (.getFields class)))))
-
-(defn static-members
-  "Returns all static members for a given class."
-  [^Class class]
-  (or (@static-members-cache class)
-      (get (populate-static-members-cache class) class)))
+  (when-let [[_klass method :as parts] (qualified-member-symbol? x)]
+    (when-not (str/starts-with? (str method) ".") parts)))
 
 (defn static-members-candidates
   "Returns a list of static member candidates."
-  [^String prefix ns _]
-  (when-let [[_ cl-name member-prefix] (static-member-symbol? prefix)]
+  [^String prefix ns _context]
+  (when-let [[cl-name member-prefix] (static-member-symbol? prefix)]
     (when-let [cl (resolve-class ns (symbol cl-name))]
       (let [inparts? (re-find #"[A-Z]" member-prefix)]
-        (for [[^String member-name members] (static-members cl)
-              :when (if inparts?
-                      (camel-case-matches? member-prefix member-name)
-                      (.startsWith member-name member-prefix))]
+        (for [[^String member-name members] (get-all-class-members cl)
+              :let [types (:types (meta members))]
+              :when (and (if inparts?
+                           (camel-case-matches? member-prefix member-name)
+                           (.startsWith member-name member-prefix))
+                         (or (some #{:static-method :static-field} types)
+                             (and (clojure-1-12+?) (:constructor types))))]
           {:candidate (str cl-name "/" member-name),
-           :type (if (instance? Method (first members))
-                   :static-method
-                   :static-field)})))))
+           :type (cond (instance? Constructor (first members)) :constructor
+                       (instance? Method (first members)) :static-method
+                       :else :static-field),
+           :priority 0})))))
 
-(defsource :compliment.lite/static-members
-  :candidates
-  #'static-members-candidates)
+(defsource :compliment.lite/members :candidates #'members-candidates)
+
+(defsource :compliment.lite/static-members :candidates #'static-members-candidates)
 
 ;; compliment/sources/namespaces.clj
 
@@ -422,26 +436,25 @@
 
 (defn namespaces-candidates
   "Return a list of namespace candidates."
-  [^String prefix ns _]
+  [^String prefix ns context]
   (when (nscl-symbol? prefix)
     (let [has-dot (> (.indexOf prefix ".") -1)
           [literals prefix] (split-by-leading-literals prefix)
-          cands-from-classpath
+          cands-from-cp
           (for [{:keys [^String ns-str file]} (namespaces&files-on-classpath)
                 :when (and (re-find #"\.cljc?$" file)
                            (if has-dot
                              (nscl-matches? prefix ns-str)
                              (.startsWith ns-str prefix)))]
-            {:candidate (str literals ns-str), :type :namespace, :file file})
-          ns-names (set (map :candidate cands-from-classpath))
-          ns-sym->cand #(let [ns-str (name %)]
-                          (when (and (nscl-matches? prefix ns-str)
-                                     (not (ns-names ns-str)))
-                            {:candidate (str literals ns-str),
-                             :type :namespace}))]
-      (-> cands-from-classpath
-          (into (keep ns-sym->cand) (keys (ns-aliases ns)))
-          (into (comp (map ns-name) (keep ns-sym->cand)) (all-ns))))))
+            {:candidate (str literals ns-str), :type :namespace, :file file, :priority 0})
+          ns-names (set (map :candidate cands-from-cp))
+          ns-sym->cand
+          #(let [ns-str (name %1)]
+             (when (and (nscl-matches? prefix ns-str) (not (ns-names ns-str)))
+               {:candidate (str literals ns-str %2), :type :namespace, :priority 0}))]
+      (-> cands-from-cp
+          (into (keep #(ns-sym->cand % "/")) (keys (ns-aliases ns)))
+          (into (comp (map ns-name) (keep #(ns-sym->cand % nil))) (all-ns))))))
 
 (defsource :compliment.lite/namespaces :candidates #'namespaces-candidates)
 
@@ -460,8 +473,7 @@
   [prefix pkg-name]
   (reduce-kv (fn [l ^String short-name full-names]
                (if (and (.startsWith short-name prefix)
-                        (some (fn [^String fn] (.startsWith fn pkg-name))
-                              full-names))
+                        (some (fn [^String fn] (.startsWith fn pkg-name)) full-names))
                  (conj l {:candidate short-name, :type :class})
                  l))
              []
@@ -469,7 +481,7 @@
 
 (defn classes-candidates
   "Returns a list of classname completions."
-  [^String prefix ns _]
+  [^String prefix ns context]
   (when (nscl-symbol? prefix)
     (if-let [import-ctx (get {} :nil)]
       (get-classes-by-package-name prefix import-ctx)
@@ -480,34 +492,33 @@
                         (when-not (.contains seen class-str)
                           (when remember? (.add seen class-str))
                           true)))
-            str->cand (fn [s] {:candidate s, :type :class})
+            str->cand (fn [s fqname] {:candidate s, :type :class, :priority 0})
             all-classes (classes-on-classpath)
             it (.iterator ^Iterable all-classes)
             roots (root-packages-on-classpath)]
         (as-> (transient []) result
-          (reduce-kv
-           (fn [result _ v]
-             (if (class? v)
-               (let [fqname (.getName ^Class v)
-                     sname (.getSimpleName ^Class v)]
-                 (cond-> result
-                   (and (nscl-matches? prefix fqname) (include? fqname true))
-                   (conj! (str->cand fqname))
-                   (and (nscl-matches? prefix sname) (include? sname true))
-                   (conj! {:candidate sname,
-                           :type :class,
-                           :package (when-let [pkg (.getPackage ^Class v)]
-                                      (.getName ^Package pkg))})))
-               result))
-           result
-           (ns-map ns))
+          (reduce-kv (fn [result _ ^Class v]
+                       (if (class? v)
+                         (let [fqname (.getName v)
+                               sname (.getSimpleName v)]
+                           (cond-> result
+                             (and (nscl-matches? prefix fqname) (include? fqname true))
+                             (conj! (str->cand fqname fqname))
+                             (and (nscl-matches? prefix sname) (include? sname true))
+                             (conj! {:candidate sname,
+                                     :type :class,
+                                     :package (some-> (.getPackage v)
+                                                      .getName),
+                                     :priority 0})))
+                         result))
+                     result
+                     (ns-map ns))
           (if (Character/isUpperCase (.charAt prefix 0))
             (reduce-kv (fn [result ^String short-name full-names]
                          (if (.startsWith short-name prefix)
                            (reduce (fn [result cl]
                                      (cond-> result
-                                       (include? cl true) (conj! (str->cand
-                                                                  cl))))
+                                       (include? cl true) (conj! (str->cand cl cl))))
                                    result
                                    full-names)
                            result))
@@ -520,14 +531,14 @@
                 (let [^String cl (.next it)]
                   (recur (cond-> result
                            (and (.startsWith cl prefix) (include? cl false))
-                           (conj! (str->cand cl)))))
+                           (conj! (str->cand cl cl)))))
                 result))
             (reduce conj!
                     result
                     (for [^String root-pkg roots
                           :when (and (.startsWith root-pkg prefix)
                                      (include? root-pkg false))]
-                      (str->cand (str root-pkg ".")))))
+                      (str->cand (str root-pkg ".") ""))))
           (persistent! result))))))
 
 (defsource :compliment.lite/classes :candidates #'classes-candidates)
@@ -546,7 +557,7 @@
 
 (defn vars-candidates
   "Returns a list of namespace-bound candidates, with namespace being\n  either the scope (if prefix is scoped), `ns` arg or the namespace\n  extracted from context if inside `ns` declaration."
-  [^String prefix ns _]
+  [^String prefix ns context]
   (let [[literals prefix] (split-by-leading-literals prefix)]
     (when-let [[_ scope-name prefix] (var-symbol? prefix)]
       (let [scope (some-> scope-name
@@ -562,23 +573,19 @@
         (for [[var-sym var] vars
               :let [var-name (name var-sym)]
               :when (and (var? var) (dash-matches? prefix var-name))
-              :let [{:keys [arglists doc private deprecated], :as var-meta}
-                    (meta var)]
-              :when (not (:completion/hidden var-meta))]
-          (cond-> {:candidate
-                   (str literals
-                        (if scope (str scope-name "/" var-name) var-name)),
+              :let [var-meta (meta var)]
+              :when (not (:completion/hidden var-meta))
+              :let [var-ns (.ns ^clojure.lang.Var var)
+                    this-ns? (= var-ns ns)
+                    clojure-ns? true]]
+          (cond-> {:candidate (str literals
+                                   (if scope (str scope-name "/" var-name) var-name)),
                    :type (cond (:macro var-meta) :macro
-                               arglists :function
+                               (:arglists var-meta) :function
                                :else :var),
-                   :ns (str (or (:ns var-meta) ns))}
-            (and private (:private *extra-metadata*)) (assoc :private
-                                                             (boolean private))
-            (and deprecated (:deprecated *extra-metadata*))
-            (assoc :deprecated (boolean deprecated))
-            (and arglists (:arglists *extra-metadata*))
-            (assoc :arglists (apply list (map pr-str arglists)))
-            (and doc (:doc *extra-metadata*)) (assoc :doc doc)))))))
+                   :ns (str (or (:ns var-meta) ns)),
+                   :priority 0}
+            *extra-metadata* (identity)))))))
 
 (defsource :compliment.lite/vars :candidates #'vars-candidates)
 
@@ -608,7 +615,7 @@
     (for [[alias _] (ns-aliases ns)
           :let [aname (name alias)]
           :when (.startsWith aname prefix)]
-      (tagged-candidate (str "::" aname)))))
+      (tagged-candidate (str "::" aname "/")))))
 
 (defn aliased-candidates
   "Returns a list of alias-qualified double-colon keywords (like ::str/foo),\n  where alias has to be registered in the given namespace."
@@ -628,9 +635,10 @@
     (cond (and double-colon? has-slash?) (aliased-candidates prefix ns)
           double-colon? (concat (qualified-candidates prefix ns)
                                 (namespace-alias-candidates prefix ns))
-          single-colon? (for [[kw _] @keywords-table
-                              :when (.startsWith (str kw) (subs prefix 1))]
-                          (tagged-candidate (str ":" kw))))))
+          single-colon? (let [prefix (subs prefix 1)]
+                          (for [[kw _] @keywords-table
+                                :when (.startsWith (str kw) prefix)]
+                            (tagged-candidate (str ":" kw)))))))
 
 (defsource :compliment.lite/keywords :candidates #'keyword-candidates)
 
@@ -638,37 +646,20 @@
 
 (def ^{:private true} special-forms
   (set (map name
-            '[def if do quote var recur throw try catch monitor-enter monitor-exit
-              new set!])))
+            '[def if do quote var recur throw try catch monitor-enter monitor-exit new
+              set!])))
 
-(defn special-candidates
+(defn special-form-candidates
   "Returns list of completions for special forms."
-  [prefix _ _]
-  (when (and (var-symbol? prefix) true)
-    (for [form special-forms
+  [prefix _ context]
+  (when (var-symbol? prefix)
+    (for [form (concat special-forms ["true" "false" "nil"])
           :when (dash-matches? prefix form)]
       {:candidate form, :type :special-form})))
 
-(defsource :compliment.lite/special-forms :candidates #'special-candidates)
-
-(defn literal-candidates
-  "We define `true`, `false`, and `nil` in a separate source because they are\n  not context-dependent (don't have to be first items in the list)."
-  [prefix _ __]
-  (for [^String literal ["true" "false" "nil"]
-        :when (.startsWith literal prefix)]
-    {:candidate literal, :type :special-form}))
-
-(defsource :compliment.lite/literals :candidates #'literal-candidates)
+(defsource :compliment.lite/special-forms :candidates #'special-form-candidates)
 
 ;; compliment/core.clj
-
-(def ^{:private true} by-length-comparator
-  "Sorts list of strings by their length first, and then alphabetically if length\n  is equal."
-  (reify
-    Comparator
-    (compare [_ s1 s2]
-      (let [res (Integer/compare (.length ^String s1) (.length ^String s2))]
-        (if (zero? res) (.compareTo ^String s1 s2) res)))))
 
 (defn ensure-ns
   "Takes either a namespace object or a symbol and returns the corresponding\n  namespace if it exists, otherwise returns `user` namespace."
@@ -679,29 +670,13 @@
       *ns*))
 
 (defn completions
-  "Returns a list of completions for the given prefix.
-
-  Options map can contain the following options:
-  - :ns - namespace where completion is initiated;
-  - :sort-order (either :by-length or :by-name);
-  - :extra-metadata - set of extra fields to add to the maps;
-  - :sources - list of source keywords to use."
+  "Returns a list of completions for the given prefix and namespace."
   ([prefix] (completions prefix *ns* {}))
   ([prefix ns] (completions prefix ns {}))
-  ([prefix ns
-    {:keys [sort-order sources extra-metadata],
-     :or {sort-order :by-name}}]
+  ([prefix ns _]
    (let [nspc (ensure-ns ns)
-         ctx nil]
-     (binding [*extra-metadata* extra-metadata]
-       (let [candidate-fns
-             (keep (fn [[_ src]] (when (:enabled src) (:candidates src)))
-                   (if sources (all-sources sources) (all-sources)))
-             candidates (into []
-                              (comp (map (fn [f] (f prefix nspc ctx))) cat)
-                              candidate-fns)
-             sorted-cands
-             (if (= sort-order :by-name)
-               (sort-by :candidate candidates)
-               (sort-by :candidate by-length-comparator candidates))]
-         sorted-cands)))))
+         candidate-fns (keep (fn [[_ src]] (when (:enabled src) (:candidates src)))
+                             (all-sources))
+         candidates
+         (into [] (comp (map (fn [f] (f prefix nspc nil))) cat) candidate-fns)]
+     (sort-by :candidate candidates))))
