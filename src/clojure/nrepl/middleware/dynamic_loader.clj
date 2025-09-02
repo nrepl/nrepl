@@ -11,15 +11,15 @@
   (:require [clojure.string :as str]
             [nrepl.middleware :refer [linearize-middleware-stack set-descriptor!]]
             [nrepl.middleware.session :as middleware.session]
-            [nrepl.misc :as misc :refer [response-for with-session-classloader]]
+            [nrepl.misc :as misc :refer [with-session-classloader]]
             [nrepl.transport :as t]))
 
 (def ^:dynamic *state* nil)
 
 (defn unknown-op
   "Sends an :unknown-op :error for the given message."
-  [{:keys [op transport] :as msg}]
-  (t/send transport (response-for msg :status #{:error :unknown-op :done} :op op)))
+  [{:keys [op] :as msg}]
+  (t/respond-to msg :status #{:error :unknown-op :done} :op op))
 
 (defn- update-stack!
   [middleware]
@@ -72,25 +72,25 @@
         (require-namespaces extra-namespaces)
         (let [{:keys [unresolved]}
               (update-stack! (concat middleware (:stack @*state*)))]
-          (if-not unresolved
-            (t/send transport (response-for msg {:status :done}))
-            (t/send transport (response-for msg {:status                #{:done :error}
-                                                 :unresolved-middleware unresolved})))))
+          (t/respond-to msg (if-not unresolved
+                              {:status :done}
+                              {:status                #{:done :error}
+                               :unresolved-middleware unresolved}))))
 
       "swap-middleware"
       (do
         (require-namespaces extra-namespaces)
         (let [{:keys [unresolved]} (update-stack! middleware)]
           (when transport
-            (if-not unresolved
-              (t/send transport (response-for msg {:status :done}))
-              (t/send transport (response-for msg {:status                #{:done :error}
-                                                   :unresolved-middleware unresolved}))))))
+            (t/respond-to msg (if-not unresolved
+                                {:status :done}
+                                {:status                #{:done :error}
+                                 :unresolved-middleware unresolved})))))
 
       "ls-middleware"
-      (t/send transport (response-for msg
-                                      :middleware (mapv str (:stack @*state*))
-                                      :status :done))
+      (t/respond-to msg
+                    :status :done
+                    :middleware (mapv str (:stack @*state*)))
 
       (h msg))))
 

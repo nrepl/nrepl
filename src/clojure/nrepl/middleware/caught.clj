@@ -26,14 +26,12 @@
 (def configuration-keys
   [::caught-fn ::print?])
 
-(defn- resolve-caught
-  [{:keys [::caught transport] :as msg}]
-  (when-let [var-sym (some-> caught (symbol))]
+(defn- resolve-caught [msg]
+  (when-let [var-sym (some-> (::caught msg) (symbol))]
     (let [caught-var (misc/requiring-resolve var-sym)]
       (when-not caught-var
-        (let [resp {:status ::error
-                    ::error (str "Couldn't resolve var " var-sym)}]
-          (transport/send transport (misc/response-for msg resp))))
+        (transport/respond-to msg {::error (str "Couldn't resolve var " var-sym)
+                                   :status ::error}))
       caught-var)))
 
 (defn- caught-transport

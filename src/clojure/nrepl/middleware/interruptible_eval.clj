@@ -9,7 +9,6 @@
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.caught :as caught]
    [nrepl.middleware.print :as print]
-   [nrepl.misc :as misc :refer [response-for]]
    [nrepl.transport :as t])
   (:import
    (clojure.lang Compiler$CompilerException
@@ -57,11 +56,11 @@
   sent via that Transport."
   [msg]
   (fn run []
-    (let [{:keys [transport eval ns code line column]} msg
+    (let [{:keys [eval ns code line column]} msg
           explicit-ns (some-> ns symbol find-ns)]
       (if (and (some? ns) (nil? explicit-ns))
-        (t/send transport (response-for msg {:status #{:error :namespace-not-found :done}
-                                             :ns ns}))
+        (t/respond-to msg {:status #{:error :namespace-not-found :done}
+                           :ns     ns})
         (let [eof (Object.)
               read (if (string? code)
                      (let [reader (source-logging-pushback-reader code line column)
@@ -77,11 +76,10 @@
               caught (fn [^Throwable e]
                        (set! *e e)
                        (when-not (interrupted? e)
-                         (let [resp {::caught/throwable e
-                                     :status :eval-error
-                                     :ex (str (class e))
-                                     :root-ex (str (class (clojure.main/root-cause e)))}]
-                           (t/send transport (response-for msg resp)))))]
+                         (t/respond-to msg {::caught/throwable e
+                                            :status #{:eval-error}
+                                            :ex (str (class e))
+                                            :root-ex (str (class (clojure.main/root-cause e)))})))]
           (push-thread-bindings (if explicit-ns
                                   {#'*ns* explicit-ns}
                                   {}))
@@ -111,9 +109,9 @@
                         ;; *out* has :tag metadata; *err* does not
                         (.flush ^Writer *err*)
                         (.flush *out*)
-                        (t/send transport (response-for msg {:ns (str (ns-name *ns*))
-                                                             :value value
-                                                             ::print/keys #{:value}}))
+                        (t/respond-to msg {:ns (str (ns-name *ns*))
+                                           :value value
+                                           ::print/keys #{:value}})
                         (catch Throwable e
                           (throw (ex-info nil {:clojure.error/phase :print-eval-result} e)))))
                     (catch Throwable e
@@ -134,15 +132,14 @@
    \"eval\" and \"interrupt\" :op-erations that delegates to the given handler
    otherwise."
   [h & _configuration]
-  (fn [{:keys [op session id transport] :as msg}]
+  (fn [{:keys [op session id] :as msg}]
     (let [{:keys [exec]} (meta session)]
-      (case op
-        "eval"
+      (if (= op "eval")
         (if-not (:code msg)
-          (t/send transport (response-for msg :status #{:error :no-code :done}))
+          (t/respond-to msg :status #{:error :no-code :done})
           (exec id
                 (evaluator msg)
-                #(t/send transport (response-for msg :status :done))
+                #(t/respond-to msg :status :done)
                 msg))
         (h msg)))))
 
