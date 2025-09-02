@@ -60,8 +60,8 @@
   of the content written to that `PrintWriter` will be sent as messages on the
   transport of `msg`, keyed by `key`."
   ^java.io.PrintWriter
-  [key {:keys [transport] :as msg} {:keys [::buffer-size ::quota]}]
-  (-> (CallbackWriter. #(transport/send transport (misc/response-for msg key %)))
+  [key msg {:keys [::buffer-size ::quota]}]
+  (-> (CallbackWriter. #(transport/respond-to msg key %))
       (BufferedWriter. (or buffer-size 1024))
       (with-quota-bound-writer quota)
       (PrintWriter. true)))
@@ -80,9 +80,7 @@
         (try (with-open [writer (replying-PrintWriter key msg opts)]
                (print-fn value writer))
              (catch QuotaExceeded _
-               (transport/send
-                transport
-                (misc/response-for msg :status ::truncated)))))))
+               (transport/respond-to msg :status ::truncated))))))
   (transport/send transport (apply dissoc resp keys)))
 
 (defn- send-nonstreamed
@@ -130,13 +128,12 @@
       this)))
 
 (defn- resolve-print
-  [{:keys [::print transport] :as msg}]
+  [{:keys [::print] :as msg}]
   (when-let [var-sym (some-> print (symbol))]
     (let [print-var (misc/requiring-resolve var-sym)]
       (when-not print-var
-        (let [resp {:status ::error
-                    ::error (str "Couldn't resolve var " var-sym)}]
-          (transport/send transport (misc/response-for msg resp))))
+        (transport/respond-to msg {::error (str "Couldn't resolve var " var-sym)
+                                   :status ::error}))
       print-var)))
 
 (defn- booleanize-bencode-val [m key]

@@ -307,12 +307,12 @@
 (defn- register-session
   "Registers a new session containing the baseline bindings contained in the
    given message's :session."
-  [{:keys [transport] :as msg}]
+  [msg]
   (let [session (create-session msg)
         {:keys [id]} (meta session)]
     (alter-meta! session into (session-exec session))
     (swap! sessions assoc id session)
-    (t/send transport (response-for msg :status :done :new-session id))))
+    (t/respond-to msg :status :done, :new-session id)))
 
 (defn- interrupt-session
   [{:keys [session interrupt-id transport] :as msg}]
@@ -320,20 +320,20 @@
         interrupted-id (when interrupt (interrupt interrupt-id))]
     (cond
       (nil? interrupt)
-      (t/send transport (response-for msg :status #{:error :session-ephemeral :done}))
+      (t/respond-to msg :status #{:error :session-ephemeral :done})
 
       (nil? interrupted-id)
-      (t/send transport (response-for msg :status #{:error :interrupt-id-mismatch :done}))
+      (t/respond-to msg :status #{:error :interrupt-id-mismatch :done})
 
       (= :idle interrupted-id)
-      (t/send transport (response-for msg :status #{:session-idle :done}))
+      (t/respond-to msg :status #{:session-idle :done})
 
       :else
       (do
         (t/send transport {:status #{:interrupted :done}
                            :id interrupted-id
                            :session session-id})
-        (t/send transport (response-for msg :status #{:done}))))))
+        (t/respond-to msg :status #{:done})))))
 
 (defn close-session
   "Close the given session."
@@ -344,9 +344,9 @@
 
 (defn- handle-session-close
   "Close the session associated with the given message and notify the user."
-  [{:keys [session transport] :as msg}]
+  [{:keys [session] :as msg}]
   (close-session session)
-  (t/send transport (response-for msg :status #{:done :session-closed})))
+  (t/respond-to msg :status #{:done :session-closed}))
 
 (defn session
   "Session middleware.  Returns a handler which supports these :op-erations:
@@ -373,19 +373,19 @@
    *msg* to the currently-evaluated message so that session-specific *out*
    and *err* content can be associated with the originating message)."
   [h]
-  (fn [{:keys [op session transport] :as msg}]
+  (fn [{:keys [op session] :as msg}]
     (let [the-session (if session
                         (@sessions session)
                         (create-session msg))]
       (if-not the-session
-        (t/send transport (response-for msg :status #{:error :unknown-session :done}))
+        (t/respond-to msg :status #{:error :unknown-session :done})
         (let [msg (assoc msg :session the-session)]
           (case op
             "clone" (register-session msg)
             "interrupt" (interrupt-session msg)
             "close" (handle-session-close msg)
-            "ls-sessions" (t/send transport (response-for msg :status :done
-                                                          :sessions (or (keys @sessions) [])))
+            "ls-sessions" (t/respond-to msg {:sessions (or (keys @sessions) [])
+                                             :status   :done})
             (binding [*msg* msg]
               ;; Bind *msg* so it can later be accessed by persistent session
               ;; functions like session-exec.
@@ -430,7 +430,7 @@
 
    Requires the session middleware."
   [h]
-  (fn [{:keys [op stdin session transport] :as msg}]
+  (fn [{:keys [op stdin session] :as msg}]
     (cond
       (= op "eval")
       (let [in (-> (meta session) ^LineNumberingPushbackReader (:stdin-reader))]
@@ -443,7 +443,7 @@
           (.put q -1)
           (locking q
             (doseq [c stdin] (.put q c))))
-        (t/send transport (response-for msg :status :done)))
+        (t/respond-to msg :status :done))
       :else
       (h msg))))
 

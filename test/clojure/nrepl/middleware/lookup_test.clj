@@ -35,7 +35,7 @@
              clean-response))))
 
 (def-repl-test lookup-op-error
-  (is+ {:status #{:done :lookup-error :namespace-not-found}}
+  (is+ {:status #{:done :lookup-error}}
        (-> (nrepl/message session {:op "lookup"})
            nrepl/combine-responses
            clean-response)))

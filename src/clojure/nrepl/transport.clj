@@ -6,7 +6,7 @@
    [clojure.java.io :as io]
    [clojure.walk :as walk]
    [nrepl.bencode :as bencode]
-   [nrepl.misc :refer [uuid]]
+   [nrepl.misc :refer [response-for uuid]]
    [nrepl.socket :as socket]
    [nrepl.util.threading :as threading]
    nrepl.version)
@@ -247,3 +247,8 @@
   (let [a (LinkedBlockingQueue.)
         b (LinkedBlockingQueue.)]
     [(QueueTransport. a b) (QueueTransport. b a)]))
+
+(defn respond-to
+  "Send a response for `msg` with `response-data` using message's transport."
+  [msg & response-data]
+  (send (:transport msg) (apply response-for msg response-data)))

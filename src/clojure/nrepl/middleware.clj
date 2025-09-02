@@ -3,7 +3,7 @@
   (:require
    [clojure.set :as set]
    [nrepl.misc :as misc]
-   [nrepl.transport :as transport]
+   [nrepl.transport :as t]
    [nrepl.version :as version]))
 
 ;; Registering dynvars that are used to configure middleware. This lives here
@@ -51,27 +51,26 @@
 
 (defn wrap-describe
   [h]
-  (fn [{:keys [op descriptors verbose? transport] :as msg}]
+  (fn [{:keys [op descriptors verbose?] :as msg}]
     (if (= op "describe")
-      (transport/send transport (misc/response-for msg
-                                                   (merge
-                                                    (when-let [aux (reduce
-                                                                    (fn [aux {:keys [describe-fn]}]
-                                                                      (if describe-fn
-                                                                        (merge aux (describe-fn msg))
-                                                                        aux))
-                                                                    nil
-                                                                    (vals descriptors))]
-                                                      {:aux aux})
-                                                    {:ops (let [ops (apply merge (map :handles (vals descriptors)))]
-                                                            (if verbose?
-                                                              ops
-                                                              (zipmap (keys ops) (repeat {}))))
-                                                     :versions {:nrepl (safe-version version/version)
-                                                                :clojure (safe-version
-                                                                          (assoc *clojure-version* :version-string (clojure-version)))
-                                                                :java (safe-version (java-version))}
-                                                     :status :done})))
+      (t/respond-to msg (merge
+                         (when-let [aux (reduce
+                                         (fn [aux {:keys [describe-fn]}]
+                                           (if describe-fn
+                                             (merge aux (describe-fn msg))
+                                             aux))
+                                         nil
+                                         (vals descriptors))]
+                           {:aux aux})
+                         {:ops (let [ops (apply merge (map :handles (vals descriptors)))]
+                                 (if verbose?
+                                   ops
+                                   (zipmap (keys ops) (repeat {}))))
+                          :versions {:nrepl (safe-version version/version)
+                                     :clojure (safe-version
+                                               (assoc *clojure-version* :version-string (clojure-version)))
+                                     :java (safe-version (java-version))}
+                          :status :done}))
       (h msg))))
 
 (set-descriptor! #'wrap-describe
