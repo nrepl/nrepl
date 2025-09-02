@@ -54,21 +54,21 @@
                       :aliases {"test" "test2junit"}})
              :junixsocket {:jvm-opts ["-Dnrepl.test.junixsocket=true"]
                            :dependencies [[com.kohlschutter.junixsocket/junixsocket-core "2.9.1" :extension "pom"]]}
-             :clj-kondo {:dependencies [[clj-kondo "2024.03.13"]]}
+             :clj-kondo {:dependencies [[clj-kondo "2025.07.28"]]}
              ;; Clojure versions matrix
-             :provided {:dependencies [[org.clojure/clojure "1.11.3"]]}
+             :provided {:dependencies [[org.clojure/clojure "1.12.2"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
-             :1.10 {:dependencies [[org.clojure/clojure "1.10.2"]]
+             :1.10 {:dependencies [[org.clojure/clojure "1.10.3"]]
                     :source-paths ["src/spec"]}
-             :1.11 {:dependencies [[org.clojure/clojure "1.11.3"]]
+             :1.11 {:dependencies [[org.clojure/clojure "1.11.4"]]
                     :source-paths ["src/spec"]}
-             :1.12 {:dependencies [[org.clojure/clojure "LATEST"]]
+             :1.12 {:dependencies [[org.clojure/clojure "1.12.2"]]
                     :source-paths ["src/spec"]}
 
 
 
-;;; Maintenance profile
+             ;;; Maintenance profile
              ;;
              ;; It contains the small CLI utility (aliased to "lein docs") that
              ;; generates the nREPL ops documentation from their descriptor
