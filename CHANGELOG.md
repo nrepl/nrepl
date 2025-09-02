@@ -2,6 +2,8 @@
 
 ## master (unreleased)
 
+## 1.4.0 (2025-09-02)
+
 ### New features
 
 * [#370](https://github.com/nrepl/nrepl/pull/370): Accept `:client-name` and `:client-version` in `clone` op.

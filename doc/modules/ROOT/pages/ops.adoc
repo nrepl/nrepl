@@ -4,7 +4,7 @@ This file is _generated_ by #'nrepl.impl.docs/-main
 ////
 = Supported nREPL operations
 
-[small]#generated from a verbose 'describe' response (nREPL v1.3.1)#
+[small]#generated from a verbose 'describe' response (nREPL v1.4.0)#
 
 == Operations
 
@@ -34,9 +34,10 @@ Required parameters::
 {blank}
 
 Optional parameters::
+* `:client-name` The nREPL client name. e.g. "CIDER"
+* `:client-version` The nREPL client version. e.g. "1.2.3"
 * `:session` The ID of the session to be cloned; if not provided, a new session with default bindings is created, and mapped to the returned session ID.
-* `:client-name` The nREPL client name, e.g. "CIDER"
-* `:client-version` The nREPL client version, e.g. "1.17.0"
+
 
 Returns::
 * `:new-session` The ID of the new session.
@@ -257,3 +258,4 @@ Optional parameters::
 Returns::
 * `:status` ``done``, once done, and ``error``, if there's any problems in loading a middleware
 * `:unresolved-middleware` List of middleware that could not be resolved
+
