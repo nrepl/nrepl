@@ -7,8 +7,8 @@
   (:require
    [clojure.java.io :as io]
    [nrepl.misc :refer [log]]
-   [nrepl.tls :as tls]
-   [nrepl.socket.dynamic :refer [get-path]])
+   [nrepl.socket.dynamic :refer [get-path]]
+   [nrepl.tls :as tls])
   (:import
    (java.io BufferedInputStream BufferedOutputStream File OutputStream)
    (java.net InetSocketAddress ProtocolFamily ServerSocket Socket SocketAddress

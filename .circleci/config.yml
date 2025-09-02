@@ -8,7 +8,7 @@ orbs:
 defaults: &defaults
   working_directory: ~/repo
   environment:
-    JVM_OPTS: -Xmx3200m # limit the maximum heap size to prevent out of memory errors
+    JVM_OPTS: -Xmx3200m -Dclojure.main.report=stderr
   resource_class: large # default is medium. large (may) give us more consistent CI results
 
 # Runners for OpenJDK
@@ -52,16 +52,13 @@ commands:
     parameters:
       steps:
         type: steps
-      clojure_version:
-        description: Will be used as part of the cache key
-        type: string
       files:
         description: Files to consider when creating the cache key
         type: string
         default: "deps.edn project.clj"
       cache_version:
         type: string
-        description: "Change this value to force a cache update"
+        description: "Key used to identify unique cache"
         default: "1"
     steps:
       - run:
@@ -72,7 +69,7 @@ commands:
               find . -name $file -exec cat {} +
             done | sha256sum | awk '{print $1}' > /tmp/clojure_cache_seed
       - restore_cache:
-          key: cache-<< parameters.cache_version >>-<< parameters.clojure_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
+          key: cache-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
       - run:
           name: Install babashka if not present
           command: |
@@ -87,7 +84,7 @@ commands:
             - ~/.m2
             - .cpcache
             - /usr/local/bin/bb
-          key: cache-<< parameters.cache_version >>-<< parameters.clojure_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
+          key: cache-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
 
   setup-windows:
     steps:
@@ -123,15 +120,14 @@ jobs:
         type: steps
       clojure_version:
         type: string
-        default: "1.11"
+        default: "1.12"
     executor: jdk21
     environment:
       CLOJURE_VERSION: << parameters.clojure_version >>
     steps:
       - checkout
       - with_cache:
-          cache_version: "util_v1"
-          clojure_version: << parameters.clojure_version >>
+          cache_version: "util_v2_<< parameters.clojure_version >>"
           steps: << parameters.steps >>
 
   test:
@@ -148,8 +144,7 @@ jobs:
     steps:
       - checkout
       - with_cache:
-          cache_version: "test_v1"
-          clojure_version: << parameters.clojure_version >>
+          cache_version: "test_v2_<< parameters.clojure_version >>"
           steps:
             - run:
                 name: Running tests

@@ -24,5 +24,5 @@ target
 pom.xml
 build.xml
 /test-results
-/.clj-kondo/
+/.clj-kondo/.cache
 /.lsp/
