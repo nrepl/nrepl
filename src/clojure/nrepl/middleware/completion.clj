@@ -14,10 +14,10 @@
    :added "0.8"}
   (:require
    [clojure.walk :as walk]
-   [nrepl.util.completion :as complete]
    [nrepl.middleware :as middleware :refer [set-descriptor!]]
    [nrepl.misc :refer [response-for] :as misc]
-   [nrepl.transport :as t])
+   [nrepl.transport :as t]
+   [nrepl.util.completion :as complete])
   (:import nrepl.transport.Transport))
 
 (def ^:dynamic *complete-fn*

@@ -11,8 +11,8 @@
   {:author "Bozhidar Batsov"
    :added  "0.5"}
   (:require
-   [clojure.java.io :as io]
-   [clojure.edn :as edn]))
+   [clojure.edn :as edn]
+   [clojure.java.io :as io]))
 
 (def ^:private home-dir
   "The user's home directory."

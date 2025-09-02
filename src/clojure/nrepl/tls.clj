@@ -213,7 +213,7 @@
                         {:nrepl/kind :nrepl.server/invalid-start-request}))))
 
     :else
-    (throw (ex-info (str "Could not create TLS Context. Neither :tls-keys-str nor :tls-keys-file given.")
+    (throw (ex-info "Could not create TLS Context. Neither :tls-keys-str nor :tls-keys-file given."
                     {:nrepl/kind :nrepl.server/invalid-start-request}))))
 
 (def enabled-protocols

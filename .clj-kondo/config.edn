@@ -1,0 +1,8 @@
+{:output            {:progress true}
+ :config-in-comment {:linters {:unused-value         {:level :off}
+                               :unresolved-namespace {:level :off}}}
+ :linters           {:unused-private-var {:level   :warning}
+                     :unresolved-symbol  {:exclude [(clojure.test/is [match?])]}
+                     :consistent-alias   {:aliases {clojure.string str}}
+                     ;; Enable this opt-in linter:
+                     :unsorted-required-namespaces {:level :warning}}}

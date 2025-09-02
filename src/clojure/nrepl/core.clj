@@ -4,10 +4,10 @@
   (:require
    clojure.set
    [nrepl.misc :refer [uuid]]
+   [nrepl.socket :as socket]
    [nrepl.tls :as tls]
    [nrepl.transport :as transport]
-   [nrepl.version :as version]
-   [nrepl.socket :as socket]))
+   [nrepl.version :as version]))
 
 (defn response-seq
   "Returns a lazy seq of messages received via the given Transport.

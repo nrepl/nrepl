@@ -14,8 +14,8 @@
   (:require
    [nrepl.middleware :as middleware :refer [set-descriptor!]]
    [nrepl.misc :refer [response-for] :as misc]
-   [nrepl.util.lookup :as lookup]
-   [nrepl.transport :as t])
+   [nrepl.transport :as t]
+   [nrepl.util.lookup :as lookup])
   (:import nrepl.transport.Transport))
 
 (def ^:dynamic *lookup-fn*

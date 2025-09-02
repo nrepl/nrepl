@@ -3,9 +3,9 @@
   {:author "Chas Emerick"}
   (:require
    [nrepl.ack :as ack]
-   [nrepl.middleware.dynamic-loader :as dynamic-loader]
    [nrepl.middleware :as middleware]
    nrepl.middleware.completion
+   [nrepl.middleware.dynamic-loader :as dynamic-loader]
    nrepl.middleware.interruptible-eval
    nrepl.middleware.load-file
    nrepl.middleware.lookup
@@ -220,7 +220,7 @@
   (let [transport-fn (or transport-fn t/bencode)
         ss (cond socket
                  (unix-server-socket socket)
-                 (or tls? (or tls-keys-str tls-keys-file))
+                 (or tls? tls-keys-str tls-keys-file)
                  (inet-socket bind port (tls/ssl-context-or-throw tls-keys-str tls-keys-file))
                  :else
                  (inet-socket bind port))

@@ -2,12 +2,12 @@
   {:author "Chas Emerick"}
   (:refer-clojure :exclude [send])
   (:require
+   [clojure.edn :as edn]
    [clojure.java.io :as io]
    [clojure.walk :as walk]
    [nrepl.bencode :as bencode]
-   [nrepl.socket :as socket]
-   [clojure.edn :as edn]
    [nrepl.misc :refer [uuid]]
+   [nrepl.socket :as socket]
    [nrepl.util.threading :as threading]
    nrepl.version)
   (:import

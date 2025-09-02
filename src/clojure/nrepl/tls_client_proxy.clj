@@ -8,9 +8,9 @@
   This will start a standalone program that will forward local TCP connections on 127.0.0.1:9001
   to the remote TLS TCP connection at 127.0.0.1:4001 using the key provided in the file `client.keys`."
   {:added "1.1"}
-  (:require [nrepl.tls :as tls]
+  (:require [nrepl.cmdline :as cmdline]
             [nrepl.socket :as socket]
-            [nrepl.cmdline :as cmdline])
+            [nrepl.tls :as tls])
   (:import (java.net Socket ServerSocket)
            (java.io IOException BufferedInputStream BufferedOutputStream Closeable InputStream OutputStream)
            (java.time.format DateTimeFormatter)
@@ -234,7 +234,7 @@
        (when port-file
          (spit port-file (str (.getLocalPort sock))))
        (info "Started TLS proxy at"
-             (str (str bind ":" (.getLocalPort sock) "."))
+             (str bind ":" (.getLocalPort sock) ".")
              "Proxying to" (str remote-host ":" remote-port "."))
        (run-server cfg state sock)))
     (when block?
