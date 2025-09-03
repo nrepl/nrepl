@@ -8,7 +8,7 @@
    [nrepl.middleware.interruptible-eval :refer [*msg*]]
    [nrepl.middleware.print :as print]
    [nrepl.misc :as misc :refer [uuid response-for log]]
-   [nrepl.transport :as t]
+   [nrepl.transport :as t :refer [safe-handle]]
    [nrepl.util.classloader :as classloader]
    [nrepl.util.threading :as threading])
   (:import
@@ -367,29 +367,24 @@
    Messages indicating other operations are delegated to the given handler,
    with the session identified by the :session ID added to the message. If
    no :session ID is found, a new session is created (which will only
-   persist for the duration of the handling of the given message).
-
-   Requires the interruptible-eval middleware (specifically, its binding of
-   *msg* to the currently-evaluated message so that session-specific *out*
-   and *err* content can be associated with the originating message)."
+   persist for the duration of the handling of the given message)."
   [h]
-  (fn [{:keys [op session] :as msg}]
+  (fn [{:keys [session] :as msg}]
     (let [the-session (if session
                         (@sessions session)
                         (create-session msg))]
       (if-not the-session
         (t/respond-to msg :status #{:error :unknown-session :done})
-        (let [msg (assoc msg :session the-session)]
-          (case op
-            "clone" (register-session msg)
-            "interrupt" (interrupt-session msg)
-            "close" (handle-session-close msg)
-            "ls-sessions" (t/respond-to msg {:sessions (or (keys @sessions) [])
-                                             :status   :done})
-            (binding [*msg* msg]
-              ;; Bind *msg* so it can later be accessed by persistent session
-              ;; functions like session-exec.
-              (h msg))))))))
+        (safe-handle (assoc msg :session the-session)
+          "clone"       register-session
+          "interrupt"   interrupt-session
+          "close"       handle-session-close
+          "ls-sessions" #(t/respond-to % {:sessions (or (keys @sessions) [])
+                                          :status   :done})
+          :else         #(binding [*msg* %]
+                           ;; Bind *msg* so it can later be accessed by persistent session
+                           ;; functions like session-exec.
+                           (h %)))))))
 
 (set-descriptor! #'session
                  {:requires #{}
