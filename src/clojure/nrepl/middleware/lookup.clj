@@ -14,7 +14,7 @@
   (:require
    [nrepl.middleware :as middleware :refer [set-descriptor!]]
    [nrepl.misc :as misc]
-   [nrepl.transport :as t]
+   [nrepl.transport :as t :refer [safe-handle]]
    [nrepl.util.lookup :as lookup]))
 
 (def ^:dynamic *lookup-fn*
@@ -26,15 +26,11 @@
 
 (defn lookup-reply
   [{:keys [session sym ns lookup-fn] :as msg}]
-  (try
-    (let [the-ns (if ns (symbol ns) (symbol (str (@session #'*ns*))))
-          sym (symbol sym)
-          lookup-fn (or (some-> lookup-fn symbol misc/requiring-resolve)
-                        (misc/resolve-in-session msg *lookup-fn*))]
-      {:status :done, :info (lookup-fn the-ns sym)})
-    (catch Exception _
-      {:status (cond-> #{:done :lookup-error}
-                 (some? ns) (conj :namespace-not-found))})))
+  (let [the-ns (if ns (symbol ns) (symbol (str (@session #'*ns*))))
+        sym (symbol sym)
+        lookup-fn (or (some-> lookup-fn symbol misc/requiring-resolve)
+                      (misc/resolve-in-session msg *lookup-fn*))]
+    {:status :done, :info (lookup-fn the-ns sym)}))
 
 (defn wrap-lookup
   "Middleware that provides symbol info lookup.
@@ -45,10 +41,10 @@
   * `lookup` – a fully-qualified symbol naming a var whose function to use for
   lookup. Must point to a function with signature [sym ns]."
   [h]
-  (fn [{:keys [op] :as msg}]
-    (if (= op "lookup")
-      (t/respond-to msg (lookup-reply msg))
-      (h msg))))
+  (fn [msg]
+    (safe-handle msg
+      "lookup" lookup-reply
+      :else h)))
 
 (set-descriptor! #'wrap-lookup
                  {:requires #{"clone"}
