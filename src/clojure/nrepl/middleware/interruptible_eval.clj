@@ -4,6 +4,7 @@
   but the name is retained for backwards compatibility."
   {:author "Chas Emerick"}
   (:require
+   [clojure.java.io :as io]
    clojure.main
    clojure.test
    [nrepl.middleware :refer [set-descriptor!]]
@@ -48,6 +49,10 @@
       (and (instance? Compiler$CompilerException e)
            (instance? ThreadDeath (.getCause e)))))
 
+(defn- short-file-name [source-path]
+  (try (.getName (io/file source-path))
+       (catch Exception _)))
+
 (defn evaluator
   "Return a closure that evaluates msg's `:code` (either a string or a seq of
   forms to be evaluated) within the dynamic context of its session. `:ns` can be
@@ -56,7 +61,8 @@
   sent via that Transport."
   [msg]
   (fn run []
-    (let [{:keys [eval ns code line column]} msg
+    (let [{:keys [eval ns code file line column]} msg
+          short-fname (short-file-name file)
           explicit-ns (some-> ns symbol find-ns)]
       (if (and (some? ns) (nil? explicit-ns))
         (t/respond-to msg {:status #{:error :namespace-not-found :done}
@@ -80,9 +86,10 @@
                                             :status #{:eval-error}
                                             :ex (str (class e))
                                             :root-ex (str (class (clojure.main/root-cause e)))})))]
-          (push-thread-bindings (if explicit-ns
-                                  {#'*ns* explicit-ns}
-                                  {}))
+          (push-thread-bindings (cond-> {}
+                                  explicit-ns (assoc #'*ns* explicit-ns)
+                                  short-fname (assoc Compiler/SOURCE_PATH file
+                                                     Compiler/SOURCE short-fname)))
           (try
             (loop []
               (let [input (try

@@ -2,6 +2,10 @@
 
 ## master (unreleased)
 
+### Changes
+
+* [#385](https://github.com/nrepl/nrepl/pull/385): Preserve filename in functions compiled during regular eval.
+
 ## 1.4.0 (2025-09-02)
 
 ### New features
