@@ -29,7 +29,7 @@
   or `nil` otherwise."
   [env-var]
   (let [value (System/getenv env-var)]
-    (when (not (str/blank? value)) value)))
+    (when-not (str/blank? value) value)))
 
 (def ^:private config-file-name "nrepl.edn")
 
@@ -50,8 +50,14 @@
          (some-> (non-empty-env "XDG_CONFIG_HOME") (io/file "nrepl" config-file-name))
          (io/file xdg-config-default-dir "nrepl" config-file-name)
          (io/file home-dir ".nrepl" config-file-name)]]
-    (or (some #(when (and % (.exists %)) %) candidates)
+    (or (some (fn [^java.io.File file]
+                (when (and file (.exists file)) file))
+              candidates)
         (last candidates))))
+
+(def config-dir
+  "nREPL's global configuration directory."
+  (.getParentFile ^java.io.File config-file))
 
 (defn- load-edn
   "Load edn from an io/reader source (filename or io/resource)."
