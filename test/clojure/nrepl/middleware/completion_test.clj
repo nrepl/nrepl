@@ -22,7 +22,7 @@
            clean-response)))
 
 (def-repl-test completions-op-error
-  (is+ {:status #{:done :completion-error}
+  (is+ {:status #{:done :error :completions-error}
         :completions mc/absent}
        (-> (nrepl/message session {:op "completions"})
            nrepl/combine-responses

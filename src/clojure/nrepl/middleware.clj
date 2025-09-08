@@ -3,7 +3,7 @@
   (:require
    [clojure.set :as set]
    [nrepl.misc :as misc]
-   [nrepl.transport :as t]
+   [nrepl.transport :as t :refer [safe-handle]]
    [nrepl.version :as version]))
 
 ;; Registering dynvars that are used to configure middleware. This lives here
@@ -49,29 +49,33 @@
   {:major misc/java-version
    :version-string (System/getProperty "java.version")})
 
+(defn- describe-reply
+  [{:keys [descriptors verbose?] :as msg}]
+  (merge
+   (when-let [aux (reduce
+                   (fn [aux {:keys [describe-fn]}]
+                     (if describe-fn
+                       (merge aux (describe-fn msg))
+                       aux))
+                   nil
+                   (vals descriptors))]
+     {:aux aux})
+   {:ops (let [ops (apply merge (map :handles (vals descriptors)))]
+           (if verbose?
+             ops
+             (zipmap (keys ops) (repeat {}))))
+    :versions {:nrepl (safe-version version/version)
+               :clojure (safe-version
+                         (assoc *clojure-version* :version-string (clojure-version)))
+               :java (safe-version (java-version))}
+    :status :done}))
+
 (defn wrap-describe
   [h]
-  (fn [{:keys [op descriptors verbose?] :as msg}]
-    (if (= op "describe")
-      (t/respond-to msg (merge
-                         (when-let [aux (reduce
-                                         (fn [aux {:keys [describe-fn]}]
-                                           (if describe-fn
-                                             (merge aux (describe-fn msg))
-                                             aux))
-                                         nil
-                                         (vals descriptors))]
-                           {:aux aux})
-                         {:ops (let [ops (apply merge (map :handles (vals descriptors)))]
-                                 (if verbose?
-                                   ops
-                                   (zipmap (keys ops) (repeat {}))))
-                          :versions {:nrepl (safe-version version/version)
-                                     :clojure (safe-version
-                                               (assoc *clojure-version* :version-string (clojure-version)))
-                                     :java (safe-version (java-version))}
-                          :status :done}))
-      (h msg))))
+  (fn [msg]
+    (safe-handle msg
+      "describe" describe-reply
+      :else h)))
 
 (set-descriptor! #'wrap-describe
                  {:handles {"describe"

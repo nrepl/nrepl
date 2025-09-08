@@ -182,6 +182,32 @@ As a result, in some cases you'd be invoking nREPL's op and in other cases `cide
 If `cider-nrepl` had named the op `cider/complete` instead, that would have prevented this unfortunate
 situation.
 
+=== Robustness and error handling
+
+Given how misbehavior of a foundational tool like nREPL can greatly diminish the
+user experience, it is doubly important to prevent exceptions or errors to
+happen during middleware processing, but also vital to signalize that an error
+did occur (as the communication is often asynchronous, this needs to be done
+explicitly). A common pattern is to use `nrepl.transport/safe-handle` macro
+which accepts a list of op and handler pairs and wraps the handler invocation in
+`try/catch` block so that you don't forget to. If an exception is thrown, the
+macro will send an error message through the message's transport. For example:
+
+[source,clojure]
+----
+(defn wrap-foo [h]
+  (fn [msg]
+    (safe-handle msg
+      "foo" foo-reply
+      :else h)))
+----
+
+This middleware will call `(foo-reply msg)` in a try/catch if the message has
+`:op "foo"`, and otherwise will invoke the rest of the middleware chain with
+`h`. The return of `(foo-reply msg)` is merged with msg-specific fields and sent
+to the client. If `(foo-reply msg)` throws an exception, a message with `:status
+#{:foo-error}` will be sent to the client.
+
 == Additional Resources
 
 * https://metaredux.com/posts/2019/12/04/documenting-nrepl-middleware-apis.html

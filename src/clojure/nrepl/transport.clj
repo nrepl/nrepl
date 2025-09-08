@@ -252,3 +252,27 @@
   "Send a response for `msg` with `response-data` using message's transport."
   [msg & response-data]
   (send (:transport msg) (apply response-for msg response-data)))
+
+(defmacro safe-handle
+  "When given a message and a number of <op handler> pairs, invoke the handler
+  with the op that matches message's op. If an exception is raised during
+  handling, send an automatic error response through the message's transport
+  with `:<op>-error` status. Special keyword `:else` can be used for an op to
+  define a catch-all handler. Handlers should functions of 1 argument `msg`."
+  {:style/indent 1}
+  [msg & body] ;; `body` is used, otherwise CIDER acts up and misindents
+  (assert (even? (count body)))
+  (let [msg-sym (gensym "msg")
+        op-sym (gensym "op")]
+    `(let [~msg-sym ~msg
+           ~op-sym (:op ~msg-sym)]
+       (cond ~@(mapcat (fn [[op handler]]
+                         (if (= op :else)
+                           [:else `(~handler ~msg-sym)]
+                           [`(= ~op-sym ~op)
+                            `(try (respond-to ~msg-sym (~handler ~msg-sym))
+                                  (catch Exception e#
+                                    (respond-to ~msg-sym
+                                                :status #{~(keyword (str op "-error")) :error :done}
+                                                :message (.getMessage e#))))]))
+                       (partition 2 body))))))
