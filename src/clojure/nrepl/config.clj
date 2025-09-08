@@ -23,7 +23,7 @@
   "Default XDG config directory (~/.config)."
   (io/file home-dir ".config"))
 
-(defn- non-empty-env 
+(defn- non-empty-env
   "Get the value of the environment variable.
   Return the value of the environment variable if it's non-empty,
   or `nil` otherwise."
@@ -32,22 +32,27 @@
     (when (and value (not (str/blank? value)))
       value)))
 
-(def config-dir
-  "nREPL's global configuration directory.
-  The location is determined with the following precedence:
-  $NREPL_CONFIG_DIR
-  $XDG_CONFIG_HOME/nrepl
-  ~/.config/nrepl (if ~/.config exists)
-  ~/.nrepl"
-  (or (some-> (non-empty-env "NREPL_CONFIG_DIR") io/file)
-      (some-> (non-empty-env "XDG_CONFIG_HOME") (io/file "nrepl"))
-      (when (.exists xdg-config-default-dir)
-        (io/file xdg-config-default-dir "nrepl"))
-      (io/file home-dir ".nrepl")))
+(def config-file-name "nrepl.edn")
 
 (def config-file
-  "nREPL's config file."
-  (io/file config-dir "nrepl.edn"))
+  "nREPL's global configuration file.
+
+  The location is determined with the following precedence:
+   $NREPL_CONFIG_DIR/nrepl.edn
+   $XDG_CONFIG_HOME/nrepl/nrepl.edn
+   ~/.config/nrepl/nrepl.edn (if ~/.config exists)
+   ~/.nrepl/nrepl.edn
+
+  Return the first existing config file in this order. If no config
+  file exists in any of these locations, returns the default path
+  `~/.nrepl/nrepl.edn`."
+  (let [candidates
+        [(some-> (non-empty-env "NREPL_CONFIG_DIR") (io/file config-file-name))
+         (some-> (non-empty-env "XDG_CONFIG_HOME") (io/file "nrepl" config-file-name))
+         (io/file xdg-config-default-dir "nrepl" config-file-name)
+         (io/file home-dir ".nrepl" config-file-name)]]
+    (or (some #(when (and % (.exists %)) %) candidates)
+        (last candidates))))
 
 (defn- load-edn
   "Load edn from an io/reader source (filename or io/resource)."
