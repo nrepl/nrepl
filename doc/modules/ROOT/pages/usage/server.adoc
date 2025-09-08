@@ -367,15 +367,16 @@ nREPL server's behaviour via configuration files.
 
 There are two configuration files:
 
-* Global configuration file `.nrepl/nrepl.edn`
+* Global configuration file `~/.nrepl/nrepl.edn`
 * Local configuration file `.nrepl.edn`
 
 The global configuration file is useful for setting options that you'd
 like to use for all the nREPL servers that you start (e.g. a common
 `bind-address`, `transport`, `handler`, etc).
 
-TIP: You can alter the location of the global configuration file
-via the environment variable `NREPL_CONFIG_DIR`.
+TIP: Set `NREPL_CONFIG_DIR` to override the global config directory.
+Otherwise nREPL uses `$XDG_CONFIG_HOME/nrepl`, then `~/.config/nrepl`,
+and finally defaults to `~/.nrepl`.
 
 The local configuration file should be placed in the directory from
 which you're starting the server (normally the root directory of your
