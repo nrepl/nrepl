@@ -90,6 +90,7 @@
                                          run-with [[:inner 0]]
                                          testing-dynamic [[:inner 0]]
                                          testing-print [[:inner 0]]
+                                         safe-handle [[:inner 0]]
                                          when-require [[:inner 0]]}}}
 
              :eastwood [:test

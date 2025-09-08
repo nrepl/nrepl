@@ -16,7 +16,7 @@
    [clojure.walk :as walk]
    [nrepl.middleware :as middleware :refer [set-descriptor!]]
    [nrepl.misc :as misc]
-   [nrepl.transport :as t]
+   [nrepl.transport :as t :refer [safe-handle]]
    [nrepl.util.completion :as complete]))
 
 (def ^:dynamic *complete-fn*
@@ -31,16 +31,12 @@
      (update (walk/keywordize-keys options) :extra-metadata (comp set (partial map keyword))))))
 
 (defn completion-reply
-  [{:keys [session prefix ns complete-fn options] :as msg}]
-  (let [the-ns (if ns (symbol ns) (symbol (str (@session #'*ns*))))
+  [{:keys [prefix ns complete-fn options] :as msg}]
+  (let [the-ns (if ns (symbol ns) (symbol (str (misc/resolve-in-session msg *ns*))))
         completion-fn (or (some-> complete-fn symbol misc/requiring-resolve)
                           (misc/resolve-in-session msg *complete-fn*))]
-    (try
-      {:status :done
-       :completions (completion-fn prefix the-ns (parse-options options))}
-      (catch Exception _
-        {:status (cond-> #{:done :completion-error}
-                   (some? ns) (conj :namespace-not-found))}))))
+    {:status :done
+     :completions (completion-fn prefix the-ns (parse-options options))}))
 
 (defn wrap-completion
   "Middleware that provides code completion.
@@ -52,10 +48,10 @@
   completion. Must point to a function with signature [prefix ns options].
   * `options` – a map of options to pass to the completion function."
   [h]
-  (fn [{:keys [op] :as msg}]
-    (if (= op "completions")
-      (t/respond-to msg (completion-reply msg))
-      (h msg))))
+  (fn [msg]
+    (safe-handle msg
+      "completions" completion-reply
+      :else h)))
 
 (set-descriptor! #'wrap-completion
                  {:requires #{"clone"}
