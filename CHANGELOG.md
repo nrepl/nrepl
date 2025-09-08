@@ -2,6 +2,10 @@
 
 ## master (unreleased)
 
+### New features
+
+* [#383](https://github.com/nrepl/nrepl/pull/383): Introduce `safe-handle` helper to simplify dealing with errors in middleware responses.
+
 ### Changes
 
 * [#385](https://github.com/nrepl/nrepl/pull/385): Preserve filename in functions compiled during regular eval.
