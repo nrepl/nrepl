@@ -29,10 +29,9 @@
   or `nil` otherwise."
   [env-var]
   (let [value (System/getenv env-var)]
-    (when (and value (not (str/blank? value)))
-      value)))
+    (when (not (str/blank? value)) value)))
 
-(def config-file-name "nrepl.edn")
+(def ^:private config-file-name "nrepl.edn")
 
 (def config-file
   "nREPL's global configuration file.
