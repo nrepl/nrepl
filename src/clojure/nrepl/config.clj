@@ -12,22 +12,52 @@
    :added  "0.5"}
   (:require
    [clojure.edn :as edn]
-   [clojure.java.io :as io]))
+   [clojure.java.io :as io]
+   [clojure.string :as str]))
 
 (def ^:private home-dir
   "The user's home directory."
   (System/getProperty "user.home"))
 
-(def config-dir
-  "nREPL's configuration directory.
-  By default it's ~/.nrepl, but this can be overridden
-  with the NREPL_CONFIG_DIR env variable."
-  (or (some-> (System/getenv "NREPL_CONFIG_DIR") io/file)
-      (io/file home-dir ".nrepl")))
+(def ^:private xdg-config-default-dir
+  "Default XDG config directory (~/.config)."
+  (io/file home-dir ".config"))
+
+(defn- non-empty-env
+  "Get the value of the environment variable.
+  Return the value of the environment variable if it's non-empty,
+  or `nil` otherwise."
+  [env-var]
+  (let [value (System/getenv env-var)]
+    (when-not (str/blank? value) value)))
+
+(def ^:private config-file-name "nrepl.edn")
 
 (def config-file
-  "nREPL's config file."
-  (io/file config-dir "nrepl.edn"))
+  "nREPL's global configuration file.
+
+  The location is determined with the following precedence:
+  * $NREPL_CONFIG_DIR/nrepl.edn
+  * $XDG_CONFIG_HOME/nrepl/nrepl.edn
+  * ~/.config/nrepl/nrepl.edn (if ~/.config exists)
+  * ~/.nrepl/nrepl.edn
+
+  Return the first existing config file in this order. If no config
+  file exists in any of these locations, return the default path
+  `~/.nrepl/nrepl.edn`."
+  (let [candidates
+        [(some-> (non-empty-env "NREPL_CONFIG_DIR") (io/file config-file-name))
+         (some-> (non-empty-env "XDG_CONFIG_HOME") (io/file "nrepl" config-file-name))
+         (io/file xdg-config-default-dir "nrepl" config-file-name)
+         (io/file home-dir ".nrepl" config-file-name)]]
+    (or (some (fn [^java.io.File file]
+                (when (and file (.exists file)) file))
+              candidates)
+        (last candidates))))
+
+(def config-dir
+  "nREPL's global configuration directory."
+  (.getParentFile ^java.io.File config-file))
 
 (defn- load-edn
   "Load edn from an io/reader source (filename or io/resource)."
