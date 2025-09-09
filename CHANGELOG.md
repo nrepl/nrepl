@@ -4,6 +4,7 @@
 
 ### New features
 
+* [#386](https://github.com/nrepl/nrepl/pull/386): Add support for XDG_CONFIG_HOME
 * [#383](https://github.com/nrepl/nrepl/pull/383): Introduce `safe-handle` helper to simplify dealing with errors in middleware responses.
 
 ### Changes

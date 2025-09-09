@@ -37,13 +37,13 @@
   "nREPL's global configuration file.
 
   The location is determined with the following precedence:
-   $NREPL_CONFIG_DIR/nrepl.edn
-   $XDG_CONFIG_HOME/nrepl/nrepl.edn
-   ~/.config/nrepl/nrepl.edn (if ~/.config exists)
-   ~/.nrepl/nrepl.edn
+  * $NREPL_CONFIG_DIR/nrepl.edn
+  * $XDG_CONFIG_HOME/nrepl/nrepl.edn
+  * ~/.config/nrepl/nrepl.edn (if ~/.config exists)
+  * ~/.nrepl/nrepl.edn
 
   Return the first existing config file in this order. If no config
-  file exists in any of these locations, returns the default path
+  file exists in any of these locations, return the default path
   `~/.nrepl/nrepl.edn`."
   (let [candidates
         [(some-> (non-empty-env "NREPL_CONFIG_DIR") (io/file config-file-name))
