@@ -11,13 +11,14 @@
    [nrepl.util.threading :as threading]
    nrepl.version)
   (:import
-   clojure.lang.RT
+   (clojure.lang RT
+                 LineNumberingPushbackReader
+                 LispReader$Resolver)
    (java.io ByteArrayOutputStream
             Closeable
             EOFException
             Flushable
-            PushbackInputStream
-            PushbackReader)
+            PushbackInputStream)
    [java.net SocketException]
    [java.nio.channels ClosedChannelException]
    [java.util.concurrent BlockingQueue LinkedBlockingQueue SynchronousQueue TimeUnit]))
@@ -177,15 +178,22 @@
    via simple in/out readers, as with a tty or telnet connection."
   ([s] (tty s s s))
   ([in out & [^Closeable s]]
-   (let [r (PushbackReader. (io/reader in))
+   (let [r (LineNumberingPushbackReader. (io/reader in))
          w (io/writer out)
          cns (atom "user")
          prompt (fn [newline?]
                   (when newline? (.write w (int \newline)))
                   (.write w (str @cns "=> ")))
          session-id (atom nil)
-         read-msg #(let [code (read {:read-cond :allow} r)]
-                     (merge {:op "eval" :code [code] :ns @cns :id (str "eval" (uuid))}
+         parsing-resolver (reify clojure.lang.LispReader$Resolver
+                            (currentNS    [_]            '_unused-ns)
+                            (resolveAlias [_ _alias-sym] '_unused-ns)
+                            (resolveClass [_ _class-sym] '_unused-class)
+                            (resolveVar   [_ _var-sym]   '_unused-var))
+         read-msg #(let [[_forms code-string]
+                         (binding [*reader-resolver* parsing-resolver]
+                           (read+string {:read-cond :preserve} r))]
+                     (merge {:op "eval" :code code-string :ns @cns :id (str "eval" (uuid))}
                             (when @session-id {:session @session-id})))
          read-seq (atom (cons {:op "clone"} (repeatedly read-msg)))
          write (fn [{:keys [out err value status ns new-session id]}]
