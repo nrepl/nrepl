@@ -184,21 +184,29 @@
          prompt (fn [newline?]
                   (when newline? (.write w (int \newline)))
                   (.write w (str @cns "=> ")))
+         read-sync (java.util.concurrent.Semaphore. 1)
+         read-id (atom nil)
          session-id (atom nil)
-         parsing-resolver (reify clojure.lang.LispReader$Resolver
-                            (currentNS    [_]            '_unused-ns)
-                            (resolveAlias [_ _alias-sym] '_unused-ns)
-                            (resolveClass [_ _class-sym] '_unused-class)
-                            (resolveVar   [_ _var-sym]   '_unused-var))
-         read-msg #(let [[_forms code-string]
-                         (binding [*reader-resolver* parsing-resolver]
+         dummy-resolver (reify clojure.lang.LispReader$Resolver
+                          (currentNS    [_]            '_unused-ns)
+                          (resolveAlias [_ _alias-sym] '_unused-ns)
+                          (resolveClass [_ _class-sym] '_unused-class)
+                          (resolveVar   [_ _var-sym]   '_unused-var))
+         read-msg #(let [id (str "eval" (uuid))
+                         [_forms code-string]
+                         (binding [*reader-resolver* dummy-resolver]
                            (read+string {:read-cond :preserve} r))]
-                     (merge {:op "eval" :code code-string :ns @cns :id (str "eval" (uuid))}
+                     (.acquire read-sync)
+                     (reset! read-id id)
+                     (merge {:op "eval" :code code-string :ns @cns :id id}
                             (when @session-id {:session @session-id})))
          read-seq (atom (cons {:op "clone"} (repeatedly read-msg)))
          write (fn [{:keys [out err value status ns new-session id]}]
                  (when new-session (reset! session-id new-session))
                  (when ns (reset! cns ns))
+                 (when (and (some #{:done "done"} status)
+                            (= id @read-id))
+                   (.release read-sync))
                  (doseq [^String x [out err value] :when x]
                    (.write w x))
                  (when (and (= status #{:done}) id (.startsWith ^String id "eval"))

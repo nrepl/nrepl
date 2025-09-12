@@ -55,11 +55,19 @@
             br   (java.io.BufferedReader. (java.io.InputStreamReader. (.getInputStream c)))
             _    (doto out
                    (.println "(System/getProperty \"nreplacktest\")")
+                   (.println "#?(:clj :clj-form)")
+                   (.println "#?(:cljs :cljs-form)")
+                   (.println "(clojure.core/require '[clojure.java.io :as io])")
+                   (.println "::io/xyz")
                    (.flush))
-            resp (doall (repeatedly 3 #(.readLine br)))
+            resp (doall (repeatedly 7 #(.readLine br)))
             _    (.disconnect c)]
-        (is (= "user=> \"y\""
-               (last resp))))
+        (is (= ["user=> \"y\""
+                "user=> :clj-form"
+                "user=> "
+                "user=> nil"
+                "user=> :clojure.java.io/xyz"]
+               (drop 2 resp))))
       (finally
         (.destroy server-process)))))
 
