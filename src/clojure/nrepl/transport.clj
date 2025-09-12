@@ -21,7 +21,7 @@
             PushbackInputStream)
    [java.net SocketException]
    [java.nio.channels ClosedChannelException]
-   [java.util.concurrent BlockingQueue LinkedBlockingQueue SynchronousQueue TimeUnit]))
+   [java.util.concurrent BlockingQueue LinkedBlockingQueue Semaphore SynchronousQueue TimeUnit]))
 
 (defprotocol Transport
   "Defines the interface for a wire protocol implementation for use
@@ -184,10 +184,10 @@
          prompt (fn [newline?]
                   (when newline? (.write w (int \newline)))
                   (.write w (str @cns "=> ")))
-         read-sync (java.util.concurrent.Semaphore. 1)
+         read-sync (Semaphore. 1)
          read-id (atom nil)
          session-id (atom nil)
-         dummy-resolver (reify clojure.lang.LispReader$Resolver
+         dummy-resolver (reify LispReader$Resolver
                           (currentNS    [_]            '_unused-ns)
                           (resolveAlias [_ _alias-sym] '_unused-ns)
                           (resolveClass [_ _class-sym] '_unused-class)
