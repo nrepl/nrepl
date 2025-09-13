@@ -12,8 +12,7 @@
    nrepl.version)
   (:import
    (clojure.lang RT
-                 LineNumberingPushbackReader
-                 LispReader$Resolver)
+                 LineNumberingPushbackReader)
    (java.io ByteArrayOutputStream
             Closeable
             EOFException
@@ -173,6 +172,24 @@
             (.close in)
             (.close out))))))))
 
+(def clojure<1-10 (not (resolve 'read+string)))
+
+(defmacro read-form
+  "Read a form from `in` stream."
+  [in]
+  (if clojure<1-10
+    ;; Remains broken - remove when support for 1.8 & 1.9 is dropped
+    `[(read {:read-cond :allow} ~in)]
+    `(let [dummy-resolver# (reify clojure.lang.LispReader$Resolver
+                             (currentNS    [_]            '_unused-ns)
+                             (resolveAlias [_ _alias-sym] '_unused-ns)
+                             (resolveClass [_ _class-sym] '_unused-class)
+                             (resolveVar   [_ _var-sym]   '_unused-var))
+           [_forms# code-string#]
+           (binding [*reader-resolver* dummy-resolver#]
+             (read+string {:read-cond :preserve} ~in))]
+       code-string#)))
+
 (defn tty
   "Returns a Transport implementation suitable for serving an nREPL backend
    via simple in/out readers, as with a tty or telnet connection."
@@ -187,18 +204,11 @@
          read-sync (Semaphore. 1)
          read-id (atom nil)
          session-id (atom nil)
-         dummy-resolver (reify LispReader$Resolver
-                          (currentNS    [_]            '_unused-ns)
-                          (resolveAlias [_ _alias-sym] '_unused-ns)
-                          (resolveClass [_ _class-sym] '_unused-class)
-                          (resolveVar   [_ _var-sym]   '_unused-var))
          read-msg #(let [id (str "eval" (uuid))
-                         [_forms code-string]
-                         (binding [*reader-resolver* dummy-resolver]
-                           (read+string {:read-cond :preserve} r))]
+                         code (read-form r)]
                      (.acquire read-sync)
                      (reset! read-id id)
-                     (merge {:op "eval" :code code-string :ns @cns :id id}
+                     (merge {:op "eval" :code code :ns @cns :id id}
                             (when @session-id {:session @session-id})))
          read-seq (atom (cons {:op "clone"} (repeatedly read-msg)))
          write (fn [{:keys [out err value status ns new-session id]}]

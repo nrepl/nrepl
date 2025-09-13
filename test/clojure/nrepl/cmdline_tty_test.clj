@@ -61,12 +61,19 @@
                    (.println "::io/xyz")
                    (.flush))
             resp (doall (repeatedly 7 #(.readLine br)))
-            _    (.disconnect c)]
-        (is (= ["user=> \"y\""
-                "user=> :clj-form"
-                "user=> "
-                "user=> nil"
-                "user=> :clojure.java.io/xyz"]
+            _    (.disconnect c)
+            expected (if transport/clojure<1-10
+                       ;; Continued error behavior in Clojure <1.10
+                       ["user=> \"y\""
+                        "user=> :clj-form"
+                        "user=> "
+                        nil nil]
+                       ["user=> \"y\""
+                        "user=> :clj-form"
+                        "user=> "
+                        "user=> nil"
+                        "user=> :clojure.java.io/xyz"])]
+        (is (= expected
                (drop 2 resp))))
       (finally
         (.destroy server-process)))))
