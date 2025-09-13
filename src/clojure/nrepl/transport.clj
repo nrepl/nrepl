@@ -181,10 +181,10 @@
     ;; Remains broken - remove when support for 1.8 & 1.9 is dropped
     `[(read {:read-cond :allow} ~in)]
     `(let [dummy-resolver# (reify clojure.lang.LispReader$Resolver
-                             (currentNS    [_]            '_unused-ns)
-                             (resolveAlias [_ _alias-sym] '_unused-ns)
-                             (resolveClass [_ _class-sym] '_unused-class)
-                             (resolveVar   [_ _var-sym]   '_unused-var))
+                             (currentNS    [_]             '_unused-ns)
+                             (resolveAlias [_ _alias-sym#] '_unused-ns)
+                             (resolveClass [_ _class-sym#] '_unused-class)
+                             (resolveVar   [_ _var-sym#]   '_unused-var))
            [_forms# code-string#]
            (binding [*reader-resolver* dummy-resolver#]
              (read+string {:read-cond :preserve} ~in))]
