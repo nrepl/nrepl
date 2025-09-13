@@ -176,10 +176,11 @@
 
 (defmacro read-form
   "Read a form from `in` stream."
-  [in]
+  [in sync-fn]
   (if clojure<1-10
     ;; Remains broken - remove when support for 1.8 & 1.9 is dropped
-    `[(read {:read-cond :allow} ~in)]
+    `(do (~sync-fn)  ;; Sync *prior* to read - read relies on eval
+         [(read {:read-cond :allow} ~in)])
     `(let [dummy-resolver# (reify clojure.lang.LispReader$Resolver
                              (currentNS    [_]             (gensym))
                              (resolveAlias [_ _alias-sym#] (gensym))
@@ -188,6 +189,7 @@
            [_forms# code-string#]
            (binding [*reader-resolver* dummy-resolver#]
              (read+string {:read-cond :preserve} ~in))]
+       (~sync-fn)  ;; Sync *after* eval-independent read for parallelism
        code-string#)))
 
 (defn tty
@@ -205,9 +207,10 @@
          read-id (atom nil)
          session-id (atom nil)
          read-msg #(let [id (str "eval" (uuid))
-                         code (read-form r)]
-                     (.acquire read-sync)
-                     (reset! read-id id)
+                         sync-fn (fn []
+                                   (.acquire read-sync)
+                                   (reset! read-id id))
+                         code (read-form r sync-fn)]
                      (merge {:op "eval" :code code :ns @cns :id id}
                             (when @session-id {:session @session-id})))
          read-seq (atom (cons {:op "clone"} (repeatedly read-msg)))

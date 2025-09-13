@@ -68,8 +68,9 @@
                        ;; Continued error behavior in Clojure <1.10
                        ["user=> \"y\""
                         "user=> :clj-form"
+                        "user=> nil"
                         "user=> "
-                        nil nil nil nil]
+                        nil nil nil]
                        ["user=> \"y\""
                         "user=> :clj-form"
                         "user=> "
