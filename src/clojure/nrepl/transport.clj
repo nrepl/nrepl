@@ -11,16 +11,16 @@
    [nrepl.util.threading :as threading]
    nrepl.version)
   (:import
-   clojure.lang.RT
+   (clojure.lang RT
+                 LineNumberingPushbackReader)
    (java.io ByteArrayOutputStream
             Closeable
             EOFException
             Flushable
-            PushbackInputStream
-            PushbackReader)
+            PushbackInputStream)
    [java.net SocketException]
    [java.nio.channels ClosedChannelException]
-   [java.util.concurrent BlockingQueue LinkedBlockingQueue SynchronousQueue TimeUnit]))
+   [java.util.concurrent BlockingQueue LinkedBlockingQueue Semaphore SynchronousQueue TimeUnit]))
 
 (defprotocol Transport
   "Defines the interface for a wire protocol implementation for use
@@ -172,25 +172,54 @@
             (.close in)
             (.close out))))))))
 
+(def clojure<1-10 (not (resolve 'read+string)))
+
+(defmacro read-form
+  "Read a form from `in` stream."
+  [in sync-fn]
+  (if clojure<1-10
+    ;; Remains broken - remove when support for 1.8 & 1.9 is dropped
+    `(do (~sync-fn)  ;; Sync *prior* to read - read relies on eval
+         [(read {:read-cond :allow} ~in)])
+    `(let [dummy-resolver# (reify clojure.lang.LispReader$Resolver
+                             (currentNS    [_]             (gensym))
+                             (resolveAlias [_ _alias-sym#] (gensym))
+                             (resolveClass [_ _class-sym#] (gensym))
+                             (resolveVar   [_ _var-sym#]   (gensym)))
+           [_forms# code-string#]
+           (binding [*reader-resolver* dummy-resolver#]
+             (read+string {:read-cond :preserve} ~in))]
+       (~sync-fn)  ;; Sync *after* eval-independent read for parallelism
+       code-string#)))
+
 (defn tty
   "Returns a Transport implementation suitable for serving an nREPL backend
    via simple in/out readers, as with a tty or telnet connection."
   ([s] (tty s s s))
   ([in out & [^Closeable s]]
-   (let [r (PushbackReader. (io/reader in))
+   (let [r (LineNumberingPushbackReader. (io/reader in))
          w (io/writer out)
          cns (atom "user")
          prompt (fn [newline?]
                   (when newline? (.write w (int \newline)))
                   (.write w (str @cns "=> ")))
+         read-sync (Semaphore. 1)
+         read-id (atom nil)
          session-id (atom nil)
-         read-msg #(let [code (read {:read-cond :allow} r)]
-                     (merge {:op "eval" :code [code] :ns @cns :id (str "eval" (uuid))}
+         read-msg #(let [id (str "eval" (uuid))
+                         sync-fn (fn []
+                                   (.acquire read-sync)
+                                   (reset! read-id id))
+                         code (read-form r sync-fn)]
+                     (merge {:op "eval" :code code :ns @cns :id id}
                             (when @session-id {:session @session-id})))
          read-seq (atom (cons {:op "clone"} (repeatedly read-msg)))
          write (fn [{:keys [out err value status ns new-session id]}]
                  (when new-session (reset! session-id new-session))
                  (when ns (reset! cns ns))
+                 (when (and (some #{:done "done"} status)
+                            (= id @read-id))
+                   (.release read-sync))
                  (doseq [^String x [out err value] :when x]
                    (.write w x))
                  (when (and (= status #{:done}) id (.startsWith ^String id "eval"))

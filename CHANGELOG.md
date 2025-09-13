@@ -10,6 +10,7 @@
 ### Changes
 
 * [#385](https://github.com/nrepl/nrepl/pull/385): Preserve filename in functions compiled during regular eval.
+* [#387](https://github.com/nrepl/nrepl/pull/387): Correctly resolve namespaced keywords in tty transport.
 
 ## 1.4.0 (2025-09-02)
 
