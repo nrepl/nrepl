@@ -96,6 +96,12 @@ content:
      start_path: doc
 ----
 
+==== Deploying to Clojars
+
+Releases are done by CircleCI automatically. To push a release, you need to tag
+a commit in master branch with the desired release version, starting with `v`,
+e.g. `v1.2.3`.
+
 == Funding
 
 While nREPL is free software and will always be, the project would benefit immensely from some funding.
