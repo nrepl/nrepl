@@ -1,6 +1,7 @@
 {:tasks
  {:requires [[babashka.fs :as fs]
-             [babashka.process :as p]]
+             [babashka.process :as p]
+             [clojure.string :as str]]
   :init (do (def clj-version
               "The clj version to use with lein tasks."
               (or (first *command-line-args*) (System/getenv "CLOJURE_VERSION") "1.11"))
@@ -62,7 +63,31 @@
            ;; artifact repository.
            :task (shell lein "with-profile" (str "-user,+" clj-version) "deploy" "clojars")}
 
+  ci-deploy {:doc "Deploy to clojars for [CLOJURE_VERSION]. To be used from CircleCI. Auth is controlled by the `clojars_username` and `clojars_password` env vars."
+             ;; Deploying requires the caller to set environment variables as
+             ;; specified in project.clj to provide a login and password to the
+             ;; artifact repository.
+             :task
+             (do
+               (doseq [required-env ["CLOJARS_USERNAME" "CLOJARS_PASSWORD" "CIRCLE_TAG"]]
+                 (when-not (System/getenv required-env)
+                   (println (format "Error: %s is undefined" required-env))
+                   (System/exit 1)))
+
+               (let [circle-tag (System/getenv "CIRCLE_TAG")]
+                 ;; Check if CIRCLE_TAG starts with 'v'
+                 (when-not (str/starts-with? circle-tag "v")
+                   (println (format "[Error] CIRCLE_TAG %s must start with 'v'." circle-tag))
+                   (System/exit 1))
+
+                 ;; Extract version by removing 'v' prefix
+                 (let [project-version (subs circle-tag 1)]
+                   (println (format "Deploying version: %s" project-version))
+
+                   ;; Set PROJECT_VERSION environment variable and run lein deploy
+                   (p/shell {:extra-env {"PROJECT_VERSION" project-version}}
+                            "lein" "with-profile" "-user,-dev,-provided"
+                            "deploy" "clojars"))))}
+
   clean  {:doc "Clean artifacts."
           :task (shell lein "clean")}}}
-
-

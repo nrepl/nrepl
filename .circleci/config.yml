@@ -71,11 +71,12 @@ commands:
       - restore_cache:
           key: cache-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
       - run:
-          name: Install babashka if not present
+          name: Install packages
           command: |
-            [ -e /usr/local/bin/bb ] && exit
             # Install curl explicitly because jdk24 doesn't have it.
             apt update && apt install -y curl
+            # Skip Babashka download if present
+            [ -e /usr/local/bin/bb ] && exit
             bash <(curl -s https://raw.githubusercontent.com/borkdude/babashka/master/install) --dir ~
             mv ~/bb /usr/local/bin/bb
       - steps: << parameters.steps >>
@@ -112,23 +113,45 @@ commands:
 
 jobs:
 
-  util_job:
+  lint:
     description: |
       Running utility commands/checks (linter etc.)
     parameters:
-      steps:
-        type: steps
       clojure_version:
         type: string
         default: "1.12"
-    executor: jdk21
+    executor: jdk24
     environment:
       CLOJURE_VERSION: << parameters.clojure_version >>
     steps:
       - checkout
       - with_cache:
-          cache_version: "util_v2_<< parameters.clojure_version >>"
-          steps: << parameters.steps >>
+          cache_version: "util_v3_<< parameters.clojure_version >>"
+          steps:
+            - run:
+                name: Running Eastwood
+                command: |
+                  bb eastwood
+            - run:
+                name: Running cljfmt
+                command: |
+                  bb cljfmt
+            - run:
+                name: Running clj-kondo
+                command: |
+                  bb kondo
+            - run:
+                name: Verifying Cljdoc
+                command: |
+                  bb verify_cljdoc
+
+  deploy:
+    executor: jdk8
+    steps:
+      - checkout
+      - run:
+          name: Deploy
+          command: bb ci-deploy
 
   test:
     description: |
@@ -169,43 +192,44 @@ jobs:
   #           java -version; if(-not $?){exit 9}
   #           bb test      ; if(-not $?){exit 9}
 
+run_always: &run_always
+  filters:
+    branches:
+      only: /.*/
+    tags:
+      only: /.*/
+
 workflows:
   ci-test-matrix:
     jobs:
       - test:
           matrix:
+            alias: "test"
             parameters:
               # Clojure versions 1.8-1.9 are tested only against JDK8 because of
               # multiple incompatibilities of those versions with JDK11+.
               clojure_version: ["1.8", "1.9", "1.10", "1.11", "1.12"]
               jdk_version: [jdk8]
+          <<: *run_always
       - test:
           matrix:
+            alias: "test-1-10+"
             parameters:
               clojure_version: ["1.10", "1.11", "1.12"]
               jdk_version: [jdk11, jdk17, jdk21, jdk24]
+          <<: *run_always
       # - test_code_windows:
       #     name: Win, Java sys, Clj 1.11
       #     clojure_version: "1.11"
-      - util_job:
-          name: Code Linting
-          steps:
-            - run:
-                name: Running Eastwood
-                command: |
-                  bb eastwood
-            - run:
-                name: Running cljfmt
-                command: |
-                  bb cljfmt
-            - run:
-                name: Running clj-kondo
-                command: |
-                  bb kondo
-      - util_job:
-          name: Checking Cljdoc
-          steps:
-            - run:
-                name: Verifying Cljdoc
-                command: |
-                  bb verify_cljdoc
+      - lint:
+          <<: *run_always
+      - deploy:
+          requires:
+            - test
+            - test-1-10+
+            - lint
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v\d+\.\d+\.\d+(-alpha\d+)?$/
