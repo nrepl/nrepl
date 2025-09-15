@@ -65,7 +65,7 @@
           short-fname (short-file-name file)
           explicit-ns (some-> ns symbol find-ns)]
       (if (and (some? ns) (nil? explicit-ns))
-        (t/respond-to msg {:status #{:error :namespace-not-found :done}
+        (t/respond-to msg {:status #{:error :namespace-not-found}
                            :ns     ns})
         (let [eof (Object.)
               read (if (string? code)

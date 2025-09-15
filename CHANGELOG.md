@@ -11,6 +11,10 @@
 
 * [#385](https://github.com/nrepl/nrepl/pull/385): Preserve filename in functions compiled during regular eval.
 
+### Bugs fixed
+
+* [#215](https://github.com/nrepl/nrepl/pull/215): Don't send `:done` twice if namespace can't be resolved during `eval`.
+
 ## 1.4.0 (2025-09-02)
 
 ### New features
