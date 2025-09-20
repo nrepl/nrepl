@@ -61,35 +61,48 @@
   sent via that Transport."
   [msg]
   (fn run []
-    (let [{:keys [eval ns code file line column]} msg
-          short-fname (short-file-name file)
+    (let [{:keys [eval ns code file file-name line column]} msg
+          ;; Qualified read-fn and eval-fn are a way for middleware to provide
+          ;; custom read and eval functions which can be runtime closures.
+          ;; `:eval` parameter that can come from a client can only be a symbol
+          ;; pointing to a var.
+          read-fn (or (::read-fn msg) clojure.core/read)
+          eval-fn (or (::eval-fn msg) (some-> eval symbol find-var))
+          ;; Needed exclusively by `load-file` middleware to say that if error
+          ;; happens anywhere during the evaluation of the file, don't try
+          ;; evaluating subsequent forms.
+          stop-on-error? (::stop-on-error msg)
+          ;; A way to provide extra temporary bindings (not session-persisted).
+          bindings (or (::bindings msg) {})
+          file-name (or file-name (short-file-name file))
           explicit-ns (some-> ns symbol find-ns)]
       (if (and (some? ns) (nil? explicit-ns))
         (t/respond-to msg {:status #{:error :namespace-not-found}
                            :ns     ns})
         (let [eof (Object.)
+              errored? (volatile! false)
               read (if (string? code)
                      (let [reader (source-logging-pushback-reader code line column)
                            read-cond (or (-> msg :read-cond keyword)
                                          :allow)]
-                       #(read {:read-cond read-cond :eof eof} reader))
+                       #(read-fn {:read-cond read-cond :eof eof} reader))
                      (let [code (.iterator ^Iterable code)]
                        #(if (.hasNext code)
                           (.next code)
                           eof)))
-              eval-fn (when eval (find-var (symbol eval)))
-              ;; eval-fn (if eval (find-var (symbol eval)) clojure.core/eval)
               caught (fn [^Throwable e]
                        (set! *e e)
+                       (vreset! errored? true)
                        (when-not (interrupted? e)
                          (t/respond-to msg {::caught/throwable e
                                             :status #{:eval-error}
                                             :ex (str (class e))
                                             :root-ex (str (class (clojure.main/root-cause e)))})))]
-          (push-thread-bindings (cond-> {}
-                                  explicit-ns (assoc #'*ns* explicit-ns)
-                                  short-fname (assoc Compiler/SOURCE_PATH file
-                                                     Compiler/SOURCE short-fname)))
+          (push-thread-bindings (merge (when explicit-ns {#'*ns* explicit-ns})
+                                       (when (and file file-name)
+                                         {Compiler/SOURCE_PATH file
+                                          Compiler/SOURCE file-name})
+                                       bindings))
           (try
             (loop []
               (let [input (try
@@ -125,8 +138,9 @@
                       (caught e)))
                   ;; Otherwise, when errors happen during eval/print phase,
                   ;; report the exception but continue executing the
-                  ;; remaining readable forms.
-                  (recur))))
+                  ;; remaining readable forms, unless we load the whole file.
+                  (when-not (and stop-on-error? @errored?)
+                    (recur)))))
 
             (catch Throwable e
               (caught e))
@@ -163,6 +177,7 @@
                                                "eval" "A fully-qualified symbol naming a var whose function value will be used to evaluate [code], instead of `clojure.core/eval` (the default)."
                                                "ns" "The namespace in which to perform the evaluation. The supplied namespace must exist already (e.g. be loaded). If no namespace is specified the evaluation falls back to `*ns*` for the session in question."
                                                "file" "The path to the file containing [code]. `clojure.core/*file*` will be bound to this."
+                                               "file-name" "Name of source file, e.g. io.clj. Do not confuse with `file` param which contains full path while `file-name` is only the short file name. Both parameters are needed to properly set the bytecode location metadata."
                                                "line" "The line number in [file] at which [code] starts."
                                                "column" "The column number in [file] at which [code] starts."
                                                "read-cond" "The options passed to the reader before the evaluation. Useful when middleware in a higher layer wants to process reader conditionals."})
