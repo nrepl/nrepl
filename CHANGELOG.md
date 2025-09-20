@@ -4,17 +4,18 @@
 
 ### New features
 
-* [#386](https://github.com/nrepl/nrepl/pull/386): Add support for `XDG_CONFIG_HOME`.
-* [#383](https://github.com/nrepl/nrepl/pull/383): Introduce `safe-handle` helper to simplify dealing with errors in middleware responses.
-
 ### Changes
 
+* [#391](https://github.com/nrepl/nrepl/pull/391): **(Breaking)** Remove `nrepl.helpers/load-file-command`.
+* [#391](https://github.com/nrepl/nrepl/pull/391): Make `load-file` work completely through `interruptible-eval` middleware.
+* [#383](https://github.com/nrepl/nrepl/pull/383): Introduce `safe-handle` helper to simplify dealing with errors in middleware responses.
 * [#385](https://github.com/nrepl/nrepl/pull/385): Preserve filename in functions compiled during regular eval.
-* [#387](https://github.com/nrepl/nrepl/pull/387): Correctly resolve namespaced keywords in tty transport.
+* [#386](https://github.com/nrepl/nrepl/pull/386): Add support for `XDG_CONFIG_HOME`.
 
 ### Bugs fixed
 
 * [#215](https://github.com/nrepl/nrepl/pull/215): Don't send `:done` twice if namespace can't be resolved during `eval`.
+* [#387](https://github.com/nrepl/nrepl/pull/387): Correctly resolve namespaced keywords in tty transport.
 
 ## 1.4.0 (2025-09-02)
 
