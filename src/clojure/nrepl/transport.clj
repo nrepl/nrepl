@@ -172,26 +172,6 @@
             (.close in)
             (.close out))))))))
 
-(def clojure<1-10 (not (resolve 'read+string)))
-
-(defmacro read-form
-  "Read a form from `in` stream."
-  [in sync-fn]
-  (if clojure<1-10
-    ;; Remains broken - remove when support for 1.8 & 1.9 is dropped
-    `(do (~sync-fn)  ;; Sync *prior* to read - read relies on eval
-         [(read {:read-cond :allow} ~in)])
-    `(let [dummy-resolver# (reify clojure.lang.LispReader$Resolver
-                             (currentNS    [_]             (gensym))
-                             (resolveAlias [_ _alias-sym#] (gensym))
-                             (resolveClass [_ _class-sym#] (gensym))
-                             (resolveVar   [_ _var-sym#]   (gensym)))
-           [_forms# code-string#]
-           (binding [*reader-resolver* dummy-resolver#]
-             (read+string {:read-cond :preserve} ~in))]
-       (~sync-fn)  ;; Sync *after* eval-independent read for parallelism
-       code-string#)))
-
 (defn tty
   "Returns a Transport implementation suitable for serving an nREPL backend
    via simple in/out readers, as with a tty or telnet connection."
@@ -200,40 +180,30 @@
    (let [r (LineNumberingPushbackReader. (io/reader in))
          w (io/writer out)
          cns (atom "user")
-         prompt (fn [newline?]
-                  (when newline? (.write w (int \newline)))
-                  (.write w (str @cns "=> ")))
          read-sync (Semaphore. 1)
-         read-id (atom nil)
+         eval-ids (atom #{})
          session-id (atom nil)
-         read-msg #(let [id (str "eval" (uuid))
-                         sync-fn (fn []
-                                   (.acquire read-sync)
-                                   (reset! read-id id))
-                         code (read-form r sync-fn)]
-                     (merge {:op "eval" :code code :ns @cns :id id}
-                            (when @session-id {:session @session-id})))
-         read-seq (atom (cons {:op "clone"} (repeatedly read-msg)))
+         read-queue (LinkedBlockingQueue.)
+         read #(or (.poll read-queue)
+                   (let [id (str "eval" (uuid))]
+                     (.acquire read-sync)
+                     (swap! eval-ids conj id)
+                     {:op "eval", :code r, :ns @cns, :id id, :session @session-id}))
          write (fn [{:keys [out err value status ns new-session id]}]
                  (when new-session (reset! session-id new-session))
                  (when ns (reset! cns ns))
-                 (when (and (some #{:done "done"} status)
-                            (= id @read-id))
-                   (.release read-sync))
                  (doseq [^String x [out err value] :when x]
                    (.write w x))
-                 (when (and (= status #{:done}) id (.startsWith ^String id "eval"))
-                   (prompt true))
+                 (when (and (some #{:done "done"} status) (contains? @eval-ids id))
+                   (swap! eval-ids disj id)
+                   (.write w (str "\n" @cns "=> "))
+                   (.release read-sync))
                  (.flush w))
-         read #(let [head (promise)]
-                 (swap! read-seq (fn [s]
-                                   (deliver head (first s))
-                                   (rest s)))
-                 @head)]
-     (fn-transport read write
-                   (when s
-                     (swap! read-seq (partial cons {:session @session-id :op "close"}))
-                     #(.close s))))))
+         close (when s
+                 #(do (.put read-queue {:op "close", :session @session-id})
+                      (.close s)))]
+     (.put read-queue {:op "clone"})
+     (fn-transport read write close))))
 
 (defn tty-greeting
   "A greeting fn usable with `nrepl.server/start-server`,
