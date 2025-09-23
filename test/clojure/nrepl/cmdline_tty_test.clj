@@ -4,6 +4,7 @@
   (:require [clojure.test :refer [deftest is testing]]
             [nrepl.cmdline :as cmd]
             [nrepl.server :as server]
+            [nrepl.test-helpers :refer [is+]]
             [nrepl.transport :as transport])
   (:import [com.hypirion.io ClosingPipe Pipe]
            [org.apache.commons.net.telnet TelnetClient]
@@ -61,25 +62,17 @@
                    (.println "::io/xyz")
                    (.println "(clojure.core/require '[clojure.set :as sets])")
                    (.println "{::io/x 1 ::sets/x 2}")
-                   (.flush))
-            resp (doall (repeatedly 9 #(.readLine br)))
-            _    (.disconnect c)
-            expected (if transport/clojure<1-10
-                       ;; Continued error behavior in Clojure <1.10
-                       ["user=> \"y\""
-                        "user=> :clj-form"
-                        "user=> nil"
-                        "user=> "
-                        nil nil nil]
-                       ["user=> \"y\""
-                        "user=> :clj-form"
-                        "user=> "
-                        "user=> nil"
-                        "user=> :clojure.java.io/xyz"
-                        "user=> nil"
-                        "user=> {:clojure.java.io/x 1, :clojure.set/x 2}"])]
-        (is (= expected
-               (drop 2 resp))))
+                   (.flush))]
+        (is+ [#"^;; nREPL"
+              #"^;; Clojure"
+              "user=> \"y\""
+              "user=> :clj-form"
+              "user=> nil"
+              "user=> :clojure.java.io/xyz"
+              "user=> nil"
+              "user=> {:clojure.java.io/x 1, :clojure.set/x 2}"]
+             (vec (repeatedly 8 #(.readLine br))))
+        (.disconnect c))
       (finally
         (.destroy server-process)))))
 

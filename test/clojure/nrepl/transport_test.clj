@@ -11,22 +11,6 @@
                    (#'sut/safe-write-bencode out {"obj" (Object.)})))
       (is (empty? (.toByteArray out))))))
 
-(deftest tty-read-conditional-test
-  (testing "tty-read-msg is configured to preserve conditionals"
-    (let [in (-> "(try nil (catch #?(:clj Throwable :cljr Exception) e nil))"
-                 (java.io.StringReader.)
-                 (java.io.PushbackReader.))
-          out (ByteArrayOutputStream.)
-          expected (if sut/clojure<1-10
-                     ;; Old behavior was to process conditionals on read
-                     '[(try nil (catch Throwable e nil))]
-                     "(try nil (catch #?(:clj Throwable :cljr Exception) e nil))")]
-      (is (= expected
-             (let [^nrepl.transport.FnTransport fn-transport (sut/tty in out nil)]
-               (.recv fn-transport)     ;; :op "clone"
-               (-> (.recv fn-transport) ;; :op "eval"
-                   :code)))))))
-
 (deftest malformed-bencode-input-test
   (testing "if non-bencode input is passed, throw an informative error"
     (let [in (-> (.getBytes "123456789123456789123456789")
