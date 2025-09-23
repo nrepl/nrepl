@@ -86,7 +86,7 @@
 
                    ;; Set PROJECT_VERSION environment variable and run lein deploy
                    (p/shell {:extra-env {"PROJECT_VERSION" project-version}}
-                            "lein" "with-profile" "-user,-dev,-provided"
+                            "lein" "with-profile" "-user,-dev,-test"
                             "deploy" "clojars"))))}
 
   clean  {:doc "Clean artifacts."

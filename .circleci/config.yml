@@ -77,8 +77,7 @@ commands:
             apt update && apt install -y curl
             # Skip Babashka download if present
             [ -e /usr/local/bin/bb ] && exit
-            bash <(curl -s https://raw.githubusercontent.com/borkdude/babashka/master/install) --dir ~
-            mv ~/bb /usr/local/bin/bb
+            bash <(curl -s https://raw.githubusercontent.com/borkdude/babashka/master/install) --dir /usr/local/bin/
       - steps: << parameters.steps >>
       - save_cache:
           paths:
@@ -150,6 +149,10 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install packages
+          command: |
+            bash <(curl -s https://raw.githubusercontent.com/borkdude/babashka/master/install) --dir /usr/local/bin/
+      - run:
           name: Deploy
           command: bb ci-deploy
 
@@ -197,7 +200,7 @@ run_always: &run_always
     branches:
       only: /.*/
     tags:
-      only: /.*/
+      ignore: /.*SNAPSHOT$/
 
 workflows:
   ci-test-matrix:
@@ -233,3 +236,10 @@ workflows:
               ignore: /.*/
             tags:
               only: /^v\d+\.\d+\.\d+(-alpha\d+)?$/
+      - deploy:
+          name: Deploy snapshot
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^.+-SNAPSHOT$/
