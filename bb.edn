@@ -10,7 +10,7 @@
               (str (or (fs/which "lein")
                        (throw (Exception. "Cannot find lein in PATH."))))))
 
-  *DEFAULTS* {:doc "[CLOJURE_VERSION]: the CLOJURE_VERSION env var or \"1.12\". [BUMP field]: the BUMP env var or \"patch\"."}
+  *DEFAULTS* {:doc "[CLOJURE_VERSION]: the CLOJURE_VERSION env var or \"1.12\"."}
 
   kaocha {:doc "Run the kaocha test runner with [kaocha ARGS...]."
           :task (apply shell lein "kaocha" *command-line-args*)}
@@ -24,7 +24,7 @@
                              (when extra-profiles (str "," extra-profiles)))]
            (if (= clj-version "1.8")
              (shell lein "with-profile" profiles "test")
-             (shell lein "with-profile" profiles "run" "-m" "kaocha.runner")))}
+             (shell lein "with-profile" profiles "run" "-m" "kaocha.runner" "--no-capture-output")))}
 
   eastwood {:doc "Run eastwood for [CLOJURE_VERSION]."
             :task (shell lein "with-profile" (str "-user,+" clj-version ",+eastwood") "eastwood")}
