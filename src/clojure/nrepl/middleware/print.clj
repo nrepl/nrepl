@@ -9,8 +9,8 @@
    [nrepl.misc :as misc]
    [nrepl.transport :as transport])
   (:import
-   (java.io BufferedWriter PrintWriter StringWriter Writer)
-   (nrepl CallbackWriter QuotaBoundWriter QuotaExceeded)
+   (java.io OutputStreamWriter PrintWriter StringWriter Writer)
+   (nrepl.out CallbackBufferedOutputStream QuotaBoundWriter QuotaExceeded)
    (nrepl.transport Transport)))
 
 (def ^:dynamic *print-fn*
@@ -49,7 +49,7 @@
 (defn with-quota-bound-writer
   "Returns a `java.io.Writer` that wraps `writer` and throws `QuotaExceeded` once
   it has written more than `quota` bytes."
-  ^java.io.Writer
+  ^Writer
   [^Writer writer quota]
   (if quota
     (QuotaBoundWriter. writer quota)
@@ -61,8 +61,9 @@
   transport of `msg`, keyed by `key`."
   ^java.io.PrintWriter
   [key msg {:keys [::buffer-size ::quota]}]
-  (-> (CallbackWriter. #(transport/respond-to msg key %))
-      (BufferedWriter. (or buffer-size 1024))
+  (-> (CallbackBufferedOutputStream. #(transport/respond-to msg key %)
+                                     (or buffer-size 1024))
+      (OutputStreamWriter.)
       (with-quota-bound-writer quota)
       (PrintWriter. true)))
 
