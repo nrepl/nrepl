@@ -54,8 +54,8 @@
                       :test-selectors {:default '(complement :min-java-version)}
                       :aliases {"test" "test2junit"}})
              :junixsocket {:jvm-opts ["-Dnrepl.test.junixsocket=true"]
-                           :dependencies [[com.kohlschutter.junixsocket/junixsocket-core "2.9.1" :extension "pom"]]}
-             :clj-kondo {:dependencies [[clj-kondo "2025.07.28"]]}
+                           :dependencies [[com.kohlschutter.junixsocket/junixsocket-core "2.10.1" :extension "pom"]]}
+             :clj-kondo {:dependencies [[clj-kondo "2025.09.22"]]}
              ;; Clojure versions matrix
              :provided {:dependencies [[org.clojure/clojure "1.12.2"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
@@ -75,7 +75,7 @@
              ;; generates the nREPL ops documentation from their descriptor
              ;; metadata.
              :maint {:source-paths ["src/maint"]
-                     :dependencies [[org.clojure/tools.cli "1.1.230"]]}
+                     :dependencies [[org.clojure/tools.cli "1.2.245"]]}
 
              ;; CI tools
              :cloverage {:plugins [[lein-cloverage "1.2.4"]]
