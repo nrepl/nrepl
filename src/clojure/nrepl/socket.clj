@@ -60,18 +60,8 @@
 (def ^Class jdk-unix-address-class
   (find-class 'java.net.UnixDomainSocketAddress))
 
-(def ^:private test-junixsocket?
-  ;; Make it possible to test junixsocket even when JDK >= 16
-  (= "true" (System/getProperty "nrepl.test.junixsocket")))
-
 (def unix-domain-flavor
   (cond
-    test-junixsocket? (do
-                        (assert junixsocket-address-class)
-                        (assert junixsocket-server-class)
-                        (binding [*out* *err*]
-                          (println "nrepl.test: insisting on junixsocket support"))
-                        :junixsocket)
     jdk-unix-address-class :jdk
     (and junixsocket-address-class junixsocket-server-class) :junixsocket
     :else nil))
@@ -84,14 +74,13 @@
 
 (def junix-address-of
   (when (= :junixsocket unix-domain-flavor)
-    (or (try (let [addr-of (.getDeclaredMethod junixsocket-address-class "of"
-                                               (into-array Class [File]))]
-               (fn [path] (.invoke addr-of nil (into-array File [(File. ^String path)]))))
-             (catch NoSuchMethodException _))
-        ;; For junixsocket versions < 2.4.0
-        (let [c (.getDeclaredConstructor junixsocket-address-class
-                                         (into-array Class [File]))]
-          (fn [path] (.newInstance c (into-array File [(File. ^String path)])))))))
+    (try (let [addr-of (.getDeclaredMethod junixsocket-address-class "of"
+                                           (into-array Class [File]))]
+           (fn [path] (.invoke addr-of nil (into-array File [(File. ^String path)]))))
+         (catch NoSuchMethodException _))))
+
+(def ^:private error-msg
+  "Support for filesystem sockets requires JDK 17+ or a junixsocket dependency")
 
 (defn unix-socket-address
   "Returns a filesystem socket address for the given path string."
@@ -99,9 +88,9 @@
   (case unix-domain-flavor
     :jdk (jdk-unix-address-of path)
     :junixsocket (junix-address-of path)
-    (let [msg "Support for filesystem sockets requires JDK 16+ or a junixsocket dependency"]
-      (log msg)
-      (throw (ex-info msg {:nrepl/kind ::no-filesystem-sockets})))))
+    (do
+      (log error-msg)
+      (throw (ex-info error-msg {:nrepl/kind ::no-filesystem-sockets})))))
 
 (def jdk-unix-server-socket
   ;; Dynamic because one argument open doesn't exist until jvm 15, nor UNIX
@@ -157,9 +146,9 @@
           (-> path File. .deleteOnExit))
         sock)
 
-      (let [msg "Support for filesystem sockets requires JDK 16+ or a junixsocket dependency"]
-        (log msg)
-        (throw (ex-info msg {:nrepl/kind ::no-filesystem-sockets}))))))
+      (do
+        (log error-msg)
+        (throw (ex-info error-msg {:nrepl/kind ::no-filesystem-sockets}))))))
 
 (defn unix-client-socket
   "Returns a filesystem socket bound to the path if the JDK is version
@@ -179,9 +168,9 @@
         (.connect ^Socket sock addr)
         sock)
 
-      (let [msg "Support for filesystem sockets requires JDK 16+ or a junixsocket dependency"]
-        (log msg)
-        (throw (ex-info msg {:nrepl/kind ::no-filesystem-sockets}))))))
+      (do
+        (log error-msg)
+        (throw (ex-info error-msg {:nrepl/kind ::no-filesystem-sockets}))))))
 
 (defn as-nrepl-uri [sock transport-scheme]
   (let [get-local-addr (fn [^NetworkChannel c] (.getLocalAddress c))]

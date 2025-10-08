@@ -53,11 +53,11 @@ how you can easily start a ClojureScript capable nREPL:
 $ clj -M:nREPL -m nrepl.cmdline --middleware "[cider.piggieback/wrap-cljs-repl]"
 ----
 
-By default, nREPL listens for connections on a randomly chosen local
-port with no authentication, but you can specify the address or port,
-or, if you're using JDK 16 or newer, or you add a
-https://kohlschutter.github.io/junixsocket/[junixsocket] dependency,
-you can ask it to listen on a UNIX domain (filesystem) socket instead:
+By default, nREPL listens for connections on a randomly chosen local port with
+no authentication, but you can specify the address and port explicitly, or you
+can ask it to listen on a UNIX domain (filesystem) socket instead. This is
+supported natively on JDK 17 and newer; for earlier versions you need to add a
+https://kohlschutter.github.io/junixsocket/[junixsocket] dependency:
 
 [source,clojure]
 ----
@@ -65,9 +65,8 @@ you can ask it to listen on a UNIX domain (filesystem) socket instead:
 ;; ...
 :aliases {:nREPL
           {:extra-deps
-           ;; UNIX domain socket support was added in 1.0.0
            {nrepl/nrepl {:mvn/version "1.4.0"}
-            com.kohlschutter.junixsocket/junixsocket-core {:mvn/version "2.3.2"}}}}
+            com.kohlschutter.junixsocket/junixsocket-core {:mvn/version "2.10.1"}}}}
 }
 ----
 
