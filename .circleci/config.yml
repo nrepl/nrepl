@@ -164,6 +164,9 @@ jobs:
         type: string
       clojure_version:
         type: string
+      extra_profiles:
+        type: string
+        default: ""
     executor: << parameters.jdk_version >>
     environment:
       CLOJURE_VERSION: << parameters.clojure_version >>
@@ -174,7 +177,7 @@ jobs:
           steps:
             - run:
                 name: Running tests
-                command: bb test
+                command: bb test << parameters.extra_profiles >>
             - store_test_results:
                 path: test-results
 
@@ -207,19 +210,30 @@ workflows:
     jobs:
       - test:
           matrix:
-            alias: "test"
+            alias: "test-jdk8"
             parameters:
               # Clojure versions 1.8-1.9 are tested only against JDK8 because of
               # multiple incompatibilities of those versions with JDK11+.
               clojure_version: ["1.8", "1.9", "1.10", "1.11", "1.12"]
               jdk_version: [jdk8]
+              extra_profiles: ["+junixsocket"]
           <<: *run_always
       - test:
           matrix:
-            alias: "test-1-10+"
+            alias: "test-jdk11"
+            parameters:
+              # JDK11 is the last tested version that needs junitsocket library
+              # to support sockets as connection target.
+              clojure_version: ["1.10", "1.11", "1.12"]
+              jdk_version: [jdk11]
+              extra_profiles: ["+junixsocket"]
+          <<: *run_always
+      - test:
+          matrix:
+            alias: "test"
             parameters:
               clojure_version: ["1.10", "1.11", "1.12"]
-              jdk_version: [jdk11, jdk17, jdk21, jdk25]
+              jdk_version: [jdk17, jdk21, jdk25]
           <<: *run_always
       # - test_code_windows:
       #     name: Win, Java sys, Clj 1.11
@@ -228,8 +242,9 @@ workflows:
           <<: *run_always
       - deploy:
           requires:
+            - test-jdk8
+            - test-jdk11
             - test
-            - test-1-10+
             - lint
           filters:
             branches:
