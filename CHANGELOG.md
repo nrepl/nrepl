@@ -11,6 +11,7 @@
 * [#383](https://github.com/nrepl/nrepl/pull/383): Introduce `safe-handle` helper to simplify dealing with errors in middleware responses.
 * [#385](https://github.com/nrepl/nrepl/pull/385): Preserve filename in functions compiled during regular eval.
 * [#386](https://github.com/nrepl/nrepl/pull/386): Add support for `XDG_CONFIG_HOME`.
+* [#395](https://github.com/nrepl/nrepl/pull/395): Raise minimal [junixsocket](https://github.com/kohlschutter/junixsocket) version to 2.4.0 (only on pre-JDK17 if you need binding nREPL to UNIX sockets).
 
 ### Bugs fixed
 
