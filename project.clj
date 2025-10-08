@@ -53,8 +53,7 @@
                       ;; TODO: replicate koacha's version filter logic here
                       :test-selectors {:default '(complement :min-java-version)}
                       :aliases {"test" "test2junit"}})
-             :junixsocket {:jvm-opts ["-Dnrepl.test.junixsocket=true"]
-                           :dependencies [[com.kohlschutter.junixsocket/junixsocket-core "2.10.1" :extension "pom"]]}
+             :junixsocket {:dependencies [[com.kohlschutter.junixsocket/junixsocket-core "2.10.1" :extension "pom"]]}
              :clj-kondo {:dependencies [[clj-kondo "2025.09.22"]]}
              ;; Clojure versions matrix
              :provided {:dependencies [[org.clojure/clojure "1.12.2"]]}

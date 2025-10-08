@@ -4,17 +4,13 @@
              [clojure.string :as str]]
   :init (do (def clj-version
               "The clj version to use with lein tasks."
-              (or (first *command-line-args*) (System/getenv "CLOJURE_VERSION") "1.11"))
-            (def bump
-              "The release BUMP field."
-              (or (second *command-line-args*) (System/getenv "BUMP") "patch"))
-
+              (or (System/getenv "CLOJURE_VERSION") "1.12"))
             (def lein
               "The full path to lein."
               (str (or (fs/which "lein")
                        (throw (Exception. "Cannot find lein in PATH."))))))
 
-  *DEFAULTS* {:doc "[CLOJURE_VERSION]: the CLOJURE_VERSION env var or \"1.11\". [BUMP field]: the BUMP env var or \"patch\"."}
+  *DEFAULTS* {:doc "[CLOJURE_VERSION]: the CLOJURE_VERSION env var or \"1.12\". [BUMP field]: the BUMP env var or \"patch\"."}
 
   kaocha {:doc "Run the kaocha test runner with [kaocha ARGS...]."
           :task (apply shell lein "kaocha" *command-line-args*)}
@@ -23,14 +19,12 @@
          :task
          ;; We use kaocha on Clojure 1.9+, but revert to lein's built in
          ;; runner with Clojure 1.8.
-         (if (= clj-version "1.8")
-           (do
-             (shell lein "with-profile" (str "-user,+" clj-version ",+test") "test")
-             (shell lein "with-profile" (str "-user,+" clj-version ",+test,+junixsocket") "test"))
-           (do
-             (shell lein "with-profile" (str "-user,+" clj-version ",+test") "run" "-m" "kaocha.runner")
-             (shell lein
-                    "with-profile" (str "-user,+" clj-version ",+test,+junixsocket") "run" "-m" "kaocha.runner")))}
+         (let [[extra-profiles] *command-line-args*
+               profiles (str "-user,+" clj-version ",+test"
+                             (when extra-profiles (str "," extra-profiles)))]
+           (if (= clj-version "1.8")
+             (shell lein "with-profile" profiles "test")
+             (shell lein "with-profile" profiles "run" "-m" "kaocha.runner")))}
 
   eastwood {:doc "Run eastwood for [CLOJURE_VERSION]."
             :task (shell lein "with-profile" (str "-user,+" clj-version ",+eastwood") "eastwood")}
@@ -53,9 +47,6 @@
   verify_cljdoc (-> (p/shell {:out :string}
                              "curl -fsSL https://raw.githubusercontent.com/cljdoc/cljdoc/master/script/verify-cljdoc-edn")
                     (p/shell "bash -s doc/cljdoc.edn"))
-
-  release  {:doc "Perform lein release tasks for [CLOJURE_VERSION] and [BUMP field]. BUMP controls which field in the version string will be incremented in the *next* snapshot version. Typically this is either \"major\", \"minor\", or \"patch\"."
-            :tasks (shell lein "with-profile" (str "-user,+" clj-version) "release" bump)}
 
   deploy  {:doc "Deploy to clojars for [CLOJURE_VERSION]. Auth is controlled by the `clojars_username` and `clojars_password` env vars."
            ;; Deploying requires the caller to set environment variables as
