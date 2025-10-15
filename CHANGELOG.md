@@ -6,6 +6,7 @@
 
 ### New features
 
+* [#393](https://github.com/nrepl/nrepl/pull/393): Add `forward-system-output` op for forwarding System/out and System/err output to the client.
 * [#383](https://github.com/nrepl/nrepl/pull/383): Introduce `safe-handle` helper to simplify dealing with errors in middleware responses.
 * [#386](https://github.com/nrepl/nrepl/pull/386): Add support for `XDG_CONFIG_HOME`.
 
