@@ -7,6 +7,7 @@
                    [org.clojure/test.check "1.1.1"]
                    [nubank/matcher-combinators "3.9.1"
                     :exclusions [org.clojure/clojure]]]
+   :resource-paths ["test"]
    :java-source-paths ["test/java"]})
 
 (defproject nrepl (or (not-empty (System/getenv "PROJECT_VERSION"))
