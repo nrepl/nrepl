@@ -7,7 +7,8 @@
    These tests are transport agnostic, and do not deal with sessions, session
    IDs, and message IDs"
   (:refer-clojure :exclude [print])
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [clojure.java.io :as io]
+            [clojure.test :refer [deftest is testing]]
             [matcher-combinators.matchers :as mc]
             [nrepl.core :refer [combine-responses]]
             [nrepl.middleware.print :as print]
@@ -225,3 +226,14 @@
                    print/*quota*    8]
            (handle {:value        (range 512)
                     ::print/quota 16})))))
+
+(deftest unicode-printing-test
+  (testing-print "unicode characters are handled correctly"
+    (let [big-naughty-string (slurp (io/resource "blns.txt"))]
+      (is+ [{:value (pr-str big-naughty-string)}
+            (mc/equals {})]
+           (handle {:value              big-naughty-string
+                    ;; Enable streaming printer to force the usage
+                    ;; of replying-PrintWriter.
+                    ::print/stream?     1
+                    ::print/buffer-size 100000})))))

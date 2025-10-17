@@ -69,13 +69,14 @@ public class CallbackBufferedOutputStream extends OutputStream {
         if (size == 0) return;
 
         String content = buffer.toString(charset.name());
+        int length = content.length();
         int lastNewlineIndex = content.lastIndexOf('\n');
-        int lengthToFlush = (force || size == bufferSize) ? size : lastNewlineIndex + 1;
+        int lengthToFlush = (force || size == bufferSize) ? length : lastNewlineIndex + 1;
         if (lengthToFlush > 0) {
             String flushContent = content.substring(0, lengthToFlush);
             callback.invoke(flushContent);
             buffer.reset();
-            if (lengthToFlush < size) {
+            if (lengthToFlush < length) {
                 String remaining = content.substring(lengthToFlush + 1);
                 buffer.write(remaining.getBytes(charset));
             }
