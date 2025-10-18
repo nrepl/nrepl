@@ -31,7 +31,7 @@ nREPL is available in Clojars. Add this to your Leiningen
 
 [source,clojure]
 ----
-[nrepl "1.5.0"]
+[nrepl "1.5.1"]
 ----
 
 [TIP]
@@ -46,10 +46,10 @@ Or, add this to your Gradle project's `build.gradle`:
 ----
 dependencies {
   // to use as a library in your code
-  implementation 'nrepl:nrepl:1.5.0'
+  implementation 'nrepl:nrepl:1.5.1'
 
   // or to override the version of nREPL used by the clojureRepl task
-  nrepl 'nrepl:nrepl:1.5.0'
+  nrepl 'nrepl:nrepl:1.5.1'
 }
 ----
 
@@ -60,7 +60,7 @@ Or, add this to your Maven project's `pom.xml`:
 <dependency>
   <groupId>nrepl</groupId>
   <artifactId>nrepl</artifactId>
-  <version>1.5.0</version>
+  <version>1.5.1</version>
 </dependency>
 ----
 
