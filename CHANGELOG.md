@@ -2,6 +2,8 @@
 
 ## master (unreleased)
 
+## 1.5.1 (2025-10-18)
+
 ### Bugs fixed
 
 * [#398](https://github.com/nrepl/nrepl/pull/398): Fix crashes when printing strings with multicodepoint characters.

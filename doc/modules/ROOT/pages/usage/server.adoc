@@ -22,7 +22,7 @@ Add this alias to `~/.clojure/deps.edn`:
 ;; ...
 :aliases {:nREPL
           {:extra-deps
-            {nrepl/nrepl {:mvn/version "1.5.0"}}}}
+            {nrepl/nrepl {:mvn/version "1.5.1"}}}}
 }
 ----
 
@@ -43,7 +43,7 @@ how you can easily start a ClojureScript capable nREPL:
 ;; ...
 :aliases {:nREPL
           {:extra-deps
-           {nrepl/nrepl {:mvn/version "1.5.0"}
+           {nrepl/nrepl {:mvn/version "1.5.1"}
             cider/piggieback {:mvn/version "0.4.2"}}}}
 }
 ----
@@ -65,7 +65,7 @@ https://kohlschutter.github.io/junixsocket/[junixsocket] dependency:
 ;; ...
 :aliases {:nREPL
           {:extra-deps
-           {nrepl/nrepl {:mvn/version "1.5.0"}
+           {nrepl/nrepl {:mvn/version "1.5.1"}
             com.kohlschutter.junixsocket/junixsocket-core {:mvn/version "2.10.1"}}}}
 }
 ----
@@ -214,7 +214,7 @@ has been started.
 [source,shell]
 ----
 nREPL server started on port 56249 on host 127.0.0.1 - nrepl://127.0.0.1:56249
-REPL-y 0.4.3, nREPL 1.5.0
+REPL-y 0.4.3, nREPL 1.5.1
 Clojure 1.10.0
 Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
     Docs: (doc function-name-here)
@@ -227,7 +227,7 @@ Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
 user=>
 ----
 
-Here you can see that Leiningen has started an nREPL 1.5.0 server and has connected to it using REPL-y 0.4.3.
+Here you can see that Leiningen has started an nREPL 1.5.1 server and has connected to it using REPL-y 0.4.3.
 
 ====
 
@@ -339,7 +339,7 @@ You can pull in the needed dependencies by adding this to your pom.xml:
     <dependency>
         <groupId>nrepl</groupId>
         <artifactId>nrepl</artifactId>
-        <version>1.5.0</version>
+        <version>1.5.1</version>
     </dependency>
     <dependency>
         <groupId>org.clojure</groupId>
