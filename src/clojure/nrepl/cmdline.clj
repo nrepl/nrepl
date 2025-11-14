@@ -5,7 +5,6 @@
   {:author "Chas Emerick"}
   (:require
    [clojure.edn :as edn]
-   [clojure.java.io :as io]
    [clojure.string :as str]
    [nrepl.ack :refer [send-ack]]
    [nrepl.config :as config]
@@ -218,6 +217,7 @@ Exit:      Control+D or (exit) or (quit)"
   -p/--port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
   -s/--socket PATH            Start nREPL on filesystem socket at PATH or nREPL to connect to when using --connect.
   --ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.
+  --port-file FILE            Path to file where the server port will be written. Defaults to \".nrepl-port\". Can be overridden by NREPL_PORT_FILE environment variable.
   -n/--handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`. Must be expressed as a namespace-qualified symbol. The underlying var will be automatically `require`d.
   -m/--middleware MIDDLEWARE  A sequence of vars (expressed as namespace-qualified symbols), representing middleware you wish to mix in to the nREPL handler. The underlying vars will be automatically `require`d.
   -t/--transport TRANSPORT    The transport to use (default `nrepl.transport/bencode`), expressed as a namespace-qualified symbol. The underlying var will be automatically `require`d.
@@ -388,7 +388,10 @@ Exit:      Control+D or (exit) or (quit)"
   Returns map of processed options to start an nREPL server."
   [options]
   (let [middleware (sanitize-middleware-option (:middleware options))
-        {:keys [host port socket transport tls-keys-str tls-keys-file]} (connection-opts options)]
+        {:keys [host port socket transport tls-keys-str tls-keys-file]} (connection-opts options)
+        ;; Default to ".nrepl-port" for backward compatibility with CLI usage
+        ;; Can be overridden via --port-file, NREPL_PORT_FILE env var, or config
+        port-file (get options :port-file ".nrepl-port")]
     (merge options
            {:host host
             :port port
@@ -401,7 +404,8 @@ Exit:      Control+D or (exit) or (quit)"
             :handler (options->handler options middleware)
             :greeting (options->greeting options transport)
             :ack-port (options->ack-port options)
-            :repl-fn (options->repl-fn options)})))
+            :repl-fn (options->repl-fn options)
+            :port-file port-file})))
 
 (defn interactive-repl
   "Runs an interactive repl if :interactive CLI option is true otherwise
@@ -471,19 +475,20 @@ Exit:      Control+D or (exit) or (quit)"
   "Writes a file relative to project classpath with port number so other tools
   can infer the nREPL server port.
   Takes nREPL server map and processed CLI options map.
-  Returns nil."
-  [server _options]
-  ;; Many clients look for this file to infer the port to connect to
-  (let [port (:port server)
-        port-file (io/file ".nrepl-port")]
-    (.deleteOnExit ^java.io.File port-file)
-    (spit port-file port)))
+  Returns nil.
+
+  DEPRECATED: This function is now a no-op as nrepl.server/start-server
+  handles port file writing when :port-file is provided. Kept for backward
+  compatibility in case external code calls it directly."
+  [_server _options]
+  ;; No-op: port file is now written by nrepl.server/start-server
+  nil)
 
 (defn start-server
   "Creates an nREPL server instance.
   Takes map of CLI options.
   Returns nREPL server map."
-  [{:keys [port bind socket handler transport greeting tls-keys-str tls-keys-file]}]
+  [{:keys [port bind socket handler transport greeting tls-keys-str tls-keys-file port-file]}]
   (nrepl-server/start-server
    :port port
    :bind bind
@@ -492,7 +497,8 @@ Exit:      Control+D or (exit) or (quit)"
    :transport-fn transport
    :greeting-fn greeting
    :tls-keys-str tls-keys-str
-   :tls-keys-file tls-keys-file))
+   :tls-keys-file tls-keys-file
+   :port-file port-file))
 
 (defn dispatch-commands
   "Look at options to dispatch a specified command.

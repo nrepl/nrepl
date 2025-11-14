@@ -79,7 +79,10 @@
   It's created by merging the global configuration file
   with a local configuration file that would normally
   the placed in the directory in which you're running
-  nREPL."
-  (merge
-   (load-config config-file)
-   (load-config (io/file ".nrepl.edn"))))
+  nREPL. Environment variables can override config file settings."
+  (let [base-config (merge
+                     (load-config config-file)
+                     (load-config (io/file ".nrepl.edn")))
+        env-port-file (non-empty-env "NREPL_PORT_FILE")]
+    (cond-> base-config
+      env-port-file (assoc :port-file env-port-file))))

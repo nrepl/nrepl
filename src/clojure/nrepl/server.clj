@@ -2,6 +2,7 @@
   "Default server implementations"
   {:author "Chas Emerick"}
   (:require
+   [clojure.java.io :as io]
    [nrepl.ack :as ack]
    [nrepl.middleware :as middleware]
    nrepl.middleware.completion
@@ -203,13 +204,18 @@
        would provide this greeting upon connecting to the server, but telnet et
        al. isn't that. See `nrepl.transport/tty-greeting` for an example of such
        a function.
+   * :port-file — if specified, the path to a file where the server port will be
+       written. The file will be deleted on JVM exit. Defaults to nil (no file
+       written). Commonly set to \".nrepl-port\" to support tooling that
+       discovers the server port by reading this file. Ignored when using
+       :socket (filesystem sockets).
 
    Returns a (record) handle to the server that is started, which may be stopped
    either via `stop-server`, (.close server), or automatically via `with-open`.
    The port that the server is open on is available in the :port slot of the
    server map (useful if the :port option is 0 or was left unspecified."
   ^nrepl.server.Server
-  [& {:keys [port bind socket tls? tls-keys-str tls-keys-file transport-fn handler ack-port greeting-fn consume-exception]
+  [& {:keys [port bind socket tls? tls-keys-str tls-keys-file transport-fn handler ack-port greeting-fn port-file consume-exception]
       :or {consume-exception (fn [_] nil)}}]
   (when (and socket (or port bind tls?))
     (let [msg "Cannot listen on both port and filesystem socket"]
@@ -239,4 +245,9 @@
        (accept-connection-loop server consume-exception)))
     (when ack-port
       (ack/send-ack (:port server) ack-port transport-fn))
+    ;; Write port file if requested (ignored for filesystem sockets)
+    (when (and port-file (not socket))
+      (let [f (io/file port-file)]
+        (.deleteOnExit ^java.io.File f)
+        (spit f (:port server))))
     server))

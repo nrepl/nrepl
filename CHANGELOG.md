@@ -2,6 +2,8 @@
 
 ## master (unreleased)
 
+* Add support for naming the port file (via command line/env variable/function args)
+
 ## 1.5.1 (2025-10-18)
 
 ### Bugs fixed

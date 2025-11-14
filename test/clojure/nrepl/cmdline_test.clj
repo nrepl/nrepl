@@ -113,7 +113,8 @@
         :handler #'clojure.core/identity
         :repl-fn #'clojure.core/identity
         :greeting nil
-        :ack-port 2000}
+        :ack-port 2000
+        :port-file ".nrepl-port"}
        (cmd/server-opts {:bind "0.0.0.0"
                          :port 5000
                          :ack 2000
@@ -143,6 +144,100 @@
          (cmd/server-started-message
           server
           {:transport #'transport/bencode}))))
+
+;; Port file tests
+
+(deftest port-file-created-with-default-name
+  (testing "Server creates .nrepl-port by default when using CLI"
+    (let [port-file (as-file ".nrepl-port")]
+      (try
+        ;; Clean up any existing port file
+        (when (.exists port-file)
+          (.delete port-file))
+
+        (with-open [^Server server (server/start-server
+                                    :transport-fn #'transport/bencode
+                                    :handler server/default-handler
+                                    :port-file ".nrepl-port")]
+          (is (.exists port-file) "Port file should exist")
+          (is (= (str (:port server))
+                 (slurp port-file))
+              "Port file should contain the server port"))
+        (finally
+          (when (.exists port-file)
+            (.delete port-file)))))))
+
+(deftest port-file-created-with-custom-name
+  (testing "Server creates port file with custom name when :port-file is specified"
+    (let [port-file (as-file "my-custom-port.txt")]
+      (try
+        ;; Clean up any existing port file
+        (when (.exists port-file)
+          (.delete port-file))
+
+        (with-open [^Server server (server/start-server
+                                    :transport-fn #'transport/bencode
+                                    :handler server/default-handler
+                                    :port-file "my-custom-port.txt")]
+          (is (.exists port-file) "Custom port file should exist")
+          (is (= (str (:port server))
+                 (slurp port-file))
+              "Port file should contain the server port"))
+        (finally
+          (when (.exists port-file)
+            (.delete port-file)))))))
+
+(deftest port-file-not-created-when-nil
+  (testing "Server does not create port file when :port-file is nil"
+    (let [port-file (as-file ".nrepl-port")]
+      (try
+        ;; Clean up any existing port file
+        (when (.exists port-file)
+          (.delete port-file))
+
+        (with-open [^Server _server (server/start-server
+                                     :transport-fn #'transport/bencode
+                                     :handler server/default-handler
+                                     :port-file nil)]
+          (is (not (.exists port-file)) "Port file should not exist when :port-file is nil"))
+        (finally
+          (when (.exists port-file)
+            (.delete port-file)))))))
+
+(deftest port-file-not-created-for-filesystem-socket
+  (testing "Server does not create port file for filesystem sockets (bug fix)"
+    (when unix-domain-flavor
+      (let [tmpdir (create-tmpdir "target" "port-file-socket-test-")
+            sock-path (str tmpdir "/socket")
+            port-file (as-file ".nrepl-port")]
+        (try
+          ;; Clean up any existing port file
+          (when (.exists port-file)
+            (.delete port-file))
+
+          (with-open [^Server _server (server/start-server
+                                       :socket sock-path
+                                       :transport-fn #'transport/bencode
+                                       :handler server/default-handler
+                                       :port-file ".nrepl-port")]
+            (is (not (.exists port-file))
+                "Port file should not be created for filesystem socket servers"))
+          (finally
+            (when (.exists port-file)
+              (.delete port-file))
+            (.delete (as-file sock-path))
+            (Files/delete tmpdir)))))))
+
+(deftest server-opts-respects-port-file-option
+  (testing "server-opts includes :port-file with custom value"
+    (let [opts (cmd/server-opts {:port-file "custom.port"})]
+      (is (= "custom.port" (:port-file opts))
+          "server-opts should include custom :port-file")))
+
+  (testing "server-opts defaults to .nrepl-port for backward compatibility"
+    (let [opts (cmd/server-opts {})]
+      (is (= ".nrepl-port" (:port-file opts))
+          "server-opts should default :port-file to .nrepl-port"))))
 
 (deftest ^:slow ack
   (with-server-every-transport nil
