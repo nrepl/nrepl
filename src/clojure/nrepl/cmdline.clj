@@ -302,12 +302,17 @@ Exit:      Control+D or (exit) or (quit)"
              options
              options))
 
+(defn- meta-merge
+  "Metadata-aware function used for specifying merge behavior."
+  [config-opt cli-opt]
+  (if (some (comp :concat meta) [config-opt cli-opt]) (into config-opt cli-opt) cli-opt))
+
 (defn args->cli-options
   "Takes CLI args list and returns vector of parsed options map and
   remaining args."
   [args]
   (let [[options _args] (split-args (expand-shorthands args))
-        merge-config (partial merge config/config)
+        merge-config (partial merge-with meta-merge config/config)
         options (-> options
                     (keywordize-options)
                     (parse-cli-values)

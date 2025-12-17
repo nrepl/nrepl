@@ -92,7 +92,28 @@
 
 (deftest args->cli-options
   (is+ [{:middleware :middleware :repl "true"} ["extra" "args"]]
-       (cmd/args->cli-options ["-m" ":middleware" "-r" "true" "extra" "args"])))
+       (cmd/args->cli-options ["-m" ":middleware" "-r" "true" "extra" "args"]))
+
+  (testing "having ^:concat metadata groups together collection values coming from CLI and config"
+    (with-redefs [nrepl.config/config {:middleware (with-meta '[foo/middleware bar/middleware] {:concat true})}]
+      (is+ [{:middleware '[foo/middleware bar/middleware baz/middleware]} []]
+           (cmd/args->cli-options ["-m" "[baz/middleware]"])))
+    (with-redefs [nrepl.config/config {:middleware (with-meta '[foo/middleware] {:concat true})}]
+      (is+ [{:middleware '[foo/middleware]} []]
+           (cmd/args->cli-options [])))
+    (with-redefs [nrepl.config/config {:middleware '[foo/middleware bar/middleware]}]
+      (is+ [{:middleware '[foo/middleware bar/middleware baz/middleware]} []]
+           (cmd/args->cli-options ["-m" "^:concat [baz/middleware]"])))
+    (is+ [{:middleware '[baz/middleware]} []]
+         (cmd/args->cli-options ["-m" "^:concat [baz/middleware]"]))
+    (with-redefs [nrepl.config/config {:middleware (with-meta '[foo/middleware bar/middleware] {:concat true})}]
+      (is+ [{:middleware '[foo/middleware bar/middleware baz/middleware]} []]
+           (cmd/args->cli-options ["-m" "^:concat [baz/middleware]"]))))
+
+  (testing "no ^:concat metadata - CLI overrides config"
+    (with-redefs [nrepl.config/config {:middleware '[old/middleware]}]
+      (is+ [{:middleware '[new/middleware]} []]
+           (cmd/args->cli-options ["-m" "[new/middleware]"])))))
 
 (deftest connection-opts
   (is+ {:port 5000
