@@ -2,6 +2,10 @@
 
 ## master (unreleased)
 
+### New features
+
+* [#402](https://github.com/nrepl/nrepl/pull/402): Add `^:concat` metadata support for config merging.
+
 ## 1.5.2 (2025-12-29)
 
 ### Bugs fixed

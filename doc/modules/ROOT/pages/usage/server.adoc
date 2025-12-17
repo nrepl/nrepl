@@ -361,7 +361,7 @@ is not difficult; read more about transports xref:design/transports.adoc[here].
 
 === Server Configuration
 
-Starting with version 0.5 you can configure certain aspects of the
+Starting with version 0.5, you can configure certain aspects of the
 nREPL server's behaviour via configuration files.
 
 There are two configuration files:
@@ -383,9 +383,6 @@ project). Its purpose is to set project-specific settings (e.g. a common port
 you always want to use with a particular project). Any setting in `.nrepl.edn`
 will take precedence over a setting in `.nrepl/nrepl.edn`.
 
-NOTE: Settings passed via the command-line interface will take
-precedence over settings specified via the configuration files.
-
 Here's an example global configuration file:
 
 ..nrepl/nrepl.edn
@@ -393,7 +390,7 @@ Here's an example global configuration file:
 ----
 {:bind         "::"
  :transport    nrepl.transport/tty
- :middleware   [some.ns/mw1 some.ns/mw1]}
+ :middleware   [some.ns/mw1 some.ns/mw2]}
 ----
 
 IMPORTANT: You should refer to vars only as symbols.
@@ -409,6 +406,39 @@ And this is an example of a local config file:
  :handler      some.ns/awesome-handler
  :transport    nrepl.transport/bencode}
 ----
+
+Settings passed via the command-line interface will replace configuration
+file settings by default. Since version 1.6, you can use the `^:concat` metadata
+to concatenate collection values instead of replacing them.
+
+For example, given this config file:
+
+..nrepl/nrepl.edn
+[source,clojure]
+----
+{:middleware ^:concat [company/metrics company/security]}
+----
+
+And this CLI invocation:
+
+[source,shell]
+----
+$ clj -M:nREPL -m nrepl.cmdline --middleware "[cider.nrepl/cider-middleware]"
+----
+
+The resulting middleware will be:
+
+[source,clojure]
+----
+[company/metrics company/security cider.nrepl/cider-middleware]
+----
+
+The `^:concat` metadata can be used on either config values or CLI arguments,
+and is useful for ensuring certain middleware (e.g., company-wide monitoring/metrics
+middleware) is always loaded, even when development tools pass their own middleware
+via CLI flags.
+
+NOTE: The `^:concat` metadata only applies to top-level configuration.
 
 === Dynamic var defaults
 
