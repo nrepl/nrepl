@@ -77,7 +77,7 @@ public class CallbackBufferedOutputStream extends OutputStream {
             callback.invoke(flushContent);
             buffer.reset();
             if (lengthToFlush < length) {
-                String remaining = content.substring(lengthToFlush + 1);
+                String remaining = content.substring(lengthToFlush);
                 buffer.write(remaining.getBytes(charset));
             }
         }

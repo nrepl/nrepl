@@ -123,6 +123,13 @@
                   ::print/print   `custom-printer
                   ::print/options {:sub "bar"}}))))
 
+(deftest streamed-printing-with-newlines
+  (testing-print "custom ::print/keys"
+    (is+ [{:value "abcd\nefgh\n"} {:value "ijkl"} {}]
+         (handle {:value        (symbol "abcd\nefgh\nijkl")
+                  ::print/keys  #{:value}
+                  ::print/stream? 1}))))
+
 (deftest multiple-keys
   (testing-print "respects buffer-size option"
     (is+ [{:value "(0 1 2 3"}
