@@ -216,6 +216,8 @@ workflows:
               # multiple incompatibilities of those versions with JDK11+.
               clojure_version: ["1.8", "1.9", "1.10", "1.11", "1.12"]
               jdk_version: [jdk8]
+              # JDK8 and 11 need junitsocket library to support sockets as
+              # connection target.
               extra_profiles: ["+junixsocket"]
           <<: *run_always
       - test:
@@ -224,16 +226,23 @@ workflows:
             parameters:
               # JDK11 is the last tested version that needs junitsocket library
               # to support sockets as connection target.
-              clojure_version: ["1.10", "1.11", "1.12"]
+              clojure_version: ["1.12"]
               jdk_version: [jdk11]
               extra_profiles: ["+junixsocket"]
+          <<: *run_always
+      - test:
+          matrix:
+            alias: "test-older-jdk"
+            parameters:
+              clojure_version: ["1.12"]
+              jdk_version: [jdk17, jdk21]
           <<: *run_always
       - test:
           matrix:
             alias: "test"
             parameters:
               clojure_version: ["1.10", "1.11", "1.12"]
-              jdk_version: [jdk17, jdk21, jdk25]
+              jdk_version: [jdk25]
           <<: *run_always
       # - test_code_windows:
       #     name: Win, Java sys, Clj 1.11
@@ -243,7 +252,6 @@ workflows:
       - deploy:
           requires:
             - test-jdk8
-            - test-jdk11
             - test
             - lint
           filters:
