@@ -2,6 +2,8 @@
 
 ## master (unreleased)
 
+## 1.5.2 (2025-12-29)
+
 ### Bugs fixed
 
 * [#403](https://github.com/nrepl/nrepl/pull/403): Fix off by 1 error in CallbackBufferedOutputStream.
