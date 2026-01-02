@@ -513,9 +513,9 @@ Exit:      Control+D or (exit) or (quit)"
                 (save-port-file server options)
                 (if (:interactive options)
                   (interactive-repl server options)
-                  ;; need to hold process open with a non-daemon thread
-                  ;;   -- this should end up being super-temporary
-                  (Thread/sleep Long/MAX_VALUE)))))
+                  ;; Lock the main thread to prevent process from quitting while
+                  ;; the server is running.
+                  (.join (Thread/currentThread))))))
 
 (defn -main
   [& args]
