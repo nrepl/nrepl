@@ -8,11 +8,14 @@
             [nrepl.config :refer [config]]))
 
 (defn log
-  [ex-or-msg & msgs]
-  (let [ex (when (instance? Throwable ex-or-msg) ex-or-msg)
+  [?kw & [ex-or-msg & msgs]]
+  (let [[kw ex-or-msg msgs] (if (keyword? ?kw)
+                              [?kw ex-or-msg msgs]
+                              [:error ?kw (cons ex-or-msg msgs)])
+        ex (when (instance? Throwable ex-or-msg) ex-or-msg)
         msgs (if ex msgs (filter identity (cons ex-or-msg msgs)))]
     (binding [*out* *err*]
-      (apply println "ERROR:" msgs)
+      (apply println (str (str/upper-case (name kw)) ":") msgs)
       (when ex (.printStackTrace ^Throwable ex (java.io.PrintWriter. *out*))))))
 
 (defmacro log-exceptions [& body]
