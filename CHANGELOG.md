@@ -6,6 +6,10 @@
 
 * [#402](https://github.com/nrepl/nrepl/pull/402): Add `^:concat` metadata support for config merging.
 
+### Changes
+
+* [#408](https://github.com/nrepl/nrepl/pull/408): Refactor `stdin` middleware.
+
 ## 1.5.2 (2025-12-29)
 
 ### Bugs fixed
