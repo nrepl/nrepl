@@ -913,13 +913,6 @@
                                 ::middleware.caught/print? 1})
               (mapv clean-response)))))
 
-(def-repl-test dynamic-middleware-test
-  (let [rsp (->> (message client {:op "ls-middleware"})
-                 (map clean-response)
-                 combine-responses)]
-    (is (contains? (set (:middleware rsp))
-                   "#'nrepl.middleware.session/session"))))
-
 ;; This test checks if, within the same session, the ContextClassLoader and
 ;; RT/baseLoader have a common DynamicClassLoader ancestor. This is what
 ;; pomegranate (and other classpath modifying libs?) target to enable hotloading

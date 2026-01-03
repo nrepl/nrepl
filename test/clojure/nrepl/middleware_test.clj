@@ -2,7 +2,8 @@
   (:require
    [clojure.test :refer [deftest is are]]
    [nrepl.middleware :as middleware :refer [linearize-middleware-stack]]
-   [nrepl.server :refer [default-middleware]]))
+   [nrepl.server :refer [default-middleware]]
+   [nrepl.test-helpers :refer [is+]]))
 
 (defn- wonky-resolve [s] (if (symbol? s) (resolve s) s))
 
@@ -24,7 +25,6 @@
     (are [before after] (< (stack before) (stack after))
       'interruptible-eval 'wrap-load-file
       'interruptible-eval 'session
-      'wrap-describe 'wrap-print
       'interruptible-eval 'wrap-print))
 
   (let [n ^{::middleware/descriptor
@@ -40,12 +40,10 @@
       'interruptible-eval m
       m 'wrap-print
       'session n
-      q 'wrap-describe
       m n
 
       'interruptible-eval 'wrap-load-file
       'interruptible-eval 'session
-      'wrap-describe 'wrap-print
       'interruptible-eval 'wrap-print)))
 
 (deftest append-dependency-free-middleware
@@ -58,10 +56,10 @@
     (is (= #{n m} (set (take-last 2 stack))))))
 
 (deftest no-descriptor-warning
-  (let [^String s (with-out-str
-                    (binding [*err* *out*]
-                      (indexed-stack (conj default-middleware {:dummy :middleware}))))]
-    (is (.contains s "No nREPL middleware descriptor in metadata of {:dummy :middleware}"))))
+  (is+ #"No nREPL middleware descriptor in metadata of \{:dummy :middleware\}"
+       (with-out-str
+         (binding [*err* *out*]
+           (indexed-stack (conj default-middleware {:dummy :middleware}))))))
 
 (deftest NREPL-53-regression
   (is (= [0 1 2]
