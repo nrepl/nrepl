@@ -13,9 +13,9 @@
    [nrepl.util.threading :as threading])
   (:import
    (clojure.lang Compiler LineNumberingPushbackReader)
-   (java.io Reader)
    (java.util.concurrent Executors ExecutorService LinkedBlockingQueue)
-   (nrepl SessionThread)))
+   (nrepl SessionThread)
+   (nrepl.in QueuePollingReader)))
 
 (def ^:private sessions (atom {}))
 
@@ -51,49 +51,16 @@
    can provide content to be read."
   [session-id transport]
   (let [input-queue (LinkedBlockingQueue.)
-        request-input (fn []
-                        (cond (> (.size input-queue) 0)
-                              (.take input-queue)
-                              *skipping-eol*
-                              nil
-                              :else
-                              (do
-                                (t/send transport
-                                        (response-for *msg* :session session-id
-                                                      :status :need-input))
-                                (.take input-queue))))
-        do-read (fn [buf off len]
-                  (locking input-queue
-                    (loop [i off]
-                      (cond
-                        (>= i (+ off len))
-                        (+ off len)
-                        (.peek input-queue)
-                        (do (aset-char buf i (char (.take input-queue)))
-                            (recur (inc i)))
-                        :else
-                        i))))
+        request-input #(or (.poll input-queue)
+                           ;; Skipping newlines shouldn't trigger need-input
+                           ;; from the client if queue is empty.
+                           (when-not *skipping-eol*
+                             (t/send transport
+                                     (response-for *msg* :session session-id
+                                                   :status :need-input))
+                             (.take input-queue)))
         reader (LineNumberingPushbackReader.
-                (proxy [Reader] []
-                  (close [] (.clear input-queue))
-                  (read
-                    ([]
-                     (let [^Reader this this] (proxy-super read)))
-                    ([x]
-                     (let [^Reader this this]
-                       (if (instance? java.nio.CharBuffer x)
-                         (proxy-super read ^java.nio.CharBuffer x)
-                         (proxy-super read ^chars x))))
-                    ([^chars buf off len]
-                     (if (zero? len)
-                       -1
-                       (let [first-character (request-input)]
-                         (if (or (nil? first-character) (= first-character -1))
-                           -1
-                           (do
-                             (aset-char buf off (char first-character))
-                             (- (do-read buf (inc off) (dec len))
-                                off)))))))))]
+                (QueuePollingReader. input-queue request-input))]
     {:input-queue input-queue
      :stdin-reader reader}))
 
@@ -424,27 +391,28 @@
                              :returns {"sessions" "A list of all available session IDs."}}}})
 
 (defn add-stdin
-  "stdin middleware.  Returns a handler that supports a \"stdin\" :op-eration, which
-   adds content provided in a :stdin slot to the session's *in* Reader.  Delegates to
-   the given handler for other operations.
-
-   Requires the session middleware."
+  "Stdin middleware. Handles \"stdin\" :op-eration, which adds content provided in
+  a :stdin slot to the session's *in* Reader. Requires the session middleware."
   [h]
   (fn [{:keys [op stdin session] :as msg}]
-    (cond
-      (= op "eval")
-      (let [in (-> (meta session) ^LineNumberingPushbackReader (:stdin-reader))]
+    ;; NB: confusing hack. When `(read)` is issued to an input stream, it
+    ;; returns a Lisp form, ending with the last character of the form,
+    ;; naturally (e.g. a closing paren). However, it is expected that any
+    ;; trailing newline after such form is thrown away in order for a
+    ;; subsequent `(read-line)` call to not just return that empty newline but
+    ;; the actual following content. To simulate this behavior, we run
+    ;; newline-skipping function before every `eval` request.
+    (when (= op "eval")
+      (let [in (:stdin-reader (meta session))]
         (binding [*skipping-eol* true]
-          (clojure.main/skip-if-eol in))
-        (h msg))
-      (= op "stdin")
-      (let [q (-> (meta session) ^LinkedBlockingQueue (:input-queue))]
+          (clojure.main/skip-if-eol in))))
+
+    (if (= op "stdin")
+      (let [^LinkedBlockingQueue q (:input-queue (meta session))]
         (if (empty? stdin)
           (.put q -1)
-          (locking q
-            (doseq [c stdin] (.put q c))))
+          (.addAll q (seq stdin)))
         (t/respond-to msg :status :done))
-      :else
       (h msg))))
 
 (set-descriptor! #'add-stdin
