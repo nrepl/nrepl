@@ -5,7 +5,6 @@
    [nrepl.ack :as ack]
    [nrepl.middleware :as middleware]
    nrepl.middleware.completion
-   [nrepl.middleware.dynamic-loader :as dynamic-loader]
    nrepl.middleware.interruptible-eval
    nrepl.middleware.io
    nrepl.middleware.load-file
@@ -114,26 +113,20 @@
 (def default-middleware
   "Middleware vars that are implicitly merged with any additional
    middleware provided to nrepl.server/default-handler."
-  [#'nrepl.middleware/wrap-describe
+  [#'nrepl.middleware.caught/wrap-caught
    #'nrepl.middleware.completion/wrap-completion
    #'nrepl.middleware.interruptible-eval/interruptible-eval
    #'nrepl.middleware.io/wrap-out
    #'nrepl.middleware.load-file/wrap-load-file
    #'nrepl.middleware.lookup/wrap-lookup
+   #'nrepl.middleware.print/wrap-print
    #'nrepl.middleware.session/add-stdin
-   #'nrepl.middleware.session/session
-   #'nrepl.middleware.dynamic-loader/wrap-dynamic-loader])
+   #'nrepl.middleware.session/session])
 
-(def built-in-ops
-  "Get all the op names from default middleware automatically"
-  (->> default-middleware
-       (map #(-> % meta :nrepl.middleware/descriptor :handles keys))
-       (reduce concat)
-       set))
-
-(def ^{:deprecated "0.8.0"} default-middlewares
-  "Use `nrepl.server/default-middleware` instead. Middleware"
-  default-middleware)
+(defn- unknown-op-handler
+  "Sends an :unknown-op :error for the given message."
+  [{:keys [op] :as msg}]
+  (t/respond-to msg :status #{:error :unknown-op :done} :op op))
 
 (defn default-handler
   "A default handler supporting interruptible evaluation, stdin, sessions, and
@@ -143,19 +136,14 @@
    should all be values (usually vars) that have an nREPL middleware descriptor
    in their metadata (see `nrepl.middleware/set-descriptor!`).
 
-   This handler bootstraps by initiating with just the dynamic loader, then
-   using that to load the other middleware."
+   This handler always attaches one special `wrap-describe` middleware which
+   handles `describe` op."
   [& additional-middleware]
-  (let [initial-handler (dynamic-loader/wrap-dynamic-loader nil)
-        state           (atom {:handler initial-handler
-                               :stack   [#'nrepl.middleware.dynamic-loader/wrap-dynamic-loader]})]
-    (binding [dynamic-loader/*state* state]
-      (initial-handler {:op          "swap-middleware"
-                        :state       state
-                        :middleware (concat default-middleware additional-middleware)}))
-    (fn [msg]
-      (binding [dynamic-loader/*state* state]
-        ((:handler @state) msg)))))
+  (let [stack (middleware/linearize-middleware-stack
+               (into default-middleware additional-middleware))
+        base-handler (middleware/wrap-describe unknown-op-handler stack)
+        full-handler (reduce (fn [handler m] (m handler)) base-handler stack)]
+    (with-meta full-handler {:stack stack})))
 
 (defrecord
  Server
