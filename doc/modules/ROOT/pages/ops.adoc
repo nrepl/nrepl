@@ -4,27 +4,9 @@ This file is _generated_ by #'nrepl.impl.docs/-main
 ////
 = Supported nREPL operations
 
-[small]#generated from a verbose 'describe' response (nREPL v1.5.2)#
+[small]#generated from a verbose 'describe' response (nREPL v1.6.0)#
 
 == Operations
-
-=== `add-middleware`
-
-Adding some middleware
-
-Required parameters::
-* `:middleware` a list of middleware
-
-
-Optional parameters::
-* `:extra-namespaces` a list of extra namespaces to load. This is useful when the new middleware feature deferred loading
-
-
-Returns::
-* `:status` ``done``, once done, and ``error``, if there's any problems in loading a middleware
-* `:unresolved-middleware` List of middleware that could not be resolved
-
-
 
 === `clone`
 
@@ -91,6 +73,7 @@ Optional parameters::
 
 Returns::
 * `:aux` Map of auxiliary data contributed by all of the active nREPL middleware via :describe-fn functions in their descriptors.
+* `:middleware` Current middleware stack, in inside-out order (earliest middleware is last).
 * `:ops` Map of "op"erations supported by this nREPL endpoint
 * `:versions` Map containing version maps (like \*clojure-version*, e.g. major, minor, incremental, and qualifier keys) for values, component names as keys. Common keys include "nrepl" and "clojure".
 
@@ -212,21 +195,6 @@ Returns::
 
 
 
-=== `ls-middleware`
-
-List of current middleware
-
-Required parameters::
-{blank}
-
-Optional parameters::
-{blank}
-
-Returns::
-* `:middleware` list of vars representing loaded middleware, from inside out
-
-
-
 === `ls-sessions`
 
 Lists the IDs of all active sessions.
@@ -255,22 +223,4 @@ Optional parameters::
 
 Returns::
 * `:status` A status of "need-input" will be sent if a session's \*in* requires content in order to satisfy an attempted read operation.
-
-
-
-=== `swap-middleware`
-
-Replace the whole middleware stack
-
-Required parameters::
-* `:middleware` a list of middleware
-
-
-Optional parameters::
-* `:extra-namespaces` a list of extra namespaces to load. This is useful when the new middleware feature deferred loading
-
-
-Returns::
-* `:status` ``done``, once done, and ``error``, if there's any problems in loading a middleware
-* `:unresolved-middleware` List of middleware that could not be resolved
 

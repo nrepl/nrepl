@@ -79,18 +79,13 @@ Middleware descriptors are implemented as a map in var metadata under a
 any of three entries:
 
 * `:requires`, a set containing strings or vars identifying other middleware
-  that must be applied at a higher level than the middleware being described.
-Var references indicate an implementation detail dependency; string values
-indicate a dependency on _any_ middleware that handles the specified `:op`.
+  that must be applied at a higher level ("before") than the middleware being
+  described. Var references indicate a dependency on exact middleware; string
+  values indicate a dependency on _any_ middleware that handles the specified
+  `:op`.
 * `:expects`, the same as `:requires`, except the referenced middleware must
-  exist in the final stack at a lower level than the middleware being
-described.
-
-TIP: Another way to think of `:expects` and `:requires` would be
-_before_ and _after_. Middleware you're expecting should have already
-been applied by the time the middleware that expects it gets applied,
-and middleware that's required should be applied afterwards. We'll
-expand on this in the paragraphs to come.
+  exist in the final stack at a lower level ("after") than the middleware being
+  described.
 
 * `:handles`, a map that documents the operations implemented by the
   middleware.  Each entry in this map must have as its key the string value of
@@ -103,6 +98,12 @@ the handled `:op` and a value that contains any of four entries:
 ** `:returns`, a map of slots that may be found in messages sent in response
     to handling the indicated `:op`
 
+WARN: Middleware can directly reference other middleware Vars in `:requires` and
+`:expects` but this will not automatically pull them into middleware stack. All
+desired middleware must be listed explicitly during handler construction,
+otherwise an exception will be thrown by
+`nrepl.middleware/linearize-middleware-stack`.
+
 The values in the `:handles` map are used to support the `"describe"` operation,
 which provides "a machine- and human-readable directory and documentation for
 the operations supported by an nREPL endpoint" (see
@@ -114,8 +115,8 @@ if you'd like to generate an ops listing in Markdown format.
 
 The `:requires` and `:expects` entries control the order in which
 middleware is applied to a base handler.  In the `add-stdin` example above,
-that middleware will be applied after any middleware that handles the `"eval"`
-operation, but before the `nrepl.middleware.session/session`
+that middleware will be executed before any middleware that handles the `"eval"`
+operation, but after the `nrepl.middleware.session/session`
 middleware.  In the case of `add-stdin`, this ensures that incoming messages
 hit the session middleware (thus ensuring that the user's dynamic scope —
 including `*in*` — has been added to the message) before the ``add-stdin``'s
@@ -132,15 +133,15 @@ aid in accomplishing its aims.
 
 nREPL uses the dependency information in descriptors in order to produce a
 linearization of a set of middleware; this linearization is exposed by
-`nrepl.middleware/linearize-middleware-stack`, which is
-implicitly used by `nrepl.server/default-handler` to combine the
-default stack of middleware with any additional provided middleware vars.  The
-primary contribution of `default-handler` is to use
-`nrepl.server/unknown-op` as the base handler; this ensures that
-unhandled messages will always produce a response message with an `:unknown-op`
-`:status`.  Any handlers otherwise created (e.g. via direct usage of
-`linearize-middleware-stack` to obtain a ordered sequence of middleware vars)
-should do the same, or use a similar alternative base handler.
+`nrepl.middleware/linearize-middleware-stack`, which is implicitly used by
+`nrepl.server/default-handler` to combine the default stack of middleware with
+any additional provided middleware vars. Additionally, `default-handler` adds
+`nrepl.middleware/wrap-describe` middleware to the stack which provides
+`describe` op support. Any handlers created without using `default-handler`
+(e.g. via direct usage of `linearize-middleware-stack` to obtain a ordered
+sequence of middleware vars) should make sure to add `wrap-desribe`, and also
+make a base handler that responds with `:unknown-op` error to messages with
+unrecognized ops.
 
 == Evaluation
 
@@ -195,9 +196,6 @@ you'll have to do this in separate session, as all requests within the
 same session are serialized.
 
 == Pretty Printing
-
-NOTE: Pretty printing support was added in nREPL 0.5 and the API is still
-considered experimental.
 
 nREPL includes a `print` middleware to print the results of evaluated forms as
 strings for returning to the client. This enables using libraries like
@@ -339,23 +337,3 @@ If a middleware descriptor's `:requires` set contains
 * Any handled requests will contain the key
   `:nrepl.middleware.caught/caught-fn`, whose value is a function that can be
   called on a `java.lang.Throwable` to convey errors interactively.
-
-== Dynamic middleware loading
-
-NOTE: Dynamic middleware loading support was added in nREPL 0.8 and the API is still
-considered experimental, and may change.
-
-nREPL includes a `dynamic-loader` middleware, which can be used, at runtime,
-query and change the middleware stack the nREPL server is using.
-
-This introduces three new operations:
-
-* `ls-middleware`, to return a list of active middleware, ordered from inside outwards.
-* `add-middleware`, which adds a middleware to the stack. Optionally, a list of
-  `extra-namespaces` could be provided for loading. This is useful when adding
-  middleware that implement some form of deferred loading. Examples include
-  `cider-nrepl` and `refactor-nrepl`. This feature allows us to pre-load
-  namespaces when we add a middleware. If loading of any particular middleware
-  fails, the stack will be unchanged.
-* `swap-middleware`, similar to `add-`, but replaces all existing middleware.
-  Note that this _may_ remove the `dynamic-loader` itself.
