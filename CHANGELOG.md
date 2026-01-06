@@ -9,6 +9,7 @@
 ### Changes
 
 * [#408](https://github.com/nrepl/nrepl/pull/408): Refactor `stdin` middleware.
+* [#409](https://github.com/nrepl/nrepl/pull/409): Refactor handler construction and middleware application.
 
 ## 1.5.2 (2025-12-29)
 
