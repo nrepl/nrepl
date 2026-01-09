@@ -93,7 +93,7 @@
 (defn- extended-descriptors
   [middlewares]
   (let [mware-set (set middlewares)]
-    (for [m middlewares
+    (for [m (distinct middlewares) ;; Don't use the above set here for more predictable tests.
           :let [{:keys [expects requires] :as desc} (::descriptor (meta m))]]
       (do (when (nil? desc)
             (misc/log :warning "No nREPL middleware descriptor in metadata of" m
