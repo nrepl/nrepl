@@ -71,6 +71,12 @@
          (binding [*err* *out*]
            (indexed-stack [#'nrepl.middleware.interruptible-eval/interruptible-eval]))))))
 
+(deftest middleware-deduplication
+  (is+ [#'nrepl.middleware.print/wrap-print]
+       (linearize-middleware-stack [#'nrepl.middleware.print/wrap-print
+                                    #'nrepl.middleware.print/wrap-print
+                                    #'nrepl.middleware.print/wrap-print])))
+
 (deftest NREPL-53-regression
   (is (= [0 1 2]
          (map :id

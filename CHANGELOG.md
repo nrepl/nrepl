@@ -11,6 +11,10 @@
 * [#408](https://github.com/nrepl/nrepl/pull/408): Refactor `stdin` middleware.
 * [#409](https://github.com/nrepl/nrepl/pull/409): Refactor handler construction and middleware application.
 
+### Bugs fixed
+
+* [#410](https://github.com/nrepl/nrepl/pull/410): Middleware: deduplicate middleware when constructing a handler.
+
 ## 1.5.2 (2025-12-29)
 
 ### Bugs fixed
