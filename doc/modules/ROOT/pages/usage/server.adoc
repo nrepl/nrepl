@@ -94,7 +94,7 @@ interface (this output was simply generated with `--help`):
 -s/--socket PATH            Start nREPL on filesystem socket at PATH.
 --ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.
 -n/--handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`. Must be expressed as a namespace-qualified symbol. The underlying var will be automatically `require`d.
--m/--middleware MIDDLEWARE  A sequence of vars (expressed as namespace-qualified symbols), representing middleware you wish to mix in to the nREPL handler. The underlying vars will be automatically `require`d.
+-m/--middleware MIDDLEWARE  A sequence of vars (expressed as namespace-qualified symbols), representing middleware you wish to mix in to the nREPL handler. The underlying vars will be automatically `require`d. If unavailable, the server will exit unless symbols are marked with ^:optional metadata.
 -t/--transport TRANSPORT    The transport to use (default `nrepl.transport/bencode`), expressed as a namespace-qualified symbol. The underlying var will be automatically `require`d.
 --help                      Show this help message.
 ....
@@ -452,3 +452,27 @@ local projects by putting this into your global config:
 ----
 {:dynamic-vars {clojure.core/*warn-on-reflection* true}}
 ----
+
+=== Optional middleware
+
+Starting with version 1.6, middleware symbols can be marked with `^:optional` metadata to enable graceful
+degradation. By default, the server will exit if middleware cannot be loaded.
+With `^:optional`, unavailable middleware is skipped.
+
+..nrepl/nrepl.edn
+[source,clojure]
+----
+{:middleware [cider.nrepl/cider-middleware
+              ^:optional experimental.ns/beta-feature]}
+----
+
+You can also use `^:optional` from the command line:
+
+[source,shell]
+----
+$ clj -M:nREPL -m nrepl.cmdline --middleware "[cider.nrepl/cider-middleware,^:optional experimental.ns/beta-feature]"
+----
+
+This is useful for configuring nREPL middleware references once, and not have to
+change the configuration depending on the availability of the referenced
+middleware on the classpath.
