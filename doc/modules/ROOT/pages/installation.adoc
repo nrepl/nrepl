@@ -16,7 +16,7 @@ mostly targets `clj`. It's documented in the subsequent sections of this
 manual.
 ====
 
-All popular Clojure build tools (Leiningen, Gradle, Maven) have
+All popular Clojure build tools (tools.deps, Leiningen, Gradle, Maven) have
 the ability to run an nREPL server and most of the time you'll probably
 simply use nREPL through them and end up using whatever nREPL version
 they happen to ship.
@@ -26,7 +26,7 @@ want to embed an nREPL server directly in your application. In those
 scenarios some kind of an installation will be in order - just adding
 nREPL as a dependency to your project.
 
-nREPL is available in Clojars. Add this to your Leiningen
+nREPL is available in https://clojars.org/nrepl[Clojars]. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
 [source,clojure]
@@ -39,6 +39,13 @@ nREPL is available in Clojars. Add this to your Leiningen
 You can override the version of nREPL supplied by Leiningen by adding nREPL as a
 dependency to your project.
 ====
+
+Or, add this to your `deps.edn`:
+
+[source,clojure]
+----
+nrepl/nrepl {:mvn/version "1.4.0"}
+----
 
 Or, add this to your Gradle project's `build.gradle`:
 
