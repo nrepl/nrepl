@@ -44,7 +44,7 @@ how you can easily start a ClojureScript capable nREPL:
 :aliases {:nREPL
           {:extra-deps
            {nrepl/nrepl {:mvn/version "1.5.2"}
-            cider/piggieback {:mvn/version "0.4.2"}}}}
+            cider/piggieback {:mvn/version "0.6.1"}}}}
 }
 ----
 
@@ -156,7 +156,7 @@ You can also specify a lot of nREPL's configuration options in the `:repl` profi
 [source,clojure]
 ----
 ;; Options to change the way the REPL behaves.
-:repl-options { ;; Specify the string to print when prompting for input.
+:repl-options {;; Specify the string to print when prompting for input.
                ;; defaults to something like (fn [ns] (str *ns* "=> "))
                :prompt (fn [ns] (str "your command for <" ns ">? " ))
                ;; What to print when the repl session starts.
@@ -237,9 +237,9 @@ The https://github.com/clojurephant/clojurephant[Clojurephant] plugin provides
 Clojure/ClojureScript support for Gradle, including built-in nREPL support:
 
 [source,shell]
----
+----
 $ ./gradlew clojureRepl
----
+----
 
 NOTE: Clojurephant will only start an nREPL server. You will need to use a separate
 nREPL client, such as your editor.
@@ -275,10 +275,7 @@ and port 4001:
 
 [source,clojure]
 ----
-=> (require '[nrepl.server :refer [start-server stop-server]])
-nil
-=> (defonce server (start-server :bind "172.18.0.5" :port 4001))
-='user/server
+(defonce server (start-server :bind "172.18.0.5" :port 4001))
 ----
 
 WARNING: Keep in mind that running a nREPL server on a public address
@@ -287,7 +284,7 @@ authentication, no authorization) by default, anyone can connect to
 your app and modify its behaviour or run code on the remote host.
 
 You can also ask nREPL to listen on a UNIX domain (filesystem) socket
-with the `:socket` keyword (if you're using JDK 16 or newer add a
+with the `:socket` keyword (if you're using JDK 17 or newer add a
 https://kohlschutter.github.io/junixsocket/[junixsocket] dependency),
 which should be as secure as the access to the socket\'s parent
 directories (POSIX doesn't specify the effect of the socket file's
@@ -295,10 +292,7 @@ permissions (if any), and some systems have ignored them):
 
 [source,clojure]
 ----
-=> (require '[nrepl.server :refer [start-server stop-server]])
-nil
-=> (defonce server (start-server :socket "/some/where/safe/nrepl"))
-='user/server
+(defonce server (start-server :socket "/some/where/safe/nrepl"))
 ----
 
 Depending on what the lifecycle of your application is, whether you want to be
@@ -344,7 +338,7 @@ You can pull in the needed dependencies by adding this to your pom.xml:
     <dependency>
         <groupId>org.clojure</groupId>
         <artifactId>clojure</artifactId>
-        <version>1.10.0</version>
+        <version>1.12.3</version>
     </dependency>
 </dependencies>
 ----
