@@ -64,12 +64,12 @@
            (indexed-stack (conj default-middleware {:dummy :middleware}))))))
 
 (deftest missing-middleware-fail
-  (is (thrown-with-msg?
-       clojure.lang.ExceptionInfo
-       #"Middleware #'nrepl.middleware.(caught|print)/wrap-(caught|print) is required by #'nrepl.middleware.interruptible-eval/interruptible-eval"
+  (is+ '{interruptible-eval 0, wrap-caught 1, wrap-print 2}
+       (indexed-stack [#'nrepl.middleware.interruptible-eval/interruptible-eval]))
+  (is+ #"Middleware #'nrepl.middleware.(caught|print)/wrap-(caught|print) is required by #'nrepl.middleware.interruptible-eval/interruptible-eval but is not present in middleware list."
        (with-out-str
          (binding [*err* *out*]
-           (indexed-stack [#'nrepl.middleware.interruptible-eval/interruptible-eval]))))))
+           (indexed-stack [#'nrepl.middleware.interruptible-eval/interruptible-eval])))))
 
 (deftest middleware-deduplication
   (is+ [#'nrepl.middleware.print/wrap-print]

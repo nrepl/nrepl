@@ -91,22 +91,34 @@
           :else 0)))
 
 (defn- extended-descriptors
+  "This function serves two purposes:
+  - Scan through middlewares' dependencies and add those that are mentioned in
+  `:requires` or `:expects`, but not included explicitly. This is done for
+  compatibility, but will be removed in the future.
+  - Return descriptor for each middleware."
   [middlewares]
   (let [mware-set (set middlewares)]
-    (for [m (distinct middlewares) ;; Don't use the above set here for more predictable tests.
-          :let [{:keys [expects requires] :as desc} (::descriptor (meta m))]]
-      (do (when (nil? desc)
-            (misc/log :warning "No nREPL middleware descriptor in metadata of" m
-                      ", see nrepl.middleware/set-descriptor!"))
-          (doseq [dep (concat expects requires)
-                  :when (and (var? dep) (not (mware-set dep)))]
-            (throw (ex-info (format "Middleware %s is required by %s but is not present in middleware list." dep m)
-                            {})))
-          (-> desc
-              ;; Conj the middleware Var itself to `:handles` to support direct
-              ;; reference to middlewares dependencies in `:expects`/`:requires`.
-              (update :handles #(set (conj (keys %) m)))
-              (assoc :implemented-by m))))))
+    (->> (for [m middlewares
+               :let [{:keys [expects requires] :as desc} (::descriptor (meta m))]]
+           (do (when (nil? desc)
+                 (misc/log :warning "No nREPL middleware descriptor in metadata of" m
+                           ", see nrepl.middleware/set-descriptor!"))
+               (let [deps (concat expects requires)
+                     missing-deps (for [dep deps
+                                        :when (and (var? dep) (not (mware-set dep)))]
+                                    (do (misc/log :warning (format "Middleware %s is required by %s but is not present in middleware list." dep m))
+                                        dep))]
+                 ;; TODO: stop adding missing deps in future versions.
+                 (concat [m] missing-deps))))
+         (apply concat)
+         distinct
+         (mapv (fn [m]
+                 (let [desc (::descriptor (meta m))]
+                   (-> desc
+                       ;; Conj the middleware Var itself to `:handles` to support direct
+                       ;; reference to middlewares dependencies in `:expects`/`:requires`.
+                       (update :handles #(set (conj (keys %) m)))
+                       (assoc :implemented-by m))))))))
 
 (defn- topologically-sort
   "Topologically sorts the given middleware descriptors according to
