@@ -9,6 +9,7 @@
    [nrepl.misc :as misc]
    [nrepl.transport :as transport])
   (:import
+   (clojure.lang RT)
    (java.io OutputStreamWriter PrintWriter StringWriter Writer)
    (nrepl.out CallbackBufferedOutputStream QuotaBoundWriter QuotaExceeded)
    (nrepl.transport Transport)))
@@ -73,8 +74,7 @@
    {:keys [::print-fn ::keys] :as opts}]
   ;; Iterator is used instead of reduce for cleaner stacktrace if an exception
   ;; gets thrown during printing.
-  (let [^Iterable keys (or keys [])
-        it (.iterator keys)]
+  (let [it (RT/iter keys)]
     (while (.hasNext it)
       (let [key (.next it)
             value (get resp key)]
@@ -90,8 +90,7 @@
    {:keys [::print-fn ::quota ::keys]}]
   ;; Iterator is used instead of reduce for cleaner stacktrace if an exception
   ;; gets thrown during printing.
-  (let [^Iterable keys (or keys [])
-        it (.iterator keys)]
+  (let [it (RT/iter keys)]
     (loop [resp resp]
       (if (.hasNext it)
         (let [key (.next it)

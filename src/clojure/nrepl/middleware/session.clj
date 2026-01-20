@@ -138,17 +138,17 @@
         ;; TODO: new options: out-quota | err-quota
         opts {::print/buffer-size (or out-limit (get (meta session) :out-limit))}
         out (print/replying-PrintWriter :out msg opts)
-        err (print/replying-PrintWriter :err msg opts)
-        ctxcl (.getContextClassLoader (Thread/currentThread))]
+        err (print/replying-PrintWriter :err msg opts)]
     (-> bindings-map
         (assoc #'*msg* msg
-               Compiler/LOADER ctxcl
+               Compiler/LOADER (classloader/dynamic-classloader)
                #'*out* out
                #'*err* err
                ;; clojure.test captures *out* at load-time, so we need to make
                ;; sure runtime output of test status/results is redirected
                ;; properly. There might be more cases like this, but we can't do
-               ;; much about it besides patching like this.
+               ;; much about it besides patching like this. We intentionally
+               ;; don't require beforehand in order to not add to loading times.
                (resolve 'clojure.test/*test-out*) out)
         (cond->
          file (assoc #'*file* file)))))
@@ -362,7 +362,7 @@
                  {:requires #{}
                   :expects #{}
                   :describe-fn (fn [{:keys [session]}]
-                                 (when (and session (instance? clojure.lang.Atom session))
+                                 (when (instance? clojure.lang.Atom session)
                                    {:current-ns (-> @session (get #'*ns*) str)}))
                   :handles {"clone"
                             {:doc "Clones the current session, returning the ID of the newly-created session."
