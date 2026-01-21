@@ -52,7 +52,7 @@ Required parameters::
 Optional parameters::
 * `:complete-fn` The fully qualified name of a completion function to use instead of the default one (e.g. ``my.ns/completion``).
 * `:ns` The namespace in which we want to obtain completion candidates. Defaults to ``\*ns*``.
-* `:options` A map of options supported by the completion function. Supported keys: ``extra-metadata`` (possible values: ``:arglists``, ``:docs``).
+* `:options` A map of options supported by the completion function.
 
 
 Returns::
