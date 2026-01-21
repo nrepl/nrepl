@@ -67,22 +67,14 @@
 (def ^:private force-stop-delay-ms 5000)
 
 (defn interrupt-stop
-  "This works as follows
-
-  1. Calls interrupt
-  2. Wait 100ms. This is mainly to allow thread that respond quickly to
-     interrupts to send a message back in response to the interrupt. Significantly,
-     this includes an exception thrown by `Thread/sleep`.
-  3. Asynchronously: wait another `force-stop-delay-ms` (5000ms) for the thread
-     to cleanly terminate. Only calls `.stop` if it fails to do so (and risk
-     state corruption)
-
-  This set of behaviours strikes a balance between allowing a thread to respond
-  to an interrupt, but also ensuring we actually kill runaway processes."
+  "Try to interrupt the thread normally. Asynchronously wait for 5000ms and, if
+  the thread didn't terminate itself cleanly, kill the thread using either
+  `.stop` or JVMTI agent. This behaviour strikes a balance between allowing a
+  thread to respond to an interrupt, but also ensuring we clean up runaway
+  processes."
   [^Thread t]
   ;; TODO: make timeouts configurable?
   (.interrupt t)
-  (Thread/sleep 100)
   (.schedule ^ScheduledExecutorService @thread-reaper-executor
              ^Runnable #(misc/log-exceptions
                          (when-not (= (.getState t) Thread$State/TERMINATED)

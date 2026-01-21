@@ -495,6 +495,7 @@
            (-> (message session {:op "interrupt"})
                combine-responses
                clean-response))
+      (Thread/sleep 100) ;; Let interrupt go through and generate an exception
       (is+ {:status #{:done :eval-error :interrupted}
             :ex "class java.lang.InterruptedException"}
            (-> resp
