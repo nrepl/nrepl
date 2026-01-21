@@ -2,7 +2,6 @@
   "Default server implementations"
   {:author "Chas Emerick"}
   (:require
-   [nrepl.ack :as ack]
    [nrepl.middleware :as middleware]
    nrepl.middleware.caught
    nrepl.middleware.completion
@@ -12,7 +11,7 @@
    nrepl.middleware.lookup
    nrepl.middleware.print
    nrepl.middleware.session
-   [nrepl.misc :refer [log log-exceptions response-for]]
+   [nrepl.misc :as misc :refer [log log-exceptions response-for]]
    [nrepl.socket :as socket :refer [inet-socket unix-server-socket]]
    [nrepl.tls :as tls]
    [nrepl.transport :as t]
@@ -234,5 +233,5 @@
       (log-exceptions
        (accept-connection-loop server consume-exception)))
     (when ack-port
-      (ack/send-ack (:port server) ack-port transport-fn))
+      ((misc/requiring-resolve 'nrepl.ack/send-ack) (:port server) ack-port transport-fn))
     server))

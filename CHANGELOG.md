@@ -11,6 +11,7 @@
 * [#408](https://github.com/nrepl/nrepl/pull/408): Refactor `stdin` middleware.
 * [#409](https://github.com/nrepl/nrepl/pull/409): Refactor handler construction and middleware application.
 * [#412](https://github.com/nrepl/nrepl/pull/412): **Deprecated:** automatic inclusion of middleware references by `:requires`/`:expects` into the resulting handler. This behavior still works but will produce an error in the future. It is thus recommended to include all necessary middleware into the list passed to `nrepl.server/default-handler`.
+* [#416](https://github.com/nrepl/nrepl/pull/416): Load nrepl.ack conditionally.
 
 ### Bugs fixed
 
