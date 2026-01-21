@@ -7,7 +7,6 @@
    [clojure.edn :as edn]
    [clojure.java.io :as io]
    [clojure.string :as str]
-   [nrepl.ack :refer [send-ack]]
    [nrepl.config :as config]
    [nrepl.core :as nrepl]
    [nrepl.misc :refer [uuid]]
@@ -355,9 +354,7 @@ Exit:      Control+D or (exit) or (quit)"
   "Takes a map of nREPL CLI options.
   Returns integer ack port or nil."
   [options]
-  (some-> options
-          (:ack)
-          (->int)))
+  (->int (:ack options)))
 
 (defn- options->repl-fn
   "Takes a map of nREPL CLI options.
@@ -441,21 +438,6 @@ Exit:      Control+D or (exit) or (quit)"
                     options)
   (exit 0))
 
-(defn ack-server
-  "Acknowledge the port of this server to another nREPL server running on
-  :ack port.
-  Takes nREPL server map and processed CLI options map.
-  Prints a message describing the acknowledgement between servers.
-  Returns nil."
-  [server options]
-  (when-let [ack-port (:ack-port options)]
-    (let [port (:port server)
-          transport (:transport options)]
-      (when (:verbose options)
-        (println (format "ack'ing my port %d to other server running on port %d"
-                         port ack-port)))
-      (send-ack port ack-port transport))))
-
 (defn server-started-message
   "Returns nREPL server started message that some tools rely on to parse the
   connection details from.
@@ -488,7 +470,7 @@ Exit:      Control+D or (exit) or (quit)"
   "Creates an nREPL server instance.
   Takes map of CLI options.
   Returns nREPL server map."
-  [{:keys [port bind socket handler transport greeting tls-keys-str tls-keys-file]}]
+  [{:keys [port bind socket handler transport greeting ack-port tls-keys-str tls-keys-file]}]
   (nrepl-server/start-server
    :port port
    :bind bind
@@ -496,6 +478,7 @@ Exit:      Control+D or (exit) or (quit)"
    :handler handler
    :transport-fn transport
    :greeting-fn greeting
+   :ack-port ack-port
    :tls-keys-str tls-keys-str
    :tls-keys-file tls-keys-file))
 
@@ -508,7 +491,6 @@ Exit:      Control+D or (exit) or (quit)"
         (:connect options) (connect-to-server (connection-opts options))
         :else (let [options (server-opts options)
                     server (start-server options)]
-                (ack-server server options)
                 (println (server-started-message server options))
                 (save-port-file server options)
                 (if (:interactive options)
