@@ -37,6 +37,15 @@
   []
   (str (java.util.UUID/randomUUID)))
 
+(defn take-until
+  "Like (take-while (complement f) coll), but includes the first item in coll that
+   returns true for f."
+  [f coll]
+  (lazy-seq
+   (when-first [el coll]
+     (cons el (when-not (f el)
+                (take-until f (rest coll)))))))
+
 (defn response-for
   "Returns a map containing the :session and :id from the \"request\" `msg`
    as well as all entries specified in `response-data`, which can be one
