@@ -2,8 +2,7 @@
   "High level nREPL client support."
   {:author "Chas Emerick"}
   (:require
-   clojure.set
-   [nrepl.misc :refer [uuid]]
+   [nrepl.misc :refer [take-until uuid]]
    [nrepl.socket :as socket]
    [nrepl.tls :as tls]
    [nrepl.transport :as transport]
@@ -28,39 +27,20 @@
    a client fn returned from this fn."
   [transport response-timeout]
   (let [latest-head (atom nil)
-        update #(swap! latest-head
-                       (fn [[timestamp :as head] now]
-                         (if (< timestamp now)
-                           [now %]
-                           head))
-                       ;; nanoTime appropriate here; looking to maintain ordering, not actual timestamps
-                       (System/nanoTime))
-        tracking-seq (fn tracking-seq [responses]
-                       (lazy-seq
-                        (if (seq responses)
-                          (let [rst (tracking-seq (rest responses))]
-                            (update rst)
-                            (cons (first responses) rst))
-                          (do (update nil) nil))))
-        restart #(let [head (-> transport
-                                (response-seq response-timeout)
-                                tracking-seq)]
-                   (reset! latest-head [0 head])
-                   head)]
+        ;; We don't use `response-seq` here but make a custom transport-pulling
+        ;; lazy seq that updates `latest-head` to always point to the yet
+        ;; unrealized part of the message sequence.
+        resp-seq (fn resp-seq []
+                   (lazy-seq
+                    (if-some [resp (transport/recv transport response-timeout)]
+                      (cons resp (reset! latest-head (resp-seq)))
+                      (reset! latest-head nil))))]
     ^{::transport transport ::timeout response-timeout}
     (fn this
-      ([] (or (second @latest-head)
-              (restart)))
+      ([] (or @latest-head (reset! latest-head (resp-seq))))
       ([msg]
        (transport/send transport msg)
        (this)))))
-
-(defn- take-until
-  "Like (take-while (complement f) coll), but includes the first item in coll that
-   returns true for f."
-  [f coll]
-  (let [[head tail] (split-with (complement f) coll)]
-    (concat head (take 1 tail))))
 
 (defn- delimited-transport-seq
   "Returns a function of one argument that performs described below.
@@ -71,18 +51,17 @@
     - Filter only items related to the delimited-slots of client's response seq
     - Returns head of the seq that will terminate
       upon receipt of a :status, when :status is an element of termination-statuses"
-  [client termination-statuses delimited-slots]
-  (with-meta
-    (comp (partial take-until (comp #(seq (clojure.set/intersection % termination-statuses))
-                                    set
-                                    :status))
-          (let [keys (keys delimited-slots)]
-            (partial filter #(= delimited-slots (select-keys % keys))))
-          client
-          #(merge % delimited-slots))
-    (-> (meta client)
-        (update-in [::termination-statuses] (fnil into #{}) termination-statuses)
-        (update-in [::taking-until] merge delimited-slots))))
+  [klient termination-statuses delimited-slots]
+  (let [delimited-keys (keys delimited-slots)
+        termination-statuses (set termination-statuses)]
+    (with-meta
+      (fn [msg]
+        (->> (klient (merge msg delimited-slots))
+             (filter #(= delimited-slots (select-keys % delimited-keys)))
+             (take-until #(some termination-statuses (:status %)))))
+      (-> (meta klient)
+          (update ::termination-statuses (fnil into #{}) termination-statuses)
+          (update ::taking-until merge delimited-slots)))))
 
 (defn message
   "Sends a message via [client] with a fixed message :id added to it
