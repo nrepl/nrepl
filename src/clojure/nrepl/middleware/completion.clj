@@ -13,10 +13,9 @@
   {:author "Bozhidar Batsov"
    :added "0.8"}
   (:require
-   [clojure.walk :as walk]
-   [nrepl.middleware :as middleware :refer [set-descriptor!]]
+   [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.misc :as misc]
-   [nrepl.transport :as t :refer [safe-handle]]
+   [nrepl.transport :refer [safe-handle]]
    [nrepl.util.completion :as complete]))
 
 (def ^:dynamic *complete-fn*
@@ -25,18 +24,13 @@
   options for the completion function."
   complete/completions)
 
-(def ^:private parse-options
-  (memoize
-   (fn [options]
-     (update (walk/keywordize-keys options) :extra-metadata (comp set (partial map keyword))))))
-
 (defn completion-reply
   [{:keys [prefix ns complete-fn options] :as msg}]
   (let [the-ns (if ns (symbol ns) (symbol (str (misc/resolve-in-session msg *ns*))))
         completion-fn (or (some-> complete-fn symbol misc/requiring-resolve)
                           (misc/resolve-in-session msg *complete-fn*))]
     {:status :done
-     :completions (completion-fn prefix the-ns (parse-options options))}))
+     :completions (completion-fn prefix the-ns options)}))
 
 (defn wrap-completion
   "Middleware that provides code completion.
@@ -61,6 +55,6 @@
                              :requires {"prefix" "The prefix to complete."}
                              :optional {"ns" "The namespace in which we want to obtain completion candidates. Defaults to `*ns*`."
                                         "complete-fn" "The fully qualified name of a completion function to use instead of the default one (e.g. `my.ns/completion`)."
-                                        "options" "A map of options supported by the completion function. Supported keys: `extra-metadata` (possible values: `:arglists`, `:docs`)."}
+                                        "options" "A map of options supported by the completion function."}
                              :returns {"completions" "A list of completion candidates. Each candidate is a map with `:candidate` and `:type` keys. Vars also have a `:ns` key."}}}
                   :session-dynvars #{#'*complete-fn*}})
