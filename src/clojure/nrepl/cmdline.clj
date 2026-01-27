@@ -16,6 +16,7 @@
    [nrepl.util.threading :as threading]
    [nrepl.version :as version])
   (:import
+   [java.io FileNotFoundException]
    [java.net URI]))
 
 (defn- clean-up-and-exit
@@ -218,7 +219,7 @@ Exit:      Control+D or (exit) or (quit)"
   -s/--socket PATH            Start nREPL on filesystem socket at PATH or nREPL to connect to when using --connect.
   --ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.
   -n/--handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`. Must be expressed as a namespace-qualified symbol. The underlying var will be automatically `require`d.
-  -m/--middleware MIDDLEWARE  A sequence of vars (expressed as namespace-qualified symbols), representing middleware you wish to mix in to the nREPL handler. The underlying vars will be automatically `require`d.
+  -m/--middleware MIDDLEWARE  A sequence of vars (expressed as namespace-qualified symbols), representing middleware you wish to mix in to the nREPL handler. The underlying vars will be automatically `require`d. If unavailable, the server will exit unless symbols are marked with ^:optional metadata.
   -t/--transport TRANSPORT    The transport to use (default `nrepl.transport/bencode`), expressed as a namespace-qualified symbol. The underlying var will be automatically `require`d.
   --help                      Show this help message.
   -v/--version                Display the nREPL version.
@@ -237,8 +238,19 @@ Exit:      Control+D or (exit) or (quit)"
     (or (ns-resolve space (-> sym name symbol))
         (die (format "nREPL %s: unable to resolve %s\n" (name key) sym)))))
 
+(defn- safe-require-and-resolve
+  "Like require-and-resolve but returns nil when sym can't be resolved"
+  [key sym]
+  (if-let [space (and (symbol? sym) (namespace sym))]
+    (try (require (symbol space))
+         (ns-resolve (symbol space) (-> sym name symbol))
+         (catch FileNotFoundException _))
+    (die (format "nREPL %s: %s is not a qualified symbol\n" (name key) (pr-str sym)))))
+
 (def ^:private resolve-mw-xf
-  (comp (map #(require-and-resolve :middleware %))
+  (comp (map #(if (-> % meta :optional)
+                (safe-require-and-resolve :middleware %)
+                (require-and-resolve :middleware %)))
         (keep identity)))
 
 (defn- handle-seq-var

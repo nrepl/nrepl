@@ -5,6 +5,7 @@
 ### New features
 
 * [#402](https://github.com/nrepl/nrepl/pull/402): Add `^:concat` metadata support for config merging.
+* [#415](https://github.com/nrepl/nrepl/pull/415): Gracefully handle missing middleware via the `^:optional` metadata.
 
 ### Changes
 

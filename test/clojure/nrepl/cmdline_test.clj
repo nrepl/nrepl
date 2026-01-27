@@ -9,10 +9,12 @@
    [nrepl.cmdline :as cmd]
    [nrepl.core :as nrepl]
    [nrepl.core-test :refer [*server* *transport-fn* transport-fns]]
+   [nrepl.middleware :as middleware]
    [nrepl.server :as server]
    [nrepl.socket :refer [find-class unix-domain-flavor unix-socket-address]]
    [nrepl.test-helpers :as th :refer [is+]]
-   [nrepl.transport :as transport])
+   [nrepl.transport :as transport]
+   [matcher-combinators.matchers :as m])
   (:import
    (com.hypirion.io Pipe ClosingPipe)
    (java.lang ProcessBuilder$Redirect)
@@ -20,6 +22,13 @@
    (java.nio.channels Channels SocketChannel)
    (java.nio.file Files)
    (nrepl.server Server)))
+
+(defn wrap-dummy [handler]
+  (fn [msg] (handler msg)))
+
+(middleware/set-descriptor! #'wrap-dummy
+                            {:requires #{}
+                             :expects #{}})
 
 (defn create-tmpdir
   "Creates a temporary directory in parent (something clojure.java.io/as-path
@@ -139,7 +148,20 @@
                          :port 5000
                          :ack 2000
                          :handler 'clojure.core/identity
-                         :repl-fn 'clojure.core/identity})))
+                         :repl-fn 'clojure.core/identity}))
+  (testing  "middleware resolution"
+    (testing "builds handler with optional middleware present"
+      (let [result (cmd/server-opts {:middleware [(with-meta 'nrepl.cmdline-test/wrap-dummy {:optional true})]})]
+        (is+ {:stack (m/embeds [#'nrepl.cmdline-test/wrap-dummy])} (meta (:handler result)))))
+
+    (testing "builds handler with optional middleware missing"
+      (let [base-middleware-stack (meta (:handler (cmd/server-opts {})))
+            result (cmd/server-opts {:middleware [(with-meta 'nonexistent/middleware {:optional true})]})]
+        (is+ base-middleware-stack (meta (:handler result)))))
+
+    (testing "required middleware missing still fails"
+      (is (thrown? Exception
+                   (cmd/server-opts {:middleware ['nonexistent/required]}))))))
 
 (deftest server-started-message
   (with-open [^Server server (server/start-server
