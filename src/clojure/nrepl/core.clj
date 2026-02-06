@@ -93,7 +93,7 @@
    closed."
   [client & {:keys [session clone]}]
   (let [session (or session (apply new-session client (when clone [:clone clone])))]
-    (delimited-transport-seq client #{"session-closed"} {:session session})))
+    (delimited-transport-seq client #{"session-closed" :session-closed} {:session session})))
 
 (defn combine-responses
   "Combines the provided seq of response messages into a single response map.
