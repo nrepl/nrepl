@@ -211,6 +211,7 @@
            (loop []
              (let [{:keys [^LinkedBlockingQueue queue]} @state
                    [exec-id ^Runnable r ^Runnable ack msg] (.take queue)
+                   exec-id (or exec-id (uuid)) ;; :id may be absent in msg.
                    bindings (add-per-message-bindings msg @session)]
                (swap! state assoc :running exec-id)
                (push-thread-bindings bindings)
@@ -261,12 +262,12 @@
      ;; without (for compatibility). The compat arity takes message from *msg*
      ;; dynvar which isn't correct if some middleware modifies the message
      ;; before calling :exec (see https://github.com/nrepl/nrepl/issues/363).
-     :exec (fn
+     :exec (fn this
              ([exec-id r ack]
               ;; Here, *msg* is bound by session middleware on the server/handler
               ;; thread. We have to convey it to the executor thread.
               (if *msg*
-                (.put ^LinkedBlockingQueue (:queue @state) [exec-id r ack *msg*])
+                (this exec-id r ack *msg*)
                 (log "*msg* is unbound in a persistent session.")))
              ([exec-id r ack msg]
               (.put ^LinkedBlockingQueue (:queue @state) [exec-id r ack msg])))}))
