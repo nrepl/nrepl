@@ -485,40 +485,49 @@
       (is+ {:status #{:done :interrupted}} (-> resp combine-responses clean-response))
       (is (= [true] (repl-values session "halted?")))))
   (testing "interrupting a sleep"
-    (let [resp (message session {:op "eval"
-                                 :code (code
-                                        (do
-                                          (Thread/sleep 10000)
-                                          "Done"))})]
+    ;; Here and below we use `client-session` to continue collecting responses
+    ;; past `:done` until `:session-closed`, because the exception raised by
+    ;; interrupt arrives out of order after `:done` response.
+    (let [session' (nrepl/client-session client)
+          responses (session' {:op "eval"
+                               :code (code
+                                      (do
+                                        (Thread/sleep 10000)
+                                        "Done"))})]
       (Thread/sleep 100)
-      (is+ {:status #{:done}}
-           (-> (message session {:op "interrupt"})
-               combine-responses
-               clean-response))
-      (is+ {:status #{:done :eval-error :interrupted}
-            :ex "class java.lang.InterruptedException"}
-           (-> resp
-               combine-responses
-               clean-response))))
+      (session' {:op "interrupt"})
+      (Thread/sleep 200) ;; Let interrupt go through and generate an exception
+      (session' {:op "close"})
+      ;; Can't rely on order, thus `mc/embeds`.
+      (is+ (mc/embeds
+            [;; response to interrupt msg
+             {:status #{:done :interrupted}}
+             ;; InterruptedException raised during sleep
+             {:ex "class java.lang.InterruptedException"
+              :root-ex "class java.lang.InterruptedException",
+              :status #{:eval-error}}
+             ;; Response to `close`
+             {:status #{:done :session-closed}}])
+           (mapv clean-response responses))))
   (testing "interruptible code"
-    (let [resp (message session {:op "eval"
-                                 :code (code
-                                        (do
-                                          (defn run []
-                                            (if (.isInterrupted (Thread/currentThread))
-                                              "Clean stop!"
-                                              (recur)))
-                                          (run)))})]
+    (let [session' (nrepl/client-session client)
+          responses (session' {:op "eval"
+                               :code (code
+                                      (#(if (.isInterrupted (Thread/currentThread))
+                                          "Clean stop!"
+                                          (recur))))})]
       (Thread/sleep 100)
-      (is+ {:status #{:done}}
-           (-> (message session {:op "interrupt"})
-               first
-               clean-response))
-      (is+ {:status #{:done :interrupted}
-            :value ["\"Clean stop!\""]}
-           (-> resp
-               combine-responses
-               clean-response)))))
+      (session' {:op "interrupt"})
+      (Thread/sleep 200) ;; Let interrupt go through and generate an exception
+      (session' {:op "close"})
+      (is+ (mc/embeds
+            [;; response to interrupt msg
+             {:status #{:done :interrupted}}
+             ;; Lagging return value produced after interruption
+             {:value "\"Clean stop!\""}
+             ;; Response to `close`
+             {:status #{:done :session-closed}}])
+           (mapv clean-response responses)))))
 
 (def-repl-test non-interruptible-stop-thread
   (testing "non-interruptible code can still be interrupted"
