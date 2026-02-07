@@ -67,13 +67,13 @@
 
 
 
-             ;;; Maintenance profile
+             ;;; Docs generation profile
              ;;
              ;; It contains the small CLI utility (aliased to "lein docs") that
              ;; generates the nREPL ops documentation from their descriptor
              ;; metadata.
-             :maint {:source-paths ["src/maint"]
-                     :dependencies [[org.clojure/tools.cli "1.2.245"]]}
+             :docs {:source-paths ["src/maint"]
+                    :dependencies [[org.clojure/tools.cli "1.2.245"]]}
 
              ;; CI tools
              :cloverage {:plugins [[lein-cloverage "1.2.4"]]
