@@ -53,16 +53,16 @@
                       :test-selectors {:default '(complement :min-java-version)}
                       :aliases {"test" "test2junit"}})
              :junixsocket {:dependencies [[com.kohlschutter.junixsocket/junixsocket-core "2.10.1" :extension "pom"]]}
-             :clj-kondo {:dependencies [[clj-kondo "2025.09.22"]]}
+             :clj-kondo {:dependencies [[clj-kondo "2026.01.19"]]}
              ;; Clojure versions matrix
-             :provided {:dependencies [[org.clojure/clojure "1.12.2"]]}
+             :provided {:dependencies [[org.clojure/clojure "1.12.4"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :1.10 {:dependencies [[org.clojure/clojure "1.10.3"]]
                     :source-paths ["src/spec"]}
              :1.11 {:dependencies [[org.clojure/clojure "1.11.4"]]
                     :source-paths ["src/spec"]}
-             :1.12 {:dependencies [[org.clojure/clojure "1.12.2"]]
+             :1.12 {:dependencies [[org.clojure/clojure "1.12.4"]]
                     :source-paths ["src/spec"]}
 
 
@@ -83,20 +83,15 @@
                                      ;; in this project
                                      :test-ns-regex [#"^((?!nrepl.sanity-test).)*$"]}}
 
-             :cljfmt {:plugins [[lein-cljfmt "0.8.0"]]
-                      :cljfmt {:indents {delay [[:inner 0]]
-                                         returning [[:inner 0]]
-                                         run-with [[:inner 0]]
-                                         testing-dynamic [[:inner 0]]
-                                         testing-print [[:inner 0]]
-                                         safe-handle [[:inner 0]]
-                                         when-require [[:inner 0]]}}}
+             :cljfmt {:plugins [[dev.weavejester/lein-cljfmt "0.15.6"]]
+                      :cljfmt {:extra-indents {run-with [[:inner 0]]
+                                               testing-print [[:inner 0]]
+                                               safe-handle [[:inner 0]]
+                                               when-require [[:inner 0]]}}}
 
              :eastwood [:test
-                        {:plugins [[jonase/eastwood "1.4.0"]]
+                        {:plugins [[jonase/eastwood "1.4.3"]]
                          :eastwood {:config-files ["eastwood.clj"]
-                                    :ignored-faults {:non-dynamic-earmuffs {nrepl.middleware.load-file true}
-                                                     :unused-ret-vals {nrepl.util.completion-test true
+                                    :ignored-faults {:unused-ret-vals {nrepl.util.completion-test true
                                                                        nrepl.bencode true}
-                                                     :deprecations {nrepl.helpers true}
                                                      :reflection {nrepl.socket.dynamic true}}}}]})
