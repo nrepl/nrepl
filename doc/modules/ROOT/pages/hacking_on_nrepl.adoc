@@ -142,13 +142,6 @@ use a command like this:
 $ lein with-profile 1.8 test
 ----
 
-To run tests for all Clojure versions from 1.8 to latest configured.
-
-[source,shell]
-----
-$ lein test-all
-----
-
 === Running tests on CI
 
 For ease of use/consistency with other nREPL projects, tests are ran on CI
