@@ -26,8 +26,7 @@
   :javac-options ["-target" "8" "-source" "8"]
 
   :aliases {"bump-version" ["change" "version" "leiningen.release/bump-version"]
-            "test-all" ["with-profile" "+1.8:+1.9:+1.10:+1.11:+fastlane:+junixsocket" "test"]
-            "docs" ["with-profile" "+maint" "run" "-m" "nrepl.impl.docs" "--file"
+            "docs" ["with-profile" "+docs" "run" "-m" "nrepl.impl.docs" "--file"
                     ~(clojure.java.io/as-relative-path
                       (clojure.java.io/file "doc" "modules" "ROOT" "pages" "ops.adoc"))]
             "kaocha" ["with-profile" "+test" "run" "-m" "kaocha.runner"]}
@@ -44,8 +43,7 @@
                                     :password :env/clojars_password
                                     :sign-releases false}]]
 
-  :profiles {:fastlane {:dependencies [[nrepl/fastlane "0.1.0"]]}
-             :dev ~dev-test-common-profile
+  :profiles {:dev ~dev-test-common-profile
              :test ~(merge
                      dev-test-common-profile
                      {:plugins      '[[test2junit "1.4.2"]]

@@ -49,15 +49,6 @@
   {#'transport/bencode "nrepl"
    #'transport/edn "nrepl+edn"})
 
-;; There is a profile that adds the fastlane dependency and test
-;; its transports.
-(when-require 'fastlane.core
-  (def transport-fn->protocol
-    (merge transport-fn->protocol
-           {(requiring-resolve 'fastlane.core/transit+msgpack) "transit+msgpack"
-            (requiring-resolve 'fastlane.core/transit+json) "transit+json"
-            (requiring-resolve 'fastlane.core/transit+json-verbose) "transit+json-verbose"})))
-
 (def ^File project-base-dir (File. (System/getProperty "nrepl.basedir" ".")))
 
 (def ^:dynamic ^nrepl.server.Server  *server* nil)
@@ -107,17 +98,13 @@
        ~@body)))
 
 (defmacro def-repl-test
+  {:style/indent 1}
   [name & body]
   `(deftest ~name
      (with-repl-server ~@body)))
 
 (defn- strict-transport? []
-  ;; TODO: add transit here.
-  (or (= *transport-fn* #'transport/edn)
-      (when-require 'fastlane.core
-        (or (= *transport-fn* (requiring-resolve 'fastlane.core/transit+msgpack))
-            (= *transport-fn* (requiring-resolve 'fastlane.core/transit+json))
-            (= *transport-fn* (requiring-resolve 'fastlane.core/transit+json-verbose))))))
+  (= *transport-fn* #'transport/edn))
 
 (defn- check-response-format
   "checks response against spec, if available it to do a spec check later"
