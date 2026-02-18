@@ -251,39 +251,17 @@ user=>
 == Hot-loading dependencies
 
 From time to time you'd want to experiment with some library without
-adding it as a dependency of your project.  You can easily achieve
-this with `tools.deps` or `pomegranate`. Let's start with a `tools.deps` example:
+adding it as a dependency of your project. Starting with Clojure 1.12,
+you can use the built-in `clojure.repl.deps/add-lib` to hot-load dependencies:
 
-[source,shell]
+[source,clojure]
 ----
-$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.5.2"}
-                      org.clojure/tools.deps.alpha {:git/url "https://github.com/clojure/tools.deps.alpha.git"
-                                                    :sha "d492e97259c013ba401c5238842cd3445839d020"}}}' -M -m nrepl.cmdline --interactive
-network-repl
-Clojure 1.9.0
-user=> (require '[clojure.tools.deps.alpha.repl :refer [add-lib]])
+user=> (require '[clojure.repl.deps :refer [add-lib]])
 nil
-user=> (add-lib 'org.clojure/core.memoize {:mvn/version "0.7.1"})
+user=> (add-lib 'org.clojure/core.memoize {:mvn/version "1.1.266"})
 true
 user=> (require 'clojure.core.memoize)
 nil
-user=>
-
 ----
 
-Alternatively with `pomegranate` you can do the following:
-
-[source,shell]
-----
-$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.5.2"} com.cemerick/pomegranate {:mvn/version "1.2.25"}}}' -M -m nrepl.cmdline --interactive
-network-repl
-Clojure 1.9.0
-user=> (require '[cemerick.pomegranate :refer [add-dependencies]])
-nil
-user=> (add-dependencies :coordinates '[[org.clojure/core.memoize "0.7.1"]]
-                         :repositories (merge cemerick.pomegranate.aether/maven-central
-                                             {"clojars" "https://clojars.org/repo"}))
-{[org.clojure/core.memoize "0.7.1"] #{[org.clojure/core.cache "0.7.1"] [org.clojure/clojure "1.6.0"]}, [org.clojure/core.cache "0.7.1"] #{[org.clojure/data.priority-map "0.0.7"]}, [org.clojure/data.priority-map "0.0.7"] nil, [org.clojure/clojure "1.6.0"] nil}
-user=> (require 'clojure.core.memoize)
-nil
-----
+NOTE: On older Clojure versions you can use https://github.com/clj-commons/pomegranate[pomegranate] for similar functionality.
