@@ -46,6 +46,67 @@ There are a few other simple clients that you can explore for inspiration:
 It might also be a good idea to see the message exchange between some nREPL and client.
 CIDER provides a https://docs.cider.mx/cider/troubleshooting.html#debugging-the-communication-with-nrepl[convenient solution] for this.
 
+== Sessions
+
+Sessions are a core concept in nREPL. A session is a stateful evaluation context
+that holds dynamic variable bindings (`\*ns*`, `\*1`, `\*e`, `\*out*`, etc.)
+and persists them across messages. Understanding session lifecycle is important
+for building well-behaved clients.
+
+=== Session types
+
+nREPL has two kinds of sessions:
+
+* *Persistent sessions* are created by the `clone` op and remain alive until
+  explicitly closed with the `close` op. They have a dedicated thread, support
+  interruption, and persist dynamic bindings across evaluations (e.g. changing
+  `\*ns*` in one eval is visible in the next).
+
+* *Ephemeral sessions* are created automatically when a message arrives without
+  a `:session` ID. They exist only for the duration of that single message --
+  dynamic binding changes are not preserved. Ephemeral sessions cannot be
+  interrupted.
+
+For user-facing evaluations, always use a persistent session. Ephemeral sessions
+are fine for stateless operations like `describe` or `ls-sessions`.
+
+=== Lifecycle
+
+A typical session lifecycle looks like this:
+
+. *Create* -- Send `{:op "clone"}` to create a new session. The response
+  contains `:new-session` with the session ID. You can optionally pass
+  `:client-name` and `:client-version` to identify your client.
+. *Use* -- Include the `:session` ID in subsequent messages (`eval`, `stdin`,
+  `completions`, etc.). The server routes these to the correct session and
+  applies the session's bindings.
+. *Close* -- Send `{:op "close" :session "..."}` when the session is no longer
+  needed. This terminates the session thread and releases resources.
+
+=== Multiple sessions
+
+Clients typically maintain at least two sessions:
+
+* A *user session* for interactive evaluation, where `\*1`, `\*2`, `\*3`, and
+  `\*e` accumulate results and errors as the user works.
+* A *tooling session* for background operations (completion, lookup, etc.) that
+  should not interfere with user state.
+
+Some clients create additional sessions for specific purposes (e.g. one per
+editor buffer, or a dedicated session for test runs). Creating sessions is
+cheap -- each is just an atom of bindings and a thread.
+
+=== Cloning from an existing session
+
+`clone` can take an optional `:session` parameter. When provided, the new
+session inherits all dynamic bindings from the source session. This is useful
+for creating a "snapshot" of the current state -- for instance, to fork a
+session for a long-running evaluation while keeping the original session
+responsive.
+
+When `:session` is omitted, the new session starts with default bindings
+(see xref:usage/server.adoc#_dynamic_var_defaults[Dynamic var defaults]).
+
 == Best Practices
 
 Below is a listing of best practices when it comes to building nREPL clients. A
