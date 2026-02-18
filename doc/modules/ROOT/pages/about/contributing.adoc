@@ -96,7 +96,9 @@ content:
      start_path: doc
 ----
 
-==== Deploying to Clojars
+== Releasing
+
+=== Deploying to Clojars
 
 Releases are done by CircleCI automatically. To push a release, you need to tag
 a commit in the `master` branch with the desired release version, starting with `v`,
