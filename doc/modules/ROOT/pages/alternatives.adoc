@@ -1,7 +1,5 @@
 = Alternatives
 
-NOTE: This page is work in progress.
-
 nREPL is certainly not the only project that aims to provide a common foundation for (Clojure) development tooling.
 footnote:[nREPL was the first such effort in the Clojure community, though.]
 Here we'll mostly focus on alternatives in the realm of Clojure, and we'll briefly go over
@@ -107,13 +105,13 @@ Here's a typical exchange between a client and a `prepl` server:
 https://langserver.org/[The Language Server protocol] is used between
 a tool (the client) and a language smartness provider (the server) to
 integrate features like auto complete, go to definition, find all
-references and alike into the tool.
+references and the like into the tool.
 
 With LSP you'd end up with a server similar to nREPL providing common editing operations.
 The communication between an LSP client and a server is done via JSON.
 
-Currently there's a single implementation of an LSP server for Clojure - namely https://github.com/snoe/clojure-lsp[clojure-lsp].
-Its functionality is powered internally by static code analysis, one can easily imagine
+The most popular LSP server for Clojure is https://github.com/clojure-lsp/clojure-lsp[clojure-lsp].
+Its functionality is powered internally by static code analysis, but one can easily imagine
 an LSP server implementation that's powered by a REPL.
 
 === Pros
