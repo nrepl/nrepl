@@ -44,7 +44,7 @@ Or, add this to your `deps.edn`:
 
 [source,clojure]
 ----
-nrepl/nrepl {:mvn/version "1.4.0"}
+nrepl/nrepl {:mvn/version "1.5.2"}
 ----
 
 Or, add this to your Gradle project's `build.gradle`:
