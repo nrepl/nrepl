@@ -11,8 +11,7 @@ directly to the needs of development tools.
 
 == Code Completion
 
-NOTE: Code completion support was added in nREPL 0.8 and the API is still
-considered experimental.
+NOTE: Code completion support was added in nREPL 0.8.
 
 nREPL bundles a completion middleware with a flexible interface. By default it will use nREPL's own
 code completion in `nrepl.util.completion`, but you can instruct nREPL to use
@@ -68,8 +67,7 @@ The default completion function accepts the `extra-metadata` option. It allows c
 
 == Symbol Lookup
 
-NOTE: Symbol lookup support was added in nREPL 0.8 and the API is still
-considered experimental.
+NOTE: Symbol lookup support was added in nREPL 0.8.
 
 NOTE: In nREPL 0.8.1 and older, xref:ops.adoc#lookup[the `lookup` op] fails for some symbols
 because the result contains data that the xref:design/transports.adoc#bencode-transport[Bencode transport] does not support (see https://github.com/nrepl/nrepl/issues/207[nrepl/nrepl#207]). In versions newer than 0.8.1, `:arglists` and `:arglists-str` have identical string values. `:arglists-str` is subject to removal.
@@ -113,8 +111,7 @@ user=> (set! nrepl.middleware.lookup/*lookup-fn* my.namespace/my-lookup)
 
 == Pretty Printing
 
-NOTE: Pretty printing support was added in nREPL 0.6 and the API is still
-considered experimental.
+NOTE: Pretty printing support was added in nREPL 0.6.
 
 The namespace `nrepl.middleware.print` contains some dynamic vars you can `set!`
 at the REPL to alter how evaluation results will be printed. Note that if your
