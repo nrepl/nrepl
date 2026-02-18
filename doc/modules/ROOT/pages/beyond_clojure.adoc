@@ -15,23 +15,13 @@ will cause bugs when used with other servers, while other clients are
 designed with language-agnosticism in mind. Usually the nREPL servers would mention in their
 documentation which clients are known to work well with them.
 
-* https://github.com/Foxboron/HyREPL[HyREPL] - an nREPL for the http://hylang.org/[Hy programming language]
-
 * https://gitlab.com/technomancy/jeejah[JeeJah] - an nREPL server for https://fennel-lang.org/[Fennel] and https://www.lua.org/[Lua]
 
 * https://gitlab.com/technomancy/ogion[Ogion] - an nREPL server for https://racket-lang.org/[Racket]
 
 * https://github.com/sjl/cl-nrepl[cl-nrepl] - an nREPL server for Common Lisp
 
-* https://github.com/bodil/cljs-noderepl[cljs-noderepl] - an nREPL server for ClojureScript running on Node.js
-
-* https://github.com/vspinu/R-nREPL[R-nREPL] - an nREPL server for R
-
 * https://git.sr.ht/~ngraves/nrepl-python[nrepl-python] - an nREPL server for https://www.python.org/[Python]
-
-* https://github.com/clojure/clr.tools.nrepl[nREPL CLR] - an nREPL server for ClojureCLR. A 1:1 port of the reference Clojure nREPL. Unfortunately it has been abandoned a long time ago.
-
-* https://github.com/arcadia-unity/Arcadia/blob/master/Editor/NRepl.cs[Arcadia nREPL] - an nREPL server implemented in C# for Arcadia. An actively maintained alternative of nREPL CLR.
 
 * https://github.com/babashka/babashka.nrepl[Babashka nREPL] - an nREPL server bundled with https://github.com/borkdude/babashka[babashka]
 
@@ -39,7 +29,7 @@ documentation which clients are known to work well with them.
 
 * https://github.com/viesti/nrepl-cljs-sci[nrepl-cljs-sci] - a native Node.js nREPL server implementation using https://github.com/borkdude/sci[SCI].
 
-* https://git.sr.ht/~abcdw/guile-ares-rs[guile-ares-rs] -  an Asynchronous Reliable Extensible Sleek RPC Server for Guile based on the nREPL protocol. 
+* https://git.sr.ht/~abcdw/guile-ares-rs[guile-ares-rs] - an Asynchronous Reliable Extensible Sleek RPC Server for Guile based on the nREPL protocol.
 
 * https://git.sr.ht/~ngraves/nrepl-scilab[nrepl-scilab] - an nREPL server for https://www.scilab.org/[Scilab]
 

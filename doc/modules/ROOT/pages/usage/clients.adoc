@@ -9,7 +9,6 @@ servers written in any language.
 
 == Command-line Clients
 
-* https://leiningen.org/grench.html[grenchman] (command-line nREPL client written in OCaml, works with non-Clojure servers)
 * https://github.com/trptcolin/reply/[REPL-y] (command-line client for nREPL)
 * https://github.com/bhauman/rebel-readline/tree/master/rebel-readline-nrepl[rebel-readline] (advanced command-line client for nREPL)
 * https://github.com/eraserhd/rep[rep] (A single-shot nREPL client designed for shell invocation.)
@@ -24,18 +23,12 @@ NOTE: Leiningen uses REPL-y internally as its command-line nREPL client.
 * https://github.com/clojure-emacs/cider[CIDER] (Clojure Interactive
   Development Environment that Rocks for Emacs)
 * https://cursiveclojure.com[Cursive] (Clojure IDE/plugin for IntelliJ Idea)
-* https://github.com/ccw-ide/ccw[Counterclockwise] (Clojure IDE/plugin
-  for Eclipse)
 * https://github.com/sanel/monroe[monroe] (nREPL client for Emacs, works with non-Clojure servers)
-* https://github.com/Saikyun/miracle[miracle] (fork of `monroe` targeting Arcadia)
 * https://github.com/Sasanidas/Rail[Rail] (generic nREPL client for Emacs that should work with any nREPL server)
 * https://github.com/tpope/vim-fireplace[fireplace.vim] (Clojure + nREPL
   support for vim)
 * https://github.com/Olical/conjure[Conjure] (Clojure(Script) plugin for Neovim)
 * https://github.com/liquidz/vim-iced[vim-iced] (Clojure Interactive Development Environment for Vim8/Neovim)
-* https://github.com/clojure-vim/acid.nvim[Acid.nvim] (Asynchronous Clojure Interactive Development for Neovim)
-* https://github.com/mauricioszabo/atom-chlorine[Chlorine] (Atom plugin for Clojure Development)
-* https://github.com/jasongilman/proto-repl[Proto REPL] (Clojure development environment and REPL for Atom)
 * https://github.com/BetterThanTomorrow/calva[Calva] (Clojure & ClojureScript support for VS Code)
 * https://github.com/tonsky/Clojure-Sublimed[Clojure Sublimed] (Clojure support for Sublime Text)
 
