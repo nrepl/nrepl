@@ -29,10 +29,6 @@ internally for ClojureScript evaluation)
 
 * https://github.com/nrepl/drawbridge[drawbridge]
 
-==== Transit Support
-
-* https://github.com/nrepl/fastlane[fastlane]
-
 == Third-party
 
 Third-party extensions are not developed and maintained by nREPL's Core Team and are
