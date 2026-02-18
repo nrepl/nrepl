@@ -345,6 +345,49 @@ You can pull in the needed dependencies by adding this to your pom.xml:
 
 A more complete example, including the use of custom middleware, can be found https://github.com/nrepl/nrepl-java-example[here].
 
+== Server discovery
+
+When nREPL starts via the CLI (i.e. `nrepl.cmdline`), it writes the
+server port to a file so that editors and other tools can automatically
+find and connect to the running server.
+
+=== `.nrepl-port`
+
+The server port is written to `.nrepl-port` in the current working
+directory. Most Clojure editors -- CIDER, Calva, Cursive, Conjure, and
+others -- look for this file to auto-connect to a running nREPL server.
+
+The file is registered for deletion on JVM shutdown (via
+`File.deleteOnExit`), so under normal circumstances it is cleaned up
+automatically when the server stops.
+
+=== `.nrepl-tls-proxy-port`
+
+When using TLS with a local proxy, the proxy port is written to
+`.nrepl-tls-proxy-port` in the current working directory. See
+xref:usage/tls.adoc[TLS] for details on setting up TLS connections.
+
+=== Embedded servers
+
+NOTE: `nrepl.server/start-server` does *not* write a port file -- only the
+CLI does. If you are embedding nREPL in your application and want editors
+to auto-discover the server, you need to write the port file yourself:
+
+[source,clojure]
+----
+(let [server (nrepl.server/start-server)]
+  (spit ".nrepl-port" (:port server)))
+----
+
+=== Version control
+
+Since `.nrepl-port` is a transient runtime artifact, you should add it to
+your `.gitignore` (or equivalent):
+
+----
+.nrepl-port
+----
+
 == Server options
 
 Note that nREPL is not limited to its default messaging protocol, nor to its
