@@ -18,7 +18,7 @@ we have to get a bit creative to determine the minimum version to target.
 
 The minimum required Clojure version is currently derived using data
 from the
-https://clojure.org/news/2021/04/06/state-of-clojure-2021[State of
+https://clojure.org/news/2024/06/02/state-of-clojure-2024[State of
 Clojure] survey. In general we consider a Clojure release eligible for
 dropping once its usage drops below 5%, but we'd not drop support for
 any release just for the sake of doing it. We'd do it only if
