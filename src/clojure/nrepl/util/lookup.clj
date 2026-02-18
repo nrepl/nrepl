@@ -33,7 +33,7 @@
 
 (defn lookup
   "Lookup the metadata for `sym`.
-  If the `sym` is not qualified than it will be resolved in the context
+  If the `sym` is not qualified then it will be resolved in the context
   of `ns`."
   [ns sym]
   (some-> (sym-meta ns sym) misc/sanitize-meta))

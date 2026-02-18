@@ -33,7 +33,7 @@
   (delay (Executors/newCachedThreadPool (thread-factory "nREPL-server-%d"))))
 
 (def transport-executor
-  "Executor used to run the transport  run the handler loop and handle individual requests."
+  "Executor used to run the transport handler loop and handle individual requests."
   (delay (Executors/newCachedThreadPool (thread-factory "nREPL-transport-%d"))))
 
 (def handle-executor

@@ -49,7 +49,7 @@
 ;; # Netstrings
 ;;
 ;; Now let's start with the basic netstrings. They consist of a byte count,
-;; followed a colon and the binary data and a trailing comma. Examples:
+;; followed by a colon and the binary data and a trailing comma. Examples:
 ;;
 ;;     13:Hello, World!,
 ;;     10:Guten Tag!,
@@ -219,7 +219,7 @@
 ;;     * `\i` to encode integers.
 ;;     * `\l` to encode lists of items.
 ;;     * `\d` to encode maps of item pairs.
-;;  * `\e` to end the a previously started tag.
+;;  * `\e` to end a previously started tag.
 ;;
 ;; ## Reading bencode
 ;;
@@ -269,7 +269,7 @@
                     (read-netstring* input)))))
 
 (defn read-nrepl-message
-  "Sames as `read-bencode`, but ensure that the top-level value is a map as
+  "Same as `read-bencode`, but ensure that the top-level value is a map as
   expected by the nREPL protocol."
   [^PushbackInputStream input]
   (let [first-byte (read-byte input)]
@@ -280,7 +280,7 @@ Wrong first byte: %s (must be %d)." first-byte d) {})))))
 
 ;; ## Writing bencode
 ;;
-;; Writing bencode is similar easy as reading it. The main entry point
+;; Writing bencode is similarly easy as reading it. The main entry point
 ;; takes a string, map, sequence or integer and writes it according to
 ;; the rules to the given OutputStream.
 
@@ -378,7 +378,7 @@ Wrong first byte: %s (must be %d)." first-byte d) {})))))
     (write-netstring* output (string>payload s)))
 
   ;; Symbols and keywords are converted to a string of the form 'namespace/name'
-  ;; or just 'name' in case its not qualified. We do not add colons for keywords
+  ;; or just 'name' in case it's not qualified. We do not add colons for keywords
   ;; since the other side might not have the notion of keywords.
 
   Named

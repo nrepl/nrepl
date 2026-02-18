@@ -1,5 +1,5 @@
 (ns nrepl.util.out
-  "Utilities for injecting out intercepting writers for System.out and err."
+  "Utilities for injecting output-intercepting writers for System.out and err."
   {:added "1.5"
    :author "Oleksandr Yakushev"}
   (:require [nrepl.util.threading :as threading])

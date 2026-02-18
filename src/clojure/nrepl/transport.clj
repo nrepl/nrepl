@@ -27,7 +27,7 @@
    with nREPL."
   (recv [this] [this timeout]
     "Reads and returns the next message received.  Will block.
-     Should return nil the a message is not available after `timeout`
+     Should return nil if a message is not available after `timeout`
      ms or if the underlying channel has been closed.")
   (send [this msg] "Sends msg. Implementations should return the transport."))
 
@@ -257,7 +257,7 @@
   with the op that matches message's op. If an exception is raised during
   handling, send an automatic error response through the message's transport
   with `:<op>-error` status. Special keyword `:else` can be used for an op to
-  define a catch-all handler. Handlers should functions of 1 argument `msg`."
+  define a catch-all handler. Handlers should be functions of 1 argument `msg`."
   {:style/indent 1}
   [msg & body] ;; `body` is used, otherwise CIDER acts up and misindents
   (assert (even? (count body)))

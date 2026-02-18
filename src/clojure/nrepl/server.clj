@@ -157,7 +157,7 @@
  ;;A record representing an nREPL server.
  [server-socket ;; A java.net.ServerSocket for underlying server connection
   host ;; When starting an IP server, the hostname the server is bound to
-  port ;; When starting an IP server, the port the servfer is bound to
+  port ;; When starting an IP server, the port the server is bound to
   socket ;; When starting a filesystem socket server, the string path to the
          ;; socket file
   open-transports ;; An IDeref containing a set of nrepl.transport/Transport
@@ -211,7 +211,7 @@
       (log msg)
       (throw (ex-info msg {:nrepl/kind ::invalid-start-request}))))
   (when (and tls? (not (or tls-keys-str tls-keys-file)))
-    (let [msg "tls? is true, but tls-keys-str nor tls-keys-file is present"]
+    (let [msg "tls? is true, but neither tls-keys-str nor tls-keys-file is present"]
       (log msg)
       (throw (ex-info msg {:nrepl/kind ::invalid-start-request}))))
   (let [transport-fn (or transport-fn t/bencode)

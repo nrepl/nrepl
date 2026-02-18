@@ -20,7 +20,7 @@
 (def ^:private sessions (atom {}))
 
 (defn ^{:deprecated "1.4.0"} close-all-sessions!
-  "Use this fn to manually shut down all sessions. Since each new session spanws
+  "Use this fn to manually shut down all sessions. Since each new session spawns
    a new thread, and sessions need to be otherwise explicitly closed, we can
    accumulate too many active sessions for the JVM. This occurs when we are
    running tests in watch mode."
@@ -84,7 +84,7 @@
          (reset! state [config m]))))))
 
 (defn- gather-initial-bindings
-  "Return a map of dynamic vars that have to be establihed for the underlying
+  "Return a map of dynamic vars that have to be established for the underlying
   `interruptible-eval` middleware. This should be called when creating a session
   from scratch. The bound vars in this map can be reused across messages within
   one session."
@@ -173,7 +173,7 @@
 
 (defn- create-session
   "Return a new session atom that contains a map of dynamic variables needed for
-  `interruptable-eval`. If `session` is present in the message, base the new
+  `interruptible-eval`. If `session` is present in the message, base the new
   session on it, otherwise make one from scratch. The returned session is always
   an ephemeral one, with an ephemeral `:exec` function. To make it persistent,
   `register-session` has to be called next."

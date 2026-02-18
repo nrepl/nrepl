@@ -78,7 +78,7 @@
   "Configuration map.
   It's created by merging the global configuration file
   with a local configuration file that would normally
-  the placed in the directory in which you're running
+  be placed in the directory in which you're running
   nREPL."
   (merge
    (load-config config-file)

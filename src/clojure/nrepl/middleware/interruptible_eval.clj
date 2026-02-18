@@ -1,5 +1,5 @@
 (ns nrepl.middleware.interruptible-eval
-  "Supports the ability to evaluation code. The name of the middleware is
+  "Supports the ability to evaluate code. The name of the middleware is
   slightly misleading, as interrupt is currently supported at a session level
   but the name is retained for backwards compatibility."
   {:author "Chas Emerick"}
