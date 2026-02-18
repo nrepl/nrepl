@@ -180,6 +180,30 @@ As a result, in some cases you'd be invoking nREPL's op and in other cases `cide
 If `cider-nrepl` had named the op `cider/complete` instead, that would have prevented this unfortunate
 situation.
 
+=== Sending responses
+
+The example above uses `response-for` to build a response map and `t/send` to
+send it manually.  For most cases, `nrepl.transport/respond-to` is a more
+convenient alternative -- it extracts the transport from the message, builds the
+response with `response-for`, and sends it in one step:
+
+[source,clojure]
+----
+(require '[nrepl.transport :as t])
+
+;; Instead of:
+(t/send (:transport msg) (response-for msg {:status :done :value result}))
+
+;; You can write:
+(t/respond-to msg :status :done :value result)
+
+;; Or pass a map:
+(t/respond-to msg {:status :done :value result})
+----
+
+`respond-to` accepts the same arguments as `response-for` (key-value pairs
+or maps) and is used extensively throughout nREPL's built-in middleware.
+
 === Robustness and error handling
 
 Given how misbehavior of a foundational tool like nREPL can greatly diminish the
@@ -203,8 +227,12 @@ macro will send an error message through the message's transport. For example:
 This middleware will call `(foo-reply msg)` in a try/catch if the message has
 `:op "foo"`, and otherwise will invoke the rest of the middleware chain with
 `h`. The return of `(foo-reply msg)` is merged with msg-specific fields and sent
-to the client. If `(foo-reply msg)` throws an exception, a message with `:status
-#{:foo-error}` will be sent to the client.
+to the client via `respond-to`. If `(foo-reply msg)` throws an exception, a
+message with `:status #{:foo-error :error :done}` will be sent to the client.
+
+When using `safe-handle`, the handler function (e.g. `foo-reply`) should return
+a response map rather than sending the response itself -- `safe-handle` takes
+care of sending via `respond-to`.
 
 == Additional Resources
 
