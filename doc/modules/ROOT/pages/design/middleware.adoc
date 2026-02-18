@@ -99,10 +99,14 @@ the handled `:op` and a value that contains any of four entries:
     to handling the indicated `:op`
 
 WARN: Middleware can directly reference other middleware Vars in `:requires` and
-`:expects` but this will not automatically pull them into middleware stack. All
-desired middleware must be listed explicitly during handler construction,
-otherwise an exception will be thrown by
-`nrepl.middleware/linearize-middleware-stack`.
+`:expects`, but all desired middleware must be listed explicitly during handler
+construction.  In nREPL 1.6+, referencing a middleware Var in `:requires` or
+`:expects` that is not present in the middleware list will log a warning. The
+missing middleware is still auto-included for now, but this *deprecated*
+behavior will be removed in a future release -- at that point, missing
+dependencies will cause an error.  If you see warnings like "Middleware X is
+required by Y but is not present in middleware list", add the missing middleware
+to your handler or configuration explicitly.
 
 The values in the `:handles` map are used to support the `"describe"` operation,
 which provides "a machine- and human-readable directory and documentation for
