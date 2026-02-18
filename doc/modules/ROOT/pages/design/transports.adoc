@@ -1,10 +1,5 @@
 = Transports
 
-////
- talk about strings vs. bytestrings, the encoding thereof, etc when we
-figure that out
-////
-
 _Transports_ are roughly analogous to Ring's adapters: they provide an
 implementation of a common protocol (`nrepl.transport.Transport`)
 to enable nREPL clients and servers to send and receive messages without regard
