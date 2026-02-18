@@ -491,21 +491,48 @@ global values.
 === Dynamic var defaults
 
 You can use the server configuration file (either project-local or system-wide)
-to specify the default values for any dynamic variable whenever a new client is
-connected (note that the variable's namespace has to be already loaded at that
-point). This serves two important purposes:
+to specify default values for dynamic variables. These defaults are applied
+when a new session is created (i.e. when a client connects). This serves
+two important purposes:
 
 - Gives a starting value to the dynamic variable.
 - Makes it rebindable thread-locally via `set!`.
 
-For example, you can use this feature to enable reflection warnings in all your
-local projects by putting this into your global config:
+The format is a map from fully-qualified var symbols to their values:
 
 ..nrepl/nrepl.edn
 [source,clojure]
 ----
-{:dynamic-vars {clojure.core/*warn-on-reflection* true}}
+{:dynamic-vars {clojure.core/*warn-on-reflection* true
+                clojure.core/*print-length*        100
+                clojure.core/*print-level*          5}}
 ----
+
+You can configure any dynamic var whose namespace is loaded at server
+startup. This includes all of `clojure.core` and any namespace that your
+project or middleware loads eagerly.
+
+nREPL sessions already bind a set of vars by default (with their current
+root values):
+
+- `\*warn-on-reflection*`, `\*unchecked-math*`, `\*assert*`
+- `\*print-meta*`, `\*print-length*`, `\*print-level*`, `\*print-namespace-maps*`
+- `\*data-readers*`, `\*default-data-reader-fn*`, `\*read-eval*`
+- `\*math-context*`, `\*compile-path*`, `\*command-line-args*`
+
+The `:dynamic-vars` config overrides these defaults and can also introduce
+additional vars. For example, you could set a project-local default for
+`\*print-length*` to prevent accidental printing of large sequences:
+
+..nrepl.edn
+[source,clojure]
+----
+{:dynamic-vars {clojure.core/*print-length* 50}}
+----
+
+NOTE: The var's namespace must already be loaded when the session is
+created. If a symbol cannot be resolved, nREPL logs a warning and
+skips it.
 
 === Optional middleware (`^:optional`)
 
