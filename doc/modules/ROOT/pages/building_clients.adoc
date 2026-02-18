@@ -1,7 +1,5 @@
 = Building Clients
 
-NOTE: This page is very incomplete and a work in progress.
-
 == Overview
 
 This part of the documentation is mostly intended for people who are

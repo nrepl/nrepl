@@ -1,7 +1,5 @@
 = Building Servers
 
-NOTE: This page is very incomplete and a work in progress.
-
 == Overview
 
 This part of the documentation aims to guide you in the process of implementing
