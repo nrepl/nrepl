@@ -444,9 +444,18 @@ And this is an example of a local config file:
  :transport    nrepl.transport/bencode}
 ----
 
-Settings passed via the command-line interface will replace configuration
-file settings by default. Since version 1.6, you can use the `^:concat` metadata
-to concatenate collection values instead of replacing them.
+=== Merging CLI and config values (`^:concat`)
+
+Settings passed via the command-line interface replace configuration
+file settings by default. For example, if your config file specifies
+`:middleware [a/mw1 a/mw2]` and you pass `--middleware "[b/mw3]"` on the
+CLI, the resulting middleware will be just `[b/mw3]` -- the config file
+values are lost.
+
+Since version 1.6, you can use the `^:concat` metadata on collection values
+to concatenate them instead of replacing. The metadata can be placed on
+either the config value or the CLI value -- if either side carries
+`^:concat`, the values are merged with `into` (config first, then CLI).
 
 For example, given this config file:
 
@@ -470,12 +479,14 @@ The resulting middleware will be:
 [company/metrics company/security cider.nrepl/cider-middleware]
 ----
 
-The `^:concat` metadata can be used on either config values or CLI arguments,
-and is useful for ensuring certain middleware (e.g., company-wide monitoring/metrics
-middleware) is always loaded, even when development tools pass their own middleware
-via CLI flags.
+This is useful for ensuring certain middleware (e.g. company-wide
+monitoring or security middleware) is always loaded, even when development
+tools pass their own middleware via CLI flags.
 
-NOTE: The `^:concat` metadata only applies to top-level configuration.
+NOTE: `^:concat` only applies when merging CLI arguments with config file
+values. It does not affect the merge between global (`~/.nrepl/nrepl.edn`)
+and local (`.nrepl.edn`) config files -- local values always replace
+global values.
 
 === Dynamic var defaults
 
@@ -496,11 +507,13 @@ local projects by putting this into your global config:
 {:dynamic-vars {clojure.core/*warn-on-reflection* true}}
 ----
 
-=== Optional middleware
+=== Optional middleware (`^:optional`)
 
-Starting with version 1.6, middleware symbols can be marked with `^:optional` metadata to enable graceful
-degradation. By default, the server will exit if middleware cannot be loaded.
-With `^:optional`, unavailable middleware is skipped.
+By default, the server will exit with an error if any configured middleware
+cannot be resolved (i.e. its namespace isn't on the classpath). Since
+version 1.6, middleware symbols can be marked with `^:optional` metadata --
+if the middleware can't be loaded, it is silently skipped and the server
+starts with the remaining middleware.
 
 ..nrepl/nrepl.edn
 [source,clojure]
@@ -516,6 +529,18 @@ You can also use `^:optional` from the command line:
 $ clj -M:nREPL -m nrepl.cmdline --middleware "[cider.nrepl/cider-middleware,^:optional experimental.ns/beta-feature]"
 ----
 
-This is useful for configuring nREPL middleware references once, and not have to
-change the configuration depending on the availability of the referenced
-middleware on the classpath.
+This is useful when you share a single nREPL configuration across projects
+that don't all have the same dependencies on the classpath. For instance,
+a global config can reference editor-specific middleware as optional so it
+works regardless of which projects include that dependency:
+
+..nrepl/nrepl.edn
+[source,clojure]
+----
+{:middleware ^:concat [^:optional cider.nrepl/cider-middleware
+                       ^:optional some.other/editor-middleware]}
+----
+
+NOTE: `^:optional` only affects middleware _resolution_ at startup -- if
+the middleware's namespace exists on the classpath but the var is missing
+or throws an error during loading, the server will still fail.
