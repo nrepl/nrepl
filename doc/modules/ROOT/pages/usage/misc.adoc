@@ -265,3 +265,44 @@ nil
 ----
 
 NOTE: On older Clojure versions you can use https://github.com/clj-commons/pomegranate[pomegranate] for similar functionality.
+
+== System Output Forwarding
+
+NOTE: System output forwarding was added in nREPL 1.5.
+
+By default, nREPL captures output written to `\*out*` and `\*err*` within
+each evaluation and sends it back to the client. However, output written
+directly to `System/out` or `System/err` from Java code, background threads,
+or the root bindings of `\*out*`/`\*err*` is not captured -- it goes to
+the server's console and the client never sees it.
+
+The `forward-system-output` op addresses this by intercepting `System/out`
+and `System/err` at the JVM level and forwarding the output to the
+requesting client's session. To enable it, send:
+
+[source,clojure]
+----
+{:op "forward-system-output"}
+----
+
+Once enabled, any output written to `System/out` or `System/err` from
+any thread will be forwarded to the client as messages with an extra
+`:source :system` key (to distinguish them from regular eval output).
+
+A few things to keep in mind:
+
+* *Multiple clients* -- Each client that sends `forward-system-output`
+  receives a copy of the system output. This is useful when multiple
+  editors are connected to the same server.
+
+* *Cancellation* -- There is no dedicated op to stop forwarding. To
+  stop receiving system output, close the session and create a new one.
+
+* *Global side-effect* -- The first call to `forward-system-output`
+  globally replaces `System/out` and `System/err` with wrapped streams.
+  The original output destinations still receive the output (it is teed,
+  not redirected), but this is a JVM-wide change.
+
+WARNING: Do not enable system output forwarding if the client runs inside
+the same JVM process as the server. The forwarded output will itself
+produce more output, leading to an infinite loop.
