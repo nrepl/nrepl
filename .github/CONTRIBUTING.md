@@ -28,6 +28,6 @@ try to follow these guidelines when you do so.
   and description in grammatically correct, complete sentences.
 
 [1]: https://github.com/nrepl/nrepl/issues
-[2]: http://gun.io/blog/how-to-github-fork-branch-and-pull-request
-[3]: http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
-[4]: https://help.github.com/articles/using-pull-requests
+[2]: https://docs.github.com/en/get-started/exploring-projects-on-github/contributing-to-a-project
+[3]: https://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
+[4]: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests
