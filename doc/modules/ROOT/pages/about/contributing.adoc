@@ -27,7 +27,7 @@ Consider improving and extending this manual.
 
 The https://nrepl.org[documentation site] is generated from the AsciiDoc files in the https://github.com/nrepl/nrepl/tree/master/doc[doc] folder of nREPL's GitHub repo and is published to https://nrepl.org.
 https://antora.org[Antora] is used to convert the manual into HTML.
-The filesystem layout is described at https://docs.antora.org/antora/2.0/component-structure/.
+The filesystem layout is described at https://docs.antora.org/antora/latest/standard-directories/[the Antora docs].
 
 To make changes to the manual you simply have to change the files under `doc`.
 The site will be regenerated manually periodically.
@@ -36,14 +36,14 @@ The site will be regenerated manually periodically.
 
 NOTE: The instructions here assume you already have (the right version of) node.js installed.
 
-Installing the Antora is super simple:
+Installing Antora is super simple:
 
 [source]
 ----
-$ npm i -g @antora/cli@2.3 @antora/site-generator-default@2.3
+$ npm i -g @antora/cli @antora/site-generator
 ----
 
-Check out https://docs.antora.org/antora/2.3/install/install-antora/[the detailed installation instructions]
+Check out https://docs.antora.org/antora/latest/install/install-antora/[the detailed installation instructions]
 if you run into any problems.
 
 ==== Building the Site
