@@ -57,7 +57,7 @@ Still, I think it's fair to say that the main purpose of the socket REPL server 
 == prepl
 
 https://clojuredocs.org/clojure.core.server/prepl[prepl] is a structured REPL
-built into Clojure since version 1.0. Clients feed `prepl` text to be evaluated
+built into Clojure since version 1.10. Clients feed `prepl` text to be evaluated
 and receive the result as a map. That makes it much easier to use the REPL from
 development tools.
 

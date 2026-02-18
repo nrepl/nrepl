@@ -139,7 +139,7 @@ any additional provided middleware vars. Additionally, `default-handler` adds
 `nrepl.middleware/wrap-describe` middleware to the stack which provides
 `describe` op support. Any handlers created without using `default-handler`
 (e.g. via direct usage of `linearize-middleware-stack` to obtain a ordered
-sequence of middleware vars) should make sure to add `wrap-desribe`, and also
+sequence of middleware vars) should make sure to add `wrap-describe`, and also
 make a base handler that responds with `:unknown-op` error to messages with
 unrecognized ops.
 
@@ -192,7 +192,7 @@ between a session and id, is that an `id` is for tracking a single
 message, and sessions are for tracking remote state. They're
 fundamental to allowing simultaneous activities in the same nREPL.
 For instance - if you want to evaluate two expressions simultaneously
-you'll have to do this in separate session, as all requests within the
+you'll have to do this in a separate session, as all requests within the
 same session are serialized.
 
 == Pretty Printing

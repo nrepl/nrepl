@@ -34,7 +34,7 @@ NOTE: Leiningen uses REPL-y internally as its command-line nREPL client.
 * https://github.com/Olical/conjure[Conjure] (Clojure(Script) plugin for Neovim)
 * https://github.com/liquidz/vim-iced[vim-iced] (Clojure Interactive Development Environment for Vim8/Neovim)
 * https://github.com/clojure-vim/acid.nvim[Acid.nvim] (Asynchronous Clojure Interactive Development for Neovim)
-* https://github.com/mauricioszabo/atom-chlorine[Chrorine] (Atom plugin for Clojure Development)
+* https://github.com/mauricioszabo/atom-chlorine[Chlorine] (Atom plugin for Clojure Development)
 * https://github.com/jasongilman/proto-repl[Proto REPL] (Clojure development environment and REPL for Atom)
 * https://github.com/BetterThanTomorrow/calva[Calva] (Clojure & ClojureScript support for VS Code)
 * https://github.com/tonsky/Clojure-Sublimed[Clojure Sublimed] (Clojure support for Sublime Text)

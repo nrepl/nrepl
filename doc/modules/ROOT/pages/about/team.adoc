@@ -12,7 +12,7 @@ does a lot of the groundwork on major new features.
 
 == nREPL Alumni
 
-In addition, we'd like to extend a special thanks the following retired nREPL
+In addition, we'd like to extend a special thanks to the following retired nREPL
 core team members. Lovingly known as The Alumni:
 
 * https://github.com/cemerick[Chas Emerick] (author)

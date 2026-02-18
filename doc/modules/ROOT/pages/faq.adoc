@@ -31,7 +31,7 @@ There is a separate implementation of nREPL for ClojureCLR: https://github.com/c
 
 == When is nREPL 1.0 going to be released?
 
-nREPL was released on August 24, 2022. This completes the promise we made
+nREPL 1.0 was released on August 24, 2022. This completes the promise we made
 way back in 2018 to address most languishing problems and get nREPL
 in a great shape.
 

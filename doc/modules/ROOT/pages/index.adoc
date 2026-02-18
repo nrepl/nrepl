@@ -21,7 +21,7 @@ kinds, including "standard" interactive, text-based REPLs).
 
 The default network protocol used is simple, depending neither
 on JVM or Clojure specifics, thereby allowing (encouraging?) the development
-of non-Clojure REPL clients.  The REPLs operational semantics are such
+of non-Clojure REPL clients.  The REPL's operational semantics are such
 that essentially any non-JVM Clojure implementation should be able to
 implement it, with allowances for hosts that lack the concurrency primitives to
 support e.g. asynchronous evaluation, interrupts, etc.
@@ -49,7 +49,7 @@ reasons why we decided to leave the "Clojure Contrib" umbrella.
 
 Everyone's welcome to get involved in the project, so we can take it to the next level!
 
-TIP: Check out the how you can help nREPL xref:about/contributing.adoc[here].
+TIP: Check out how you can help nREPL xref:about/contributing.adoc[here].
 
 == Status
 

@@ -18,9 +18,9 @@ At the very least a client should be able to connect to an nREPL server and
 support code evaluation (the `eval` op). Ideally, the client should be able to make use of all
 the ops that are part of the nREPL protocol.
 
-While, the reference nREPL server for Clojure supports multiple data exchange
+While the reference nREPL server for Clojure supports multiple data exchange
 formats, it's important for clients to support `bencode`, as that is the only format
-embraced the nREPL protocol. If a client is focused only on Clojure(Script) nREPL
+embraced by the nREPL protocol. If a client is focused only on Clojure(Script) nREPL
 servers they can safely opt for EDN, or ideally support both `bencode` and EDN.
 
 A typical message exchange between a client and a server would be:
@@ -29,7 +29,7 @@ A typical message exchange between a client and a server would be:
 * Server responds with the session id.
 * Client sends `describe` to check the server's capabilities and version/runtime information.
 * Server responds with a map of the relevant data.
-* Clients starts sending `eval` messages using the session id that it obtained earlier.
+* Client starts sending `eval` messages using the session id that it obtained earlier.
 * Server responds with the appropriate messages (e.g. `value` and `out`). Eventually a message with
 status `done` signals that the `eval` message has been fully processed.
 
@@ -56,7 +56,7 @@ Clojure server. While this is OK in some cases (e.g. if you're building a
 Clojure IDE), it's always better to build clients that can work with any nREPL
 server. Note that some of the suggestions here might not apply to all servers.
 
-* Keep user evaluations in one sessions and tooling-related evaluations (e.g. for code completion) in another.
+* Keep user evaluations in one session and tooling-related evaluations (e.g. for code completion) in another.
 This will ensure that vars like `*1` and `*e` are not messed up.
 * Don't assume too much about the server. Infer the capabilities of the server using `describe`. Try to make
 your client Clojure-agnostic.
@@ -104,7 +104,7 @@ them, e.g. `session` holds their state globally.
 
 == Debugging the Communication with nREPL
 
-Occasionally it's be useful to inspect the communication between your client and
+Occasionally it'd be useful to inspect the communication between your client and
 nREPL. nREPL clients are generally encouraged to provide some nREPL message logging
 functionality, as that'd be beneficial for their end users as well. (e.g. CIDER
 has a `+*nrepl-messages*+` where you can monitor all requests and responses)

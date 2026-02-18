@@ -1,6 +1,6 @@
 = Hacking on nREPL
 
-This section is dedicated to people, who're hacking on nREPL itself (e.g. to fix bugs or to enhance
+This section is dedicated to people who're hacking on nREPL itself (e.g. to fix bugs or to enhance
 existing functionality).
 
 There are generally two approaches to hacking on nREPL - you can either make some changes, build a new server
@@ -16,7 +16,7 @@ nREPL shouldn't ever be necessary (unless you're hacking on it).
 Building nREPL locally is a very simple process:
 
 . Clone the repo
-. Make sure you have Leingingen installed
+. Make sure you have Leiningen installed
 . Run the build:
 
 [source,shell]
@@ -31,7 +31,7 @@ Afterwards you can simply do something like:
 $ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.5.2"}}}' -M -m nrepl.cmdline --interactive
 ----
 
-Now you can start playing the server you've built.
+Now you can start playing with the server you've built.
 
 === Building libnrepl native agent
 
@@ -62,14 +62,14 @@ automatically.
 
 As nREPL is fundamental to the development workflows of many people it might be
 unclear how exactly you can hack on it, while at the same time you're already
-running an nREPL server, powering the REPL in which you're doing to hacking.
+running an nREPL server, powering the REPL in which you're doing the hacking.
 
 Developing nREPL while connected to nREPL is a classic example of eating your own dog food.
 
 The development process is actually pretty simple - you just need to
 connect to nREPL as you'd normally would (e.g. by using CIDER, vim-iced or Calva), make
 some changes and test them by starting new nREPL instances from the
-REPL and connecting to them to see how they are having.
+REPL and connecting to them to see how they are behaving.
 
 In practice it might not be convenient to spin many nREPL connections
 from your editor, so a combination of `nrepl.server/start-server` and
@@ -131,7 +131,7 @@ $ bb kaocha --watch --skip-meta :slow
 
 as it will re-run tests on changes, but also skip a handful of slower tests.
 
-=== Running test for Clojure 1.8
+=== Running tests for Clojure 1.8
 
 Kaocha only supports Clojure 1.9 and up. For earlier versions, we can still use
 Leiningen's test runner. To run the tests only for a specific version of Clojure,
@@ -144,7 +144,7 @@ $ lein with-profile 1.8 test
 
 === Running tests on CI
 
-For ease of use/consistency with other nREPL projects, tests are ran on CI
+For ease of use/consistency with other nREPL projects, tests are run on CI
 environments using a https://github.com/babashka/babashka[babashka], with the command:
 
 [source,shell]

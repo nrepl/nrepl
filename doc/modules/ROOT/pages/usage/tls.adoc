@@ -18,7 +18,7 @@ running a TLS nREPL server and client.
 
 == Generating certificates and keys
 
-First things first - we need to generate the some certificates and keys. One
+First things first - we need to generate some certificates and keys. One
 simple option is to use the Clojure library
 https://github.com/ivarref/locksmith[locksmith]:
 

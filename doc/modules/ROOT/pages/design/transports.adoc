@@ -26,7 +26,7 @@ https://github.com/nrepl/nrepl/wiki/Extensions[Other nREPL transports (e.g. HTTP
 
 This is, and will mostly likely remain, nREPL's default and primary
 transport. It is pronounced B-Encode, and is a relatively simple format,
-comprising of only two scalar types (byte strings and integer) and two
+comprising only two scalar types (byte strings and integer) and two
 collection types (dictionaries and lists).
 
 A simple nREPL message, to run the operation `eval` on the code `(+ 2 2)` would
@@ -85,7 +85,7 @@ when encoded using nREPL's bencode encoder and received by nREPL, are equivalent
 There's nothing special you have to do to use the bencode transport,
 as it's the default transport for `nrepl.server/start-server`.
 
-You'll need a bencode capable client to connect to an nREPL server that transport.
+You'll need a bencode-capable client to connect to an nREPL server using that transport.
 
 TIP: nREPL's bencode implementation is available as a https://github.com/nrepl/bencode[standalone library].
 Keep in mind that nREPL itself doesn't use this library, as it's committed to having 0 runtime dependencies.
@@ -96,13 +96,13 @@ in the future.
 
 NOTE: The EDN transport was introduced in nREPL 0.7.
 
-The main difference between the bencode transport and the EDN one is that instead of bencode dictionaries and lists, and being limited to integer and byte string types, you'd be sending and receiving full EDN structures and types, including maps, vectors, lists, sets, strings, keywords and symbols. The structures of the messages is similar, only the data format changes.
+The main difference between the bencode transport and the EDN one is that instead of bencode dictionaries and lists, and being limited to integer and byte string types, you'd be sending and receiving full EDN structures and types, including maps, vectors, lists, sets, strings, keywords and symbols. The structure of the messages is similar, only the data format changes.
 
-This may be useful in a couple of usecases: In some clients, including ClojureScript ones, where EDN is easier to handle than bencode. Furthermore, because this transport exposes more of the richer data types in the internals of nREPL and its middleware, it may support more complex usecases.
+This may be useful in a couple of use cases: In some clients, including ClojureScript ones, where EDN is easier to handle than bencode. Furthermore, because this transport exposes more of the richer data types in the internals of nREPL and its middleware, it may support more complex use cases.
 
-The introduction of the EDN transport does require more specification of the message format, whereby some vagueness was allowed for by the limitatioms of bencode. For example, `:op` values are strings, and `:status` is either a keyword, or a set of keywords. This may cause some surprised, unintended consequences. Thus tweaks to the EDN message format may be possible until the transport is declared mature.
+The introduction of the EDN transport does require more specification of the message format, whereby some vagueness was allowed for by the limitations of bencode. For example, `:op` values are strings, and `:status` is either a keyword, or a set of keywords. This may cause some surprising, unintended consequences. Thus tweaks to the EDN message format may be possible until the transport is declared mature.
 
-These details are reflected in the `nrepl.spec` ns, against which responses are verified during testing. This is not used by nREPL anywhere else at moment.
+These details are reflected in the `nrepl.spec` ns, against which responses are verified during testing. This is not used by nREPL anywhere else at the moment.
 
 For example, of the (same as before) four messages
 

@@ -6,7 +6,7 @@ NOTE: This page is very incomplete and a work in progress.
 
 This part of the documentation aims to guide you in the process of implementing
 an nREPL server. The focus is going to be on implementing the language-agnostic nREPL protocol,
-not on specifics of the references nREPL server implementation for Clojure.
+not on specifics of the reference nREPL server implementation for Clojure.
 
 == Basics
 
@@ -14,7 +14,7 @@ To build a server compatible with the nREPL protocol all you need to do is build
 that handles the xref:ops.adoc[protocol ops] and uses `bencode` as the default data exchange format.
 
 You can completely ignore concepts like middleware, handlers and so on - those are just
-implementation details from the references implementation. If you want to leverage them that'd be great,
+implementation details from the reference implementation. If you want to leverage them that'd be great,
 but if you don't - it's not a big deal.
 
 It's important to understand that clients only care whether some op is there,
@@ -34,7 +34,7 @@ will probably appreciate having those.
 [NOTE]
 ====
 Some clients (e.g. CIDER) might be relying on the server startup message to extract connection
-information from it. That's why it's a good to provide the same message for your own server implementation.
+information from it. That's why it's a good idea to provide the same message for your own server implementation.
 Here's the message in question:
 
   nREPL server started on port 58567 on host 127.0.0.1 - nrepl://127.0.0.1:58567
@@ -51,7 +51,7 @@ CIDER provides a https://docs.cider.mx/cider/troubleshooting.html#debugging-the-
 == Best Practices
 
 * Write an `.nrepl-port` file on server startup.
-* Add support for `.nrepl.edn` (at least if you're working with a language than can easily handle EDN).
+* Add support for `.nrepl.edn` (at least if you're working with a language that can easily handle EDN).
 * Avoid adding runtime dependencies, unless you can somehow isolate them. You don't want your server
 to mess up dependencies in the user space.
 * Provide some information in the `describe` op that makes it easy for clients to recognize your server.

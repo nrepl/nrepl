@@ -68,7 +68,7 @@ The default completion function accepts the `extra-metadata` option. It allows c
 
 == Symbol Lookup
 
-NOTE: Symbol look support was added in nREPL 0.8 and the API is still
+NOTE: Symbol lookup support was added in nREPL 0.8 and the API is still
 considered experimental.
 
 NOTE: In nREPL 0.8.1 and older, xref:ops.adoc#lookup[the `lookup` op] fails for some symbols

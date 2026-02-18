@@ -127,7 +127,7 @@ to become a nREPL sponsor.
 
 You can support the development of nREPL, CIDER, https://github.com/clojure-emacs/clojure-mode[clojure-mode] and https://github.com/clojure-emacs/inf-clojure[inf-clojure] via
 https://opencollective.com/nrepl[Open Collective],
-https://https://github.com/sponsors/bbatsov[GitHub Sponsors]
+https://github.com/sponsors/bbatsov[GitHub Sponsors],
 https://www.patreon.com/bbatsov[Patreon] and
 https://www.paypal.me/bbatsov[PayPal].
 

@@ -25,7 +25,7 @@
 
 == Design
 
-NOTE: The articles here are quite outdated, but they can give you some historical context about the certain design decisions in the early versions of
+NOTE: The articles here are quite outdated, but they can give you some historical context about certain design decisions in the early versions of
 nREPL.
 
 * https://docs.google.com/document/edit?id=1dnb1ONTpK9ttO5W4thxiXkU5Ki89gK62anRqKEK4YZI&authkey=CMuszuMI&hl=en#[Original Design Notes]

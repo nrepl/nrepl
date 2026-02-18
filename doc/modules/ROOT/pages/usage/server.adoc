@@ -33,7 +33,7 @@ Then you can simply run the nREPL server in headless mode like this:
 $ clj -M:nREPL -m nrepl.cmdline
 ----
 
-A good practice is add whatever nREPL middleware you want to use to
+A good practice is to add whatever nREPL middleware you want to use to
 the `nREPL` profile, so you can easily activate them when needed. Here's
 how you can easily start a ClojureScript capable nREPL:
 
@@ -140,7 +140,7 @@ This will start nREPL listening on `localhost` and a random port. You can specif
 $ lein repl :headless :host some-host :port 1234
 ----
 
-Alternatively you bind nREPL to an Unix domain socket like this:
+Alternatively you can bind nREPL to a Unix domain socket like this:
 
 [source,shell]
 ----

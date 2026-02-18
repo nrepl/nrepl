@@ -185,8 +185,8 @@ situation.
 === Robustness and error handling
 
 Given how misbehavior of a foundational tool like nREPL can greatly diminish the
-user experience, it is doubly important to prevent exceptions or errors to
-happen during middleware processing, but also vital to signalize that an error
+user experience, it is doubly important to prevent exceptions or errors from
+happening during middleware processing, but also vital to signalize that an error
 did occur (as the communication is often asynchronous, this needs to be done
 explicitly). A common pattern is to use `nrepl.transport/safe-handle` macro
 which accepts a list of op and handler pairs and wraps the handler invocation in
