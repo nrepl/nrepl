@@ -1,5 +1,15 @@
 (ns nrepl.transport
-  {:author "Chas Emerick"}
+  "Abstractions and implementations for nREPL message transports.
+
+  A transport handles the wire-level communication between client and
+  server -- encoding, sending, and receiving messages. nREPL ships with
+  bencode, EDN, and TTY transport implementations.
+
+  Also provides helper functions for middleware authors: `respond-to`
+  for sending responses and `safe-handle` for op dispatch with error
+  handling."
+  {:author "Chas Emerick"
+   :added  "0.4"}
   (:refer-clojure :exclude [send])
   (:require
    [clojure.edn :as edn]

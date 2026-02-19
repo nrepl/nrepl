@@ -1,5 +1,11 @@
 (ns nrepl.middleware.load-file
-  {:author "Chas Emerick"}
+  "Middleware for loading entire files.
+
+  Delegates to `interruptible-eval` for reading and evaluation while
+  ensuring proper source file metadata (path, name, line numbers) is
+  set for the compiler."
+  {:author "Chas Emerick"
+   :added  "0.4"}
   (:require [nrepl.middleware :as middleware :refer [set-descriptor!]]
             [nrepl.middleware.caught :as caught]
             [nrepl.middleware.interruptible-eval :as eval]

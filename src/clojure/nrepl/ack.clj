@@ -1,4 +1,10 @@
 (ns nrepl.ack
+  "Server acknowledgement support.
+
+  When starting a new nREPL server, it can notify an already-running
+  server of its port via the ack protocol. This is used by tools like
+  Leiningen to discover the port of a freshly launched server."
+  {:added "0.4"}
   (:require
    [nrepl.core :as nrepl]
    [nrepl.transport :as t]))

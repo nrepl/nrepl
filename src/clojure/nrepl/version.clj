@@ -1,4 +1,6 @@
 (ns nrepl.version
+  "nREPL version information, read from the Maven-generated POM properties
+  at build time."
   {:author "Colin Jones"
    :added  "0.5"}
   (:import java.util.Properties))

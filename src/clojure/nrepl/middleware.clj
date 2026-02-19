@@ -1,4 +1,12 @@
 (ns nrepl.middleware
+  "Middleware descriptor infrastructure.
+
+  Provides `set-descriptor!` for declaring middleware metadata
+  (dependencies, handled ops, documentation) and
+  `linearize-middleware-stack` for ordering middleware according
+  to their `:requires` and `:expects` constraints. Also includes
+  the built-in `wrap-describe` middleware."
+  {:added "0.4"}
   (:refer-clojure :exclude [comparator])
   (:require
    [nrepl.misc :as misc]
