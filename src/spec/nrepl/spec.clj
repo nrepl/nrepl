@@ -100,9 +100,31 @@
 
 (s/def ::ns string?)
 
-;; TODO spec the print inputs/options
+;; Parameters for Print middleware
+;;
+;; These are optional parameters that can be included in eval and load-file
+;; requests to control how values are printed.
 
-;; TODO spec the caught inputs/output
+(s/def :nrepl.middleware.print/print symbol?)
+
+(s/def :nrepl.middleware.print/options (s/nilable map?))
+
+(s/def :nrepl.middleware.print/stream? any?) ;; logical true/false
+
+(s/def :nrepl.middleware.print/buffer-size pos-int?)
+
+(s/def :nrepl.middleware.print/quota pos-int?)
+
+(s/def :nrepl.middleware.print/keys (s/coll-of keyword?))
+
+;; Parameters for Caught middleware
+;;
+;; These are optional parameters that can be included in eval and load-file
+;; requests to control how errors are conveyed.
+
+(s/def :nrepl.middleware.caught/caught symbol?)
+
+(s/def :nrepl.middleware.caught/print? any?) ;; logical true/false
 
 ;; Parameters for Load File
 
@@ -134,4 +156,12 @@
                                   ::file-name ::file-path
                                   ::ops ::verbose? ::versions
                                   ::sessions
-                                  ::stdin]))
+                                  ::stdin]
+                        :opt [:nrepl.middleware.print/print
+                              :nrepl.middleware.print/options
+                              :nrepl.middleware.print/stream?
+                              :nrepl.middleware.print/buffer-size
+                              :nrepl.middleware.print/quota
+                              :nrepl.middleware.print/keys
+                              :nrepl.middleware.caught/caught
+                              :nrepl.middleware.caught/print?]))
