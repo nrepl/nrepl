@@ -346,9 +346,7 @@
                              "nil" ":user/a"
                              "nil" ":a/a"]
             >devnull        (fn [& _] nil)]
-        (with-redefs [cmd/clean-up-and-exit >devnull
-                      ;; EDN transport doesn't work here because of a bug (#351).
-                      transport-fns [#'nrepl.transport/bencode]]
+        (with-redefs [cmd/clean-up-and-exit >devnull]
           (with-server-every-transport (fn [] {:socket (str (create-tmpdir "target" "socket-test-") "/socket")})
             (binding [*in* (java.io.PushbackReader. (java.io.StringReader. test-input))]
               (let [results (atom [])]
