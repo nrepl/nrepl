@@ -285,6 +285,7 @@ Wrong first byte: %s (must be %d)." first-byte d) {})))))
 ;; the rules to the given OutputStream.
 
 (defprotocol BencodeSerializable
+  "Protocol for types that can be serialized to bencode."
   (write-bencode* [object output]))
 
 (defn write-bencode

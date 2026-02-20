@@ -13,6 +13,8 @@
 (def ^{:private true} ack-port-promise (atom nil))
 
 (defn reset-ack-port!
+  "Reset the ack port promise. Must be called before starting a server
+  whose port should be captured via `wait-for-ack`."
   []
   (reset! ack-port-promise (promise))
   ;; save people the misery of ever trying to deref the empty promise in their REPL
@@ -35,6 +37,8 @@
     (deref f timeout nil)))
 
 (defn handle-ack
+  "Middleware that handles the \"ack\" op by delivering the port value
+  to the ack port promise."
   [h]
   (fn [{:keys [op port transport] :as msg}]
     (if (not= op "ack")
@@ -46,6 +50,8 @@
 
 ;; TODO: could stand to have some better error handling around all of this
 (defn send-ack
+  "Send an ack message to a running nREPL server at `ack-port`,
+  informing it that this server is listening on `my-port`."
   ([my-port ack-port]
    (send-ack my-port ack-port t/bencode))
   ([my-port ack-port transport-fn]

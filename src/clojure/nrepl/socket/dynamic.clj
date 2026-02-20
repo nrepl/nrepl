@@ -11,4 +11,9 @@
 ;; AFUnixSocketAddress unconditionally in the junixsocket cases.  Also note that
 ;; the former returns a Path, and the latter returns a string.
 
-(defn get-path [addr] (.getPath addr))
+(defn get-path
+  "Return the filesystem path from a Unix domain socket address.
+  Works with both JDK 16+ UnixDomainSocketAddress and junixsocket's
+  AFUNIXSocketAddress."
+  [addr]
+  (.getPath addr))

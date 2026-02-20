@@ -8,6 +8,9 @@
             [nrepl.config :refer [config]]))
 
 (defn log
+  "Log a message to *err*. The first argument can optionally be a keyword
+  log level (e.g. :warning, :error). If the first non-keyword argument is
+  a Throwable, its stack trace is printed."
   [?kw & [ex-or-msg & msgs]]
   (let [[kw ex-or-msg msgs] (if (keyword? ?kw)
                               [?kw ex-or-msg msgs]
@@ -18,7 +21,9 @@
       (apply println (str (str/upper-case (name kw)) ":") msgs)
       (when ex (.printStackTrace ^Throwable ex (java.io.PrintWriter. *out*))))))
 
-(defmacro log-exceptions [& body]
+(defmacro log-exceptions
+  "Execute body, logging and re-throwing any exception."
+  [& body]
   `(try
      ~@body
      (catch Throwable ex#
