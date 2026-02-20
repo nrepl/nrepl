@@ -44,7 +44,9 @@
 
 ;; `versions` for Java, Clojure, and nREPL are returned.
 ;; `ops` for available ops is also returned.
-;; `aux` is also provided, but not included in spec here.
+;; `aux` is auxiliary data contributed by middleware via :describe-fn
+;; `middleware` is the list of active middleware as strings
+;; `current-ns` is provided via the session middleware's describe-fn
 
 (s/def ::verbose? boolean?)
 
@@ -69,22 +71,39 @@
 (s/def ::incremental (s/or :integer int?
                            :string  string?))
 
+(s/def ::version-string string?)
+
 (s/def ::version (s/keys :opt-un [::major ::minor ::incremental ::version-string]))
 
 (s/def ::versions (s/map-of keyword? ::version))
 
+(s/def ::aux map?)
+
+(s/def ::middleware (s/coll-of string?))
+
+(s/def ::current-ns string?)
+
 ;; Parameters for Eval
 
 ;; `code` is provided as a string.
-;; `line`, `column` and `file` are provided for location in source
+;; `line`, `column` and `file` are provided for location in source.
+;; `read-cond` controls the reader's conditional behavior (:allow or :preserve).
+;; `eval` specifies an alternative evaluation function.
 
 ;; `value` holds the return value
 ;; `out` holds what was printed to stdout
+;; `err` holds what was printed to stderr
 ;; `ns` holds the value of `*ns*` after the eval.
 
 (s/def ::code string?)
 
+(s/def ::read-cond keyword?)
+
+(s/def ::eval string?)
+
 (s/def ::out string?)
+
+(s/def ::err string?)
 
 (s/def ::value any?)
 
@@ -147,16 +166,54 @@
 
 (s/def ::stdin string?)
 
+;; Parameters for Interrupt
+
+;; `interrupt-id` optionally specifies which request to interrupt
+
+(s/def ::interrupt-id string?)
+
+;; Parameters for Completion
+
+;; `prefix` is the string to complete.
+;; `complete-fn` is an optional fully-qualified function name.
+;; `options` is an optional map of options for the completion/lookup function.
+;; `completions` is the list of completion candidates returned.
+
+(s/def ::prefix string?)
+
+(s/def ::complete-fn string?)
+
+(s/def ::options map?)
+
+(s/def ::completions (s/coll-of map?))
+
+;; Parameters for Lookup
+
+;; `sym` is the symbol to look up.
+;; `lookup-fn` is an optional fully-qualified function name.
+;; `info` is the map of symbol info returned.
+
+(s/def ::sym string?)
+
+(s/def ::lookup-fn string?)
+
+(s/def ::info map?)
+
 ;; Message map def
 
 (s/def ::message (s/keys :opt-un [::session ::id ::status ::client-name ::client-version
                                   ::new-session
-                                  ::op ::code ::out ::value ::file ::line ::column
+                                  ::op ::code ::out ::err ::value ::file ::line ::column
+                                  ::read-cond ::eval
                                   ::ex ::root-ex ::ns
                                   ::file-name ::file-path
-                                  ::ops ::verbose? ::versions
+                                  ::ops ::verbose? ::versions ::aux ::middleware
+                                  ::current-ns
                                   ::sessions
-                                  ::stdin]
+                                  ::stdin
+                                  ::interrupt-id
+                                  ::prefix ::complete-fn ::options ::completions
+                                  ::sym ::lookup-fn ::info]
                         :opt [:nrepl.middleware.print/print
                               :nrepl.middleware.print/options
                               :nrepl.middleware.print/stream?
