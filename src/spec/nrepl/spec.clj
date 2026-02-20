@@ -214,11 +214,11 @@
                                   ::interrupt-id
                                   ::prefix ::complete-fn ::options ::completions
                                   ::sym ::lookup-fn ::info]
-                        :opt [:nrepl.middleware.print/print
-                              :nrepl.middleware.print/options
-                              :nrepl.middleware.print/stream?
-                              :nrepl.middleware.print/buffer-size
-                              :nrepl.middleware.print/quota
-                              :nrepl.middleware.print/keys
-                              :nrepl.middleware.caught/caught
-                              :nrepl.middleware.caught/print?]))
+                         :opt [:nrepl.middleware.print/print
+                               :nrepl.middleware.print/options
+                               :nrepl.middleware.print/stream?
+                               :nrepl.middleware.print/buffer-size
+                               :nrepl.middleware.print/quota
+                               :nrepl.middleware.print/keys
+                               :nrepl.middleware.caught/caught
+                               :nrepl.middleware.caught/print?]))

@@ -160,27 +160,23 @@
   {:added "0.7"}
   ([s] (edn s s s))
   ([in out & [s]]
-   (let [in (java.io.PushbackReader. (io/reader in))
-         out (io/writer out)]
+   (let [in (java.io.PushbackReader. (io/reader (socket/buffered-input in)))
+         out (socket/buffered-output out)]
      (fn-transport
       #(rethrow-on-disconnection s (edn/read in))
       #(rethrow-on-disconnection s
                                  (locking out
-                                   ;; TODO: The transport doesn't seem to work
-                                   ;; without these bindings. Worth investigating
-                                   ;; why
                                    (binding [*print-readably* true
                                              *print-length*   nil
                                              *print-level*    nil]
-                                     (doto out
-                                       (.write (str %))
-                                       (.flush)))))
+                                     (socket/write out (.getBytes ^String (str %) "UTF-8"))
+                                     (.flush ^Flushable out))))
       (fn []
         (if s
           (.close ^Closeable s)
           (do
-            (.close in)
-            (.close out))))))))
+            (.close ^Closeable in)
+            (.close ^Closeable out))))))))
 
 (defn tty
   "Returns a Transport implementation suitable for serving an nREPL backend
