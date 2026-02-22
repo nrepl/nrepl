@@ -16,10 +16,11 @@ At the very least a client should be able to connect to an nREPL server and
 support code evaluation (the `eval` op). Ideally, the client should be able to make use of all
 the ops that are part of the nREPL protocol.
 
-While the reference nREPL server for Clojure supports multiple data exchange
-formats, it's important for clients to support `bencode`, as that is the only format
-embraced by the nREPL protocol. If a client is focused only on Clojure(Script) nREPL
-servers they can safely opt for EDN, or ideally support both `bencode` and EDN.
+Bencode is the standard wire format for the nREPL protocol and the only format
+guaranteed to be supported by all servers and middleware. Clients targeting only
+Clojure(Script) servers can use EDN for richer type support (keywords, sets, etc.
+are preserved rather than coerced to strings), but should ideally support bencode
+as well for maximum compatibility.
 
 A typical message exchange between a client and a server would be:
 

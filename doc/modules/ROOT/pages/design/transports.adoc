@@ -95,9 +95,11 @@ The main difference between the bencode transport and the EDN one is that instea
 
 This may be useful in a couple of use cases: In some clients, including ClojureScript ones, where EDN is easier to handle than bencode. Furthermore, because this transport exposes more of the richer data types in the internals of nREPL and its middleware, it may support more complex use cases.
 
-The introduction of the EDN transport does require more specification of the message format, whereby some vagueness was allowed for by the limitations of bencode. For example, `:op` values are strings, and `:status` is either a keyword, or a set of keywords. This may cause some surprising, unintended consequences. Thus tweaks to the EDN message format may be possible until the transport is declared mature.
-
-These details are reflected in the `nrepl.spec` ns, against which responses are verified during testing. This is not used by nREPL anywhere else at the moment.
+The EDN transport exposes more of the nREPL message format than bencode does.
+Notably, `:op` values are strings (e.g., `"eval"`, not `:eval`), consistent with
+how ops are handled internally and by third-party middleware. `:status` is either
+a keyword or a set of keywords. These details are reflected in the `nrepl.spec`
+ns, against which responses are verified during testing.
 
 For example, of the (same as before) four messages
 
