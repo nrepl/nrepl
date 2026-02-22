@@ -60,7 +60,8 @@
                             ;; to avoid confusing tools which assume any
                             ;; :ns always means *ns*.
                             (when (and (contains? (:status resp) :done)
-                                       (not @error-encountered))
+                                       (not @error-encountered)
+                                       @last-result)
                               (.send transport (dissoc @last-result :ns)))
                             (.send transport resp)))))]
     (-> (dissoc msg :file-path)

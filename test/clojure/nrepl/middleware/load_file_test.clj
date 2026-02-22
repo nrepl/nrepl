@@ -76,3 +76,27 @@
                                  :file very-long-code
                                  :file-path "/path/to/source.clj"
                                  :file-name "source.clj"}))))))
+
+(def-repl-test load-file-empty-file
+  (let [resp (nrepl/combine-responses
+              (nrepl/message session {:op "load-file"
+                                      :file ""
+                                      :file-path "/path/to/empty.clj"
+                                      :file-name "empty.clj"}))]
+    (testing "empty file completes without error"
+      (is (some #{:done "done"} (:status resp)))
+      (is (not (contains? resp :ex))))
+    (testing "empty file produces no value"
+      (is (not (contains? resp :value))))))
+
+(def-repl-test load-file-only-comments
+  (let [resp (nrepl/combine-responses
+              (nrepl/message session {:op "load-file"
+                                      :file ";; just a comment\n;; another comment\n"
+                                      :file-path "/path/to/comments.clj"
+                                      :file-name "comments.clj"}))]
+    (testing "comments-only file completes without error"
+      (is (some #{:done "done"} (:status resp)))
+      (is (not (contains? resp :ex))))
+    (testing "comments-only file produces no value"
+      (is (not (contains? resp :value))))))
