@@ -28,14 +28,8 @@
                           X509KeyManager
                           X509TrustManager)))
 
-(defmacro base64->binary [string]
-  (if (try (import 'java.util.Base64)
-           (catch ClassNotFoundException _))
-    `(let [^String s# ~string]
-       (.decode (java.util.Base64/getMimeDecoder) s#))
-    (do
-      (import 'javax.xml.bind.DatatypeConverter)
-      `(javax.xml.bind.DatatypeConverter/parseBase64Binary ~string))))
+(defn- base64->binary ^bytes [^String string]
+  (.decode (java.util.Base64/getMimeDecoder) string))
 
 (def ^:private ^CertificateFactory x509-cert-factory
   "The X.509 certificate factory"
