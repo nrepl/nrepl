@@ -78,7 +78,7 @@
       write
       (fn [] (close) (.cancel fut true))))))
 
-(defmulti #^{:private true} <bytes class)
+(defmulti ^:private <bytes class)
 
 (defmethod <bytes :default
   [input]

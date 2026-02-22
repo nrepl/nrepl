@@ -157,7 +157,7 @@ Exit:      Control+D or (exit) or (quit)"
                          port (assoc :port port))
               :options options})))
 
-(def #^{:private true} option-shorthands
+(def ^:private option-shorthands
   {"-i" "--interactive"
    "-r" "--repl"
    "-f" "--repl-fn"
@@ -171,7 +171,7 @@ Exit:      Control+D or (exit) or (quit)"
    "-n" "--handler"
    "-v" "--version"})
 
-(def #^{:private true} unary-options
+(def ^:private unary-options
   #{"--interactive"
     "--connect"
     "--color"
