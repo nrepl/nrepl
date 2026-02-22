@@ -444,6 +444,77 @@ And this is an example of a local config file:
  :transport    nrepl.transport/bencode}
 ----
 
+=== Configuration keys
+
+The following keys are recognized in `.nrepl.edn` and `~/.nrepl/nrepl.edn`:
+
+.Configuration keys
+[cols="m,a,a,a"]
+|===
+| Key | Type | Default | Description
+
+| :port
+| integer
+| `0` (random)
+| Port to listen on.
+
+| :bind
+| string
+| `"127.0.0.1"`
+| Address to bind the server socket to.
+
+| :socket
+| string
+| —
+| Filesystem path for a Unix domain socket (alternative to `:port`/`:bind`, requires JDK 16+).
+
+| :handler
+| symbol
+| —
+| A namespace-qualified symbol resolving to a handler function. When set, `:middleware` is ignored.
+
+| :transport
+| symbol
+| `nrepl.transport/bencode`
+| A namespace-qualified symbol resolving to a transport function (e.g. `nrepl.transport/edn`).
+
+| :middleware
+| vector of symbols
+| `[]`
+| Middleware to include in the handler. Symbols can be marked with `^:optional` metadata.
+
+| :ack
+| integer
+| —
+| Port of an already-running nREPL server to notify of this server's port.
+
+| :dynamic-vars
+| map
+| `{}`
+| A map from fully-qualified var symbols to default values applied to new sessions. See <<_dynamic_var_defaults>>.
+
+| :tls-keys-file
+| string
+| —
+| Path to a file containing certificates and private key for TLS. See xref:tls.adoc[TLS].
+
+| :tls-keys-str
+| string
+| —
+| Inline string containing certificates and private key for TLS.
+
+| :enable-jvmti-agent
+| boolean
+| `true`
+| Whether to load the native JVMTI agent for thread stopping on Java 21+. See xref:../installation.adoc#jvmti[JVMTI agent].
+
+| :repl-fn
+| symbol
+| —
+| A namespace-qualified symbol resolving to a custom REPL function (used with `--interactive`).
+
+|===
+
 === Merging CLI and config values (`^:concat`)
 
 Settings passed via the command-line interface replace configuration
