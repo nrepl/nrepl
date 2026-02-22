@@ -6,56 +6,106 @@ while using nREPL and their solutions.
 Generally it's also a good idea to check whether the problem you've experienced is not a bug that's
 already reported on our issue tracker.
 
+== Connection Issues
+
+=== Cannot Connect to Server
+
+If your client cannot connect to a running nREPL server:
+
+* Verify the server is actually running and listening on the expected port.
+* Check that the `.nrepl-port` file (if present) contains the correct port.
+A stale `.nrepl-port` file left over from a previous session will point clients at
+a port where nothing is listening. Delete it and restart the server.
+* If the server is bound to `127.0.0.1` (the default), connections from other
+machines will be refused. Use `:bind "0.0.0.0"` to listen on all interfaces,
+but be aware of the security implications -- see xref:usage/tls.adoc[TLS] if
+you need remote access.
+* On some systems, firewalls or security software may block connections to
+ephemeral ports.
+
+=== Port Already in Use
+
+If you see an "Address already in use" error when starting a server, another
+process is already listening on that port. Either stop the other process, or
+start nREPL on a different port (`:port 0` will pick a random available port).
+
+== Evaluation Issues
+
+=== Evaluation Appears to Hang
+
+If an evaluation never returns:
+
+* The code may be performing blocking I/O or running an infinite loop.
+Try sending an `interrupt` op to stop it.
+* If printing a large or infinite lazy sequence, `\*print-length*` may not be
+set. Bind it to a reasonable value (e.g. 100) in your session to avoid
+this.
+* Middleware that wraps printing (e.g. `nrepl.middleware.print`) respects
+`\*print-length*` and `\*print-level*` -- make sure these are set in the
+session where the evaluation is running.
+
+=== Interrupt Does Not Work
+
+On Java 21+, `Thread.stop()` has been disabled by the JDK. nREPL ships a
+native JVMTI agent to restore thread-stopping capability, but it requires the
+JVM flag `-Djdk.attach.allowAttachSelf` to be set at startup.
+
+If interrupt doesn't stop a running evaluation on Java 21+, make sure this
+flag is present. See xref:installation.adoc#jvmti[Enable libnrepl JVMTI agent]
+for details.
+
+On earlier Java versions, interrupt should work out of the box via
+`Thread.stop()`.
+
 == Middleware
 
 === Warnings when Starting nREPL
 
-If you encounter something like:
+If you see warnings like:
 
 [source,shell]
 ----
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-apropos, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-classpath, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-complete, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-debug, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-enlighten, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-format, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-info, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-inspect, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-macroexpand, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-slurp, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-ns, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-out, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-content-type, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-slurp, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-pprint, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-pprint-fn, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-profile, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-refresh, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-resource, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-spec, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-stacktrace, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-test, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-trace, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-tracker, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-undef, see nrepl.middleware/set-descriptor!
-[WARNING] No nREPL middleware descriptor in metadata of #'cider.nrepl/wrap-version, see nrepl.middleware/set-descriptor!
-nREPL server started on port 36457 on host 127.0.0.1 - nrepl://127.0.0.1:36457
+[WARNING] No nREPL middleware descriptor in metadata of #'some.middleware/wrap-foo, see nrepl.middleware/set-descriptor!
 ----
 
-This means that you're trying to load middleware incompatible with the current
-version of nREPL. Make sure you're using the latest versions of all the
-middleware libraries in your project/profiles and that you're not
-loading any projects with explicit `tools.nrepl` dependencies that get
-required early in your projects (e.g. in `user.clj`).
+This means you're loading middleware that is incompatible with the current
+version of nREPL. Make sure you're using the latest versions of all middleware
+libraries and that your project does not pull in a stale `tools.nrepl`
+dependency (the predecessor to nREPL).
 
-== Leiningen
+=== Middleware Not Loading
 
-=== The REPL Task Crashes
+If a middleware you've configured doesn't seem to have any effect:
 
-If you experience problems running `lein repl` you have to make sure that:
+* Use the `describe` op to inspect the server's active middleware and ops.
+If your middleware's op doesn't appear, it was not loaded.
+* Check that the middleware var is fully qualified and resolves correctly.
+* Middleware ordering matters -- `set-descriptor!` declares `:requires` and
+`:expects` dependencies. If these aren't satisfied, the middleware may be
+silently excluded from the handler stack. Check the server output for
+warnings.
 
-* You're not using Leiningen 2.8.2 (a bug there rendered the `repl` task unusable - it was addressed in 2.8.3).
-* Your project is using Clojure 1.8+.
-* Your project is using Java 8+.
-* You're using the latest versions of nREPL middleware.
+== TLS
+
+If you're having trouble with TLS connections, the most common issues are:
+
+* *Certificate not found* -- verify the path in `:tls-keys-file` points to an
+existing file.
+* *Handshake timeout* -- the default handshake timeout is 30 seconds. If
+clients are on a slow network, this may not be enough.
+* *"Cannot use same keys as server"* -- the server rejects connections where
+the client presents the same certificate as the server. Generate separate
+client and server key files.
+
+See xref:usage/tls.adoc[TLS support] for setup instructions.
+
+== Build Tools
+
+=== Leiningen
+
+If you experience problems running `lein repl`:
+
+* Make sure your project uses Clojure 1.8+ and Java 8+.
+* Make sure you're using the latest versions of nREPL middleware.
+* If Leiningen bundles an older nREPL version, you can override it by adding
+`nrepl` as an explicit dependency in your `project.clj`.
