@@ -29,6 +29,45 @@ https://github.com/thheller/shadow-cljs[shadow-cljs]).
 
 There is a separate implementation of nREPL for ClojureCLR: https://github.com/clojure/clr.tools.nrepl[https://github.com/clojure/clr.tools.nrepl].
 
+== What's the difference between the bencode and EDN transports?
+
+Bencode is the default wire format and the only one guaranteed to be supported
+by all nREPL servers and middleware. It's simple and language-agnostic, but
+limited to strings and integers -- keywords, sets, and other Clojure types are
+coerced to strings in transit.
+
+The EDN transport preserves richer Clojure types (keywords, sets, symbols, etc.)
+and is a good choice for clients that only target Clojure servers. See
+xref:design/transports.adoc[Transports] for details.
+
+== How do I configure the nREPL server?
+
+nREPL reads configuration from two EDN files: a global `~/.nrepl/nrepl.edn`
+and a project-local `.nrepl.edn`. You can set the bind address, port,
+transport, middleware, and more. Command-line flags override config file values.
+See xref:usage/server.adoc#_server_configuration[Server Configuration] for the
+full details.
+
+== Can I use nREPL with Unix domain sockets?
+
+Yes, since nREPL 1.2 (requires JDK 16+). Pass a filesystem path instead of a
+port when starting the server:
+
+[source,shell]
+----
+$ clj -M:nrepl -m nrepl.cmdline --socket path/to/socket
+----
+
+See xref:usage/server.adoc[Server] for more on this.
+
+== Why doesn't interrupt stop my evaluation?
+
+On Java 21+, `Thread.stop()` has been disabled by the JDK. nREPL ships a native
+JVMTI agent to restore this capability, but it requires the JVM flag
+`-Djdk.attach.allowAttachSelf` at startup. See
+xref:installation.adoc#jvmti[Enable libnrepl JVMTI agent] for setup
+instructions.
+
 == When was nREPL 1.0 released?
 
 nREPL 1.0 was released on August 24, 2022. This completes the promise we made
