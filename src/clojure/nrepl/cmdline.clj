@@ -113,8 +113,7 @@ Exit:      Control+D or (exit) or (quit)"
     ;; in the `:out` slot.
     (Thread/sleep 50)
     (let [session (nrepl/client-session client)]
-      (swap! running-repl assoc :transport transport)
-      (swap! running-repl assoc :client session)
+      (swap! running-repl assoc :transport transport :client session)
       (binding [*ns* *ns*]
         (loop []
           (prompt *ns*)
