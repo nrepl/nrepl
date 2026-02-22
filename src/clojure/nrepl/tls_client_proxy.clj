@@ -178,7 +178,7 @@
     (do
       (shutdown-agents)
       (System/exit 1))
-    (throw msg)))
+    (throw (ex-info msg {}))))
 
 (defn start-tls-proxy
   "Start a local TLS proxy. This will forward a local regular TCP connection to a remote TLS TCP connection.
