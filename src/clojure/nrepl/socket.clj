@@ -172,30 +172,30 @@
         (log error-msg)
         (throw (ex-info error-msg {:nrepl/kind ::no-filesystem-sockets}))))))
 
-(defn as-nrepl-uri [sock transport-scheme]
-  (let [get-local-addr (fn [^NetworkChannel c] (.getLocalAddress c))]
-    (if-let [addr (and (instance? ServerSocketChannel sock)
-                       (get-local-addr sock))]
-      (URI. (str transport-scheme "+unix")
-            (let [^Path path (get-path addr)]
-              (-> path .toAbsolutePath str))
-            nil)
-      (if-let [addr (and (some-> junixsocket-server-class (instance? sock))
-                         (.getLocalSocketAddress ^ServerSocket sock))]
-        (URI. (str transport-scheme "+unix")
-              (get-path addr)
-              nil)
-        ;; Assume it's an InetAddress socket
-        (let [sock ^ServerSocket sock]
-          (URI. (str transport-scheme
-                     (when (instance? SSLServerSocket sock)
-                       "s"))
-                nil ;; userInfo
-                (-> sock .getInetAddress .getHostName)
-                (.getLocalPort sock)
-                nil       ;; path
-                nil       ;; query
-                nil)))))) ;; fragment
+(defn as-nrepl-uri
+  "Constructs an nREPL URI from a server map and transport scheme.
+  Takes a map with :server-socket and :host keys (as in nrepl.server/Server)."
+  ^URI [{:keys [host server-socket]} transport-scheme]
+  (cond
+    (instance? ServerSocketChannel server-socket)
+    (URI. (str transport-scheme "+unix")
+          (let [^Path path (get-path (.getLocalAddress ^NetworkChannel server-socket))]
+            (-> path .toAbsolutePath str))
+          nil)
+
+    (and junixsocket-server-class (instance? junixsocket-server-class server-socket))
+    (URI. (str transport-scheme "+unix")
+          (get-path (.getLocalSocketAddress ^ServerSocket server-socket))
+          nil)
+
+    :else
+    (URI. (str transport-scheme
+               (when (instance? SSLServerSocket server-socket)
+                 "s"))
+          nil
+          host
+          (.getLocalPort ^ServerSocket server-socket)
+          nil nil nil))) ;; fragment
 
 (defprotocol Acceptable
   (accept [s]
