@@ -17,6 +17,7 @@
 ### Bugs fixed
 
 * [#410](https://github.com/nrepl/nrepl/pull/410): Middleware: deduplicate middleware when constructing a handler.
+* [#302](https://github.com/nrepl/nrepl/issues/302): Use the actual bind address in the server startup message instead of resolving via `.getHostName` (which returns `localhost` and breaks IPv6-only clients).
 
 ## 1.5.2 (2025-12-29)
 

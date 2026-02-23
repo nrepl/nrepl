@@ -16,8 +16,7 @@
    [nrepl.util.threading :as threading]
    [nrepl.version :as version])
   (:import
-   [java.io FileNotFoundException]
-   [java.net URI]))
+   [java.io FileNotFoundException]))
 
 (defn- clean-up-and-exit
   "Performs any necessary clean up and calls `(System/exit status)`."
@@ -454,16 +453,15 @@ Exit:      Control+D or (exit) or (quit)"
   connection details from.
   Takes nREPL server map and processed CLI options map.
   Returns connection header string."
-  [server options]
+  [{:keys [host port socket] :as server} options]
   (let [transport (:transport options)
-        ^java.net.ServerSocket ssocket (:server-socket server)
-        ^URI uri (socket/as-nrepl-uri ssocket (transport/uri-scheme transport))]
+        uri (socket/as-nrepl-uri server (transport/uri-scheme transport))]
     ;; The format here is important, as some tools (e.g. CIDER) parse the string
     ;; to extract from it the host and the port to connect to
-    (if-let [host (.getHost uri)]
+    (if socket
+      (str "nREPL server started on socket " (.toASCIIString ^java.net.URI uri))
       (format "nREPL server started on port %d on host %s - %s"
-              (.getPort uri) host uri)
-      (str "nREPL server started on socket " (.toASCIIString uri)))))
+              port host uri))))
 
 (defn save-port-file
   "Writes a file relative to project classpath with port number so other tools
