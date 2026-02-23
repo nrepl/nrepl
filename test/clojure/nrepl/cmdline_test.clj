@@ -164,13 +164,25 @@
                    (cmd/server-opts {:middleware ['nonexistent/required]}))))))
 
 (deftest server-started-message
-  (with-open [^Server server (server/start-server
-                              :transport-fn #'transport/bencode
-                              :handler server/default-handler)]
-    (is+ #"nREPL server started on port \d+ on host .* - .*//.*:\d+"
-         (cmd/server-started-message
-          server
-          {:transport #'transport/bencode}))))
+  (testing "default bind uses 127.0.0.1 in message and URI"
+    (with-open [^Server server (server/start-server
+                                :transport-fn #'transport/bencode
+                                :handler server/default-handler)]
+      (let [msg (cmd/server-started-message
+                 server
+                 {:transport #'transport/bencode})]
+        (is+ #"nREPL server started on port \d+ on host 127\.0\.0\.1 - .*//127\.0\.0\.1:\d+"
+             msg))))
+  (testing "explicit localhost bind is preserved"
+    (with-open [^Server server (server/start-server
+                                :bind "localhost"
+                                :transport-fn #'transport/bencode
+                                :handler server/default-handler)]
+      (let [msg (cmd/server-started-message
+                 server
+                 {:transport #'transport/bencode})]
+        (is+ #"nREPL server started on port \d+ on host localhost - .*//localhost:\d+"
+             msg)))))
 
 (deftest ^:slow ack
   (with-server-every-transport nil
