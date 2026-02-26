@@ -2,6 +2,8 @@
 
 ## master (unreleased)
 
+## 1.6.0 (2026-02-26)
+
 ### New features
 
 * [#402](https://github.com/nrepl/nrepl/pull/402): Add `^:concat` metadata support for config merging.
@@ -17,6 +19,9 @@
 ### Bugs fixed
 
 * [#410](https://github.com/nrepl/nrepl/pull/410): Middleware: deduplicate middleware when constructing a handler.
+* [#421](https://github.com/nrepl/nrepl/pull/421): Fix EDN transport with Unix domain sockets.
+* [#422](https://github.com/nrepl/nrepl/pull/422): Fix `load-file` sending nil message for empty/comment-only files.
+* Fix `err-exit` throwing a string instead of an Exception.
 
 ## 1.5.2 (2025-12-29)
 
