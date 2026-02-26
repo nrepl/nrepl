@@ -190,3 +190,40 @@ If you've made any changes to the built-in middleware descriptors you can regene
 ----
 $ lein docs
 ----
+
+== Releasing nREPL
+
+NOTE: This section is relevant only to nREPL maintainers with push access to the repository.
+
+Here's the process for cutting a new release (e.g. version `1.6.0`):
+
+. Update `CHANGELOG.md` — rename the `master (unreleased)` section to
+the new version and date (e.g. `1.6.0 (2026-02-26)`), and add a fresh
+`master (unreleased)` section above it.
+
+. Commit and tag:
++
+[source,shell]
+----
+$ git commit -am "Release 1.6.0"
+$ git tag v1.6.0
+----
+
+. Push the commit and tag:
++
+[source,shell]
+----
+$ git push origin master --tags
+----
+
+. The rest is automated:
+  * *Clojars deploy* — pushing the tag triggers a CircleCI `deploy` job
+  (after tests and lint pass) that publishes the artifact to
+  https://clojars.org/nrepl/nrepl[Clojars]. The version is derived from
+  the tag name. The tag must match `v<major>.<minor>.<patch>` (with an
+  optional `-alpha<N>` suffix).
+  * *GitHub Release* — a GitHub Actions workflow creates a GitHub Release
+  with auto-generated release notes.
+
+TIP: Snapshot deploys are also automated — pushing a tag ending in
+`-SNAPSHOT` triggers the same CircleCI deploy pipeline.
