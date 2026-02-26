@@ -201,6 +201,9 @@ Here's the process for cutting a new release (e.g. version `1.6.0`):
 the new version and date (e.g. `1.6.0 (2026-02-26)`), and add a fresh
 `master (unreleased)` section above it.
 
+. Set `version` in `doc/antora.yml` to the major.minor version (e.g. `1.6`
+for a `1.6.0` or `1.6.1` release). Do not include the patch number.
+
 . Commit and tag:
 +
 [source,shell]
@@ -209,7 +212,14 @@ $ git commit -am "Release 1.6.0"
 $ git tag v1.6.0
 ----
 
-. Push the commit and tag:
+. Reset `version` in `doc/antora.yml` back to `~` and commit:
++
+[source,shell]
+----
+$ git commit -am "Begin next development iteration"
+----
+
+. Push the commits and tag:
 +
 [source,shell]
 ----
