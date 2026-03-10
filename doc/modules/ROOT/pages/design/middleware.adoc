@@ -79,13 +79,19 @@ Middleware descriptors are implemented as a map in var metadata under a
 any of three entries:
 
 * `:requires`, a set containing strings or vars identifying other middleware
-  that must be applied at a higher level ("before") than the middleware being
-  described. Var references indicate a dependency on exact middleware; string
-  values indicate a dependency on _any_ middleware that handles the specified
-  `:op`.
-* `:expects`, the same as `:requires`, except the referenced middleware must
-  exist in the final stack at a lower level ("after") than the middleware being
-  described.
+  that must process a request _before_ the middleware being described sees it.
+* `:expects`, a set containing strings or vars identifying other middleware
+  that must process a request _after_ the middleware being described.
++
+Both `:requires` and `:expects` support two kinds of references:
++
+** *Var references* (e.g., `#'session`) create a hard dependency on a specific
+   middleware. That exact middleware must be present in the stack.
+** *String references* (e.g., `"eval"`) create a dependency on _any_ middleware
+   that handles an operation with that name. This is more flexible -- it doesn't
+   matter which specific middleware provides the op. Prefer string references
+   when you depend on an _operation_ being available rather than a specific
+   implementation of it.
 
 * `:handles`, a map that documents the operations implemented by the
   middleware.  Each entry in this map must have as its key the string value of
@@ -108,6 +114,36 @@ dependencies will cause an error.  If you see warnings like "Middleware X is
 required by Y but is not present in middleware list", add the missing middleware
 to your handler or configuration explicitly.
 
+=== Optional dependencies
+
+nREPL has no built-in concept of optional middleware dependencies. If a
+middleware var is listed in `:requires` or `:expects` but is absent from the
+stack, a warning is emitted (and the dependency is auto-included, though this
+is deprecated).
+
+If your middleware can function without another middleware but should be ordered
+relative to it _when both are present_, use a *string reference* to an op that
+the other middleware handles, rather than a var reference. String references
+don't trigger warnings when no middleware in the stack handles that op -- the
+ordering constraint is simply ignored during linearization.
+
+For example, instead of:
+
+[source,clojure]
+----
+;; Hard dependency — warns if wrap-cljs-repl is absent:
+{:requires #{#'wrap-cljs-repl}}
+----
+
+Use:
+
+[source,clojure]
+----
+;; Orders relative to any middleware that handles the "eval" op for
+;; ClojureScript, if present. No warning when absent:
+{:requires #{"eval-cljs"}}
+----
+
 The values in the `:handles` map are used to support the `"describe"` operation,
 which provides "a machine- and human-readable directory and documentation for
 the operations supported by an nREPL endpoint" (see
@@ -117,23 +153,39 @@ the operations supported by an nREPL endpoint" (see
 TIP: There's also `lein with-profile +docs run -m nrepl.impl.docs --output md`
 if you'd like to generate an ops listing in Markdown format.
 
-The `:requires` and `:expects` entries control the order in which
-middleware is applied to a base handler.  In the `add-stdin` example above,
-that middleware will be executed before any middleware that handles the `"eval"`
-operation, but after the `nrepl.middleware.session/session`
-middleware.  In the case of `add-stdin`, this ensures that incoming messages
-hit the session middleware (thus ensuring that the user's dynamic scope —
-including `*in*` — has been added to the message) before the ``add-stdin``'s
-handler sees them, so that it may append the provided `stdin` content to the
-buffer underlying `*in*`.  Additionally, `add-stdin` must be "above" any `eval`
-middleware, as it takes responsibility for calling `clojure.main/skip-if-eol`
-on `*in*` prior to each evaluation (in order to ensure functional parity with
-Clojure's default stream-based REPL implementation).
+=== Understanding middleware ordering
+
+Middleware are composed inside-out: the last middleware in the linearized stack
+wraps the base handler first, and the first middleware wraps everything else
+last. This means the first middleware in the stack is the first to see an
+incoming request and the last to see an outgoing response:
+
+----
+Request → [A] → [B] → [C] → base-handler
+                             ← Response
+
+If B :requires C  →  C sees the request before B (C is "inner"/closer to the base)
+If B :expects A   →  B sees the request before A (B is "outer"/further from the base)
+----
+
+In other words:
+
+* `:requires` puts something *before* you in the request flow
+* `:expects` puts something *after* you in the request flow
+
+In the `add-stdin` example above, that middleware requires `#'session` and
+expects `"eval"`. This ensures that incoming messages hit the session middleware
+first (so that the user's dynamic scope -- including `\*in*` -- has been added
+to the message) before `add-stdin` sees them. Additionally, `add-stdin` must
+see messages before any `eval` middleware, as it takes responsibility for
+calling `clojure.main/skip-if-eol` on `\*in*` prior to each evaluation (in
+order to ensure functional parity with Clojure's default stream-based REPL
+implementation).
 
 The specific contents of a middleware's descriptor depends entirely on its
 objectives: which operations it is to implement/define, how it is to modify
-incoming request messages, and which higher- and lower-level middleware are to
-aid in accomplishing its aims.
+incoming request messages, and which other middleware are to aid in
+accomplishing its aims.
 
 nREPL uses the dependency information in descriptors in order to produce a
 linearization of a set of middleware; this linearization is exposed by
