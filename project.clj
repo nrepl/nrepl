@@ -49,7 +49,7 @@
                      {:plugins      '[[test2junit "1.4.2"]]
                       :test2junit-output-dir "test-results"
                       ;; This skips any tests that doesn't work on all java versions
-                      ;; TODO: replicate koacha's version filter logic here
+                      ;; TODO: replicate kaocha's version filter logic here
                       :test-selectors {:default '(complement :min-java-version)}
                       :aliases {"test" "test2junit"}})
              :junixsocket {:dependencies [[com.kohlschutter.junixsocket/junixsocket-core "2.10.1" :extension "pom"]]}
