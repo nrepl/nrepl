@@ -2,7 +2,7 @@
 
 [NOTE]
 ====
-nREPL is compatible with Clojure 1.8+ and Java 8+.
+nREPL is compatible with Clojure 1.9+ and Java 8+.
 ====
 
 nREPL is a library (as opposed to it being an application), so it's

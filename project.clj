@@ -56,16 +56,10 @@
              :clj-kondo {:dependencies [[clj-kondo "2026.01.19"]]}
              ;; Clojure versions matrix
              :provided {:dependencies [[org.clojure/clojure "1.12.4"]]}
-             :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
-             :1.10 {:dependencies [[org.clojure/clojure "1.10.3"]]
-                    :source-paths ["src/spec"]}
-             :1.11 {:dependencies [[org.clojure/clojure "1.11.4"]]
-                    :source-paths ["src/spec"]}
-             :1.12 {:dependencies [[org.clojure/clojure "1.12.4"]]
-                    :source-paths ["src/spec"]}
-
-
+             :1.10 {:dependencies [[org.clojure/clojure "1.10.3"]]}
+             :1.11 {:dependencies [[org.clojure/clojure "1.11.4"]]}
+             :1.12 {:dependencies [[org.clojure/clojure "1.12.4"]]}
 
              ;;; Docs generation profile
              ;;
@@ -86,8 +80,7 @@
              :cljfmt {:plugins [[dev.weavejester/lein-cljfmt "0.15.6"]]
                       :cljfmt {:extra-indents {run-with [[:inner 0]]
                                                testing-print [[:inner 0]]
-                                               safe-handle [[:inner 0]]
-                                               when-require [[:inner 0]]}}}
+                                               safe-handle [[:inner 0]]}}}
 
              :eastwood-config {:plugins [[jonase/eastwood "1.4.3"]]
                                :eastwood {:config-files ["eastwood.clj"]

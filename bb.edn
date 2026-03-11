@@ -17,14 +17,10 @@
 
   test  {:doc "Run tests for [CLOJURE_VERSION]."
          :task
-         ;; We use kaocha on Clojure 1.9+, but revert to lein's built in
-         ;; runner with Clojure 1.8.
          (let [[extra-profiles] *command-line-args*
                profiles (str "-user,+" clj-version ",+test"
                              (when extra-profiles (str "," extra-profiles)))]
-           (if (= clj-version "1.8")
-             (shell lein "with-profile" profiles "test")
-             (shell lein "with-profile" profiles "run" "-m" "kaocha.runner" "--no-capture-output")))}
+           (shell lein "with-profile" profiles "run" "-m" "kaocha.runner" "--no-capture-output"))}
 
   eastwood {:doc "Run eastwood for [CLOJURE_VERSION]."
             :task (shell lein "with-profile" (str "-user,+" clj-version ",+eastwood") "eastwood")}
