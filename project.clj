@@ -89,9 +89,9 @@
                                                safe-handle [[:inner 0]]
                                                when-require [[:inner 0]]}}}
 
-             :eastwood [:test
-                        {:plugins [[jonase/eastwood "1.4.3"]]
-                         :eastwood {:config-files ["eastwood.clj"]
-                                    :ignored-faults {:unused-ret-vals {nrepl.util.completion-test true
-                                                                       nrepl.bencode true}
-                                                     :reflection {nrepl.socket.dynamic true}}}}]})
+             :eastwood-config {:plugins [[jonase/eastwood "1.4.3"]]
+                               :eastwood {:config-files ["eastwood.clj"]
+                                          :ignored-faults {:unused-ret-vals {nrepl.util.completion-test true
+                                                                             nrepl.bencode true}
+                                                           :reflection {nrepl.socket.dynamic true}}}}
+             :eastwood [:test :eastwood-config]})
