@@ -131,17 +131,6 @@ $ bb kaocha --watch --skip-meta :slow
 
 as it will re-run tests on changes, but also skip a handful of slower tests.
 
-=== Running tests for Clojure 1.8
-
-Kaocha only supports Clojure 1.9 and up. For earlier versions, we can still use
-Leiningen's test runner. To run the tests only for a specific version of Clojure,
-use a command like this:
-
-[source,shell]
-----
-$ lein with-profile 1.8 test
-----
-
 === Running tests on CI
 
 For ease of use/consistency with other nREPL projects, tests are run on CI
@@ -151,9 +140,6 @@ environments using a https://github.com/babashka/babashka[babashka], with the co
 ----
 $ bb test
 ----
-
-this will check the `VERSION` environmental variable, and switch between Kaocha
-and Leiningen tests based on which is available.
 
 == Running cljfmt
 

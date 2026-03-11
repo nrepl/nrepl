@@ -105,7 +105,7 @@ See xref:usage/tls.adoc[TLS support] for setup instructions.
 
 If you experience problems running `lein repl`:
 
-* Make sure your project uses Clojure 1.8+ and Java 8+.
+* Make sure your project uses Clojure 1.9+ and Java 8+.
 * Make sure you're using the latest versions of nREPL middleware.
 * If Leiningen bundles an older nREPL version, you can override it by adding
 `nrepl` as an explicit dependency in your `project.clj`.

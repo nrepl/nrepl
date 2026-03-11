@@ -4,6 +4,7 @@
    [clojure.java.io :as io]
    [clojure.main]
    [clojure.set :as set]
+   [clojure.spec.alpha]
    [clojure.stacktrace :refer [root-cause]]
    [clojure.test :refer [are deftest is testing use-fixtures]]
    [matcher-combinators.matchers :as mc]
@@ -32,17 +33,12 @@
    java.net.SocketException
    (nrepl.server Server)))
 
+(require 'nrepl.spec) ;; Load for side effects (register specs).
+
 (deftest version-sanity-check
   (is (let [v (System/getenv "CLOJURE_VERSION")]
         (println "Running on Clojure" (clojure-version) ", expected:" v)
         (or (nil? v) (.startsWith ^String (clojure-version) v)))))
-
-(defmacro when-require [n & body]
-  (let [nn (eval n)]
-    (try (require nn)
-         (catch Throwable e nil))
-    (when (find-ns nn)
-      `(do ~@body))))
 
 (def transport-fn->protocol
   "Add your transport-fn var here so it can be tested"
@@ -107,10 +103,9 @@
   (= *transport-fn* #'transport/edn))
 
 (defn- check-response-format
-  "checks response against spec, if available it to do a spec check later"
+  "Check response against nrepl.spec."
   [resp]
-  (when-require 'nrepl.spec
-    ((requiring-resolve 'clojure.spec.alpha/assert*) :nrepl.spec/message resp))
+  (clojure.spec.alpha/assert* :nrepl.spec/message resp)
   resp)
 
 (defn clean-response
