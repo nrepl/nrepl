@@ -26,3 +26,4 @@ build.xml
 /test-results
 /.clj-kondo/.cache
 /.lsp/
+/.claude/
