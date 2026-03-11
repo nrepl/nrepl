@@ -215,6 +215,8 @@
       (log msg)
       (throw (ex-info msg {:nrepl/kind ::invalid-start-request}))))
   (let [transport-fn (or transport-fn t/bencode)
+        port (or port 0)
+        bind (or bind "127.0.0.1")
         ss (cond socket
                  (unix-server-socket socket)
                  (or tls? tls-keys-str tls-keys-file)
