@@ -9,6 +9,7 @@
 ### Bugs fixed
 
 * [#302](https://github.com/nrepl/nrepl/issues/302): Use the actual bind address in the server startup message instead of resolving via `.getHostName` (which returns `localhost` and breaks IPv6-only clients).
+* [#432](https://github.com/nrepl/nrepl/issues/432): Fix CallbackBufferedOutputStream corrupting multi-byte UTF-8 characters at buffer boundary.
 
 ## 1.6.0 (2026-02-26)
 

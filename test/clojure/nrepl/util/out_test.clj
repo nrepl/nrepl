@@ -1,6 +1,8 @@
 (ns nrepl.util.out-test
   (:require [clojure.test :refer :all]
-            [nrepl.util.out :as out]))
+            [clojure.string :as str]
+            [nrepl.util.out :as out])
+  (:import nrepl.out.CallbackBufferedOutputStream))
 
 (defn- reset-callbacks-fixture
   "Helper to reset the internal state for testing."
@@ -77,3 +79,17 @@
       (Thread/sleep 100)
 
       (is (= (repeat 10 "1\n") @out-calls)))))
+
+(deftest test-multibyte-character-handling
+  (doseq [buffer-len (range 10 20)
+          prefix-len (range 1 (inc buffer-len))]
+    (let [chunks   (atom [])
+          callback (fn [s] (swap! chunks conj s))
+          stream   (CallbackBufferedOutputStream. callback buffer-len)
+          prefix (byte-array prefix-len (byte (int \-)))
+          sun (.getBytes "☀" "UTF-8")]
+      (.write stream prefix 0 (count prefix))
+      (.write stream sun 0 (count sun))
+      (.flush stream)
+      (is (str/ends-with? (last @chunks) "☀") (str @chunks))
+      (is (every? #{\- \☀} (apply str @chunks)) (str @chunks)))))
