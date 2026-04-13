@@ -144,7 +144,7 @@ J <=== 1 #{:done} {:new-session "002914a8-db79-408d-807a-c5b3955ab6f9"}
 nil ---> 2 clone {}
 X <=== 2 #{:done} {:new-session "6a7e7b99-1b8e-4008-bbe5-ddddf46672a9"}
 Y ---> 3 describe {}
-Y <=== 3 #{:done} {:aux {:current-ns "user"}, :ops {:stdin {}, :lookup {}, :close {}, :load-file {}, :ls-sessions {}, :clone {}, :describe {}, :interrupt {}, :completions {}, :eval {}}, :versions {:clojure {:incremental 3, :major 1, :minor 10, :version-string "1.10.3"}, :java {:version-string "17"}, :nrepl {:incremental 2, :major 1, :minor 5, :version-string "1.5.2"}}}
+Y <=== 3 #{:done} {:aux {:current-ns "user"}, :ops {:stdin {}, :lookup {}, :close {}, :load-file {}, :ls-sessions {}, :clone {}, :describe {}, :interrupt {}, :completions {}, :eval {}}, :versions {:clojure {:incremental 3, :major 1, :minor 10, :version-string "1.10.3"}, :java {:version-string "17"}, :nrepl {:incremental 2, :major 1, :minor 5, :version-string "1.7.0"}}}
 Y ---> 4 eval {:nrepl.middleware.print/buffer-size 4096, :file "*cider-repl lambdaisland/nrepl-proxy:localhost:5424(clj)*", :nrepl.middleware.print/quota 1048576, :nrepl.middleware.print/print "cider.nrepl.pprint/pprint", :column 1, :line 10, :code "(clojure.core/apply clojure.core/require clojure.main/repl-requires)", :inhibit-cider-middleware "true", :nrepl.middleware.print/stream? "1", :nrepl.middleware.print/options {:right-margin 80}}
 G ---> 5 eval {:code "(seq (.split (System/getProperty \"java.class.path\") \":\"))"}
 Y <--- 4 #{:nrepl.middleware.print/error} #:nrepl.middleware.print{:error "Couldn't resolve print-var cider.nrepl.pprint/pprint"}
