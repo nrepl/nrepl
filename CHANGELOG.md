@@ -2,6 +2,8 @@
 
 ## master (unreleased)
 
+## 1.7.0 (2026-04-14)
+
 ### Changes
 
 * [#426](https://github.com/nrepl/nrepl/pull/426): **(Breaking)** Raise minimal supported Clojure version to 1.9.
