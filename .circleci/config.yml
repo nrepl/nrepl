@@ -181,22 +181,17 @@ jobs:
             - store_test_results:
                 path: test-results
 
-  ## Commented out because windows tests are kinda broken right now.
-  # test_windows:
-  #   description: |
-  #     Run tests on MS-Windows using the system's JDK version and given
-  #     CLOJURE_VERSION.
-  #   executor: win/default
-  #   parameters:
-  #     clojure_version:
-  #       type: string
-  #   steps:
-  #     - setup-windows
-  #     - run:
-  #         name: run tests
-  #         command: |
-  #           java -version; if(-not $?){exit 9}
-  #           bb test      ; if(-not $?){exit 9}
+  test_windows:
+    description: |
+      Run tests on MS-Windows using the system's JDK version and Clojure 1.12.
+    executor: win/default
+    steps:
+      - setup-windows
+      - run:
+          name: Running tests on Windows
+          command: |
+            java -version; if(-not $?){exit 9}
+            bb test      ; if(-not $?){exit 9}
 
 run_always: &run_always
   filters:
@@ -242,9 +237,8 @@ workflows:
               clojure_version: ["1.10", "1.11", "1.12"]
               jdk_version: [jdk25]
           <<: *run_always
-      # - test_code_windows:
-      #     name: Win, Java sys, Clj 1.11
-      #     clojure_version: "1.11"
+      - test_windows:
+          <<: *run_always
       - lint:
           <<: *run_always
       - deploy:

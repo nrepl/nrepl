@@ -1,6 +1,7 @@
 (ns nrepl.util.out-test
   (:require [clojure.test :refer :all]
             [clojure.string :as str]
+            [nrepl.test-helpers :refer [is+ newline->sys]]
             [nrepl.util.out :as out])
   (:import nrepl.out.CallbackBufferedOutputStream))
 
@@ -42,10 +43,11 @@
       (.println System/err "Hello stderr")
       (Thread/sleep 100)
 
-      (is (= #{[:test1 "Hello stdout\n"] [:test2 "Hello stdout\n"]}
-             (set @out-calls)))
-      (is (= [[:test3 "Hello stderr\n"]]
-             @err-calls)))))
+      (is+ #{[:test1 (newline->sys "Hello stdout\n")]
+             [:test2 (newline->sys "Hello stdout\n")]}
+           (set @out-calls))
+      (is+ [[:test3 (newline->sys "Hello stderr\n")]]
+           @err-calls))))
 
 (deftest test-root-binding-updates
   (testing "*out* and *err* root bindings are updated to point to wrapped streams"
@@ -62,10 +64,11 @@
                           (println "Hello stderr"))))
       (Thread/sleep 100)
 
-      (is (= #{[:test1 "Hello stdout\n"] [:test2 "Hello stdout\n"]}
-             (set @out-calls)))
-      (is (= [[:test3 "Hello stderr\n"]]
-             @err-calls)))))
+      (is+ #{[:test1 (newline->sys "Hello stdout\n")]
+             [:test2 (newline->sys "Hello stdout\n")]}
+           (set @out-calls))
+      (is+ [[:test3 (newline->sys "Hello stderr\n")]]
+           @err-calls))))
 
 (deftest test-error-handling-in-callbacks
   (testing "exceptions in one callback shouldn't break others"
@@ -78,7 +81,8 @@
         (.println System/out "1"))
       (Thread/sleep 100)
 
-      (is (= (repeat 10 "1\n") @out-calls)))))
+      (is+ (vec (repeat 10 (newline->sys "1\n")))
+           @out-calls))))
 
 (deftest test-multibyte-character-handling
   (doseq [buffer-len (range 10 20)
