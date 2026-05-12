@@ -183,14 +183,13 @@
 (deftest unencoded-values
   ;; just some PNG data that won't round-trip cleanly through UTF-8 encoding, so
   ;; any default encoding in the bencode implementation will be caught immediately
-  (let [binary-data (->> [-119 80 78 71 13 10 26 10 0 0 0 13 73 72 68 82 0 0 0
-                          100 0 0 0 100 8 6 0 0 0 112 -30 -107 84 0 0 3 -16 105
-                          67 67 80 73 67 67 32 80 114 111 102 105 108 101 0 0 40
-                          -111 -115 85 -35 111 -37 84 20 63 -119 111 92 -92 22 63
-                          -96 -79 -114 14 21 -117 -81 85 83 91 -71 27 26 -83 -58 6
-                          73 -109 -91 -23 66 26 -71 -51 -40 42 -92 -55 117 110]
-                         (map byte)
-                         (into-array Byte/TYPE))]
+  (let [binary-data (byte-array
+                     [-119 80 78 71 13 10 26 10 0 0 0 13 73 72 68 82 0 0 0
+                      100 0 0 0 100 8 6 0 0 0 112 -30 -107 84 0 0 3 -16 105
+                      67 67 80 73 67 67 32 80 114 111 102 105 108 101 0 0 40
+                      -111 -115 85 -35 111 -37 84 20 63 -119 111 92 -92 22 63
+                      -96 -79 -114 14 21 -117 -81 85 83 91 -71 27 26 -83 -58 6
+                      73 -109 -91 -23 66 26 -71 -51 -40 42 -92 -55 117 110])]
     (is (= (seq binary-data)
            (-> {"data" binary-data}
                (>stream :writer write-bencode)

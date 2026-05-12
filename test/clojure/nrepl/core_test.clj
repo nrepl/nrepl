@@ -26,6 +26,7 @@
    [nrepl.misc :refer [uuid requiring-resolve]]
    [nrepl.server :as server]
    [nrepl.test-helpers :as th :refer [is+]]
+   [nrepl.util.classloader]
    [nrepl.util.threading :as threading]
    [nrepl.transport :as transport])
   (:import
@@ -552,17 +553,17 @@
 
 (def-repl-test concurrent-message-handling
   (testing "multiple messages can be handled on the same connection concurrently"
-    (let [sessions (doall (repeatedly 3 #(client-session client)))
+    (let [sessions (vec (repeatedly 3 #(client-session client)))
           start-time (System/currentTimeMillis)
-          elapsed-times (map (fn [session eval-duration]
-                               (let [expr (pr-str `(Thread/sleep ~eval-duration))
-                                     responses (message session {:op "eval" :code expr})]
-                                 (future
-                                   (is (= [nil] (response-values responses)))
-                                   (- (System/currentTimeMillis) start-time))))
-                             sessions
-                             [2000 1000 0])]
-      (is (apply > (map deref (doall elapsed-times)))))))
+          elapsed-times (mapv (fn [session eval-duration]
+                                (let [expr (pr-str `(Thread/sleep ~eval-duration))
+                                      responses (message session {:op "eval" :code expr})]
+                                  (future
+                                    (is (= [nil] (response-values responses)))
+                                    (- (System/currentTimeMillis) start-time))))
+                              sessions
+                              [1000 500 0])]
+      (is (apply > (map deref elapsed-times))))))
 
 (def-repl-test ensure-transport-closeable
   (is (= [5] (repl-values session "5")))
@@ -580,7 +581,7 @@
   ;; thrown? should check for the root cause!
   (let [^Throwable cause (root-cause e)]
     (and (instance? SocketException cause)
-         (re-matches #".*(lost.*connection|socket closed).*" (.getMessage cause)))))
+         (re-find #"(lost.*connection|socket closed)" (.getMessage cause)))))
 
 (deftest transports-fail-on-disconnects
   (testing "Ensure that transports fail ASAP when the server they're connected to goes down."
@@ -613,7 +614,6 @@
 (deftest server-starts-with-minimal-configuration
   (testing "Ensure server starts with minimal configuration"
     (let [server (server/start-server)
-          ^nrepl.transport.FnTransport
           transport (connect :port (:port server))
           client (client transport Long/MAX_VALUE)]
       (is+ {:value ["3"]}
@@ -692,21 +692,21 @@
               conn (url-connect (str (transport-fn->protocol *transport-fn*)
                                      "://127.0.0.1:"
                                      (:port *server*)))]
-    (transport/send conn {:op "eval" :code "(+ 1 1)"})
-    (is (= [2] (response-values (response-seq conn 100))))))
+    (let [cli (nrepl/client conn Long/MAX_VALUE)]
+      (is (= 2 (th/eval-value1 cli '(+ 1 1)))))))
 
 (deftest test-ack
-  (with-open [^Server s (server/start-server :transport-fn *transport-fn*
-                                             :handler (-> (server/default-handler)
-                                                          ack/handle-ack))]
+  (with-open [s (server/start-server :transport-fn *transport-fn*
+                                     :handler (-> (server/default-handler)
+                                                  ack/handle-ack))]
     (ack/reset-ack-port!)
-    (with-open [^Server s2 (server/start-server :transport-fn *transport-fn*
-                                                :ack-port (:port s))]
+    (with-open [s2 (server/start-server :transport-fn *transport-fn*
+                                        :ack-port (:port s))]
       (is (= (:port s2) (ack/wait-for-ack 10000))))))
 
 (def-repl-test agent-await
   (is+ [42] (repl-values session (code (let [a (agent nil)]
-                                         (send a (fn [_] (Thread/sleep 1000) 42))
+                                         (send a (fn [_] (Thread/sleep 100) 42))
                                          (await a)
                                          @a)))))
 
@@ -929,28 +929,25 @@
   (testing "Check if RT/baseLoader and ContexClassLoader have a common DCL ancestor"
     (repl-values session (code (nrepl.core-test/capture-value
                                 "base-loader"
-                                (#'nrepl.core-test/classloader-hierarchy (clojure.lang.RT/baseLoader)))))
+                                (nrepl.util.classloader/find-topmost-dcl (clojure.lang.RT/baseLoader)))))
     (repl-values session (code (nrepl.core-test/capture-value
                                 "ccl"
-                                (#'nrepl.core-test/classloader-hierarchy (.. Thread currentThread getContextClassLoader)))))
-    (let [base-loader-dcls (->> (@captured-values-atom "base-loader")
-                                (filter #(instance? clojure.lang.DynamicClassLoader %))
-                                set)
-          ccl-dcls (->> (@captured-values-atom "ccl")
-                        (filter #(instance? clojure.lang.DynamicClassLoader %))
-                        set)]
-      (is (seq (set/intersection base-loader-dcls ccl-dcls))
-          (str "Base loader DCLs: " base-loader-dcls "\nCCL DCLs: " ccl-dcls)))))
+                                (nrepl.util.classloader/find-topmost-dcl (.getContextClassLoader (Thread/currentThread))))))
+    (let [base-loader (@captured-values-atom "base-loader")
+          ccl (@captured-values-atom "ccl")]
+      (is base-loader)
+      (is (= base-loader ccl))))
+  (reset! captured-values-atom {}))
 
 (def-repl-test classloader-chain-doesnt-grow-test
   (testing "after doing regular evals, the classloader chain remains of the same length"
     (let [[chain-length] (repl-values session (code (count
-                                                     (#'nrepl.core-test/classloader-hierarchy))))]
+                                                     (nrepl.core-test/classloader-hierarchy))))]
       ;; Eval some things.
       (dotimes [_ 10] (repl-values session (code (+ 1 2))))
       (is (= chain-length
              (first (repl-values session (code (count
-                                                (#'nrepl.core-test/classloader-hierarchy))))))))))
+                                                (nrepl.core-test/classloader-hierarchy))))))))))
 
 (def-repl-test custom-context-classloader-is-not-overwritten
   (testing "if user eval code has set the custom context classloader, then it persists"
@@ -965,7 +962,8 @@
                                (code
                                 (contains? (set (#'nrepl.core-test/classloader-hierarchy))
                                            (@nrepl.core-test/captured-values-atom "new-cl"))))]
-      (is good?))))
+      (is good?)))
+  (reset! captured-values-atom {}))
 
 (def-repl-test sanity-tests
   (testing "eval"

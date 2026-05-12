@@ -1,8 +1,11 @@
 (ns nrepl.test-helpers
   (:require [clojure.string :as str]
             [clojure.test :refer [is]]
+            [nrepl.core :as nrepl]
             [matcher-combinators.test])
-  (:import [java.io File]))
+  (:import (com.hypirion.io ClosingPipe Pipe)
+           (java.io File)
+           (java.net ServerSocket)))
 
 (def sys-newline
   "The system's newline character sequence."
@@ -37,6 +40,44 @@
   (if-not (= sys-file-sep "/")
     (str/replace path "/" sys-file-sep)
     path))
+
+(defn sh
+  "A version of clojure.java.shell/sh that streams in/out/err.
+  Taken and edited from https://github.com/technomancy/leiningen/blob/f7e1adad6ff5137d6ea56bc429c3b620c6f84128/leiningen-core/src/leiningen/core/eval.clj"
+  ^Process
+  [cmd]
+  (let [proc (.exec (Runtime/getRuntime) ^"[Ljava.lang.String;" (into-array String cmd))]
+    (future (with-open [out (.getInputStream proc)
+                        err (.getErrorStream proc)
+                        in (.getOutputStream proc)]
+              (let [_pump-out (doto (Pipe. out System/out) .start)
+                    _pump-err (doto (Pipe. err System/err) .start)
+                    _pump-in (ClosingPipe. System/in in)]
+                (.waitFor proc))))
+    proc))
+
+(defmacro with-process [[binding cmd-vector] & body]
+  (let [sym (gensym)]
+    `(let [~sym (sh ~cmd-vector)
+           ~binding ~sym]
+       (try ~@body
+            (finally (.destroy ~binding))))))
+
+(defn free-port []
+  (let [sock (ServerSocket. 0)
+        port (.getLocalPort sock)]
+    (.close sock)
+    port))
+
+;; nrepl-specific helpers
+
+(defn eval-value1
+  "Transform `code-form` into a string, send to `client-or-session` via `eval` op,
+  read and combine the response and return the first successful value."
+  [client-or-session code-form]
+  (-> (nrepl/message client-or-session {:op "eval", :code (nrepl/code* code-form)})
+      nrepl/response-values
+      first))
 
 ;; matcher-combinators.test is needed for `match?`
 

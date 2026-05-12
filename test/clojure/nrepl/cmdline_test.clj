@@ -4,6 +4,7 @@
    [clojure.java.io :refer [as-file]]
    [clojure.string :as str]
    [clojure.test :refer :all]
+   [matcher-combinators.matchers :as m]
    [nrepl.ack :as ack]
    [nrepl.bencode :refer [write-bencode]]
    [nrepl.cmdline :as cmd]
@@ -11,14 +12,13 @@
    [nrepl.core-test :refer [*server* *transport-fn* transport-fns]]
    [nrepl.middleware :as middleware]
    [nrepl.server :as server]
-   [nrepl.socket :refer [find-class unix-domain-flavor unix-socket-address]]
-   [nrepl.test-helpers :as th :refer [is+]]
-   [nrepl.transport :as transport]
-   [matcher-combinators.matchers :as m])
+   [nrepl.socket
+    :refer [find-class unix-domain-flavor unix-socket-address]]
+   [nrepl.test-helpers :refer [eval-value1 free-port is+ with-process]]
+   [nrepl.transport :as transport])
   (:import
-   (com.hypirion.io Pipe ClosingPipe)
    (java.lang ProcessBuilder$Redirect)
-   (java.net ServerSocket Socket SocketAddress)
+   (java.net Socket SocketAddress)
    (java.nio.channels Channels SocketChannel)
    (java.nio.file Files)
    (nrepl.server Server)))
@@ -36,12 +36,6 @@
   [parent prefix]
   (let [nio-path (.toPath (as-file parent))]
     (Files/createTempDirectory nio-path prefix (into-array java.nio.file.attribute.FileAttribute []))))
-
-(defn- free-port []
-  (let [sock (ServerSocket. 0)
-        port (.getLocalPort sock)]
-    (.close sock)
-    port))
 
 (defn- run-f-with-server-and-every-transport [server-opts-fn f]
   (doseq [transport-fn transport-fns]
@@ -65,23 +59,6 @@
 (defn- var->str
   [sym]
   (subs (str sym) 2))
-
-(defn- sh
-  "A version of clojure.java.shell/sh that streams in/out/err.
-  Taken and edited from https://github.com/technomancy/leiningen/blob/f7e1adad6ff5137d6ea56bc429c3b620c6f84128/leiningen-core/src/leiningen/core/eval.clj"
-  ^Process
-  [& cmd]
-  (let [proc (.exec (Runtime/getRuntime) ^"[Ljava.lang.String;" (into-array String cmd))]
-    (.addShutdownHook (Runtime/getRuntime)
-                      (Thread. (fn [] (.destroy proc))))
-    (future (with-open [out (.getInputStream proc)
-                        err (.getErrorStream proc)
-                        in (.getOutputStream proc)]
-              (let [_pump-out (doto (Pipe. out System/out) .start)
-                    _pump-err (doto (Pipe. err System/err) .start)
-                    _pump-in (ClosingPipe. System/in in)]
-                (.waitFor proc))))
-    proc))
 
 (deftest repl-intro
   (is+ #"nREPL" (cmd/repl-intro)))
@@ -165,67 +142,46 @@
 
 (deftest server-started-message
   (testing "default bind uses 127.0.0.1 in message and URI"
-    (with-open [^Server server (server/start-server
-                                :transport-fn #'transport/bencode
-                                :handler server/default-handler)]
-      (let [msg (cmd/server-started-message
-                 server
-                 {:transport #'transport/bencode})]
-        (is+ #"nREPL server started on port \d+ on host 127\.0\.0\.1 - .*//127\.0\.0\.1:\d+"
-             msg))))
+    (with-open [server (server/start-server
+                        :transport-fn #'transport/bencode
+                        :handler server/default-handler)]
+      (is+ #"nREPL server started on port \d+ on host 127\.0\.0\.1 - .*//127\.0\.0\.1:\d+"
+           (cmd/server-started-message server {:transport #'transport/bencode}))))
   (testing "explicit localhost bind is preserved"
-    (with-open [^Server server (server/start-server
-                                :bind "localhost"
-                                :transport-fn #'transport/bencode
-                                :handler server/default-handler)]
-      (let [msg (cmd/server-started-message
-                 server
-                 {:transport #'transport/bencode})]
-        (is+ #"nREPL server started on port \d+ on host localhost - .*//localhost:\d+"
-             msg)))))
+    (with-open [server (server/start-server
+                        :bind "localhost"
+                        :transport-fn #'transport/bencode
+                        :handler server/default-handler)]
+      (is+ #"nREPL server started on port \d+ on host localhost - .*//localhost:\d+"
+           (cmd/server-started-message server {:transport #'transport/bencode})))))
 
 (deftest ^:slow ack
   (with-server-every-transport nil
-    (let [^Process
-          acker-process (apply sh ["java" "-Dnreplacktest=y"
-                                   "-cp" (System/getProperty "java.class.path")
-                                   "nrepl.main"
-                                   "--ack" (str (:port *server*))
-                                   "--transport" (var->str *transport-fn*)])
-          acked-port (ack/wait-for-ack 100000)]
-      (try
-        (is acked-port "Timed out waiting for ack")
-        (when acked-port
+    (with-process [_ ["java" "-Dnreplacktest=y"
+                      "-cp" (System/getProperty "java.class.path")
+                      "nrepl.main"
+                      "--ack" (str (:port *server*))
+                      "--transport" (var->str *transport-fn*)]]
+      (let [acked-port (ack/wait-for-ack 100000)]
+        (when (is acked-port "Timed out waiting for ack")
           (with-open [^nrepl.transport.FnTransport
                       transport-2 (nrepl/connect :port acked-port
                                                  :transport-fn *transport-fn*)]
             (let [client (nrepl/client transport-2 1000)]
               ;; just a sanity check
-              (is (= "y"
-                     (-> (nrepl/message client {:op "eval"
-                                                :code "(System/getProperty \"nreplacktest\")"})
-                         first
-                         nrepl/read-response-value
-                         :value))))))
-        (finally
-          (.destroy acker-process))))))
+              (is (= "y" (eval-value1 client '(System/getProperty "nreplacktest")))))))))))
 
 (deftest ^:slow explicit-port-argument
   (with-server-every-transport nil
     (let [ack-port (:port *server*)
-          bind-port (free-port)
-          ^Process
-          acker-process (apply sh ["java" "-Dnreplacktest=y"
-                                   "-cp" (System/getProperty "java.class.path")
-                                   "nrepl.main"
-                                   "--port" (str bind-port)
-                                   "--ack" (str ack-port)
-                                   "--transport" (var->str *transport-fn*)])
-          acked-port (ack/wait-for-ack 100000)]
-      (try
-        (is (= acked-port bind-port))
-        (finally
-          (.destroy acker-process))))))
+          bind-port (free-port)]
+      (with-process [_ ["java" "-Dnreplacktest=y"
+                        "-cp" (System/getProperty "java.class.path")
+                        "nrepl.main"
+                        "--port" (str bind-port)
+                        "--ack" (str ack-port)
+                        "--transport" (var->str *transport-fn*)]]
+        (is (= bind-port (ack/wait-for-ack 100000)))))))
 
 (deftest can-define-dynamic-vars
   (with-server-every-transport nil

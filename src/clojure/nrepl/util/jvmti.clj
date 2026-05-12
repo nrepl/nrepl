@@ -1,5 +1,5 @@
 (ns nrepl.util.jvmti
-  "This namespace contains code exclusive to JDK9+ and should not be attempted to
+  "This namespace contains code exclusive to JDK11+ and should not be attempted to
   load with earlier JDKs."
   (:require
    [clojure.java.io :as io])
@@ -47,7 +47,7 @@
 
 (defn stop-thread
   "Stop the given `thread` using JVMTI StopThread function. Risks state
-  corruption. Should not be used prior to JDK20."
+  corruption. Should not be used prior to JDK21."
   [thread]
   @agent-loaded
   (JvmtiAgent/stopThread thread))
