@@ -496,7 +496,7 @@ The following keys are recognized in `.nrepl.edn` and `~/.nrepl/nrepl.edn`:
 | :tls-keys-file
 | string
 | —
-| Path to a file containing certificates and private key for TLS. See xref:tls.adoc[TLS].
+| Path to a file containing certificates and private key for TLS. See xref:usage/tls.adoc[TLS].
 
 | :tls-keys-str
 | string
