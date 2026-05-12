@@ -1,31 +1,14 @@
 (ns nrepl.cmdline-tty-test
   "TTY is not a full-featured transport (e.g. doesn't support ack), so are tested
    separately here."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [clojure.java.io :as io]
+            [clojure.test :refer [deftest is testing]]
             [nrepl.cmdline :as cmd]
             [nrepl.server :as server]
-            [nrepl.test-helpers :refer [is+]]
+            [nrepl.test-helpers :refer [free-port is+ sh]]
             [nrepl.transport :as transport])
-  (:import [com.hypirion.io ClosingPipe Pipe]
-           [org.apache.commons.net.telnet TelnetClient]
-           nrepl.server.Server))
-
-(defn- sh
-  "A version of clojure.java.shell/sh that streams in/out/err.
-  Taken and edited from https://github.com/technomancy/leiningen/blob/f7e1adad6ff5137d6ea56bc429c3b620c6f84128/leiningen-core/src/leiningen/core/eval.clj"
-  ^Process
-  [& cmd]
-  (let [proc (.exec (Runtime/getRuntime) ^"[Ljava.lang.String;" (into-array String cmd))]
-    (.addShutdownHook (Runtime/getRuntime)
-                      (Thread. (fn [] (.destroy proc))))
-    (future (with-open [out (.getInputStream proc)
-                        err (.getErrorStream proc)
-                        in (.getOutputStream proc)]
-              (let [_pump-out (doto (Pipe. out System/out) .start)
-                    _pump-err (doto (Pipe. err System/err) .start)
-                    _pump-in (ClosingPipe. System/in in)]
-                (.waitFor proc))))
-    proc))
+  (:import (java.io BufferedReader PrintStream)
+           (org.apache.commons.net.telnet TelnetClient)))
 
 (defn- attempt-connection [client host port timeout-ms]
   (loop [n (/ timeout-ms 500)]
@@ -40,45 +23,42 @@
           (recur (dec n))))))
 
 (deftest ^:slow tty-server
-  (let [^int free-port (with-open [ss (java.net.ServerSocket.)]
-                         (.bind ss nil)
-                         (.getLocalPort ss))
-        ^Process
-        server-process (apply sh ["java" "-Dnreplacktest=y"
-                                  "-cp" (System/getProperty "java.class.path")
-                                  "nrepl.main"
-                                  "--port" (str free-port)
-                                  "--transport" "nrepl.transport/tty"])]
+  (let [port (free-port)
+        server-process (sh ["java" "-Dnreplacktest=y"
+                            "-cp" (System/getProperty "java.class.path")
+                            "nrepl.main"
+                            "--port" (str port)
+                            "--transport" "nrepl.transport/tty"])]
     (try
-      (let [c    (doto (TelnetClient.)
-                   (attempt-connection "localhost" free-port 100000))
-            out  (java.io.PrintStream. (.getOutputStream c))
-            br   (java.io.BufferedReader. (java.io.InputStreamReader. (.getInputStream c)))
-            _    (doto out
-                   (.println "(System/getProperty \"nreplacktest\")")
-                   (.println "#?(:clj :clj-form)")
-                   (.println "#?(:cljs :cljs-form)")
-                   (.println "(clojure.core/require '[clojure.java.io :as io])")
-                   (.println "::io/xyz")
-                   (.println "(clojure.core/require '[clojure.set :as sets])")
-                   (.println "{::io/x 1 ::sets/x 2}")
-                   (.flush))]
-        (is+ [#"^;; nREPL"
-              #"^;; Clojure"
-              "user=> \"y\""
-              "user=> :clj-form"
-              "user=> nil"
-              "user=> :clojure.java.io/xyz"
-              "user=> nil"
-              "user=> {:clojure.java.io/x 1, :clojure.set/x 2}"]
-             (vec (repeatedly 8 #(.readLine br))))
+      (let [c (doto (TelnetClient.)
+                (attempt-connection "localhost" port 100000))]
+        (with-open [out (PrintStream. (.getOutputStream c))
+                    br  (io/reader (.getInputStream c))]
+          (doseq [l ["(System/getProperty \"nreplacktest\")"
+                     "#?(:clj :clj-form)"
+                     "#?(:cljs :cljs-form)"
+                     "(clojure.core/require '[clojure.java.io :as io])"
+                     "::io/xyz"
+                     "(clojure.core/require '[clojure.set :as sets])"
+                     "{::io/x 1 ::sets/x 2}"]]
+            (.println out l))
+          (.flush out)
+          (is+ [#"^;; nREPL"
+                #"^;; Clojure"
+                "user=> \"y\""
+                "user=> :clj-form"
+                "user=> nil"
+                "user=> :clojure.java.io/xyz"
+                "user=> nil"
+                "user=> {:clojure.java.io/x 1, :clojure.set/x 2}"]
+               (vec (repeatedly 8 #(.readLine ^BufferedReader br)))))
         (.disconnect c))
       (finally
-        (.destroy server-process)))))
+        (.destroy ^Process server-process)))))
 
 (deftest no-tty-client
   (testing "Trying to connect with the tty transport should fail."
-    (with-open [^Server server (server/start-server :transport-fn #'transport/tty)]
+    (with-open [server (server/start-server :transport-fn #'transport/tty)]
       (let [options (cmd/connection-opts {:port      (:port server)
                                           :host      "localhost"
                                           :transport 'nrepl.transport/tty})]
