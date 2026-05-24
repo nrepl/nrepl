@@ -1,10 +1,10 @@
 ////
-This file is _generated_ by #'nrepl.impl.docs/-main
+This file is _generated_ by #'build.docs/docs
    *Do not edit!*
 ////
 = Supported nREPL operations
 
-[small]#generated from a verbose 'describe' response (nREPL v1.6.0)#
+[small]#generated from a verbose 'describe' response (nREPL v1.7.0)#
 
 == Operations
 

@@ -16,12 +16,12 @@ nREPL shouldn't ever be necessary (unless you're hacking on it).
 Building nREPL locally is a very simple process:
 
 . Clone the repo
-. Make sure you have Leiningen installed
+. Make sure you have Clojure CLI installed
 . Run the build:
 
 [source,shell]
 ----
-$ lein install
+$ make install
 ----
 
 Afterwards you can simply do something like:
@@ -100,17 +100,7 @@ the REPL you're using.
 
 == Task Management
 
-All command line tasks are written in `babashka` as to maximize
-compatibility across platforms. Please see
-https://github.com/babashka/babashka[babashka] for installation
-instructions.
-
-To get a list of the available tasks (as defined in `bb.edn`) run:
-
-[source,shell]
-----
-$ bb tasks
-----
+See `Makefile` the list of for available tasks.
 
 == Running the tests
 
@@ -119,14 +109,14 @@ the test suite on latest configured Clojure version:
 
 [source,shell]
 ----
-$ bb kaocha
+$ make test
 ----
 
 The following command is useful while actively working on the codebase:
 
 [source,shell]
 ----
-$ bb kaocha --watch --skip-meta :slow
+$ clojure -M:dev:test --watch --skip-meta :slow
 ----
 
 as it will re-run tests on changes, but also skip a handful of slower tests.
@@ -134,11 +124,11 @@ as it will re-run tests on changes, but also skip a handful of slower tests.
 === Running tests on CI
 
 For ease of use/consistency with other nREPL projects, tests are run on CI
-environments using a https://github.com/babashka/babashka[babashka], with the command:
+environments using Make, with the command:
 
 [source,shell]
 ----
-$ bb test
+$ make test
 ----
 
 == Running cljfmt
@@ -148,14 +138,14 @@ locally using:
 
 [source,shell]
 ----
-$ lein with-profile cljfmt cljfmt check
+$ make cljfmt
 ----
 
 You can have cljfmt fix indentation problems like this:
 
 [source,shell]
 ----
-$ lein with-profile cljfmt cljfmt fix
+$ clojure -M:cljfmt fix
 ----
 
 == Running Eastwood
@@ -165,7 +155,7 @@ locally using:
 
 [source,shell]
 ----
-$ lein with-profile eastwood eastwood
+$ make eastwood
 ----
 
 == Regenerating the Built-in Ops Documentation
@@ -174,7 +164,7 @@ If you've made any changes to the built-in middleware descriptors you can regene
 
 [source,shell]
 ----
-$ lein docs
+$ make docs
 ----
 
 == Releasing nREPL

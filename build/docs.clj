@@ -1,37 +1,14 @@
-(ns nrepl.impl.docs
+(ns build.docs
   "Doc generation utilities"
   (:require
    [clojure.string :as str]
-   [clojure.tools.cli :as cli]
+   [clojure.java.io :as io]
    [clojure.walk :as walk]
    [nrepl.core :as nrepl]
    [nrepl.server :as server]
-   [nrepl.transport :as transport]
-   [nrepl.version :as version])
-  (:import
-   (java.io File)))
+   [nrepl.transport :as transport]))
 
-(declare -main)
-
-(def cli-options
-  [["-f" "--file FILE" "File to write output into (defaults to standard output)"
-    :parse-fn #(File. %) :default *out*]
-   ["-h" "--help" "Show this help message"]
-   ["-o" "--output OUT" "One of: raw, adoc, md" :default "adoc"
-    :validate [#(contains? #{"raw" "adoc" "md"} %)]]])
-
-(defn- exit [status msg]
-  (println msg)
-  (System/exit status))
-
-(defn- usage [options-summary]
-  (->> [(:doc (meta #'-main))
-        ""
-        "Usage: lein with-profile +docs run -m nrepl.impl.docs [options]"
-        ""
-        "Options:"
-        options-summary]
-       (str/join \newline)))
+(declare docs)
 
 (defn- error-msg [errors]
   (str "The following errors occurred while parsing your command:\n\n"
@@ -44,18 +21,18 @@
 
 (defn- message-slot-markdown
   [msg-slot-docs]
-  (apply str (for [[k v] msg-slot-docs]
-               (format "* `%s` %s\n" (pr-str k) (markdown-escape v)))))
+  (str/join (for [[k v] msg-slot-docs]
+              (format "* `%s` %s\n" (pr-str k) (markdown-escape v)))))
 
 (defn- describe-markdown
   "Given a message containing the response to a verbose :describe message,
 generates a markdown string conveying the information therein, suitable for
 use in e.g. wiki pages, github, etc."
-  [{:keys [ops]}]
+  [{:keys [ops]} version]
   (apply str "# Supported nREPL operations
 
 <small>generated from a verbose 'describe' response (nREPL v"
-         (:version-string version/version)
+         version
          ")</small>\n\n## Operations"
          (for [[op {:keys [doc optional requires returns]}] (sort ops)]
            (str "\n\n### `" (pr-str op) "`\n\n"
@@ -78,18 +55,18 @@ use in e.g. wiki pages, github, etc."
 (defn- message-slot-adoc
   [msg-slot-docs]
   (if (seq msg-slot-docs)
-    (apply str (for [[k v] msg-slot-docs]
-                 (format "* `%s` %s\n" (pr-str k) (adoc-escape v))))
+    (str/join (for [[k v] msg-slot-docs]
+                (format "* `%s` %s\n" (pr-str k) (adoc-escape v))))
     "{blank}"))
 
 (defn- describe-adoc
   "Given a message containing the response to a verbose :describe message,
   generates a asciidoc string conveying the information therein, suitable for
   use in e.g. wiki pages, github, etc."
-  [{:keys [ops]}]
+  [{:keys [ops]} version]
   (apply str "= Supported nREPL operations\n\n"
          "[small]#generated from a verbose 'describe' response (nREPL v"
-         (:version-string version/version)
+         version
          ")#\n\n== Operations"
          (for [[op {:keys [doc optional requires returns]}] (sort ops)]
            (str "\n\n=== `" (name op) "`\n\n"
@@ -102,16 +79,16 @@ use in e.g. wiki pages, github, etc."
                 (message-slot-adoc (sort returns))
                 "\n"))))
 
-(defn- format-response [format resp]
+(defn- format-response [format resp version]
   (cond (= format "raw") (pr-str (select-keys resp [:ops]))
-        (= format "md") (str "<!-- This file is *generated* by " #'-main
+        (= format "md") (str "<!-- This file is *generated* by " #'docs
                              "\n   **Do not edit!** -->\n"
-                             (describe-markdown resp))
+                             (describe-markdown resp version))
         (= format "adoc") (str "////\n"
-                               "This file is _generated_ by " #'-main
+                               "This file is _generated_ by " #'docs
                                "\n   *Do not edit!*\n"
                                "////\n"
-                               (describe-adoc resp))))
+                               (describe-adoc resp version))))
 
 (defn generate-ops-info []
   (let [[local remote] (transport/piped-transports)
@@ -124,18 +101,15 @@ use in e.g. wiki pages, github, etc."
         first
         walk/keywordize-keys)))
 
-(defn -main
-  "Regenerate and output the ops documentation to the specified destination in the specified format."
-  [& args]
-  (let [{:keys [options errors summary]} (cli/parse-opts args cli-options)]
-    (cond
-      (:help options) (exit 0 (usage summary))
-      errors (exit 1 (error-msg errors))
-      :else
-      (let [file (:file options)
-            format (:output options)
-            resp (generate-ops-info)
-            docs (format-response format resp)]
-        (if (= *out* file) (println docs)
-            (do (spit file docs)
-                (println (str "Regenerated " (.getAbsolutePath file)))))))))
+(defn docs
+  "Regenerate and output the ops documentation to the specified destination in the
+  specified format."
+  [{:keys [file format version]}]
+  (let [file (some-> file io/file)
+        format (or format "adoc")
+        _ (assert (#{"raw" "adoc" "md"} format))
+        docs (format-response format (generate-ops-info) version)]
+    (if file
+      (do (spit file docs)
+          (println "Regenerated" (.getAbsolutePath file)))
+      (println docs))))

@@ -18,8 +18,8 @@ target
 
 .externalToolBuilders
 
+/.cpcache
 /.eastwood
-/.lein*
 /.nrepl-port
 pom.xml
 build.xml
