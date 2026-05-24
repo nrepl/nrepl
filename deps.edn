@@ -1,0 +1,57 @@
+{:paths ["src/clojure" "res" "target/classes"
+         ;; Inlcude Java sources to paths so that they are packaged into the JAR
+         ;; and can later be jumped into.
+         "src/java"]
+ :deps {org.clojure/clojure {:mvn/version "1.12.4" :mvn/scope "provided"}}
+
+ :aliases
+ {:build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.10"}
+                 slipset/deps-deploy {:mvn/version "0.2.2"}}
+          :ns-default build.main}
+
+  :dev {:jvm-opts ["-Djdk.attach.allowAttachSelf"]
+        :extra-paths ["test/clojure" "test/java"]
+        :extra-deps {com.github.ivarref/locksmith {:mvn/version "0.1.9"}
+                     com.hypirion/io {:mvn/version "0.3.1"}
+                     commons-net/commons-net {:mvn/version "3.10.0"}
+                     lambdaisland/kaocha {:mvn/version "1.89.1380"}
+                     lambdaisland/kaocha-junit-xml {:mvn/version "1.17.101"}
+                     org.clojure/test.check {:mvn/version "1.1.1"}
+                     nubank/matcher-combinators {:mvn/version "3.9.1"
+                                                 :exclusions [org.clojure/clojure]}}}
+
+  :1.9 {:override-deps {org.clojure/clojure {:mvn/version "1.9.0"}}}
+  :1.10 {:override-deps {org.clojure/clojure {:mvn/version "1.10.3"}}}
+  :1.11 {:override-deps {org.clojure/clojure {:mvn/version "1.11.4"}}}
+  :1.12 {:override-deps {org.clojure/clojure {:mvn/version "1.12.4"}}}
+
+  :+junixsocket {:extra-deps {com.kohlschutter.junixsocket/junixsocket-common {:mvn/version "2.10.1"}
+                              com.kohlschutter.junixsocket/junixsocket-native-common {:mvn/version "2.10.1"}}}
+
+  ;; Docs generation alias
+  ;; Usage: clj -X:docs :file '"doc/modules/ROOT/pages/ops.adoc"'
+  :docs {:extra-paths ["."]
+         :exec-fn build.docs/docs}
+
+  ;; Should be run together with :dev alias.
+  :test {:jvm-opts ["-Dclojure.main.report=stderr"]
+         :main-opts ["-m" "kaocha.runner" "--no-capture-output"]}
+
+  :cljfmt {:extra-deps {dev.weavejester/cljfmt {:mvn/version "0.15.6"}}
+           :main-opts ["-m" "cljfmt.main"]}
+
+  :kondo {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2026.01.19"}}
+          :main-opts ["-m" "clj-kondo.main" "--lint" "src"]}
+
+  :eastwood {:extra-deps {jonase/eastwood {:mvn/version "1.4.3"}}
+             :main-opts ["-m" "eastwood.lint"
+                         {:config-files ["eastwood.clj"]
+                          :ignored-faults {:unused-ret-vals {nrepl.util.completion-test true
+                                                             nrepl.bencode true}
+                                           :reflection {nrepl.socket.dynamic true}}}]}
+
+  :cloverage {:extra-deps {cloverage/cloverage {:mvn/version "1.2.4"}}
+              :main-opts ["-m" "cloverage.coverage"
+                          "-p" "src" "-s" "test"
+                          "--test-ns-regex" "^((?!nrepl.sanity-test).)*$"
+                          "--codecov"]}}}

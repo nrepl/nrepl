@@ -14,7 +14,7 @@ public class JvmtiAgent {
      * Forcibly stop a given thread.
      */
     public static void stopThread(Thread thread) {
-        // ThreadDeath is deprecated, but so it Thread.stop(). We can revisit
+        // ThreadDeath is deprecated, but so is Thread.stop(). We can revisit
         // this when JVM actually decides to remove this class.
         @SuppressWarnings("deprecation")
         Throwable throwable = new ThreadDeath();

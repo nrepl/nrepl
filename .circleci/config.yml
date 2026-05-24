@@ -16,23 +16,23 @@ defaults: &defaults
 executors:
   jdk8:
     docker:
-      - image: clojure:temurin-8-lein-2.12.0-noble
+      - image: clojure:temurin-8-tools-deps-noble
     <<: *defaults
   jdk11:
     docker:
-      - image: clojure:temurin-11-lein-2.12.0-noble
+      - image: clojure:temurin-11-tools-deps-noble
     <<: *defaults
   jdk17:
     docker:
-      - image: clojure:temurin-17-lein-2.12.0-noble
+      - image: clojure:temurin-17-tools-deps-noble
     <<: *defaults
   jdk21:
     docker:
-      - image: clojure:temurin-21-lein-2.12.0-noble
+      - image: clojure:temurin-21-tools-deps-noble
     <<: *defaults
   jdk25:
     docker:
-      - image: clojure:temurin-25-lein-2.12.0-noble
+      - image: clojure:temurin-25-tools-deps-noble
     <<: *defaults
 
 # Runs a given set of steps, with some standard pre- and post-
@@ -55,7 +55,7 @@ commands:
       files:
         description: Files to consider when creating the cache key
         type: string
-        default: "deps.edn project.clj"
+        default: "deps.edn build/main.clj"
       cache_version:
         type: string
         description: "Key used to identify unique cache"
@@ -70,20 +70,12 @@ commands:
             done | sha256sum | awk '{print $1}' > /tmp/clojure_cache_seed
       - restore_cache:
           key: cache-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
-      - run:
-          name: Install packages
-          command: |
-            # Install curl explicitly because jdk25 doesn't have it.
-            apt update && apt install -y curl
-            # Skip Babashka download if present
-            [ -e /usr/local/bin/bb ] && exit
-            bash <(curl -s https://raw.githubusercontent.com/borkdude/babashka/master/install) --dir /usr/local/bin/
       - steps: << parameters.steps >>
       - save_cache:
           paths:
             - ~/.m2
+            - ~/.gitlibs
             - .cpcache
-            - /usr/local/bin/bb
           key: cache-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
 
   setup-windows:
@@ -92,23 +84,8 @@ commands:
       - run:
           name: Install scoop latest
           command: |
-            iwr get.scoop.sh -outfile 'install.ps1'                                          ; if(-not $?){exit 9}
-            .\install.ps1 -RunAsAdmin                                                        ; if(-not $?){exit 9}
-            scoop bucket add scoop-clojure https://github.com/littleli/scoop-clojure         ; if(-not $?){exit 9}
-            scoop bucket add extras                                                          ; if(-not $?){exit 9}
-            New-Item -Path $PROFILE -ItemType "file" -Force                                  ; if(-not $?){exit 9}
-            add-content $PROFILE $("`$env:PATH=""$(Resolve-Path ~\scoop\shims);`$env:PATH"""); if(-not $?){exit 9}
-            Write-host $env:PATH                                                             ; if(-not $?){exit 9}
-
-      - run:
-          name: Install babashka latest
-          command:
-            scoop install babashka
-
-      - run:
-          name: Install lein latest
-          command:
-            scoop install leiningen
+            Invoke-WebRequest -Uri "https://github.com/casselc/clj-msi/releases/download/v1.12.5.1645/clojure-1.12.5.1645.msi" -OutFile install.msi
+            Start-Process msiexec.exe -Wait -ArgumentList "/i install.msi /qn"
 
 jobs:
 
@@ -130,31 +107,27 @@ jobs:
             - run:
                 name: Running Eastwood
                 command: |
-                  bb eastwood
+                  make eastwood
             - run:
                 name: Running cljfmt
                 command: |
-                  bb cljfmt
+                  make cljfmt
             - run:
                 name: Running clj-kondo
                 command: |
-                  bb kondo
+                  make kondo
             - run:
                 name: Verifying Cljdoc
                 command: |
-                  bb verify_cljdoc
+                  make verify-cljdoc
 
   deploy:
     executor: jdk8
     steps:
       - checkout
       - run:
-          name: Install packages
-          command: |
-            bash <(curl -s https://raw.githubusercontent.com/borkdude/babashka/master/install) --dir /usr/local/bin/
-      - run:
           name: Deploy
-          command: bb ci-deploy
+          command: make deploy
 
   test:
     description: |
@@ -164,12 +137,13 @@ jobs:
         type: string
       clojure_version:
         type: string
-      extra_profiles:
+      extra_aliases:
         type: string
         default: ""
     executor: << parameters.jdk_version >>
     environment:
       CLOJURE_VERSION: << parameters.clojure_version >>
+      EXTRA_ALIASES: << parameters.extra_aliases >>
     steps:
       - checkout
       - with_cache:
@@ -177,7 +151,7 @@ jobs:
           steps:
             - run:
                 name: Running tests
-                command: bb test << parameters.extra_profiles >>
+                command: make test
             - store_test_results:
                 path: test-results
 
@@ -191,7 +165,8 @@ jobs:
           name: Running tests on Windows
           command: |
             java -version; if(-not $?){exit 9}
-            bb test      ; if(-not $?){exit 9}
+            clojure -T:build javac :with-tests true; if(-not $?){exit 9}
+            clojure -T:build test; if(-not $?){exit 9}
 
 run_always: &run_always
   filters:
@@ -211,7 +186,7 @@ workflows:
               jdk_version: [jdk8]
               # JDK8 and 11 need junitsocket library to support sockets as
               # connection target.
-              extra_profiles: ["+junixsocket"]
+              extra_aliases: [":+junixsocket"]
           <<: *run_always
       - test:
           matrix:
@@ -221,7 +196,7 @@ workflows:
               # to support sockets as connection target.
               clojure_version: ["1.12"]
               jdk_version: [jdk11]
-              extra_profiles: ["+junixsocket"]
+              extra_aliases: [":+junixsocket"]
           <<: *run_always
       - test:
           matrix:

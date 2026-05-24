@@ -3,39 +3,37 @@
   at build time."
   {:author "Colin Jones"
    :added  "0.5"}
+  (:require [clojure.java.io :as io])
   (:import java.util.Properties))
+
+(def ^:private group "nrepl")
+(def ^:private artifact "nrepl")
+(def ^:private properties-filename
+  (str "META-INF/maven/" group "/" artifact "/pom.properties"))
 
 (defn- map-from-property-filepath [file]
   (try
-    (let [file-reader (.. (Thread/currentThread)
-                          (getContextClassLoader)
-                          (getResourceAsStream file))
-          props (Properties.)]
-      (.load props file-reader)
-      (into {} props))
+    (with-open [rdr (io/reader (io/resource file))]
+      (let [props (Properties.)]
+        (.load props rdr)
+        (into {} props)))
     (catch Exception _e nil)))
-
-(defn- get-properties-filename [group artifact]
-  (str "META-INF/maven/" group "/" artifact "/pom.properties"))
 
 (defn- get-version
   "Attempts to get the project version from system properties (set when running
   Leiningen), or a properties file based on the group and artifact ids (in jars
   built by Leiningen), or a default version passed in.  Falls back to an empty
   string when no default is present."
-  ([group artifact]
-   (get-version group artifact ""))
-  ([group artifact default-version]
+  ([] (get-version ""))
+  ([default-version]
    (or (System/getProperty (str artifact ".version"))
-       (-> (get-properties-filename group artifact)
-           map-from-property-filepath
-           (get "version"))
+       (get (map-from-property-filepath properties-filename) "version")
        default-version)))
 
-(def ^{:private true} version-string
+(def ^:private version-string
   "Current version of nREPL as a string.
   See also `version`."
-  (get-version "nrepl" "nrepl"))
+  (get-version))
 
 (def version
   "Current version of nREPL.
