@@ -40,9 +40,9 @@ deploy: check-env
 		echo "[Error] CIRCLE_TAG $(CIRCLE_TAG) must start with 'v'."; \
 		exit 1; \
 	fi
-	export PROJECT_VERSION=$$(echo "$(CIRCLE_TAG)" | sed 's/^v//'); \
 	# Clean is performed inside deploy task, no need to clean in Make
-	clojure -T:build deploy :version "$PROJECT_VERSION"
+	export PROJECT_VERSION=$$(echo "$(CIRCLE_TAG)" | sed 's/^v//'); \
+	clojure -T:build deploy :version "\"$$PROJECT_VERSION\""
 
 # Usage: PROJECT_VERSION=99.99 make install
 install: check-install-env
