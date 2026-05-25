@@ -166,7 +166,7 @@ jobs:
           command: |
             java -version; if(-not $?){exit 9}
             clojure -T:build javac :with-tests true; if(-not $?){exit 9}
-            clojure -T:build test; if(-not $?){exit 9}
+            clojure -M:dev:test; if(-not $?){exit 9}
 
 run_always: &run_always
   filters:
