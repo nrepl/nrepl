@@ -10,10 +10,6 @@
 
 (declare docs)
 
-(defn- error-msg [errors]
-  (str "The following errors occurred while parsing your command:\n\n"
-       (str/join \newline errors)))
-
 ;; oh, kill me now
 (defn- markdown-escape
   [^String s]
