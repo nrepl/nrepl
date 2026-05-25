@@ -100,7 +100,7 @@ the REPL you're using.
 
 == Task Management
 
-See `Makefile` the list of for available tasks.
+See the `Makefile` for the list of available tasks.
 
 == Running the tests
 
