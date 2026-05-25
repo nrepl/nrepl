@@ -147,10 +147,10 @@ Use:
 The values in the `:handles` map are used to support the `"describe"` operation,
 which provides "a machine- and human-readable directory and documentation for
 the operations supported by an nREPL endpoint" (see
-`nrepl.impl.docs/generate-ops-info` and the results of
-`lein with-profile +docs run -m nrepl.impl.docs` xref:ops.adoc[here]).
+`build.docs/generate-ops-info` and the results of
+`make docs` xref:ops.adoc[here]).
 
-TIP: There's also `lein with-profile +docs run -m nrepl.impl.docs --output md`
+TIP: There's also `clojure -X:docs :format '"md"'`
 if you'd like to generate an ops listing in Markdown format.
 
 === Understanding middleware ordering
