@@ -1,5 +1,5 @@
 {:paths ["src/clojure" "res" "target/classes"
-         ;; Inlcude Java sources to paths so that they are packaged into the JAR
+         ;; Include Java sources to paths so that they are packaged into the JAR
          ;; and can later be jumped into.
          "src/java"]
  :deps {org.clojure/clojure {:mvn/version "1.12.4" :mvn/scope "provided"}}

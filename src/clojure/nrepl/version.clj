@@ -20,10 +20,10 @@
     (catch Exception _e nil)))
 
 (defn- get-version
-  "Attempts to get the project version from system properties (set when running
-  Leiningen), or a properties file based on the group and artifact ids (in jars
-  built by Leiningen), or a default version passed in.  Falls back to an empty
-  string when no default is present."
+  "Attempts to get the project version from system properties, or a properties
+  file based on the group and artifact ids (in jars built by tools.build), or a
+  default version passed in.  Falls back to an empty string when no default is
+  present."
   ([] (get-version ""))
   ([default-version]
    (or (System/getProperty (str artifact ".version"))
