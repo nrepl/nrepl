@@ -3,7 +3,8 @@
 == Overview
 
 This part of the documentation aims to guide you in the process of implementing
-an nREPL server. The focus is going to be on implementing the language-agnostic nREPL protocol,
+an nREPL server. The focus is going to be on implementing the language-agnostic
+nREPL protocol (formally specified at https://spec.nrepl.org[spec.nrepl.org]),
 not on specifics of the reference nREPL server implementation for Clojure.
 
 == Basics
