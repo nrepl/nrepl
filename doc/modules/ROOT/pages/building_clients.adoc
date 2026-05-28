@@ -22,6 +22,10 @@ Clojure(Script) servers can use EDN for richer type support (keywords, sets, etc
 are preserved rather than coerced to strings), but should ideally support bencode
 as well for maximum compatibility.
 
+TIP: Refer to https://spec.nrepl.org[spec.nrepl.org] for the canonical, normative
+description of the protocol — the op definitions and message shapes a client can
+rely on across server implementations.
+
 A typical message exchange between a client and a server would be:
 
 * Client sends `clone` to create a new session.

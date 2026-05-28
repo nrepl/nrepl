@@ -36,6 +36,8 @@ Extremely stable. nREPL's protocol and API are rock-solid and battle
 tested. nREPL's team pledges to evolve them only in
 backwards-compatible ways.
 
+The protocol itself is formally specified at <https://spec.nrepl.org>.
+
 All experimental features are marked explicitly as such in nREPL's
 documentation, but even those are fairly stable by most standards.
 
