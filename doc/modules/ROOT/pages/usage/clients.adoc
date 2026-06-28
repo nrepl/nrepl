@@ -15,6 +15,7 @@ servers written in any language.
 * https://git.sr.ht/~technomancy/shevek/[shevek] (A command-line nREPL client written in https://fennel-lang.org/[Fennel], works with non-Clojure servers)
 * https://github.com/kanej/parle[Parle] (A command-line nREPL client using node.js written in ClojureScript)
 * https://github.com/licht1stein/brepl[brepl] (A fast babashka based command-line nREPL client)
+* https://github.com/waddie/nautilos[Nautilos] (An LLM-oriented command-line nREPL client written in https://janet-lang.org[Janet], works with non-Clojure servers)
 
 NOTE: Leiningen uses REPL-y internally as its command-line nREPL client.
 
@@ -31,6 +32,7 @@ NOTE: Leiningen uses REPL-y internally as its command-line nREPL client.
 * https://github.com/liquidz/vim-iced[vim-iced] (Clojure Interactive Development Environment for Vim8/Neovim)
 * https://github.com/BetterThanTomorrow/calva[Calva] (Clojure & ClojureScript support for VS Code)
 * https://github.com/tonsky/Clojure-Sublimed[Clojure Sublimed] (Clojure support for Sublime Text)
+* https://github.com/waddie/nrepl.hx[nREPL.hx] (nREPL client for Helix, works with non-Clojure servers)
 
 If your preferred Clojure development environment supports nREPL, you're in luck.
 Just use it or connect to an existing nREPL endpoint and start hacking.
