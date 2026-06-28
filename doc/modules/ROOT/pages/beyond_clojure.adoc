@@ -33,4 +33,8 @@ documentation which clients are known to work well with them.
 
 * https://git.sr.ht/~ngraves/nrepl-scilab[nrepl-scilab] - an nREPL server for https://www.scilab.org/[Scilab]
 
+* https://github.com/waddie/nrepl-janet[nrepl-janet] - an nREPL client/server library for https://janet-lang.org/[Janet]
+
+* https://github.com/waddie/nrepl-steel[nrepl-steel] - a minimal nREPL server for https://github.com/mattwparas/steel[Steel Scheme]
+
 As you can see nREPL has implementations for many popular Lisp dialects, but it's certainly not limited to Lisp dialects.
