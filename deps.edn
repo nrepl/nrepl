@@ -40,7 +40,7 @@
   :cljfmt {:extra-deps {dev.weavejester/cljfmt {:mvn/version "0.15.6"}}
            :main-opts ["-m" "cljfmt.main"]}
 
-  :kondo {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2026.01.19"}}
+  :kondo {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2026.05.25"}}
           :main-opts ["-m" "clj-kondo.main" "--lint" "src"]}
 
   :eastwood {:extra-deps {jonase/eastwood {:mvn/version "1.4.3"}}
