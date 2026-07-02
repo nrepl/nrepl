@@ -343,7 +343,7 @@
                                                 ::middleware.print/stream? 1
                                                 ::middleware.print/buffer-size 100000})
                               (map clean-response))
-          _ (Thread/sleep 100)
+          _ (Thread/sleep 300)
           interrupt-responses (->> (message session {:op "interrupt"})
                                    (mapv clean-response))]
       ;; check the interrupt succeeded first; otherwise eval-responses will not terminate
