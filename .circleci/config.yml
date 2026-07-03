@@ -186,7 +186,7 @@ workflows:
           matrix:
             alias: "test-jdk8"
             parameters:
-              clojure_version: ["1.9", "1.10", "1.11", "1.12"]
+              clojure_version: ["1.9", "1.10", "1.11", "1.12", "1.13"]
               jdk_version: [jdk8]
               # JDK8 and 11 need junitsocket library to support sockets as
               # connection target.
@@ -213,7 +213,7 @@ workflows:
           matrix:
             alias: "test"
             parameters:
-              clojure_version: ["1.10", "1.11", "1.12"]
+              clojure_version: ["1.10", "1.11", "1.12", "1.13"]
               jdk_version: [jdk26]
           <<: *run_always
       - test_windows:
