@@ -2,7 +2,7 @@
          ;; Include Java sources to paths so that they are packaged into the JAR
          ;; and can later be jumped into.
          "src/java"]
- :deps {org.clojure/clojure {:mvn/version "1.12.4" :mvn/scope "provided"}}
+ :deps {org.clojure/clojure {:mvn/version "1.12.5" :mvn/scope "provided"}}
 
  :aliases
  {:build {:deps {io.github.clojure/tools.build {:mvn/version "0.10.10"}
@@ -24,6 +24,7 @@
   :1.10 {:override-deps {org.clojure/clojure {:mvn/version "1.10.3"}}}
   :1.11 {:override-deps {org.clojure/clojure {:mvn/version "1.11.4"}}}
   :1.12 {:override-deps {org.clojure/clojure {:mvn/version "1.12.4"}}}
+  :1.13 {:override-deps {org.clojure/clojure {:mvn/version "1.13.0-alpha2"}}}
 
   :+junixsocket {:extra-deps {com.kohlschutter.junixsocket/junixsocket-common {:mvn/version "2.10.1"}
                               com.kohlschutter.junixsocket/junixsocket-native-common {:mvn/version "2.10.1"}}}
