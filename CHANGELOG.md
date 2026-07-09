@@ -2,6 +2,10 @@
 
 ## master (unreleased)
 
+### Changes
+
+* [#284](https://github.com/nrepl/nrepl/issues/284): Include the `-f`/`--repl-fn` option in the command-line help output.
+
 ## 1.7.0 (2026-04-14)
 
 ### Changes

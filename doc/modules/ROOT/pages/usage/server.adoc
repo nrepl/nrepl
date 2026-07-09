@@ -86,6 +86,7 @@ interface (this output was simply generated with `--help`):
 
 ....
 -i/--interactive            Start nREPL and connect to it with the built-in client.
+-f/--repl-fn REPL-FN        The function to run as the built-in REPL when combined with --interactive; defaults to `nrepl.cmdline/run-repl`. Must be expressed as a namespace-qualified symbol. The underlying var will be automatically `require`d.
 -c/--connect                Connect to a running nREPL with the built-in client.
 -C/--color                  Use colors to differentiate values from output in the REPL. Must be combined with --interactive.
 -b/--bind ADDR              Bind address, by default "127.0.0.1".
@@ -97,6 +98,8 @@ interface (this output was simply generated with `--help`):
 -m/--middleware MIDDLEWARE  A sequence of vars (expressed as namespace-qualified symbols), representing middleware you wish to mix in to the nREPL handler. The underlying vars will be automatically `require`d. If unavailable, the server will exit unless symbols are marked with ^:optional metadata.
 -t/--transport TRANSPORT    The transport to use (default `nrepl.transport/bencode`), expressed as a namespace-qualified symbol. The underlying var will be automatically `require`d.
 --help                      Show this help message.
+-v/--version                Display the nREPL version.
+--verbose                   Show verbose output.
 ....
 
 [NOTE]
