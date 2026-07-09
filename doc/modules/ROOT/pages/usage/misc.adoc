@@ -98,6 +98,32 @@ The function should ideally return results in the following format:
  "Returns a lazy sequence consisting of the result of applying f to\n  the set of first items of each coll, followed by applying f to the\n  set of second items in each coll, until any one of the colls is\n  exhausted.  Any remaining items in other colls are ignored. Function\n  f should accept number-of-colls arguments. Returns a transducer when\n  no collection is provided."}
 ----
 
+This map is returned to the client under the `:info` key of the `lookup`
+response (alongside the usual `:status ["done"]`).
+
+Every key is optional -- it's included only when the looked-up var (or
+special form) actually carries the corresponding metadata. nREPL's default
+lookup function may return the following keys:
+
+`:name`:: The (unqualified) name of the var or special form.
+`:ns`:: The namespace the var belongs to.
+`:doc`:: The docstring, when present.
+`:arglists`:: The var's argument lists, as a string.
+`:arglists-str`:: A duplicate of `:arglists` kept for backwards compatibility. Deprecated and subject to removal (see the note above).
+`:file`:: The file in which the var is defined. An absolute path for files on disk, or a `jar:` URL for definitions inside a jar.
+`:line`:: The line in `:file` where the definition starts.
+`:column`:: The column in `:file` where the definition starts.
+`:added`:: The library version in which the var was added, when recorded in its metadata.
+`:deprecated`:: Present (as `"true"` or a version string) when the var is marked deprecated.
+`:macro`:: `"true"` when the var is a macro.
+`:special-form`:: `"true"` when the symbol names a special form (e.g. `if`, `do`).
+`:forms`:: The valid syntactic forms, for special forms and some macros.
+`:protocol`:: The protocol the var belongs to, when applicable.
+`:resource`:: The classpath-relative resource path of the defining file.
+
+All values are strings or numbers, so they survive the Bencode transport.
+A custom `lookup-fn` is free to return a different set of keys.
+
 NOTE: nREPL's default lookup function is pretty basic and it can only handle symbols that resolve to special
 forms and vars.
 
