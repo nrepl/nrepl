@@ -209,6 +209,7 @@ Exit:      Control+D or (exit) or (quit)"
   "Usage:
 
   -i/--interactive            Start nREPL and connect to it with the built-in client.
+  -f/--repl-fn REPL-FN        The function to run as the built-in REPL when combined with --interactive; defaults to `nrepl.cmdline/run-repl`. Must be expressed as a namespace-qualified symbol. The underlying var will be automatically `require`d.
   -c/--connect                Connect to a running nREPL with the built-in client.
   -C/--color                  Use colors to differentiate values from output in the REPL. Must be combined with --interactive.
   -b/--bind ADDR              Bind address, by default \"127.0.0.1\".
