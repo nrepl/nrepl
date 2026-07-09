@@ -2,6 +2,10 @@
 
 ## master (unreleased)
 
+### New features
+
+* [#93](https://github.com/nrepl/nrepl/issues/93): Allow configuring the default print function via the `:printer` and `:printer-options` configuration keys.
+
 ### Changes
 
 * [#284](https://github.com/nrepl/nrepl/issues/284): Include the `-f`/`--repl-fn` option in the command-line help output.
