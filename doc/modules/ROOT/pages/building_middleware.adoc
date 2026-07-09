@@ -234,6 +234,46 @@ When using `safe-handle`, the handler function (e.g. `foo-reply`) should return
 a response map rather than sending the response itself -- `safe-handle` takes
 care of sending via `respond-to`.
 
+=== Terminating and passing through requests
+
+Every request a client sends expects at least one response that carries a
+`:done` status -- that's how clients know the exchange is over and stop waiting
+for more messages. When your middleware handles an op, make sure exactly one
+response includes `:done` (typically the final one). Sending it more than once,
+or attaching it to an intermediate message, can confuse clients that treat
+`:done` as "this exchange is complete" (see https://github.com/nrepl/nrepl/issues/215[nrepl/nrepl#215]
+for an example of the trouble that causes).
+
+Just as important, a middleware should only act on the ops it actually handles
+and delegate everything else to the downstream handler `h`:
+
+[source,clojure]
+----
+(fn [{:keys [op] :as msg}]
+  (if (= op "foo")
+    (handle-foo msg)
+    (h msg)))  ;; <- don't swallow ops you don't handle
+----
+
+Forgetting to call `h` for unknown ops effectively breaks every other op in the
+stack, since requests that should have flowed to the middleware below yours
+silently disappear.
+
+=== Keep your descriptor accurate
+
+The middleware descriptor isn't just documentation -- nREPL uses `:requires`
+and `:expects` to order the middleware stack (see
+xref:design/middleware.adoc[the middleware design documentation] for the exact
+semantics). Getting them wrong leads to middleware running in the wrong order,
+which tends to surface as subtle, hard-to-debug failures.
+
+It also pays to fully document each op you handle via `:doc`, `:requires`,
+`:optional` and `:returns` in the `:handles` map. This information is exposed to
+clients through the `describe` op and is used to generate
+xref:ops.adoc[the built-in ops documentation], so a well-described op directly
+improves the experience of every client author integrating with your
+middleware.
+
 == Additional Resources
 
 * https://metaredux.com/posts/2019/12/04/documenting-nrepl-middleware-apis.html
