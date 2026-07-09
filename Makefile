@@ -1,4 +1,4 @@
-.PHONY: test eastwood cljfmt kondo install deploy clean lint copy-sources-to-jdk javac javac-test
+.PHONY: test eastwood cljfmt kondo install deploy clean lint copy-sources-to-jdk javac javac-test docs verify-docs
 .DEFAULT_GOAL := install
 
 # Set bash instead of sh for the @if [[ conditions,
@@ -30,6 +30,17 @@ cloverage:
 
 docs:
 	clojure -X:docs :file '"doc/modules/ROOT/pages/ops.adoc"' :version '"1.7.0"'
+
+# Regenerate ops.adoc and fail if it differs from the committed version.
+# This catches cases where middleware descriptors changed but the generated
+# docs weren't regenerated (or ops.adoc was edited by hand).
+verify-docs: docs
+	@if ! git diff --quiet -- doc/modules/ROOT/pages/ops.adoc; then \
+		echo "[Error] ops.adoc is out of sync with the middleware descriptors."; \
+		echo "Run 'make docs' and commit the result."; \
+		git --no-pager diff -- doc/modules/ROOT/pages/ops.adoc; \
+		exit 1; \
+	fi
 
 lint: kondo cljfmt eastwood
 
