@@ -384,7 +384,7 @@
                             {:doc "Closes the specified session."
                              :requires {"session" "The ID of the session to be closed."}
                              :optional {}
-                             :returns {}}
+                             :returns {"status" "'session-closed' if the session was successfully closed. Sent in addition to the usual 'done' status, so clients should check for it to confirm the session was actually closed (rather than assuming success from 'done' alone)."}}
                             "ls-sessions"
                             {:doc "Lists the IDs of all active sessions."
                              :requires {}

@@ -38,7 +38,8 @@ Optional parameters::
 {blank}
 
 Returns::
-{blank}
+* `:status` 'session-closed' if the session was successfully closed. Sent in addition to the usual 'done' status, so clients should check for it to confirm the session was actually closed (rather than assuming success from 'done' alone).
+
 
 
 === `completions`
