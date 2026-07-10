@@ -124,6 +124,10 @@ jobs:
                 name: Verifying Cljdoc
                 command: |
                   make verify-cljdoc
+            - run:
+                name: Verifying Ops Docs
+                command: |
+                  make verify-docs
 
   deploy:
     executor: jdk8
