@@ -4,6 +4,7 @@
    [clojure.java.io :refer [as-file]]
    [clojure.string :as str]
    [clojure.test :refer :all]
+   [com.github.ivarref.locksmith :as locksmith]
    [matcher-combinators.matchers :as m]
    [nrepl.ack :as ack]
    [nrepl.bencode :refer [write-bencode]]
@@ -13,8 +14,8 @@
    [nrepl.middleware :as middleware]
    [nrepl.server :as server]
    [nrepl.socket
-    :refer [find-class unix-domain-flavor unix-socket-address]]
-   [nrepl.test-helpers :refer [eval-value1 free-port is+ with-process]]
+    :refer [as-nrepl-uri find-class unix-domain-flavor unix-socket-address]]
+   [nrepl.test-helpers :refer [eval-value1 free-port is+ win? with-process]]
    [nrepl.transport :as transport])
   (:import
    (java.lang ProcessBuilder$Redirect)
@@ -206,6 +207,7 @@
     "nrepl://localhost:7888" "nrepl"
     "NREPL://localhost"      "nrepl"
     "nrepl+edn://host:1"     "nrepl+edn"
+    "nrepls://host:7888"     "nrepls"
     "http://host/repl"       "http"
     "https://host/repl"      "https"
     "localhost"              nil
@@ -222,6 +224,50 @@
       (with-redefs [cmd/die died]
         (is (thrown-with-msg? clojure.lang.ExceptionInfo #"does not support the tty transport"
                               (#'cmd/ensure-url-scheme-support! "telnet")))))))
+
+(deftest tls-url-option-validation
+  (let [died (fn [& msg] (throw (ex-info (apply str msg) {})))]
+    (with-redefs [cmd/die died]
+      (are [url opts re] (thrown-with-msg? clojure.lang.ExceptionInfo re
+                                           (#'cmd/run-repl url nil opts))
+        ;; TLS URLs demand the TLS keys options
+        "nrepls://localhost:12345"     {}                          #"require --tls-keys-file or --tls-keys-str"
+        "nrepl+edns://localhost:12345" {}                          #"require --tls-keys-file or --tls-keys-str"
+        ;; TLS keys options are rejected for non-TLS URL schemes
+        "nrepl://localhost:12345"      {:tls-keys-str "irrelevant"} #"only supported for nrepls:// or nrepl\+edns://"
+        ;; TLS URLs without a usable host are rejected
+        "nrepls://"                    {:tls-keys-str "irrelevant"} #"Invalid URL"
+        "nrepls:///nohost"             {:tls-keys-str "irrelevant"} #"Can't extract a host"
+        ;; ... as are out-of-range ports
+        "nrepls://localhost:444401"    {:tls-keys-str "irrelevant"} #"Invalid port"))))
+
+(deftest can-connect-via-tls-url
+  (if win?
+    ;; TLS is not exercised on Windows (see nrepl.tls-test); assert something
+    ;; so the test isn't reported as running without assertions.
+    (is win? "TLS tests are skipped on Windows")
+    (let [{:keys [ca-cert server-cert server-key client-cert client-key]} (locksmith/gen-certs {:duration-days 1})
+          server-keys (str ca-cert server-cert server-key)
+          client-keys (str ca-cert client-cert client-key)]
+      (doseq [transport-fn [#'transport/bencode #'transport/edn]]
+        (with-open [^Server server (server/start-server :tls? true
+                                                        :tls-keys-str server-keys
+                                                        :transport-fn transport-fn)]
+          ;; Connect via the exact URL the server advertises in its startup
+          ;; message (nrepls:// or nrepl+edns://).
+          (let [url (str (as-nrepl-uri server (transport/uri-scheme transport-fn)))
+                >devnull (fn [& _] nil)
+                results (atom [])]
+            (binding [*in* (java.io.PushbackReader. (java.io.StringReader. "(+ 1 2)"))]
+              (with-redefs [cmd/clean-up-and-exit >devnull]
+                (#'cmd/run-repl url nil
+                                {:tls-keys-str client-keys
+                                 :prompt >devnull
+                                 :err    >devnull
+                                 :out    >devnull
+                                 :value  #(swap! results conj %)})
+                (is (= ["3"] @results)
+                    (str "connecting via " url))))))))))
 
 (deftest can-connect-via-url
   (with-server-every-transport nil

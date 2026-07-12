@@ -160,6 +160,40 @@ Exit:      Control+D or (exit) or (quit)"
         (die (format "nREPL: connecting to %s URLs requires the nrepl/drawbridge library on the classpath.\n"
                      scheme))))))
 
+(def ^:private tls-url-transports
+  "The transports the built-in client can use over TLS, keyed by the URL
+  scheme a TLS-enabled server advertises in its startup message - the
+  transport's own URI scheme with an appended \"s\", the same rule
+  `nrepl.socket/as-nrepl-uri` uses to produce it."
+  (into {}
+        (map (fn [transport] [(str (transport/uri-scheme transport) "s") transport]))
+        [#'transport/bencode #'transport/edn]))
+
+(defn- tls-url-connect
+  "Connects to a TLS URL (see `tls-url-transports`), as advertised in a
+  TLS-enabled server's startup message. The TLS keys must be supplied
+  separately via the `:tls-keys-file`/`:tls-keys-str` options."
+  [url scheme {:keys [tls-keys-file tls-keys-str]}]
+  (when-not (or tls-keys-file tls-keys-str)
+    (die (format "nREPL: %s:// URLs require --tls-keys-file or --tls-keys-str.\n" scheme)))
+  (let [^java.net.URI uri (try
+                            (java.net.URI. ^String url)
+                            (catch java.net.URISyntaxException e
+                              (die (format "nREPL: Invalid URL %s (%s).\n" url (.getMessage e)))))
+        host (.getHost uri)
+        port (.getPort uri)]
+    (when-not host
+      (die (format "nREPL: Can't extract a host from the URL %s.\n" url)))
+    (when (> port 65535)
+      (die (format "nREPL: Invalid port %d in URL %s.\n" port url)))
+    (nrepl/connect :host host
+                   ;; The same default port nrepl.core/url-connect uses for
+                   ;; the other nrepl schemes.
+                   :port (if (pos? port) port 7888)
+                   :transport-fn (tls-url-transports scheme)
+                   :tls-keys-file tls-keys-file
+                   :tls-keys-str tls-keys-str)))
+
 (defn- run-repl
   ([{:keys [server options]}]
    (let [{:keys [host port socket] :or {host "127.0.0.1"}} server
@@ -167,9 +201,13 @@ Exit:      Control+D or (exit) or (quit)"
          scheme (connect-url-scheme host)]
      (run-repl-with-transport
       (cond
+        (contains? tls-url-transports scheme)
+        (tls-url-connect host scheme options)
+
         scheme
         (do (when (or tls-keys-file tls-keys-str)
-              (die "nREPL: TLS options are not supported when connecting via a URL.\n"))
+              (die (format "nREPL: TLS options with a URL are only supported for %s URLs.\n"
+                           (str/join " or " (map #(str % "://") (keys tls-url-transports))))))
             (ensure-url-scheme-support! scheme)
             (try
               (nrepl/url-connect host)
@@ -251,7 +289,7 @@ Exit:      Control+D or (exit) or (quit)"
   -c/--connect                Connect to a running nREPL with the built-in client.
   -C/--color                  Use colors to differentiate values from output in the REPL. Must be combined with --interactive.
   -b/--bind ADDR              Bind address, by default \"127.0.0.1\".
-  -h/--host ADDR              Host address to connect to when using --connect. Defaults to \"127.0.0.1\". May also be a URL (e.g. nrepl://host:port or, with nrepl/drawbridge on the classpath, http(s)://host/repl), in which case the transport is chosen from the scheme.
+  -h/--host ADDR              Host address to connect to when using --connect. Defaults to \"127.0.0.1\". May also be a URL (e.g. nrepl://host:port, nrepls://host:port for TLS servers (requires --tls-keys-file or --tls-keys-str) or, with nrepl/drawbridge on the classpath, http(s)://host/repl), in which case the transport is chosen from the scheme.
   -p/--port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
   -s/--socket PATH            Start nREPL on filesystem socket at PATH or nREPL to connect to when using --connect.
   --ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.

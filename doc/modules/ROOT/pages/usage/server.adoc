@@ -90,7 +90,7 @@ interface (this output was simply generated with `--help`):
 -c/--connect                Connect to a running nREPL with the built-in client.
 -C/--color                  Use colors to differentiate values from output in the REPL. Must be combined with --interactive.
 -b/--bind ADDR              Bind address, by default "127.0.0.1".
--h/--host ADDR              Host address to connect to when using --connect. Defaults to "127.0.0.1". May also be a URL (e.g. nrepl://host:port or, with nrepl/drawbridge on the classpath, http(s)://host/repl), in which case the transport is chosen from the scheme.
+-h/--host ADDR              Host address to connect to when using --connect. Defaults to "127.0.0.1". May also be a URL (e.g. nrepl://host:port, nrepls://host:port for TLS servers (requires --tls-keys-file or --tls-keys-str) or, with nrepl/drawbridge on the classpath, http(s)://host/repl), in which case the transport is chosen from the scheme.
 -p/--port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
 -s/--socket PATH            Start nREPL on filesystem socket at PATH.
 --ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.

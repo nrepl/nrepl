@@ -106,7 +106,19 @@ user=> (+ 1 2)
 ----
 
 The built-in schemes are `nrepl` (the default Bencode transport) and
-`nrepl+edn` (the EDN transport). Connecting over HTTP or HTTPS is also
+`nrepl+edn` (the EDN transport).
+
+A TLS-enabled server advertises a TLS URL in its startup message - `nrepls://`
+(Bencode) or `nrepl+edns://` (EDN) - and you can connect using that URL. You
+still have to supply the client keys, so combine it with `--tls-keys-file` (or
+`--tls-keys-str`; see the xref:usage/tls.adoc[TLS documentation]):
+
+[source,shell]
+----
+$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.7.0"}}}' -M -m nrepl.cmdline --connect --host nrepls://127.0.0.1:4001 --tls-keys-file client.keys
+----
+
+Connecting over HTTP or HTTPS is also
 supported via the https://github.com/nrepl/drawbridge[Drawbridge] library -
 add `nrepl/drawbridge` to your dependencies and connect with an `http://` or
 `https://` URL:

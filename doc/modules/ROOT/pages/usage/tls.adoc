@@ -123,6 +123,14 @@ nil
 $ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.7.0"}}}' -M -m nrepl.cmdline --connect --host 127.0.0.1 --port 4001 --tls-keys-file client.keys
 ----
 
+You can also use the `nrepls://` URL that the server prints in its startup
+message (the TLS keys still have to be supplied separately):
+
+[source,shell]
+----
+$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.7.0"}}}' -M -m nrepl.cmdline --connect --host nrepls://127.0.0.1:4001 --tls-keys-file client.keys
+----
+
 == Use the TLS TCP proxy
 
 If your editor/IDE does not support nREPL TLS connections yet, you may start a local proxy server:
