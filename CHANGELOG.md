@@ -2,6 +2,10 @@
 
 ## master (unreleased)
 
+### New features
+
+* The built-in command-line client can now connect using a URL (via `--connect --host <url>`), routing through `nrepl.core/url-connect`. This adds HTTP/HTTPS support through the optional `nrepl/drawbridge` library.
+
 ### Changes
 
 * [#284](https://github.com/nrepl/nrepl/issues/284): Include the `-f`/`--repl-fn` option in the command-line help output.

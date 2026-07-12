@@ -132,12 +132,50 @@ Exit:      Control+D or (exit) or (quit)"
                 (swap! awaiting dissoc id)
                 (recur)))))))))
 
+(defn- connect-url-scheme
+  "If `s` looks like a URI with a scheme (e.g. \"nrepl://…\" or \"http://…\"),
+  return the lower-cased scheme; otherwise nil."
+  [s]
+  (when (string? s)
+    (some-> (re-find #"\A([a-zA-Z][a-zA-Z0-9+.-]*)://" s) second str/lower-case)))
+
+(defn- ensure-url-scheme-support!
+  "Make sure the built-in client can actually use `scheme`.
+
+  HTTP(S) support is provided by the optional `nrepl/drawbridge` library, so
+  require it on demand for those schemes (registering its
+  `nrepl.core/url-connect` implementation) and fail helpfully when it's missing.
+  The `telnet` scheme is rejected here, mirroring the tty guard in
+  `interactive-repl`. Schemes handled by nREPL itself (e.g. `nrepl`) need no
+  extra deps."
+  [scheme]
+  (cond
+    (= "telnet" scheme)
+    (die "The built-in client does not support the tty transport. Consider using `nc` or `telnet`.\n")
+
+    (#{"http" "https"} scheme)
+    (try
+      (require 'drawbridge.client)
+      (catch FileNotFoundException _
+        (die (format "nREPL: connecting to %s URLs requires the nrepl/drawbridge library on the classpath.\n"
+                     scheme))))))
+
 (defn- run-repl
   ([{:keys [server options]}]
    (let [{:keys [host port socket] :or {host "127.0.0.1"}} server
-         {:keys [transport tls-keys-file tls-keys-str] :or {transport #'transport/bencode}} options]
+         {:keys [transport tls-keys-file tls-keys-str] :or {transport #'transport/bencode}} options
+         scheme (connect-url-scheme host)]
      (run-repl-with-transport
       (cond
+        scheme
+        (do (when (or tls-keys-file tls-keys-str)
+              (die "nREPL: TLS options are not supported when connecting via a URL.\n"))
+            (ensure-url-scheme-support! scheme)
+            (try
+              (nrepl/url-connect host)
+              (catch IllegalArgumentException e
+                (die (format "nREPL: %s\n" (.getMessage e))))))
+
         socket
         (nrepl/connect :socket socket :transport-fn transport)
 
@@ -145,7 +183,7 @@ Exit:      Control+D or (exit) or (quit)"
         (nrepl/connect :host host :port port :transport-fn transport :tls-keys-file tls-keys-file :tls-keys-str tls-keys-str)
 
         :else
-        (die "Must supply host/port or socket."))
+        (die "Must supply host/port, socket, or a URL."))
       options)))
   ([host port]
    (run-repl host port nil))
@@ -213,7 +251,7 @@ Exit:      Control+D or (exit) or (quit)"
   -c/--connect                Connect to a running nREPL with the built-in client.
   -C/--color                  Use colors to differentiate values from output in the REPL. Must be combined with --interactive.
   -b/--bind ADDR              Bind address, by default \"127.0.0.1\".
-  -h/--host ADDR              Host address to connect to when using --connect. Defaults to \"127.0.0.1\".
+  -h/--host ADDR              Host address to connect to when using --connect. Defaults to \"127.0.0.1\". May also be a URL (e.g. nrepl://host:port or, with nrepl/drawbridge on the classpath, http(s)://host/repl), in which case the transport is chosen from the scheme.
   -p/--port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
   -s/--socket PATH            Start nREPL on filesystem socket at PATH or nREPL to connect to when using --connect.
   --ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.

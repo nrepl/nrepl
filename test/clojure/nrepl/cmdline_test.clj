@@ -201,6 +201,46 @@
                                :value #(swap! results conj %)})
               (is (= expected-output @results)))))))))
 
+(deftest connect-url-scheme-test
+  (are [in out] (= out (#'cmd/connect-url-scheme in))
+    "nrepl://localhost:7888" "nrepl"
+    "NREPL://localhost"      "nrepl"
+    "nrepl+edn://host:1"     "nrepl+edn"
+    "http://host/repl"       "http"
+    "https://host/repl"      "https"
+    "localhost"              nil
+    "127.0.0.1:7888"         nil
+    ""                       nil
+    nil                      nil))
+
+(deftest ensure-url-scheme-support-test
+  (testing "schemes handled by nREPL itself need no extra setup"
+    (is (nil? (#'cmd/ensure-url-scheme-support! "nrepl")))
+    (is (nil? (#'cmd/ensure-url-scheme-support! "nrepl+edn"))))
+  (testing "telnet is rejected, since the built-in client can't drive a tty transport"
+    (let [died (fn [& msg] (throw (ex-info (apply str msg) {})))]
+      (with-redefs [cmd/die died]
+        (is (thrown-with-msg? clojure.lang.ExceptionInfo #"does not support the tty transport"
+                              (#'cmd/ensure-url-scheme-support! "telnet")))))))
+
+(deftest can-connect-via-url
+  (with-server-every-transport nil
+    (testing "the built-in client can connect using a URL routed through url-connect"
+      (let [url      (format "%s://%s:%d"
+                             (transport/uri-scheme *transport-fn*)
+                             (:host *server*)
+                             (:port *server*))
+            >devnull (fn [& _] nil)]
+        (binding [*in* (java.io.PushbackReader. (java.io.StringReader. "(+ 1 2)"))]
+          (with-redefs [cmd/clean-up-and-exit >devnull]
+            (let [results (atom [])]
+              (#'cmd/run-repl url nil
+                              {:prompt >devnull
+                               :err    >devnull
+                               :out    >devnull
+                               :value  #(swap! results conj %)})
+              (is (= ["3"] @results)))))))))
+
 ;;; Unix domain socket tests
 
 (defn send-jdk-socket-message [message path]
