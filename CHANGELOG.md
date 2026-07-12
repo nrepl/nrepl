@@ -14,6 +14,7 @@
 - [#464](https://github.com/nrepl/nrepl/pull/464): Revert an earlier change that broke use of custom classloaders via `setContextClassLoader`
 - [#458](https://github.com/nrepl/nrepl/pull/458): Document the TLS security model and include the `--tls-keys-file`/`--tls-keys-str` options in the command-line help output.
 - [#458](https://github.com/nrepl/nrepl/pull/458): Report descriptive errors for invalid TLS key material (missing, legacy-format or encrypted private keys, missing certificates) and preserve the underlying exception causes.
+- [#458](https://github.com/nrepl/nrepl/pull/458): Detect and accept a swapped CA/own certificate order in TLS key material containing exactly two certificates.
 
 ## 1.7.0 (2026-04-14)
 
