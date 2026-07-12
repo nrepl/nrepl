@@ -13,6 +13,7 @@
 - [#376](https://github.com/nrepl/nrepl/issues/376): Document the `session-closed` status returned by the `close` op.
 - [#464](https://github.com/nrepl/nrepl/pull/464): Revert an earlier change that broke use of custom classloaders via `setContextClassLoader`
 - [#458](https://github.com/nrepl/nrepl/pull/458): Document the TLS security model and include the `--tls-keys-file`/`--tls-keys-str` options in the command-line help output.
+- [#458](https://github.com/nrepl/nrepl/pull/458): Report descriptive errors for invalid TLS key material (missing, legacy-format or encrypted private keys, missing certificates) and preserve the underlying exception causes.
 
 ## 1.7.0 (2026-04-14)
 
