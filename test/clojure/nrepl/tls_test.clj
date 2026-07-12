@@ -110,6 +110,20 @@
       (let [e (ctx-error (str ca-cert server-cert))]
         (is (some? (.getCause e)))))))
 
+(deftest swapped-certificate-order
+  ;; The documented keys file layout is CA certificate first, own certificate
+  ;; second, but the reverse order should be detected and handled.
+  (let [{:keys [ca-cert server-cert server-key client-cert client-key]} (locksmith/gen-certs {:duration-days 1})
+        server-keys (str server-cert ca-cert server-key)
+        client-keys (str client-cert ca-cert client-key)]
+    (with-open [server (server/start-server :tls? true :tls-keys-str server-keys)
+                transport (tls-connect {:tls-keys-str client-keys
+                                        :host         "127.0.0.1"
+                                        :port         (:port server)
+                                        :transport-fn transport/bencode})]
+      (let [client (nrepl/client transport 30000)]
+        (is (= 2 (eval-value1 client '(+ 1 1))))))))
+
 (deftest bad-keys
   (let [[server-keys _] (gen-key-pair)
         [_ client-keys] (gen-key-pair)

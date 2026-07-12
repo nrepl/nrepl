@@ -151,19 +151,37 @@
   (with-open [stream (input-stream (.getBytes pem))]
     (.generateCertificate x509-cert-factory stream)))
 
+(defn- issued-by?
+  "Returns true if `cert`'s signature verifies against `issuer`'s public key.
+  Returns false when verification fails for any reason, including the
+  signature algorithm being unavailable on this JVM - in which case the JVM
+  couldn't complete a TLS handshake with these certificates anyway."
+  [^Certificate cert ^Certificate issuer]
+  (try
+    (.verify cert (.getPublicKey issuer))
+    true
+    (catch Exception _
+      false)))
+
 (defn- ca-and-chain
   "Splits the PEM certificate blocks into the trust root (CA) and the own
-  certificate chain: the CA certificate comes first, the own certificate
-  second, and any further blocks are ignored (as they always have been)."
+  certificate chain. The documented layout is CA certificate first, own
+  certificate second; for that common two-certificate case a swapped order
+  is detected (by checking which certificate was issued by the other) and
+  handled transparently. With three or more blocks the documented layout is
+  assumed and the extra blocks are ignored (as they always have been)."
   [cert-pems]
-  (case (count cert-pems)
-    0 (throw (ex-info (str "No certificates found. " key-material-description)
-                      {}))
-    1 (throw (ex-info (str "Only one certificate found, but the TLS keys material must contain "
-                           "both the CA certificate and the server's/client's own certificate.")
-                      {}))
-    {:ca (parse-certificate (first cert-pems))
-     :chain [(parse-certificate (second cert-pems))]}))
+  (let [n (count cert-pems)]
+    (case n
+      0 (throw (ex-info (str "No certificates found. " key-material-description)
+                        {}))
+      1 (throw (ex-info (str "Only one certificate found, but the TLS keys material must contain "
+                             "both the CA certificate and the server's/client's own certificate.")
+                        {}))
+      (let [[a b] (map parse-certificate (take 2 cert-pems))]
+        (if (and (= 2 n) (issued-by? a b) (not (issued-by? b a)))
+          {:ca b :chain [a]}
+          {:ca a :chain [b]})))))
 
 (defn- key-store
   "Makes a keystore from a private key and a public certificate"
