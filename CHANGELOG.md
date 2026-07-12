@@ -6,6 +6,10 @@
 
 ## master (unreleased)
 
+### New features
+
+* The built-in command-line client can now connect using a URL (via `--connect --host <url>`), routing through `nrepl.core/url-connect`. This adds HTTP/HTTPS support through the optional `nrepl/drawbridge` library.
+
 ### Changes
 
 - [#462](https://github.com/nrepl/nrepl/pull/462): **(Breaking)** Raise minimal supported Clojure version to 1.10.
