@@ -9,6 +9,7 @@
 * Document the TLS security model and include the `--tls-keys-file`/`--tls-keys-str` options in the command-line help output.
 * Report descriptive errors for invalid TLS key material (missing, legacy-format or encrypted private keys, missing certificates) and preserve the underlying exception causes.
 * Detect and accept a swapped CA/own certificate order in TLS key material containing exactly two certificates.
+* Support Ed25519 (PKCS#8) private keys for TLS on Java 15+.
 
 ## 1.7.0 (2026-04-14)
 

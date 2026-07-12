@@ -42,7 +42,9 @@
   (char-array "GheesBetDyPhuvwotNolofamLydMues9"))
 
 (def ^:private key-factory-algorithms
-  ["EC" "RSA"])
+  ;; EdDSA (Ed25519/Ed448) is only available on Java 15+; on older JVMs it is
+  ;; skipped and reported as unavailable if the key can't be parsed at all.
+  ["EC" "RSA" "EdDSA"])
 
 (def ^:private key-material-description
   (str "The TLS keys material must contain the CA certificate, the certificate "

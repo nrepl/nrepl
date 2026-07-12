@@ -110,6 +110,19 @@
       (let [e (ctx-error (str ca-cert server-cert))]
         (is (some? (.getCause e)))))))
 
+(deftest ed25519-private-key-parsing
+  (if-let [^java.security.KeyPairGenerator kpg (try
+                                                 (java.security.KeyPairGenerator/getInstance "Ed25519")
+                                                 (catch java.security.NoSuchAlgorithmException _
+                                                   nil))]
+    (let [^java.security.PrivateKey private-key (.getPrivate (.generateKeyPair kpg))
+          pem (str "-----BEGIN PRIVATE KEY-----\n"
+                   (.encodeToString (java.util.Base64/getEncoder) (.getEncoded private-key))
+                   "\n-----END PRIVATE KEY-----\n")]
+      (is (instance? java.security.PrivateKey (#'tls/str->private-key pem))))
+    ;; Ed25519 needs Java 15+; nothing to test on older JDKs.
+    (is true)))
+
 (deftest swapped-certificate-order
   ;; The documented keys file layout is CA certificate first, own certificate
   ;; second, but the reverse order should be detected and handled.
