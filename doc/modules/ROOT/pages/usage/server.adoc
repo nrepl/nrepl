@@ -92,7 +92,9 @@ interface (this output was simply generated with `--help`):
 -b/--bind ADDR              Bind address, by default "127.0.0.1".
 -h/--host ADDR              Host address to connect to when using --connect. Defaults to "127.0.0.1".
 -p/--port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
--s/--socket PATH            Start nREPL on filesystem socket at PATH.
+-s/--socket PATH            Start nREPL on filesystem socket at PATH or nREPL to connect to when using --connect.
+--tls-keys-file FILE        Enable TLS, reading the CA certificate, certificate and private key from FILE. Applies both when starting a server and when using --connect. See the TLS section of the manual for details on generating the keys.
+--tls-keys-str KEYS         Same as --tls-keys-file, but the certificates and private key are passed directly as a string.
 --ack ACK-PORT              Acknowledge the port of this server to another nREPL server running on ACK-PORT.
 -n/--handler HANDLER        The nREPL message handler to use for each incoming connection; defaults to the result of `(nrepl.server/default-handler)`. Must be expressed as a namespace-qualified symbol. The underlying var will be automatically `require`d.
 -m/--middleware MIDDLEWARE  A sequence of vars (expressed as namespace-qualified symbols), representing middleware you wish to mix in to the nREPL handler. The underlying vars will be automatically `require`d. If unavailable, the server will exit unless symbols are marked with ^:optional metadata.

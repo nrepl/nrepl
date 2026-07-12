@@ -92,7 +92,9 @@ If you're having trouble with TLS connections, the most common issues are:
 * *Certificate not found* -- verify the path in `:tls-keys-file` points to an
 existing file.
 * *Handshake timeout* -- the default handshake timeout is 30 seconds. If
-clients are on a slow network, this may not be enough.
+clients are on a slow network, this may not be enough. You can raise it by
+altering `nrepl.tls/*handshake-timeout-ms*` on the server, e.g.
+`(alter-var-root #'nrepl.tls/*handshake-timeout-ms* (constantly 60000))`.
 * *"Cannot use same keys as server"* -- the server rejects connections where
 the client presents the same certificate as the server. Generate separate
 client and server key files.

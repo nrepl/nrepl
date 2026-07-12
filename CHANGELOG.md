@@ -6,6 +6,7 @@
 
 * [#284](https://github.com/nrepl/nrepl/issues/284): Include the `-f`/`--repl-fn` option in the command-line help output.
 * [#376](https://github.com/nrepl/nrepl/issues/376): Document the `session-closed` status returned by the `close` op.
+* Document the TLS security model and include the `--tls-keys-file`/`--tls-keys-str` options in the command-line help output.
 
 ## 1.7.0 (2026-04-14)
 
