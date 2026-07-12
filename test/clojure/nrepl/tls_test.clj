@@ -1,11 +1,12 @@
 (ns nrepl.tls-test
-  (:require [clojure.test :refer [deftest is use-fixtures]]
+  (:require [clojure.string :as str]
+            [clojure.test :refer [deftest is testing use-fixtures]]
             [com.github.ivarref.locksmith :as locksmith]
             [nrepl.core :as nrepl]
             [nrepl.server :as server]
+            [nrepl.test-helpers :refer [eval-value1 win?]]
             [nrepl.tls :as tls]
             [nrepl.tls-client-proxy :as tls-client-proxy]
-            [nrepl.test-helpers :refer [eval-value1 win?]]
             [nrepl.transport :as transport])
   (:import (clojure.lang ExceptionInfo)
            (java.lang AutoCloseable)
@@ -56,6 +57,58 @@
                         (server/start-server :tls? true)
                         (catch Throwable t
                           (ex-data t)))))))
+
+(defn- ctx-error
+  "Returns the ExceptionInfo thrown when creating a TLS context from
+  `keys-str`, or nil if no exception was thrown."
+  ^ExceptionInfo [keys-str]
+  (try
+    (tls/ssl-context-or-throw keys-str nil)
+    nil
+    (catch ExceptionInfo e
+      e)))
+
+(defn- is-ctx-error
+  "Asserts that creating a TLS context from `keys-str` fails with an error
+  message containing all of `substrs`."
+  [keys-str & substrs]
+  (let [e (ctx-error keys-str)]
+    (is (some? e))
+    (when e
+      (doseq [substr substrs]
+        (is (str/includes? (.getMessage e) substr))))))
+
+(deftest descriptive-key-material-errors
+  (let [{:keys [ca-cert server-cert server-key]} (locksmith/gen-certs {:duration-days 1})]
+    (testing "missing private key"
+      (is-ctx-error (str ca-cert server-cert) "No private key found"))
+    (testing "no certificates"
+      (is-ctx-error server-key "No certificates found"))
+    (testing "only one certificate"
+      (is-ctx-error (str ca-cert server-key) "Only one certificate found"))
+    (testing "traditional (non-PKCS#8) private key gets conversion advice"
+      (let [sec1-key (str/replace server-key "PRIVATE KEY-----" "EC PRIVATE KEY-----")]
+        (is-ctx-error (str ca-cert server-cert sec1-key)
+                      "EC PRIVATE KEY format" "openssl pkcs8 -topk8")))
+    (testing "password-protected private key"
+      (let [enc-key (str/replace server-key "PRIVATE KEY-----" "ENCRYPTED PRIVATE KEY-----")]
+        (is-ctx-error (str ca-cert server-cert enc-key) "password-protected")))
+    (testing "an unparsable private key reports the attempted algorithms"
+      (let [bad-key "-----BEGIN PRIVATE KEY-----\nAAAA\n-----END PRIVATE KEY-----\n"]
+        (is-ctx-error (str ca-cert server-cert bad-key) "Could not parse the private key")))
+    (testing "mismatched PEM labels get a structural error instead of \"not found\""
+      (let [broken-key (str/replace server-key
+                                    "-----END PRIVATE KEY-----"
+                                    "-----END RSA PRIVATE KEY-----")]
+        (is-ctx-error (str ca-cert server-cert broken-key) "PEM structure")))
+    (testing "surrounding whitespace on the PEM fence lines is tolerated"
+      (let [indented-key (->> (str/split-lines server-key)
+                              (map #(str "  " %))
+                              (str/join "\n"))]
+        (is (some? (tls/ssl-context-or-throw (str ca-cert server-cert "\n" indented-key "\n") nil)))))
+    (testing "the underlying cause is preserved"
+      (let [e (ctx-error (str ca-cert server-cert))]
+        (is (some? (.getCause e)))))))
 
 (deftest bad-keys
   (let [[server-keys _] (gen-key-pair)
