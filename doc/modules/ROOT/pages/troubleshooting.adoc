@@ -92,7 +92,8 @@ If you're having trouble with TLS connections, the most common issues are:
 * *Certificate not found* -- verify the path in `:tls-keys-file` points to an
 existing file.
 * *Handshake timeout* -- the default handshake timeout is 30 seconds. If
-clients are on a slow network, this may not be enough.
+clients are on a slow network, this may not be enough; see
+xref:usage/tls.adoc#handshake-timeout[Handshake timeout] for how to raise it.
 * *"Cannot use same keys as server"* -- the server rejects connections where
 the client presents the same certificate as the server. Generate separate
 client and server key files.
