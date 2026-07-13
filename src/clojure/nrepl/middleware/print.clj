@@ -5,6 +5,7 @@
    :added  "0.6"}
   (:refer-clojure :exclude [print])
   (:require
+   [nrepl.config :as config]
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.misc :as misc]
    [nrepl.transport :as transport])
@@ -14,12 +15,17 @@
    (nrepl.out CallbackBufferedOutputStream QuotaBoundWriter QuotaExceeded)
    (nrepl.transport Transport)))
 
+(def ^:private default-print-fn
+  "The built-in default print function, equivalent to `clojure.core/pr`."
+  @#'clojure.core/pr-on) ;; Private in clojure.core
+
 (def ^:dynamic *print-fn*
   "Function to use for printing. Takes two arguments: `value`, the value to print,
   and `writer`, the `java.io.PrintWriter` to print on.
 
-  Defaults to the equivalent of `clojure.core/pr`."
-  @#'clojure.core/pr-on) ;; Private in clojure.core
+  Defaults to the equivalent of `clojure.core/pr`, unless a `:printer` is set in
+  the nREPL configuration file (see `wrap-print`)."
+  default-print-fn)
 
 (def ^:dynamic *stream?*
   "If logical true, the result of printing each value will be streamed to the
@@ -136,6 +142,38 @@
                                    :status ::error}))
       print-var)))
 
+(let [state (atom {})]
+  (defn- config-print-fn
+    "Resolve the default print function configured via the `:printer` and
+    `:printer-options` keys in the nREPL configuration file, if any.
+
+    Returns a `[value writer]` function that applies `:printer-options`, or nil
+    when no (resolvable) `:printer` is configured. The result is cached and only
+    recomputed when the config map changes (which currently only happens in
+    tests)."
+    []
+    (let [cfg config/config]
+      (if (identical? (first @state) cfg)
+        (second @state)
+        (let [printer (:printer cfg)
+              print-var (cond
+                          (nil? printer) nil
+                          (or (symbol? printer) (string? printer))
+                          (misc/requiring-resolve (symbol printer))
+                          :else ::invalid)
+              f (cond
+                  (nil? printer) nil
+                  (= ::invalid print-var)
+                  (do (misc/log ":printer must be a namespace-qualified symbol, got:" (pr-str printer))
+                      nil)
+                  (nil? print-var)
+                  (do (misc/log "Could not resolve :printer var:" (str printer))
+                      nil)
+                  :else
+                  (let [opts (:printer-options cfg)]
+                    (fn [value writer] (print-var value writer opts))))]
+          (second (reset! state [cfg f])))))))
+
 (defn- booleanize-bencode-val [m key]
   (if (contains? m key)
     ;; As a convention, empty list is treated as logical false.
@@ -159,7 +197,9 @@
 
   * `::print-fn` – the function to use for printing. In requests, will be
   resolved from the above two options (if provided). Defaults to the equivalent
-  of `clojure.core/pr`. Must have signature [writer options].
+  of `clojure.core/pr`, or to the printer configured via the `:printer` and
+  `:printer-options` keys in the nREPL configuration file, when set. Must have
+  signature [writer options].
 
   * `::stream?` – if logical true, the result of printing each value will be
   streamed to the client over one or more messages.
@@ -180,7 +220,13 @@
           print-fn (if print-var
                      (fn [value writer]
                        (print-var value writer options))
-                     (misc/resolve-in-session msg *print-fn*))
+                     (let [session-fn (misc/resolve-in-session msg *print-fn*)]
+                       ;; When neither the request nor the session overrides the
+                       ;; printer, fall back to the one configured in nrepl.edn
+                       ;; (if any) before defaulting to the built-in printer.
+                       (if (identical? session-fn default-print-fn)
+                         (or (config-print-fn) session-fn)
+                         session-fn)))
           msg (-> msg
                   (assoc ::print-fn print-fn)
                   (booleanize-bencode-val ::stream?))]

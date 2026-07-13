@@ -10,6 +10,7 @@
   (:require [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]
             [matcher-combinators.matchers :as mc]
+            [nrepl.config :as config]
             [nrepl.core :refer [combine-responses]]
             [nrepl.middleware.print :as print]
             [nrepl.test-helpers :refer [is+]]
@@ -74,6 +75,35 @@
                   ::print/print   `custom-printer
                   ::print/keys    #{:value}
                   ::print/options {:sub "bar"}}))))
+
+(deftest config-printer
+  (with-redefs [config/config {:printer 'nrepl.middleware.print-test/custom-printer}]
+    (testing-print "config :printer is used as the default when the request has no ::print"
+      (is+ [{:value "<foo 42 ...>"}]
+           (handle {:value       42
+                    ::print/keys #{:value}}))))
+  (with-redefs [config/config {:printer         'nrepl.middleware.print-test/custom-printer
+                               :printer-options {:sub "cfg"}}]
+    (testing-print "config :printer-options are passed to the configured printer"
+      (is+ [{:value "<foo 42 cfg>"}]
+           (handle {:value       42
+                    ::print/keys #{:value}})))
+    (testing-print "an explicit request ::print overrides the configured printer"
+      (is+ [{:value "<foo 42 req>"}]
+           (handle {:value          42
+                    ::print/keys    #{:value}
+                    ::print/print   `custom-printer
+                    ::print/options {:sub "req"}}))))
+  (with-redefs [config/config {:printer 'my.missing.ns/printer}]
+    (testing-print "an unresolvable :printer falls back to the default printer"
+      (is+ [{:value "42"}]
+           (handle {:value       42
+                    ::print/keys #{:value}}))))
+  (with-redefs [config/config {}]
+    (testing-print "no :printer means the built-in default printer is used"
+      (is+ [{:value "42"}]
+           (handle {:value       42
+                    ::print/keys #{:value}})))))
 
 (deftest override-value-printing
   (testing-print "custom ::print/keys"

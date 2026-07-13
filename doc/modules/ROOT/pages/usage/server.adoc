@@ -516,6 +516,16 @@ The following keys are recognized in `.nrepl.edn` and `~/.nrepl/nrepl.edn`:
 | —
 | A namespace-qualified symbol resolving to a custom REPL function (used with `--interactive`).
 
+| :printer
+| symbol
+| —
+| A namespace-qualified symbol resolving to the default print function for evaluation results. Must have the signature `[value writer options]`. See xref:usage/misc.adoc#_configuring_the_default_printer[Configuring the default printer].
+
+| :printer-options
+| map
+| —
+| A map passed as the third argument to `:printer`.
+
 |===
 
 === Merging CLI and config values (`^:concat`)
