@@ -661,19 +661,14 @@
                                  resp)))))
 
 (def-repl-test request-multiple-read-newline-*in*
-  ;; Send the input only once. Reading a non-self-delimiting token like `:ohai`
-  ;; makes the reader peek the char past it, so while the `:ohai\n` payload is
-  ;; still being enqueued the queue can momentarily read empty and the server
-  ;; emits a second, spurious `need-input`. Re-sending on every `need-input`
-  ;; would then push a stray `:ohai` that the follow-up `read-line` picks up.
-  (let [sent? (atom false)]
-    (is+ [:ohai] (response-values (for [resp (repl-eval session "(read)")]
-                                    (do
-                                      (when (and (-> resp clean-response :status (contains? :need-input))
-                                                 (compare-and-set! sent? false true))
-                                        (session {:op "stdin" :stdin (th/newline->sys ":ohai\n")}))
-                                      resp)))))
-
+  ;; Verify that when ":ohai\n" is supplied (with a newline), a `(read)`
+  ;; consumes :ohai but also consumes a newline, so that when we later give "a\n"
+  ;; to stdin, and `(read-line)` is issued, it will return "a" and not the
+  ;; newline before it.
+  (let [responses-seq (repl-eval session "(read)")]
+    (is+ {:status (mc/via #(map keyword %) [:need-input])} (first responses-seq))
+    (session {:op "stdin" :stdin (th/newline->sys ":ohai\n")})
+    (is+ {:value ":ohai"} (second responses-seq)))
   (session {:op "stdin" :stdin (th/newline->sys "a\n")})
   (is+ ["a"] (repl-values session "(read-line)")))
 
