@@ -16,7 +16,8 @@
    [nrepl.util.threading :as threading]
    [nrepl.version :as version])
   (:import
-   [java.io FileNotFoundException]))
+   [java.io FileNotFoundException]
+   [nrepl.in CapturingPushbackReader]))
 
 (defn- clean-up-and-exit
   "Performs any necessary clean up and calls `(System/exit status)`."
@@ -87,6 +88,57 @@ Exit:      Control+D or (exit) or (quit)"
           (System/getProperty "java.vm.name")
           (System/getProperty "java.runtime.version")))
 
+(def ^:private permissive-reader-resolver
+  "A reader resolver that accepts any alias or class name. Used when reading
+  user input purely to find form boundaries (see `read-form-for-server`):
+  aliases and classes may exist only in the server's session, so the client
+  must not reject them (this is what lets `::alias/kw` reach the server)."
+  (reify clojure.lang.LispReader$Resolver
+    (currentNS [_] 'user)
+    (resolveClass [_ sym] sym)
+    (resolveAlias [_ sym] sym)
+    (resolveVar [_ sym] sym)))
+
+(def ^:private eof-marker (Object.))
+
+(defn- read-form-for-server
+  "Reads a single form from `pbr` (a `CapturingPushbackReader`) and returns a
+  map of `:form` and `:code` - the exact input text that was consumed - or
+  `::eof` when the input is exhausted.
+
+  The client never evaluates the form; it is read only to find its boundary
+  in the input stream (and to detect the exit/quit commands), while `:code`
+  is sent to the server verbatim. Reading is therefore deliberately
+  permissive: `*suppress-read*` keeps record and eval (`#=`) literals inert,
+  the resolver accepts unknown aliases/classes, and reader conditionals are
+  preserved - all of them are left for the server to actually interpret."
+  [^CapturingPushbackReader pbr]
+  (.clearCaptured pbr)
+  (binding [*suppress-read* true
+            *reader-resolver* permissive-reader-resolver]
+    (let [form (try
+                 (read {:eof eof-marker :read-cond :preserve} pbr)
+                 (catch java.io.IOException _
+                   ;; The input stream is gone (e.g. a closed pipe); there is
+                   ;; nothing left to read, so treat it as end of input.
+                   eof-marker))]
+      (if (identical? form eof-marker)
+        ::eof
+        {:form form
+         :code (str/trim (.getCaptured pbr))}))))
+
+(defn- skip-to-end-of-line
+  "Discards characters from `rdr` up to and including the next newline (or
+  end of input). Used to drop the rest of a line after a reader error, the
+  way `clojure.main`'s REPL does."
+  [^java.io.Reader rdr]
+  (try
+    (loop []
+      (let [c (.read rdr)]
+        (when-not (or (neg? c) (= c (int \newline)))
+          (recur))))
+    (catch java.io.IOException _ nil)))
+
 (defn- run-repl-with-transport
   [transport {:keys [prompt err out value]
               :or   {prompt #(print (str % "=> "))
@@ -111,22 +163,39 @@ Exit:      Control+D or (exit) or (quit)"
     ;; We take 50ms to listen to any greeting messages, and display the value
     ;; in the `:out` slot.
     (Thread/sleep 50)
-    (let [session (nrepl/client-session client)]
+    (let [session (nrepl/client-session client)
+          input-reader (CapturingPushbackReader. *in*)]
       (swap! running-repl assoc :transport transport :client session)
       (binding [*ns* *ns*]
         (loop []
           (prompt *ns*)
           (flush)
-          (let [input (read *in* false 'exit)]
-            (if (done? input)
+          (let [input (try
+                        (read-form-for-server input-reader)
+                        (catch Exception e
+                          ;; A broken form should never take the REPL down.
+                          ;; Report it and discard the rest of the line, like
+                          ;; clojure.main does; the reader is then guaranteed
+                          ;; to make progress on the next iteration.
+                          (err (str "Syntax error: "
+                                    (or (.getMessage e)
+                                        (some-> (.getCause e) .getMessage)
+                                        (str e))
+                                    "\n"))
+                          (flush)
+                          (skip-to-end-of-line input-reader)
+                          ::retry))]
+            (cond
+              (identical? ::retry input)
+              (recur)
+
+              (or (identical? ::eof input) (done? (:form input)))
               (clean-up-and-exit 0)
-              ;; Make sure the metadata read from *in* is preserved when we feed
-              ;; the form to nREPL.
-              (let [code-str (binding [*print-meta* true]
-                               (pr-str input))
-                    id (str "nrepl.cmdline-" (uuid))]
+
+              :else
+              (let [id (str "nrepl.cmdline-" (uuid))]
                 (swap! awaiting assoc id (promise))
-                (doseq [res (nrepl/message session {:op "eval" :code code-str :id id})]
+                (doseq [res (nrepl/message session {:op "eval" :code (:code input) :id id})]
                   (when (:ns res) (set! *ns* (create-ns (symbol (:ns res))))))
                 @(get @awaiting id)
                 (swap! awaiting dissoc id)

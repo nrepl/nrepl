@@ -7,6 +7,10 @@
 * [#284](https://github.com/nrepl/nrepl/issues/284): Include the `-f`/`--repl-fn` option in the command-line help output.
 * [#376](https://github.com/nrepl/nrepl/issues/376): Document the `session-closed` status returned by the `close` op.
 
+### Bugs fixed
+
+* [#182](https://github.com/nrepl/nrepl/issues/182): The built-in client now sends input to the server as raw text instead of reading it client-side, so reader typos, auto-resolved keywords relying on session aliases (e.g. `::io/foo`) and custom tagged literals no longer crash the REPL.
+
 ## 1.7.0 (2026-04-14)
 
 ### Changes

@@ -201,6 +201,75 @@
                                :value #(swap! results conj %)})
               (is (= expected-output @results)))))))))
 
+(deftest raw-input-handling
+  ;; The client reads input only to find form boundaries and sends the raw
+  ;; text to the server, so reader context that exists only in the server
+  ;; session (aliases, data readers) doesn't matter on the client, and broken
+  ;; input can't kill the REPL.
+  (with-open [^Server server (server/start-server :handler (server/default-handler))]
+    (let [drive (fn [input]
+                  (let [>devnull (fn [& _] nil)
+                        values (atom [])
+                        errors (atom "")]
+                    (binding [*in* (java.io.PushbackReader. (java.io.StringReader. input))]
+                      (with-redefs [cmd/clean-up-and-exit >devnull]
+                        (#'cmd/run-repl "127.0.0.1" (:port server)
+                                        {:prompt >devnull
+                                         :err #(swap! errors str %)
+                                         :out >devnull
+                                         :value #(swap! values conj %)})))
+                    {:values @values :errors @errors}))]
+      (testing "a reader typo doesn't kill the session"
+        (let [{:keys [values errors]} (drive ")\n(+ 1 2)")]
+          (is (= ["3"] values))
+          (is (str/includes? errors "Unmatched delimiter"))))
+      (testing "tagged literals unknown to the client are read by the server"
+        (let [{:keys [values errors]} (drive "#nosuch/tag 42\n(+ 1 2)")]
+          (is (= ["3"] values))
+          (is (str/includes? errors "No reader function for tag nosuch/tag"))))
+      (testing "auto-resolved keywords use the server session's aliases"
+        (let [{:keys [values]} (drive "(require '[clojure.string :as zzz])\n::zzz/foo")]
+          (is (= ["nil" ":clojure.string/foo"] values))))
+      (testing "multi-line forms work"
+        (is (= ["3"] (:values (drive "(+ 1\n2)")))))
+      (testing "reader conditionals are passed through to the server"
+        (is (= ["1"] (:values (drive "#?(:clj 1 :cljs 2)")))))
+      (testing "#_ discard is sent along with the following form"
+        (is (= ["42"] (:values (drive "#_(/ 1 0) 42")))))
+      (testing "metadata reaches the server without client-side re-printing"
+        (is (= ["true"] (:values (drive "(:foo (meta (quote ^:foo bar)))")))))
+      (testing "the exit command stops the loop before remaining input"
+        (is (= ["3"] (:values (drive "(+ 1 2)\nexit\n(+ 7 8)")))))
+      (testing "after a reader error the rest of the line is discarded (not re-read)"
+        ;; `)foo` must not sneak `foo` through to the server as a real eval.
+        (let [{:keys [values errors]} (drive ")foo\n(+ 1 2)")]
+          (is (str/includes? errors "Unmatched delimiter"))
+          (is (= ["3"] values))))
+      (testing "EOF in the middle of a form ends the loop instead of hanging"
+        (is (= ["3"] (:values (drive "(+ 1 2)\n(+ 4"))))))))
+
+(deftest read-form-for-server-passthrough
+  ;; The client reads only to find the form boundary; literals that would
+  ;; throw under *read-eval* false (records, #=) or that the client can't
+  ;; resolve (aliased keywords, unknown tags) are read inertly and their
+  ;; exact text is handed to the server verbatim.
+  (let [read-one (fn [s]
+                   (let [rdr (nrepl.in.CapturingPushbackReader.
+                              (java.io.PushbackReader. (java.io.StringReader. s)))]
+                     (#'cmd/read-form-for-server rdr)))]
+    (are [input expected-code] (= expected-code (:code (read-one input)))
+      "#clojure.lang.PersistentQueue[]" "#clojure.lang.PersistentQueue[]"
+      "#=(+ 1 1)"                       "#=(+ 1 1)"
+      "#nosuch/tag 42"                  "#nosuch/tag 42"
+      "::zzz/foo"                       "::zzz/foo"
+      "(+ 1\n  2)"                      "(+ 1\n  2)")
+    (testing "only the first form is consumed, leaving the rest for the next read"
+      (let [rdr (nrepl.in.CapturingPushbackReader.
+                 (java.io.PushbackReader. (java.io.StringReader. "(+ 1 2) (+ 3 4)")))]
+        (is (= "(+ 1 2)" (:code (#'cmd/read-form-for-server rdr))))
+        (is (= "(+ 3 4)" (:code (#'cmd/read-form-for-server rdr))))
+        (is (= :nrepl.cmdline/eof (#'cmd/read-form-for-server rdr)))))))
+
 ;;; Unix domain socket tests
 
 (defn send-jdk-socket-message [message path]
