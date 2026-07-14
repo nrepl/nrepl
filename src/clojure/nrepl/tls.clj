@@ -13,7 +13,8 @@
             [clojure.string :as str])
   (:import (java.net InetSocketAddress)
            (java.security KeyFactory
-                          KeyStore)
+                          KeyStore
+                          NoSuchAlgorithmException)
            (java.security.cert Certificate
                                CertificateFactory)
            (java.security.spec PKCS8EncodedKeySpec)
@@ -40,15 +41,46 @@
   stored in memory."
   (char-array "GheesBetDyPhuvwotNolofamLydMues9"))
 
+(def ^:private key-factory-algorithms
+  ;; EdDSA (Ed25519/Ed448) is only available on Java 15+; on older JVMs it is
+  ;; skipped and reported as unavailable if the key can't be parsed at all.
+  ["EC" "RSA" "EdDSA"])
+
+(def ^:private key-material-description
+  (str "The TLS keys material must contain the CA certificate, the certificate "
+       "and an unencrypted PKCS#8 private key (a `-----BEGIN PRIVATE KEY-----` "
+       "block) in PEM format."))
+
 (defn- get-private-key [^PKCS8EncodedKeySpec spec]
-  (reduce (fn [_ keyFactory]
-            (try
-              (let [kf (KeyFactory/getInstance keyFactory)]
-                (reduced (.generatePrivate kf spec)))
-              (catch Exception _
-                nil)))
-          nil
-          ["EC" "RSA"]))
+  (loop [[algorithm & algorithms] key-factory-algorithms
+         failures [] ; [algorithm exception] pairs for algorithms that failed to parse
+         unavailable []]
+    (if algorithm
+      (if-some [^KeyFactory key-factory (try
+                                          (KeyFactory/getInstance algorithm)
+                                          (catch NoSuchAlgorithmException _
+                                            nil))]
+        (let [result (try
+                       (.generatePrivate key-factory spec)
+                       (catch Exception e
+                         e))]
+          (if (instance? Exception result)
+            (recur algorithms (conj failures [algorithm result]) unavailable)
+            result))
+        (recur algorithms failures (conj unavailable algorithm)))
+      (let [tried (mapv first failures)
+            [^Throwable cause & more] (map second failures)]
+        ;; Keep the first parse error (usually the most specific one) as the
+        ;; cause and attach the others as suppressed exceptions.
+        (run! #(.addSuppressed cause ^Throwable %) more)
+        (throw (ex-info (str "Could not parse the private key."
+                             (when (seq tried)
+                               (str " Tried the " (str/join ", " tried)
+                                    (if (next tried) " algorithms." " algorithm.")))
+                             (when (seq unavailable)
+                               (str " Not available on this JVM: " (str/join ", " unavailable) ".")))
+                        {:tried tried :unavailable unavailable}
+                        cause))))))
 
 (defn- get-parts [s begin? end?]
   (when (string? s)
@@ -71,40 +103,87 @@
             (false? consume?)
             (recur res curr false rst)))))
 
+(def ^:private private-key-block-pattern
+  "Matches a PEM private-key block, capturing its label (e.g. \"PRIVATE KEY\"
+  or \"EC PRIVATE KEY\") and its base64 payload. Tolerates surrounding
+  horizontal whitespace, like the certificate extraction does."
+  #"(?ms)^[ \t]*-----BEGIN ((?:[A-Z0-9]+ +)*PRIVATE KEY)-----[ \t]*$(.+?)^[ \t]*-----END \1-----[ \t]*$")
+
 (defn- str->private-key [s]
-  (some->> s
-           ; LOL Java
-           (re-find #"(?ms)^-----BEGIN ?.*? PRIVATE KEY-----$(.+)^-----END ?.*? PRIVATE KEY-----$")
-           last
-           base64->binary
-           PKCS8EncodedKeySpec.
-           get-private-key))
+  (let [blocks (when (string? s)
+                 (re-seq private-key-block-pattern s))
+        by-label (group-by second blocks)
+        [_ _ pkcs8-payload] (first (by-label "PRIVATE KEY"))
+        legacy-label (->> (keys by-label)
+                          (remove #{"PRIVATE KEY" "ENCRYPTED PRIVATE KEY"})
+                          first)]
+    (cond
+      pkcs8-payload
+      (-> pkcs8-payload base64->binary PKCS8EncodedKeySpec. get-private-key)
+
+      (by-label "ENCRYPTED PRIVATE KEY")
+      (throw (ex-info (str "The private key is password-protected, which is not supported. "
+                           "Decrypt it first, e.g. `openssl pkey -in encrypted-key.pem -out key.pem`.")
+                      {}))
+
+      legacy-label
+      (throw (ex-info (str "The private key is in the " legacy-label " format, but only "
+                           "unencrypted PKCS#8 keys are supported. Convert it with "
+                           "`openssl pkcs8 -topk8 -nocrypt -in key.pem -out key-pkcs8.pem`.")
+                      {:label legacy-label}))
+
+      (and (string? s) (str/includes? s "PRIVATE KEY"))
+      (throw (ex-info (str "Found what looks like a private key, but its PEM structure could "
+                           "not be parsed. Check that the BEGIN and END labels match and that "
+                           "the block is intact.")
+                      {}))
+
+      :else
+      (throw (ex-info (str "No private key found. " key-material-description)
+                      {})))))
 
 (defn- get-certs [cert-str]
   (get-parts cert-str
              (fn [s] (= (str/trim s) "-----BEGIN CERTIFICATE-----"))
              (fn [s] (= (str/trim s) "-----END CERTIFICATE-----"))))
 
-(defn- str->ca-certificate [cert]
-  (first (get-certs cert)))
-
-(defn- str->self-certificate [cert]
-  (second (get-certs cert)))
-
-(defn- str->certificate
-  "Loads an X.509 certificate from a string."
-  ^java.security.cert.Certificate
-  [tls-keys-str]
-  (with-open [stream (input-stream (.getBytes ^String (str->ca-certificate tls-keys-str)))]
+(defn- parse-certificate
+  "Parses a single X.509 certificate from a PEM string."
+  ^Certificate [^String pem]
+  (with-open [stream (input-stream (.getBytes pem))]
     (.generateCertificate x509-cert-factory stream)))
 
-(defn- ^"[Ljava.security.cert.Certificate;" str->certificates
-  "Loads an X.509 certificate chain from a string."
-  [tls-keys-str]
-  (let [self-cert (str->self-certificate tls-keys-str)]
-    (with-open [stream (input-stream (.getBytes ^String self-cert))]
-      (let [^"[Ljava.security.cert.Certificate;" ar (make-array Certificate 0)]
-        (.toArray (.generateCertificates x509-cert-factory stream) ar)))))
+(defn- issued-by?
+  "Returns true if `cert`'s signature verifies against `issuer`'s public key.
+  Returns false when verification fails for any reason, including the
+  signature algorithm being unavailable on this JVM - in which case the JVM
+  couldn't complete a TLS handshake with these certificates anyway."
+  [^Certificate cert ^Certificate issuer]
+  (try
+    (.verify cert (.getPublicKey issuer))
+    true
+    (catch Exception _
+      false)))
+
+(defn- ca-and-chain
+  "Splits the PEM certificate blocks into the trust root (CA) and the own
+  certificate chain. The documented layout is CA certificate first, own
+  certificate second; for that common two-certificate case a swapped order
+  is detected (by checking which certificate was issued by the other) and
+  handled transparently. With three or more blocks the documented layout is
+  assumed and the extra blocks are ignored (as they always have been)."
+  [cert-pems]
+  (let [n (count cert-pems)]
+    (case n
+      0 (throw (ex-info (str "No certificates found. " key-material-description)
+                        {}))
+      1 (throw (ex-info (str "Only one certificate found, but the TLS keys material must contain "
+                             "both the CA certificate and the server's/client's own certificate.")
+                        {}))
+      (let [[a b] (map parse-certificate (take 2 cert-pems))]
+        (if (and (= 2 n) (issued-by? a b) (not (issued-by? b a)))
+          {:ca b :chain [a]}
+          {:ca a :chain [b]})))))
 
 (defn- key-store
   "Makes a keystore from a private key and a public certificate"
@@ -173,13 +252,12 @@
         nil))))
 
 (defn- ssl-str-context
-  "Given a string of a PKCS8 key, a certificate file and a trusted CA certificate
-  used to verify peers, returns an SSLContext."
+  "Given a string containing a PKCS8 private key, a certificate and a trusted
+  CA certificate used to verify peers, returns an SSLContext."
   [tls-keys-str]
   (let [key (str->private-key tls-keys-str)
-        certs (str->certificates tls-keys-str)
-        ca-cert (str->certificate tls-keys-str)]
-    ((ssl-context-generator key certs ca-cert))))
+        {:keys [ca chain]} (ca-and-chain (get-certs tls-keys-str))]
+    ((ssl-context-generator key (into-array Certificate chain) ca))))
 
 (defn ssl-context-or-throw
   "Create a SSL/TLS context from either a string or a file containing two certificates and a private key.
@@ -187,27 +265,29 @@
   [tls-keys-str tls-keys-file]
   (cond
     (and (some? tls-keys-file) (not (.exists (io/file tls-keys-file))))
-    (throw (ex-info (str ":tls-keys-file specified as " tls-keys-file " , but was not found.")
+    (throw (ex-info (str ":tls-keys-file specified as " tls-keys-file ", but the file was not found.")
                     {:nrepl/kind :nrepl.server/invalid-start-request}))
 
     (and (some? tls-keys-file) (.exists (io/file tls-keys-file)))
     (try
       (ssl-str-context (slurp tls-keys-file))
       (catch Exception e
-        (throw (ex-info (str "Could not create TLS Context from file " tls-keys-file
-                             " . Error message: " (.getMessage e))
-                        {:nrepl/kind :nrepl.server/invalid-start-request}))))
+        (throw (ex-info (str "Could not create TLS context from file " tls-keys-file
+                             ". Error message: " (.getMessage e))
+                        {:nrepl/kind :nrepl.server/invalid-start-request}
+                        e))))
 
     (string? tls-keys-str)
     (try
       (ssl-str-context tls-keys-str)
       (catch Exception e
-        (throw (ex-info (str "Could not create TLS Context from string. "
+        (throw (ex-info (str "Could not create TLS context from string. "
                              "Error message: " (.getMessage e))
-                        {:nrepl/kind :nrepl.server/invalid-start-request}))))
+                        {:nrepl/kind :nrepl.server/invalid-start-request}
+                        e))))
 
     :else
-    (throw (ex-info "Could not create TLS Context. Neither :tls-keys-str nor :tls-keys-file given."
+    (throw (ex-info "Could not create TLS context. Neither :tls-keys-str nor :tls-keys-file given."
                     {:nrepl/kind :nrepl.server/invalid-start-request}))))
 
 (def enabled-protocols
