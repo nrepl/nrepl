@@ -643,22 +643,20 @@
     (is (thrown? SocketException (repl-eval session "(+ 1 1)")))))
 
 (def-repl-test request-*in*
-  (is (= '((1 2 3)) (response-values (for [resp (repl-eval session "(read)")]
-                                       (do
-                                         (when (-> resp clean-response :status (contains? :need-input))
-                                           (session {:op "stdin" :stdin "(1 2 3)"}))
-                                         resp)))))
+  (let [responses (repl-eval session "(read)")]
+    (is+ {:status (mc/via #(map keyword %) [:need-input])} (first responses))
+    (session {:op "stdin" :stdin "(1 2 3)"})
+    (is+ {:value "(1 2 3)"} (second responses)))
 
   (session {:op "stdin" :stdin (th/newline->sys "a\nb\nc\n")})
   (doseq [x "abc"]
     (is (= [(str x)] (repl-values session "(read-line)")))))
 
 (def-repl-test request-*in*-eof
-  (is+ nil? (response-values (for [resp (repl-eval session "(read)")]
-                               (do
-                                 (when (-> resp clean-response :status (contains? :need-input))
-                                   (session {:op "stdin" :stdin []}))
-                                 resp)))))
+  (let [responses (repl-eval session "(read)")]
+    (is+ {:status (mc/via #(map keyword %) [:need-input])} (first responses))
+    (session {:op "stdin" :stdin []})
+    (is+ nil? (response-values responses))))
 
 (def-repl-test request-multiple-read-newline-*in*
   ;; Verify that when ":ohai\n" is supplied (with a newline), a `(read)`
@@ -673,20 +671,18 @@
   (is+ ["a"] (repl-values session "(read-line)")))
 
 (def-repl-test request-multiple-read-with-buffered-newline-*in*
-  (is+ [:ohai] (response-values (for [resp (repl-eval session "(read)")]
-                                  (do
-                                    (when (-> resp clean-response :status (contains? :need-input))
-                                      (session {:op "stdin" :stdin (th/newline->sys ":ohai\na\n")}))
-                                    resp))))
+  (let [responses (repl-eval session "(read)")]
+    (is+ {:status (mc/via #(map keyword %) [:need-input])} (first responses))
+    (session {:op "stdin" :stdin (th/newline->sys ":ohai\na\n")})
+    (is+ {:value ":ohai"} (second responses)))
 
   (is+ ["a"] (repl-values session "(read-line)")))
 
 (def-repl-test request-multiple-read-objects-*in*
-  (is+ [:ohai] (response-values (for [resp (repl-eval session "(read)")]
-                                  (do
-                                    (when (-> resp clean-response :status (contains? :need-input))
-                                      (session {:op "stdin" :stdin (th/newline->sys ":ohai :kthxbai\n")}))
-                                    resp))))
+  (let [responses (repl-eval session "(read)")]
+    (is+ {:status (mc/via #(map keyword %) [:need-input])} (first responses))
+    (session {:op "stdin" :stdin (th/newline->sys ":ohai :kthxbai\n")})
+    (is+ {:value ":ohai"} (second responses)))
 
   (is+ [" :kthxbai"] (repl-values session "(read-line)")))
 
