@@ -8,6 +8,7 @@
 
 ### Changes
 
+- [#462](https://github.com/nrepl/nrepl/pull/462): **(Breaking)** Raise minimal supported Clojure version to 1.10.
 - [#284](https://github.com/nrepl/nrepl/issues/284): Include the `-f`/`--repl-fn` option in the command-line help output.
 - [#376](https://github.com/nrepl/nrepl/issues/376): Document the `session-closed` status returned by the `close` op.
 

@@ -159,7 +159,7 @@ jobs:
             - store_test_results:
                 path: test-results
 
-  test_windows:
+  test-windows:
     description: |
       Run tests on MS-Windows using the system's JDK version and Clojure 1.12.
     executor: win/default
@@ -184,47 +184,46 @@ workflows:
     jobs:
       - test:
           matrix:
-            alias: "test-jdk8"
+            alias: "test-1.12"
             parameters:
-              clojure_version: ["1.9", "1.10", "1.11", "1.12", "1.13"]
-              jdk_version: [jdk8]
+              clojure_version: ["1.12"]
+              jdk_version: [jdk17, jdk21, jdk25, jdk26]
+          <<: *run_always
+      - test:
+          matrix:
+            alias: "test-1.12-junixsocket"
+            parameters:
+              clojure_version: ["1.12"]
+              jdk_version: [jdk8, jdk11]
               # JDK8 and 11 need junitsocket library to support sockets as
               # connection target.
               extra_aliases: [":+junixsocket"]
           <<: *run_always
       - test:
           matrix:
-            alias: "test-jdk11"
+            alias: "test-1.13"
             parameters:
-              # JDK11 is the last tested version that needs junitsocket library
-              # to support sockets as connection target.
-              clojure_version: ["1.12"]
-              jdk_version: [jdk11]
-              extra_aliases: [":+junixsocket"]
+              clojure_version: ["1.13"]
+              jdk_version: [jdk17, jdk21, jdk25, jdk26]
           <<: *run_always
       - test:
           matrix:
-            alias: "test-older-jdk"
+            alias: "test-older"
             parameters:
-              clojure_version: ["1.12"]
-              jdk_version: [jdk17, jdk21, jdk25]
+              clojure_version: ["1.10", "1.11"]
+              jdk_version: [jdk8, jdk26]
           <<: *run_always
-      - test:
-          matrix:
-            alias: "test"
-            parameters:
-              clojure_version: ["1.10", "1.11", "1.12", "1.13"]
-              jdk_version: [jdk26]
-          <<: *run_always
-      - test_windows:
+      - test-windows:
           <<: *run_always
       - lint:
           <<: *run_always
       - deploy:
           requires:
-            - test-jdk8
-            - test-jdk11
-            - test-older-jdk
+            - test-1.12
+            - test-1.12-junixsocket
+            - test-1.13
+            - test-older
+            - test-windows
             - lint
           filters:
             branches:
