@@ -138,10 +138,11 @@
         ;; TODO: new options: out-quota | err-quota
         opts {::print/buffer-size (or out-limit (get (meta session) :out-limit))}
         out (print/replying-PrintWriter :out msg opts)
-        err (print/replying-PrintWriter :err msg opts)]
+        err (print/replying-PrintWriter :err msg opts)
+        ctxcl (.getContextClassLoader (Thread/currentThread))]
     (-> bindings-map
         (assoc #'*msg* msg
-               Compiler/LOADER (classloader/dynamic-classloader)
+               Compiler/LOADER ctxcl
                #'*out* out
                #'*err* err
                ;; clojure.test captures *out* at load-time, so we need to make
