@@ -13,7 +13,7 @@ This is currently Java 8, 11, 17, 21, and 25.
 
 == Clojure
 
-nREPL targets Clojure 1.9+. As Clojure doesn't have the concept of supported releases
+nREPL targets Clojure 1.10+. As Clojure doesn't have the concept of supported releases
 we have to get a bit creative to determine the minimum version to target.
 
 The minimum required Clojure version is currently derived using data
@@ -49,9 +49,13 @@ Below you can find the official compatibility matrix for nREPL.
 | 8
 | 1.8
 
-| 1.7+
+| 1.7.x
 | 8
 | 1.9
+
+| 1.8+
+| 8
+| 1.10
 
 |===
 

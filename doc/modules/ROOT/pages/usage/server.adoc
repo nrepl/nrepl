@@ -9,7 +9,7 @@ popular options available for you today.
 
 === Using Clojure CLI tools
 
-NOTE: This section assumes you're using Clojure 1.9+.
+NOTE: This section assumes you're using Clojure 1.10+.
 
 If you're into the `clj` command you can take advantage of nREPL's built-in command-line interface
 (`nrepl.cmdline`).
