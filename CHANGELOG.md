@@ -9,13 +9,18 @@
 ### Changes
 
 - [#462](https://github.com/nrepl/nrepl/pull/462): **(Breaking)** Raise minimal supported Clojure version to 1.10.
+- [#144](https://github.com/nrepl/nrepl/issues/144): Document more middleware development best practices.
+- [#257](https://github.com/nrepl/nrepl/issues/257): Document the `lookup` op's return values.
 - [#284](https://github.com/nrepl/nrepl/issues/284): Include the `-f`/`--repl-fn` option in the command-line help output.
 - [#376](https://github.com/nrepl/nrepl/issues/376): Document the `session-closed` status returned by the `close` op.
-- [#464](https://github.com/nrepl/nrepl/pull/464): Revert an earlier change that broke use of custom classloaders via `setContextClassLoader`
 - [#458](https://github.com/nrepl/nrepl/pull/458): Document the TLS security model and include the `--tls-keys-file`/`--tls-keys-str` options in the command-line help output.
-- [#458](https://github.com/nrepl/nrepl/pull/458): Report descriptive errors for invalid TLS key material (missing, legacy-format or encrypted private keys, missing certificates) and preserve the underlying exception causes.
 - [#458](https://github.com/nrepl/nrepl/pull/458): Detect and accept a swapped CA/own certificate order in TLS key material containing exactly two certificates.
 - [#458](https://github.com/nrepl/nrepl/pull/458): Support Ed25519 (PKCS#8) private keys for TLS on Java 15+.
+
+### Bugs fixed
+
+- [#464](https://github.com/nrepl/nrepl/pull/464): Revert an earlier change that broke use of custom classloaders via `setContextClassLoader`.
+- [#458](https://github.com/nrepl/nrepl/pull/458): Report descriptive errors for invalid TLS key material (missing, legacy-format or encrypted private keys, missing certificates) instead of NPEs and generic JSSE messages.
 
 ## 1.7.0 (2026-04-14)
 
