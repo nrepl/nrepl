@@ -968,6 +968,27 @@
       (is good?)))
   (reset! captured-values-atom {}))
 
+(def-repl-test custom-context-classloader-is-used-for-loading
+  ;; Libraries like lambdaisland.classpath install their own classloader as the
+  ;; session thread's context classloader. Loading during eval has to resolve
+  ;; through it - binding Compiler/LOADER to a DynamicClassLoader ancestor
+  ;; instead silently bypasses it (see #464).
+  (testing "a custom context classloader ends up in the chain used for loading"
+    (repl-values session
+                 (code
+                  (let [t (Thread/currentThread)
+                        new-cl (clojure.lang.DynamicClassLoader.
+                                (.getContextClassLoader t))]
+                    (.setContextClassLoader t new-cl)
+                    (nrepl.core-test/capture-value "custom-cl" new-cl))))
+    (let [[in-chain?] (repl-values session
+                                   (code
+                                    (contains? (set (nrepl.core-test/classloader-hierarchy
+                                                     (clojure.lang.RT/baseLoader)))
+                                               (@nrepl.core-test/captured-values-atom "custom-cl"))))]
+      (is in-chain?)))
+  (reset! captured-values-atom {}))
+
 (def-repl-test sanity-tests
   (testing "eval"
     (are [expr result] (= result (first (repl-values session (code expr))))
