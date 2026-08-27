@@ -9,7 +9,6 @@
   as a developer. I'm so sorry about all of this."
   {:added "1.1"}
   (:require [clojure.java.io :as io :refer [input-stream]]
-            [clojure.stacktrace]
             [clojure.string :as str])
   (:import (java.net InetSocketAddress)
            (java.security KeyFactory
