@@ -7,7 +7,7 @@
   (deftest stop-thread-test
     (let [vol (volatile! 0)
           t (doto (Thread. #(while (vswap! vol inc))) .start)]
-      ((misc/requiring-resolve 'nrepl.util.jvmti/stop-thread) t)
+      ((requiring-resolve 'nrepl.util.jvmti/stop-thread) t)
       (Thread/sleep 1000)
       (let [v @vol]
         (Thread/sleep 500)

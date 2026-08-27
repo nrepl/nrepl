@@ -28,6 +28,15 @@
            nrepl/combine-responses
            clean-response)))
 
+(def-repl-test completions-op-unresolvable-custom-fn
+  ;; An unresolvable :complete-fn falls back to the default rather than failing
+  ;; the request, whether its namespace is missing or it isn't qualified.
+  (doseq [bad ["my.missing.ns/complete" "unqualified"]]
+    (is+ {:status #{:done}, :completions (mc/embeds [{:candidate "map"}])}
+         (-> (nrepl/message session {:op "completions" :prefix "map" :ns "clojure.core" :complete-fn bad})
+             nrepl/combine-responses
+             clean-response))))
+
 (def-repl-test completions-op-custom-fn
   (is+ {:status #{:done}, :completions [{:candidate "map"}]}
        (-> (nrepl/message session {:op "completions" :prefix "map" :ns "clojure.core" :complete-fn "nrepl.middleware.completion-test/dummy-completion"})
