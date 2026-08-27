@@ -1,5 +1,4 @@
 (ns nrepl.core-test
-  (:refer-clojure :exclude [requiring-resolve])
   (:require
    [clojure.java.io :as io]
    [clojure.main]
@@ -23,7 +22,7 @@
    [nrepl.middleware.caught :as middleware.caught]
    [nrepl.middleware.print :as middleware.print]
    [nrepl.middleware.session :as session]
-   [nrepl.misc :refer [uuid requiring-resolve]]
+   [nrepl.misc :refer [uuid]]
    [nrepl.server :as server]
    [nrepl.test-helpers :as th :refer [is+ win?]]
    [nrepl.util.classloader]

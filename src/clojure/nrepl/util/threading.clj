@@ -57,7 +57,7 @@
     (catch NoSuchMethodException _)))
 
 (defn- jvmti-stop-thread [t]
-  ((misc/requiring-resolve 'nrepl.util.jvmti/stop-thread) t))
+  ((requiring-resolve 'nrepl.util.jvmti/stop-thread) t))
 
 (defn- try-stop-thread [^Thread t]
   (cond

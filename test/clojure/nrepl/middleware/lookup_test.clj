@@ -45,3 +45,12 @@
        (-> (nrepl/message session {:op "lookup" :sym "map" :ns "clojure.core" :lookup-fn "nrepl.middleware.lookup-test/dummy-lookup"})
            nrepl/combine-responses
            clean-response)))
+
+(def-repl-test lookup-op-unresolvable-custom-fn
+  ;; An unresolvable :lookup-fn falls back to the default rather than failing
+  ;; the request, whether its namespace is missing or it isn't qualified.
+  (doseq [bad ["my.missing.ns/lookup" "unqualified"]]
+    (is+ {:status #{:done}, :info {:name "map"}}
+         (-> (nrepl/message session {:op "lookup" :sym "map" :ns "clojure.core" :lookup-fn bad})
+             nrepl/combine-responses
+             clean-response))))
