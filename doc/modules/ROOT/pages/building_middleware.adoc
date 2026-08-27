@@ -41,7 +41,7 @@ Optionally you can have some dynamic vars for configuration purposes. Below is a
 (defn completion-reply
   [{:keys [session prefix ns complete-fn options] :as msg}]
   (let [ns (if ns (symbol ns) (symbol (str (@session #'*ns*))))
-        completion-fn (or (and complete-fn (misc/requiring-resolve (symbol complete-fn))) *complete-fn*)]
+        completion-fn (or (and complete-fn (requiring-resolve (symbol complete-fn))) *complete-fn*)]
     (try
       (response-for msg {:status :done :completions (completion-fn prefix ns options)})
       (catch Exception e
