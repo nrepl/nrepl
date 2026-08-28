@@ -8,8 +8,7 @@
 
 ### New features
 
-* The built-in command-line client can now connect using a URL (via `--connect --host <url>`), routing through `nrepl.core/url-connect`. This adds HTTP/HTTPS support through the optional `nrepl/drawbridge` library.
-* The built-in command-line client can now connect to TLS servers using the URL they advertise on startup (`nrepls://`, or `nrepl+edns://` for the EDN transport), combined with `--tls-keys-file`/`--tls-keys-str`.
+- [#455](https://github.com/nrepl/nrepl/pull/455): The built-in command-line client can now connect using a URL (`--connect --host <url>`), including the `nrepls://`/`nrepl+edns://` URLs TLS servers advertise (combined with `--tls-keys-file`/`--tls-keys-str`), the `nrepl+unix:` URLs filesystem-socket servers advertise, and `http(s)://` when `nrepl/drawbridge` is on the classpath.
 
 ### Changes
 

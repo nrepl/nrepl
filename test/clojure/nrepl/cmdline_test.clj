@@ -304,7 +304,38 @@
     (let [died (fn [& msg] (throw (ex-info (apply str msg) {})))]
       (with-redefs [cmd/die died]
         (is (thrown-with-msg? clojure.lang.ExceptionInfo #"does not support the tty transport"
-                              (#'cmd/ensure-url-scheme-support! "telnet")))))))
+                              (#'cmd/ensure-url-scheme-support! "telnet"))))))
+  (testing "http(s) needs drawbridge, which isn't on the test classpath"
+    (let [died (fn [& msg] (throw (ex-info (apply str msg) {})))]
+      (with-redefs [cmd/die died]
+        (doseq [scheme ["http" "https"]]
+          (is (thrown-with-msg? clojure.lang.ExceptionInfo #"requires the nrepl/drawbridge library"
+                                (#'cmd/ensure-url-scheme-support! scheme))))))))
+
+(deftest unix-socket-url-test
+  (are [in out] (= out (#'cmd/unix-socket-url in))
+    "nrepl+unix:/tmp/n.sock"     [#'transport/bencode "/tmp/n.sock"]
+    "nrepl+edn+unix:/tmp/n.sock" [#'transport/edn "/tmp/n.sock"]
+    "NREPL+UNIX:/tmp/n.sock"     [#'transport/bencode "/tmp/n.sock"]
+    "nrepl://host:7888"          nil
+    "nrepl+unix:"                nil
+    "/tmp/n.sock"                nil
+    nil                          nil))
+
+(deftest url-conflicting-options-test
+  ;; A URL already says where to connect and over which transport, so options
+  ;; that decide the same things are refused rather than silently dropped.
+  (let [died (fn [& msg] (throw (ex-info (apply str msg) {})))]
+    (with-redefs [cmd/die died]
+      (are [opts pattern] (thrown-with-msg?
+                           clojure.lang.ExceptionInfo pattern
+                           (#'cmd/reject-conflicting-url-options! "nrepl://h:1" opts))
+        {:socket "/tmp/s"}            #"--socket can't be combined"
+        {:port 12345}                 #"--port can't be combined"
+        {:transport #'transport/edn}  #"--transport can't be combined")
+      (testing "the defaults alone are not a conflict"
+        (is (nil? (#'cmd/reject-conflicting-url-options!
+                   "nrepl://h:1" {:transport #'transport/bencode})))))))
 
 (deftest tls-url-option-validation
   (let [died (fn [& msg] (throw (ex-info (apply str msg) {})))]

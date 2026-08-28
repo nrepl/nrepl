@@ -94,8 +94,8 @@ user=> (+ 1 2)
 ----
 
 You can also connect using a URL, by passing it as the `--host` value. The
-transport is chosen from the URL's scheme, so `--transport` and `--port` are
-ignored in this case:
+transport and the address both come from the URL, so `--transport`, `--port`
+and `--socket` are refused when combined with one:
 
 [source,shell]
 ----
@@ -108,7 +108,9 @@ user=> (+ 1 2)
 ----
 
 The built-in schemes are `nrepl` (the default Bencode transport) and
-`nrepl+edn` (the EDN transport).
+`nrepl+edn` (the EDN transport). A server listening on a filesystem socket
+advertises a `nrepl+unix:` (or `nrepl+edn+unix:`) URL, which works the same
+way.
 
 A TLS-enabled server advertises a TLS URL in its startup message - `nrepls://`
 (Bencode) or `nrepl+edns://` (EDN) - and you can connect using that URL. You
@@ -127,7 +129,7 @@ add `nrepl/drawbridge` to your dependencies and connect with an `http://` or
 
 [source,shell]
 ----
-$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.7.0"} nrepl/drawbridge {:mvn/version "0.3.1"}}}' -M -m nrepl.cmdline --connect --host https://your-app.example.com/repl
+$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.7.0"} nrepl/drawbridge {:mvn/version "0.4.0"}}}' -M -m nrepl.cmdline --connect --host https://your-app.example.com/repl
 ----
 
 If Drawbridge isn't on the classpath, the client will tell you to add it.
