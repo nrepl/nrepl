@@ -211,10 +211,11 @@
            combine-responses
            clean-response))
   (let [session-id (new-session timeout-client)
-        session-alive? #(contains? (-> (message timeout-client {:op "ls-sessions"})
-                                       combine-responses
-                                       :sessions
-                                       set)
+        session-alive? #(contains? (->> (message timeout-client {:op "ls-sessions"})
+                                        (map clean-response)
+                                        combine-responses
+                                        :sessions
+                                        set)
                                    session-id)]
     (is session-id)
     (is (session-alive?))
