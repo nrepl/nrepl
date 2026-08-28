@@ -649,8 +649,9 @@
     (is+ {:value "(1 2 3)"} (second responses)))
 
   (session {:op "stdin" :stdin (th/newline->sys "a\nb\nc\n")})
-  (doseq [x "abc"]
-    (is (= [(str x)] (repl-values session "(read-line)")))))
+  (is+ ["a"] (repl-values session "(read-line)"))
+  (is+ ["b"] (repl-values session "(read-line)"))
+  (is+ ["c"] (repl-values session "(read-line)")))
 
 (def-repl-test request-*in*-eof
   (let [responses (repl-eval session "(read)")]

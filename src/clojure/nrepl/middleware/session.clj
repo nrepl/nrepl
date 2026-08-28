@@ -2,7 +2,6 @@
   "Support for persistent, cross-connection REPL sessions."
   {:author "Chas Emerick"}
   (:require
-   clojure.main
    [nrepl.config :refer [config]]
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.interruptible-eval :refer [*msg*]]
@@ -37,32 +36,20 @@
 ;; depending upon the expectations of the client/user.  I'm not sure at the moment
 ;; how best to make it configurable though...
 
-(def ^:dynamic ^:private *skipping-eol* false)
-
 (def ephemeral-executor
   "Executor for running eval requests in ephemeral sessions."
   (delay (Executors/newCachedThreadPool
           (threading/thread-factory "nREPL-ephemeral-session-%d"))))
 
 (defn- session-in
-  "Returns a LineNumberingPushbackReader suitable for binding to *in*.
-   When something attempts to read from it, it will (if empty) send a
-   {:status :need-input} message on the provided transport so the client/user
-   can provide content to be read."
+  "Returns a QueuePollingReader (that is suitable for binding to *in* when
+  wrapped into LineNumberingPushbackReader). When something attempts to read
+  from it, it will (if empty) send a {:status :need-input} message on the
+  provided transport so the client/user can provide content to be read."
   [session-id transport]
-  (let [input-queue (LinkedBlockingQueue.)
-        request-input #(or (.poll input-queue)
-                           ;; Skipping newlines shouldn't trigger need-input
-                           ;; from the client if queue is empty.
-                           (when-not *skipping-eol*
-                             (t/send transport
-                                     (response-for *msg* :session session-id
-                                                   :status :need-input))
-                             (.take input-queue)))
-        reader (LineNumberingPushbackReader.
-                (QueuePollingReader. input-queue request-input))]
-    {:input-queue input-queue
-     :stdin-reader reader}))
+  (QueuePollingReader. #(t/send transport
+                                (response-for *msg* :session session-id
+                                              :status :need-input))))
 
 (let [state (atom {})]
   (defn- dynvar-defaults-from-config []
@@ -180,16 +167,15 @@
   `register-session` has to be called next."
   ([{:keys [transport session out-limit] :as msg}]
    (let [id (uuid)
-         {:keys [input-queue stdin-reader]} (session-in id transport)
+         qpr (session-in id transport)
          new-session (atom (assoc (if session
                                     @session
                                     (gather-initial-bindings msg))
-                                  #'*in* stdin-reader
+                                  #'*in* (LineNumberingPushbackReader. qpr)
                                   #'*ns* (create-ns 'user))
                            :meta {:id id
                                   :out-limit (or out-limit (:out-limit (meta session)))
-                                  :stdin-reader stdin-reader
-                                  :input-queue input-queue})]
+                                  ::queue-reader qpr})]
      (alter-meta! new-session assoc :exec (make-ephemeral-exec-fn new-session msg))
      new-session)))
 
@@ -397,23 +383,11 @@
   a :stdin slot to the session's *in* Reader. Requires the session middleware."
   [h]
   (fn [{:keys [op stdin session] :as msg}]
-    ;; NB: confusing hack. When `(read)` is issued to an input stream, it
-    ;; returns a Lisp form, ending with the last character of the form,
-    ;; naturally (e.g. a closing paren). However, it is expected that any
-    ;; trailing newline after such form is thrown away in order for a
-    ;; subsequent `(read-line)` call to not just return that empty newline but
-    ;; the actual following content. To simulate this behavior, we run
-    ;; newline-skipping function before every `eval` request.
-    (when (= op "eval")
-      (let [in (:stdin-reader (meta session))]
-        (binding [*skipping-eol* true]
-          (clojure.main/skip-if-eol in))))
-
     (if (= op "stdin")
-      (let [^LinkedBlockingQueue q (:input-queue (meta session))]
+      (let [^QueuePollingReader qpr (::queue-reader (meta session))]
         (if (empty? stdin)
-          (.put q -1)
-          (.addAll q (seq stdin)))
+          (.addEof qpr)
+          (.addInput qpr stdin))
         (t/respond-to msg :status :done))
       (h msg))))
 
