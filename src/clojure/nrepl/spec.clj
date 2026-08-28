@@ -18,12 +18,12 @@
                                     (str/lower-case %))))
 
 (s/def ::session (s/or :single ::uuid-str
-                       :multi  (s/coll-of ::uuid-str :kind? set?)))
+                       :multi  (s/coll-of ::uuid-str :kind set?)))
 
 (s/def ::id string?)
 
 (s/def ::status (s/or :single keyword?
-                      :multi  (s/coll-of keyword? :kind? set?)))
+                      :multi  (s/coll-of keyword? :kind set?)))
 
 ;; Parameters for Clone
 
@@ -52,15 +52,15 @@
 
 (s/def ::doc string?)
 
-(s/def ::requires (s/map-of keyword? string?))
+(s/def ::requires (s/map-of string? string?))
 
-(s/def ::optional (s/map-of keyword? string?))
+(s/def ::optional (s/map-of string? string?))
 
-(s/def ::returns (s/map-of keyword? string?))
+(s/def ::returns (s/map-of string? string?))
 
 (s/def ::description (s/keys :opt-un [::doc ::requires ::optional ::returns]))
 
-(s/def ::ops (s/map-of keyword? ::description))
+(s/def ::ops (s/map-of string? ::description))
 
 (s/def ::major (s/or :integer int?
                      :string  string?))
@@ -158,7 +158,7 @@
 
 ;; `sessions`: Returns sessions in a set
 
-(s/def ::sessions (s/coll-of ::uuid-str :kind? set?))
+(s/def ::sessions (s/coll-of ::uuid-str))
 
 ;; Parameters for Std In
 
