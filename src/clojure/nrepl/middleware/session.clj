@@ -51,17 +51,25 @@
    can provide content to be read."
   [session-id transport]
   (let [input-queue (LinkedBlockingQueue.)
+        ;; A "stdin" payload is enqueued one character at a time, so an empty
+        ;; queue may just mean we looked in the middle of a message that is
+        ;; already arriving. `add-stdin` holds this lock for the whole payload,
+        ;; so taking it before asking the client for more input tells us
+        ;; whether the queue is really empty.
+        input-lock (Object.)
         request-input #(or (.poll input-queue)
                            ;; Skipping newlines shouldn't trigger need-input
                            ;; from the client if queue is empty.
                            (when-not *skipping-eol*
-                             (t/send transport
-                                     (response-for *msg* :session session-id
-                                                   :status :need-input))
-                             (.take input-queue)))
+                             (or (locking input-lock (.poll input-queue))
+                                 (do (t/send transport
+                                             (response-for *msg* :session session-id
+                                                           :status :need-input))
+                                     (.take input-queue)))))
         reader (LineNumberingPushbackReader.
                 (QueuePollingReader. input-queue request-input))]
     {:input-queue input-queue
+     :input-lock input-lock
      :stdin-reader reader}))
 
 (let [state (atom {})]
@@ -180,7 +188,7 @@
   `register-session` has to be called next."
   ([{:keys [transport session out-limit] :as msg}]
    (let [id (uuid)
-         {:keys [input-queue stdin-reader]} (session-in id transport)
+         {:keys [input-queue input-lock stdin-reader]} (session-in id transport)
          new-session (atom (assoc (if session
                                     @session
                                     (gather-initial-bindings msg))
@@ -189,7 +197,8 @@
                            :meta {:id id
                                   :out-limit (or out-limit (:out-limit (meta session)))
                                   :stdin-reader stdin-reader
-                                  :input-queue input-queue})]
+                                  :input-queue input-queue
+                                  :input-lock input-lock})]
      (alter-meta! new-session assoc :exec (make-ephemeral-exec-fn new-session msg))
      new-session)))
 
@@ -410,10 +419,15 @@
           (clojure.main/skip-if-eol in))))
 
     (if (= op "stdin")
-      (let [^LinkedBlockingQueue q (:input-queue (meta session))]
+      (let [{:keys [input-queue input-lock]} (meta session)
+            ^LinkedBlockingQueue q input-queue]
         (if (empty? stdin)
           (.put q -1)
-          (.addAll q (seq stdin)))
+          ;; Enqueue the whole payload before a reader can conclude the queue
+          ;; is empty, so it doesn't ask the client for input that is already
+          ;; on its way.
+          (locking input-lock
+            (.addAll q (seq stdin))))
         (t/respond-to msg :status :done))
       (h msg))))
 
