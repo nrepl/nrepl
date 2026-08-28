@@ -24,6 +24,7 @@
 - [#466](https://github.com/nrepl/nrepl/pull/466): Serialize namespace loading when resolving client-supplied vars, so concurrent sessions can't race on `require`.
 - [#458](https://github.com/nrepl/nrepl/pull/458): Report descriptive errors for invalid TLS key material (missing, legacy-format or encrypted private keys, missing certificates) instead of NPEs and generic JSSE messages.
 - [#182](https://github.com/nrepl/nrepl/issues/182): The built-in client now sends input to the server as raw text instead of reading it client-side, so reader typos, auto-resolved keywords relying on session aliases (e.g. `::io/foo`) and custom tagged literals no longer crash the REPL.
+- [#468](https://github.com/nrepl/nrepl/pull/468): Fix `nrepl.spec` key types for the `describe` and `ls-sessions` responses, which never matched what the server sends.
 
 ## 1.7.0 (2026-04-14)
 
