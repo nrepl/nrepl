@@ -226,9 +226,43 @@ Exit:      Control+D or (exit) or (quit)"
     (#{"http" "https"} scheme)
     (try
       (require 'drawbridge.client)
-      (catch FileNotFoundException _
-        (die (format "nREPL: connecting to %s URLs requires the nrepl/drawbridge library on the classpath.\n"
-                     scheme))))))
+      (catch FileNotFoundException e
+        ;; drawbridge pulls in clj-http and cheshire, which fail the same way,
+        ;; so don't blame drawbridge for one of its dependencies.
+        (if (str/includes? (str (.getMessage e)) "drawbridge")
+          (die (format "nREPL: connecting to %s URLs requires the nrepl/drawbridge library on the classpath.\n"
+                       scheme))
+          (die (format "nREPL: couldn't load drawbridge.client: %s\n" (.getMessage e))))))))
+
+(def ^:private unix-url-transports
+  "Transports keyed by the scheme a filesystem-socket server advertises. Those
+  URLs are opaque (e.g. `nrepl+unix:/tmp/nrepl.sock`), not authority-based, so
+  they need handling separately from the `scheme://host:port` ones."
+  (into {}
+        (map (fn [transport] [(str (transport/uri-scheme transport) "+unix") transport]))
+        [#'transport/bencode #'transport/edn]))
+
+(defn- unix-socket-url
+  "If `s` is a URL a filesystem-socket server advertises, returns a
+  `[transport path]` pair; otherwise nil."
+  [s]
+  (when (string? s)
+    (when-let [[_ scheme path] (re-find #"\A([a-zA-Z][a-zA-Z0-9+.-]*):(?!//)(.+)\z" s)]
+      (when-let [transport (unix-url-transports (str/lower-case scheme))]
+        [transport path]))))
+
+(defn- reject-conflicting-url-options!
+  "A URL already says where to connect and which transport to use, so options
+  that would decide the same things can't be honored. The TLS options are the
+  exception - a URL can't carry key material, so those are supplied alongside."
+  [url {:keys [port socket transport]}]
+  (when socket
+    (die (format "nREPL: --socket can't be combined with the URL %s.\n" url)))
+  (when port
+    (die (format "nREPL: --port can't be combined with the URL %s.\n" url)))
+  ;; bencode is the default, so anything else means --transport was given.
+  (when (and transport (not= transport #'transport/bencode))
+    (die (format "nREPL: --transport can't be combined with the URL %s; the transport comes from the scheme.\n" url))))
 
 (def ^:private tls-url-transports
   "The transports the built-in client can use over TLS, keyed by the URL
@@ -254,7 +288,7 @@ Exit:      Control+D or (exit) or (quit)"
         port (.getPort uri)]
     (when-not host
       (die (format "nREPL: Can't extract a host from the URL %s.\n" url)))
-    (when (> port 65535)
+    (when (or (zero? port) (> port 65535))
       (die (format "nREPL: Invalid port %d in URL %s.\n" port url)))
     (nrepl/connect :host host
                    ;; The same default port nrepl.core/url-connect uses for
@@ -268,19 +302,29 @@ Exit:      Control+D or (exit) or (quit)"
   ([{:keys [server options]}]
    (let [{:keys [host port socket] :or {host "127.0.0.1"}} server
          {:keys [transport tls-keys-file tls-keys-str] :or {transport #'transport/bencode}} options
-         scheme (connect-url-scheme host)]
+         scheme (connect-url-scheme host)
+         unix-url (unix-socket-url host)
+         conflicting (assoc server :transport (:transport options))]
      (run-repl-with-transport
       (cond
+        unix-url
+        (do (reject-conflicting-url-options! host conflicting)
+            (nrepl/connect :socket (second unix-url) :transport-fn (first unix-url)))
+
         (contains? tls-url-transports scheme)
-        (tls-url-connect host scheme options)
+        (do (reject-conflicting-url-options! host conflicting)
+            (tls-url-connect host scheme options))
 
         scheme
         (do (when (or tls-keys-file tls-keys-str)
               (die (format "nREPL: TLS options with a URL are only supported for %s URLs.\n"
                            (str/join " or " (map #(str % "://") (keys tls-url-transports))))))
+            (reject-conflicting-url-options! host conflicting)
             (ensure-url-scheme-support! scheme)
             (try
               (nrepl/url-connect host)
+              (catch java.net.URISyntaxException e
+                (die (format "nREPL: Invalid URL %s (%s).\n" host (.getMessage e))))
               (catch IllegalArgumentException e
                 (die (format "nREPL: %s\n" (.getMessage e))))))
 
@@ -359,7 +403,7 @@ Exit:      Control+D or (exit) or (quit)"
   -c/--connect                Connect to a running nREPL with the built-in client.
   -C/--color                  Use colors to differentiate values from output in the REPL. Must be combined with --interactive.
   -b/--bind ADDR              Bind address, by default \"127.0.0.1\".
-  -h/--host ADDR              Host address to connect to when using --connect. Defaults to \"127.0.0.1\". May also be a URL (e.g. nrepl://host:port, nrepls://host:port for TLS servers (requires --tls-keys-file or --tls-keys-str) or, with nrepl/drawbridge on the classpath, http(s)://host/repl), in which case the transport is chosen from the scheme.
+  -h/--host ADDR              Host address to connect to when using --connect. Defaults to \"127.0.0.1\". May also be a URL the server advertises on startup - nrepl://host:port, nrepls://host:port for TLS servers (requires --tls-keys-file or --tls-keys-str), nrepl+unix:/path for filesystem sockets, or http(s)://host/repl with nrepl/drawbridge on the classpath. The transport comes from the scheme, so --transport, --port and --socket can't be combined with a URL.
   -p/--port PORT              Start nREPL on PORT. Defaults to 0 (random port) if not specified.
   -s/--socket PATH            Start nREPL on filesystem socket at PATH or nREPL to connect to when using --connect.
   --tls-keys-file FILE        Enable TLS, reading the CA certificate, own certificate and private key from FILE. Applies both when starting a server and when using --connect. See the TLS section of the manual for details on generating the keys.
