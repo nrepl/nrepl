@@ -2,6 +2,7 @@
   "Support for persistent, cross-connection REPL sessions."
   {:author "Chas Emerick"}
   (:require
+   [clojure.spec.alpha :as s]
    [nrepl.config :refer [config]]
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.interruptible-eval :refer [*msg*]]
@@ -83,6 +84,7 @@
           #'*print-meta*             *print-meta*
           #'*print-length*           *print-length*
           #'*print-level*            *print-level*
+          #'*print-namespace-maps*   true
           #'*data-readers*           *data-readers*
           #'*default-data-reader-fn* *default-data-reader-fn*
           #'*compile-path*           (System/getProperty "clojure.compile.path" "classes")
@@ -93,17 +95,14 @@
           #'*2                       nil
           #'*3                       nil
           #'*e                       nil
-          #'*read-eval*              *read-eval*})
+          #'*read-eval*              *read-eval*
+          #'s/*explain-out*          s/*explain-out*})
         m
 
     ;; Conditional bindings for compatibility with older Clojure.
-    (let [print-ns-maps (resolve '*print-namespace-maps*)
-          explain-out (resolve 'clojure.spec.alpha/*explain-out*)
-          repl (resolve '*repl*)]
+    (let [repl (resolve '*repl*)]
       (cond-> m
-        print-ns-maps (assoc! print-ns-maps true)
-        explain-out   (assoc! explain-out (var-get explain-out))
-        repl          (assoc! repl true)))
+        repl (assoc! repl true)))
 
     ;; This may contain other bindings established when
     ;; `nrepl.server/start-server` was called.
