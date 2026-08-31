@@ -659,6 +659,13 @@
     (session {:op "stdin" :stdin []})
     (is+ nil? (response-values responses))))
 
+(def-repl-test request-*in*-eof-after-input
+  ;; EOF that arrives behind buffered input must still be reported, and not be
+  ;; swallowed by the read that drains that input.
+  (doall (timeout-session {:op "stdin" :stdin "abc"}))
+  (doall (timeout-session {:op "stdin" :stdin []}))
+  (is+ ["abc"] (repl-values timeout-session "(read-line)")))
+
 (def-repl-test request-multiple-read-newline-*in*
   ;; Verify that when ":ohai\n" is supplied (with a newline), a `(read)`
   ;; consumes :ohai but also consumes a newline, so that when we later give "a\n"
