@@ -26,6 +26,7 @@
 - [#182](https://github.com/nrepl/nrepl/issues/182): The built-in client now sends input to the server as raw text instead of reading it client-side, so reader typos, auto-resolved keywords relying on session aliases (e.g. `::io/foo`) and custom tagged literals no longer crash the REPL.
 - [#468](https://github.com/nrepl/nrepl/pull/468): Fix `nrepl.spec` key types for the `describe` and `ls-sessions` responses, which never matched what the server sends.
 - [#470](https://github.com/nrepl/nrepl/pull/470): [session] Fix race condition between stdin consumer and producer.
+- [#472](https://github.com/nrepl/nrepl/pull/472): Report stdin EOF that arrives behind buffered input, instead of asking the client for more input that will never come.
 
 ## 1.7.0 (2026-04-14)
 
