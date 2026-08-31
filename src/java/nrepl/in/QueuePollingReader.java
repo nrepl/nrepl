@@ -45,12 +45,11 @@ public class QueuePollingReader extends Reader {
         }
     }
 
-    /** Return the next input char. If the buffer and queue is empty, and
-     * blockOnEmpty is true, send the :need-input message to the client and
-     * block on the queue until next input is available. Return -1 if EOF is
-     * reached or if blockOnEmpty is false.
+    /** Return the next input char. If the buffer and the queue are empty, send
+     * the :need-input message to the client and block on the queue until the
+     * next input is available. Return -1 if EOF is reached.
      */
-    private int readInputChar(boolean blockOnEmpty) {
+    private int readInputChar() {
         while (true) {
             int c = pollInputChar();
             switch (c) {
@@ -58,15 +57,13 @@ public class QueuePollingReader extends Reader {
                 currentInput = null; // Clear EOF marker
                 return -1;
             case -1:
-                if (blockOnEmpty) {
-                    sendNeedInputRequest.invoke();
-                    try { currentInput = queue.take(); }
-                    catch (InterruptedException ex) {
-                        Thread.currentThread().interrupt();
-                        return -1;
-                    }
-                    continue;
-                } else return -1;
+                sendNeedInputRequest.invoke();
+                try { currentInput = queue.take(); }
+                catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    return -1;
+                }
+                continue;
             default:
                 currentInputIndex++; // Advance read pointer
                 return c;
@@ -98,7 +95,7 @@ public class QueuePollingReader extends Reader {
 
         // First char taken from an empty queue will cause `needs-input` message
         // to be sent to the client.
-        int firstChar = readInputChar(true);
+        int firstChar = readInputChar();
         if (firstChar < 0) return -1;
         buf[off] = (char)firstChar;
 
@@ -106,8 +103,11 @@ public class QueuePollingReader extends Reader {
         // there, and when queue becomes empty, return the number of chars read.
         int i = 1;
         while (i < len) {
-            int c = readInputChar(false);
+            // Peek, so that an EOF marker stays in place and is reported by the
+            // next read() instead of being swallowed here.
+            int c = pollInputChar();
             if (c < 0) break;
+            currentInputIndex++;
             buf[off + i++] = (char)c;
         }
         return i;
