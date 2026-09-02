@@ -5,6 +5,7 @@
    :added  "0.6"}
   (:refer-clojure :exclude [print])
   (:require
+   [nrepl.config :as config]
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.misc :as misc]
    [nrepl.transport :as transport])
@@ -18,7 +19,9 @@
   "Function to use for printing. Takes two arguments: `value`, the value to print,
   and `writer`, the `java.io.PrintWriter` to print on.
 
-  Defaults to the equivalent of `clojure.core/pr`."
+  Defaults to the equivalent of `clojure.core/pr`, unless a printer is
+  configured in the nREPL configuration file, in which case
+  `configure-default-printer!` installs that one instead."
   @#'clojure.core/pr-on) ;; Private in clojure.core
 
 (def ^:dynamic *stream?*
@@ -127,6 +130,34 @@
           (send-nonstreamed msg resp opts)))
       this)))
 
+(defn- config-printer
+  "Resolve the printer configured via the `::print` and `::options` keys in the
+  nREPL configuration file. Returns a [value writer] function applying
+  `::options`, or nil when nothing resolvable is configured."
+  []
+  (when-let [printer (::print config/config)]
+    (if-let [print-var (try
+                         (requiring-resolve (symbol printer))
+                         ;; Config-supplied, so a bad value is a user error.
+                         ;; Log it and keep the built-in printer, rather than
+                         ;; breaking every eval on the server.
+                         (catch Exception _ nil))]
+      (let [options (::options config/config)]
+        (fn [value writer] (print-var value writer options)))
+      (do (misc/log "Could not resolve the" (str ::print) "var:" (pr-str printer))
+          nil))))
+
+(defn configure-default-printer!
+  "Install the printer from the nREPL configuration file as the root value of
+  `*print-fn*`, making it the default for every session. Called when a server
+  starts. Per-request and per-session printers still take precedence.
+
+  Experimental: the configuration keys this reads may still change."
+  {:added "1.8"}
+  []
+  (when-let [f (config-printer)]
+    (alter-var-root #'*print-fn* (constantly f))))
+
 (defn- resolve-print
   [{:keys [::print] :as msg}]
   (when-let [var-sym (some-> print (symbol))]
@@ -163,7 +194,9 @@
 
   * `::print-fn` – the function to use for printing. In requests, will be
   resolved from the above two options (if provided). Defaults to the equivalent
-  of `clojure.core/pr`. Must have signature [writer options].
+  of `clojure.core/pr`, or to the printer set in the nREPL configuration file
+  under the same `::print` and `::options` keys. Must have signature
+  [writer options].
 
   * `::stream?` – if logical true, the result of printing each value will be
   streamed to the client over one or more messages.

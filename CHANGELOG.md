@@ -8,6 +8,7 @@
 
 ### New features
 
+- [#93](https://github.com/nrepl/nrepl/issues/93): **(Experimental)** Allow setting a default print function for every session of a server via the `:nrepl.middleware.print/print` and `:nrepl.middleware.print/options` configuration keys.
 - [#455](https://github.com/nrepl/nrepl/pull/455): The built-in command-line client can now connect using a URL (`--connect --host <url>`), including the `nrepls://`/`nrepl+edns://` URLs TLS servers advertise (combined with `--tls-keys-file`/`--tls-keys-str`), the `nrepl+unix:` URLs filesystem-socket servers advertise, and `http(s)://` when `nrepl/drawbridge` is on the classpath.
 
 ### Changes
