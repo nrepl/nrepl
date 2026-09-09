@@ -12,7 +12,7 @@
     {;; Pom section
      :lib lib
      :version version
-     :scm {:url "https://github.com/nrepl/nrepl", :tag version}
+     :scm {:url "https://github.com/nrepl/nrepl", :tag (str "v" version)}
      :pom-data [[:description "nREPL is a Clojure *n*etwork REPL."]
                 [:url "https://nrepl.org"]
                 [:licenses
