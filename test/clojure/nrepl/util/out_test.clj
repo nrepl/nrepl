@@ -13,6 +13,18 @@
 
 (use-fixtures :each reset-callbacks-fixture)
 
+(defn- wait-for
+  "Polls `pred` until it returns a truthy value or `timeout-ms` elapses.
+  Callbacks are invoked on nREPL's transport executor, so the tests have to
+  wait for them to have run instead of assuming they already have."
+  [pred timeout-ms]
+  (let [deadline (+ (System/currentTimeMillis) timeout-ms)]
+    (loop []
+      (or (pred)
+          (when (< (System/currentTimeMillis) deadline)
+            (Thread/sleep 10)
+            (recur))))))
+
 (deftest test-wrap-standard-streams-idempotency
   (testing "wrap-standard-streams is idempotent"
     (let [original-out (:out @@#'out/original-print-streams)
@@ -41,7 +53,7 @@
       ;; Write to streams
       (.println System/out "Hello stdout")
       (.println System/err "Hello stderr")
-      (Thread/sleep 100)
+      (wait-for #(and (= 2 (count @out-calls)) (= 1 (count @err-calls))) 5000)
 
       (is+ #{[:test1 (newline->sys "Hello stdout\n")]
              [:test2 (newline->sys "Hello stdout\n")]}
@@ -62,7 +74,7 @@
       (.start (Thread. #(println "Hello stdout")))
       (.start (Thread. #(binding [*out* *err*]
                           (println "Hello stderr"))))
-      (Thread/sleep 100)
+      (wait-for #(and (= 2 (count @out-calls)) (= 1 (count @err-calls))) 5000)
 
       (is+ #{[:test1 (newline->sys "Hello stdout\n")]
              [:test2 (newline->sys "Hello stdout\n")]}
@@ -77,9 +89,9 @@
       (out/set-callback :out ::bad-callback #(/ 1 %))
       (out/set-callback :out ::good-callback #(swap! out-calls conj %))
 
-      (dotimes [i 10]
+      (dotimes [_ 10]
         (.println System/out "1"))
-      (Thread/sleep 100)
+      (wait-for #(= 10 (count @out-calls)) 5000)
 
       (is+ (vec (repeat 10 (newline->sys "1\n")))
            @out-calls))))
