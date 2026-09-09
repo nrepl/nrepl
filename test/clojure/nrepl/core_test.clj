@@ -75,10 +75,17 @@
 
 (use-fixtures :each repl-server-fixture)
 
-(defn closeable-session [client]
-  (let [session (client-session client)]
-    (set! *sessions-to-close* (conj *sessions-to-close* session))
-    session))
+(defn closeable-session
+  "Opens a new session via `client` and registers it to be closed after the
+  test. When `msg-client` is given, the session's messages go through that
+  client instead (e.g. one with a short response timeout), while the `clone`
+  that opens the session still goes through `client`, so a slow server can't
+  fail the test before it has even started."
+  ([client] (closeable-session client client))
+  ([client msg-client]
+   (let [session (client-session msg-client :session (new-session client))]
+     (set! *sessions-to-close* (conj *sessions-to-close* session))
+     session)))
 
 (defmacro with-repl-server [& body]
   `(with-open [^nrepl.transport.FnTransport
@@ -88,7 +95,7 @@
            ~'client (client transport# Long/MAX_VALUE)
            ~'session (closeable-session ~'client)
            ~'timeout-client (client transport# 1000)
-           ~'timeout-session (closeable-session ~'timeout-client)
+           ~'timeout-session (closeable-session ~'client ~'timeout-client)
            ~'repl-eval #(message % {:op "eval" :code %2})
            ~'repl-values (comp response-values ~'repl-eval)]
        ~@body)))
