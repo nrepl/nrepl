@@ -31,6 +31,7 @@
 - [#468](https://github.com/nrepl/nrepl/pull/468): Fix `nrepl.spec` key types for the `describe` and `ls-sessions` responses, which never matched what the server sends.
 - [#470](https://github.com/nrepl/nrepl/pull/470): [session] Fix race condition between stdin consumer and producer.
 - [#472](https://github.com/nrepl/nrepl/pull/472): Report stdin EOF that arrives behind buffered input, instead of asking the client for more input that will never come.
+- [#474](https://github.com/nrepl/nrepl/pull/474): Keep the session alive when evaluated code closes or rebinds `*in*` or `*out*` (e.g. via `(slurp *in*)`), instead of killing the session thread and never sending `done`.
 
 ## 1.7.0 (2026-04-14)
 
