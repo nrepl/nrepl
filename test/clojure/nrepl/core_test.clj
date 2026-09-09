@@ -669,8 +669,8 @@
 (def-repl-test request-*in*-eof-after-input
   ;; EOF that arrives behind buffered input must still be reported, and not be
   ;; swallowed by the read that drains that input.
-  (doall (timeout-session {:op "stdin" :stdin "abc"}))
-  (doall (timeout-session {:op "stdin" :stdin []}))
+  (dorun (message timeout-session {:op "stdin" :stdin "abc"}))
+  (dorun (message timeout-session {:op "stdin" :stdin []}))
   (is+ ["abc"] (repl-values timeout-session "(read-line)")))
 
 (def-repl-test request-multiple-read-newline-*in*
