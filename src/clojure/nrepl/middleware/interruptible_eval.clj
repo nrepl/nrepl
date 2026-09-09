@@ -63,7 +63,10 @@
   ;; the actual following content. To simulate this behavior, we run
   ;; this newline-skipping function after every `eval` request.
   ;; Note that we check if stdin is ready in order not to block if it is empty.
-  (when (.ready ^PushbackReader *in*)
+  ;; The evaluated code may have set! *in* to some other Reader; the hack only
+  ;; makes sense for the line-numbering reader a session binds *in* to.
+  (when (and (instance? LineNumberingPushbackReader *in*)
+             (.ready ^LineNumberingPushbackReader *in*))
     (clojure.main/skip-if-eol *in*)))
 
 (defn evaluator
@@ -166,8 +169,13 @@
         (catch Throwable e
           (caught e))
         (finally
-          (flush)
-          (skip-stdin-newline)
+          ;; The evaluated code may have closed *out* or *in* (e.g. `(slurp
+          ;; *in*)`). An exception escaping from here would kill the session
+          ;; thread, and the client would never see `done`.
+          (try
+            (flush)
+            (skip-stdin-newline)
+            (catch Exception _))
           (pop-thread-bindings))))))
 
 (defn interruptible-eval

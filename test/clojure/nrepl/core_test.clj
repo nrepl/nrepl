@@ -666,6 +666,29 @@
   (doall (timeout-session {:op "stdin" :stdin []}))
   (is+ ["abc"] (repl-values timeout-session "(read-line)")))
 
+(def-repl-test closing-*in*-keeps-the-session-alive
+  ;; `slurp` closes the reader it is handed. Doing that to *in* must not take
+  ;; the session down: the eval still completes, and later evals on the same
+  ;; session are still answered (though *in* itself stays closed).
+  (dorun (message timeout-session {:op "stdin" :stdin []}))
+  (is+ [""] (repl-values timeout-session "(slurp *in*)"))
+  (is+ [2] (repl-values timeout-session "(+ 1 1)")))
+
+(def-repl-test rebinding-*in*-keeps-the-session-alive
+  ;; *in* may be set! to any Reader, not only a PushbackReader.
+  (dorun (repl-eval timeout-session
+                    (code (set! *in* (java.io.BufferedReader. (java.io.StringReader. "hi\n"))))))
+  (is+ ["hi"] (repl-values timeout-session "(read-line)"))
+  (is+ [2] (repl-values timeout-session "(+ 1 1)")))
+
+(def-repl-test closing-*out*-keeps-the-session-alive
+  ;; Flushing a closed *out* after the eval must not take the session down
+  ;; either. *out* is rebound for every message, so the next eval gets a
+  ;; working one again.
+  (dorun (repl-eval timeout-session
+                    (code (set! *out* (doto (java.io.BufferedWriter. (java.io.StringWriter.)) .close)))))
+  (is+ [2] (repl-values timeout-session "(+ 1 1)")))
+
 (def-repl-test request-multiple-read-newline-*in*
   ;; Verify that when ":ohai\n" is supplied (with a newline), a `(read)`
   ;; consumes :ohai but also consumes a newline, so that when we later give "a\n"
