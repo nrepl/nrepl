@@ -18,7 +18,7 @@ jobs:
       run: cd libnrepl/ && make all
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: libnrepl-linux-x64
         path: libnrepl/build
@@ -45,7 +45,7 @@ jobs:
           cd /build/libnrepl/ && make all
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: libnrepl-linux-arm64
         path: libnrepl/build
@@ -64,7 +64,7 @@ jobs:
       run: cd libnrepl/ && make all
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: libnrepl-macos-universal
         path: libnrepl/build
