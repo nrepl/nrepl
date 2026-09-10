@@ -209,7 +209,7 @@ $ git push origin master --tags
   the tag name. The tag must match `v<major>.<minor>.<patch>` (with an
   optional `-alpha<N>` suffix).
   * *GitHub Release* — a GitHub Actions workflow creates a GitHub Release
-  with auto-generated release notes.
+  whose notes are the version's section of `CHANGELOG.md`.
 
 TIP: Snapshot deploys are also automated — pushing a tag ending in
 `-SNAPSHOT` triggers the same CircleCI deploy pipeline.

@@ -16,12 +16,36 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Create GitHub Release with Auto-Generated Notes
+      # The release notes are the version's section of the changelog. A
+      # prerelease usually has no section of its own yet, so it gets the
+      # unreleased one. If neither has anything, fall back to GitHub's
+      # generated notes rather than publish an empty release.
+      - name: Extract the release notes from the changelog
+        id: notes
+        run: |
+          extract() {
+            awk -v heading="$1" '
+              /^## / { if (found) exit; found = ($2 == heading); next }
+              found { print }
+            ' CHANGELOG.md
+          }
+          extract "${GITHUB_REF_NAME#v}" > release-notes.md
+          if ! grep -q '[^[:space:]]' release-notes.md; then
+            extract master > release-notes.md
+          fi
+          if grep -q '[^[:space:]]' release-notes.md; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::No changelog section for $GITHUB_REF_NAME, using generated notes instead."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.ref_name }}
           name: nREPL ${{ github.ref_name }}
           prerelease: ${{ contains(github.ref, '-rc') || contains(github.ref, '-alpha') || contains(github.ref, '-beta') }}
-          generateReleaseNotes: true  # Auto-generate release notes based on PRs and commits
-          # TODO: Use bodyFile to get the contents from changelog
+          bodyFile: ${{ steps.notes.outputs.found == 'true' && 'release-notes.md' || '' }}
+          generateReleaseNotes: ${{ steps.notes.outputs.found != 'true' }}
           token: ${{ secrets.GITHUB_TOKEN }}
