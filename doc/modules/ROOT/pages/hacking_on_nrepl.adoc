@@ -9,10 +9,6 @@ interactive Lisp manner and just make some changes and test them directly from a
 
 == Building nREPL
 
-NOTE: Releases are available from Clojars, and SNAPSHOT builds from master's
-HEAD are automatically deployed there as well, so manually building
-nREPL shouldn't ever be necessary (unless you're hacking on it).
-
 Building nREPL locally is a very simple process:
 
 . Clone the repo
@@ -209,9 +205,10 @@ $ git push origin master --tags
   (after tests and lint pass) that publishes the artifact to
   https://clojars.org/nrepl/nrepl[Clojars]. The version is derived from
   the tag name. The tag must match `v<major>.<minor>.<patch>` (with an
-  optional `-alpha<N>` suffix).
+  optional `-alpha<N>`, `-beta<N>` or `-rc<N>` suffix).
   * *GitHub Release* — a GitHub Actions workflow creates a GitHub Release
   whose notes are the version's section of `CHANGELOG.md`.
 
-TIP: Snapshot deploys are also automated — pushing a tag ending in
-`-SNAPSHOT` triggers the same CircleCI deploy pipeline.
+TIP: Pushing a tag like `v1.6.0-SNAPSHOT` runs the same pipeline, tests
+included, and deploys a snapshot to Clojars. That's a cheap way to
+exercise the whole release path before tagging the real thing.

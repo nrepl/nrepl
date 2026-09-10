@@ -221,7 +221,7 @@ run_always: &run_always
     branches:
       only: /.*/
     tags:
-      ignore: /.*SNAPSHOT$/
+      only: /.*/
 
 workflows:
   ci-test-matrix:
@@ -261,6 +261,9 @@ workflows:
           <<: *run_always
       - lint:
           <<: *run_always
+      # Releases, prereleases and snapshots all go through the same gate: the
+      # whole matrix has to be green first. A vX.Y.Z-SNAPSHOT tag is the way
+      # to exercise the full release path without cutting a release.
       - deploy:
           requires:
             - test-1.12
@@ -273,11 +276,6 @@ workflows:
             branches:
               ignore: /.*/
             tags:
-              only: /^v\d+\.\d+\.\d+(-alpha\d+)?$/
-      - deploy:
-          name: Deploy snapshot
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^.+-SNAPSHOT$/
+              only:
+                - /^v\d+\.\d+\.\d+(-(alpha|beta|rc)\d+)?$/
+                - /^v\d+\.\d+\.\d+-SNAPSHOT$/
