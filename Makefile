@@ -1,4 +1,4 @@
-.PHONY: test eastwood cljfmt kondo install deploy clean lint copy-sources-to-jdk javac javac-test docs verify-docs
+.PHONY: test eastwood cljfmt kondo cloverage install deploy clean lint javac javac-test docs verify-docs verify-cljdoc check-env
 .DEFAULT_GOAL := install
 
 # Set bash instead of sh for the @if [[ conditions,
