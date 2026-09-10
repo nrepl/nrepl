@@ -82,6 +82,42 @@ commands:
             - .cpcache
           key: cache-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
 
+  prepare_deps:
+    description: |
+      Resolve the dependencies for the build tooling and the given alias
+      groups up front, retrying on failure. Computing a classpath occasionally
+      dies with a ClassCastException from HashMap internals: Maven's model
+      validator caches the coordinates it has validated in an unsynchronized
+      HashSet, and tools.deps resolves on several threads at once. It strikes
+      whenever .cpcache misses, on JDK 8 and JDK 26 alike, and a retry is all
+      it takes.
+    parameters:
+      aliases:
+        description: |
+          Space-separated alias groups to prepare, e.g. ":1.12:dev:test :kondo"
+        type: string
+    steps:
+      - run:
+          name: Preparing dependencies
+          command: |
+            prepare() {
+              clojure -P -T:build || return 1
+              for aliases in << parameters.aliases >>; do
+                clojure -P -M"$aliases" || return 1
+              done
+            }
+            attempt=1
+            until prepare; do
+              if [ "$attempt" -ge 3 ]; then
+                echo "Giving up after $attempt attempts."
+                exit 1
+              fi
+              attempt=$((attempt + 1))
+              echo "Downloading dependencies failed, retrying..."
+              sleep 5
+            done
+
+
   setup-windows:
     steps:
       - checkout
@@ -108,6 +144,8 @@ jobs:
       - with_cache:
           cache_version: "util_v3_<< parameters.clojure_version >>"
           steps:
+            - prepare_deps:
+                aliases: ":eastwood :cljfmt :kondo"
             - run:
                 name: Running Eastwood
                 command: |
@@ -157,6 +195,8 @@ jobs:
       - with_cache:
           cache_version: "test_v2_<< parameters.clojure_version >>"
           steps:
+            - prepare_deps:
+                aliases: ":<< parameters.clojure_version >>:dev:test<< parameters.extra_aliases >>"
             - run:
                 name: Running tests
                 command: make test
