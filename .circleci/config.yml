@@ -117,16 +117,6 @@ commands:
               sleep 5
             done
 
-
-  setup-windows:
-    steps:
-      - checkout
-      - run:
-          name: Install scoop latest
-          command: |
-            Invoke-WebRequest -Uri "https://github.com/casselc/clj-msi/releases/download/v1.12.5.1645/clojure-1.12.5.1645.msi" -OutFile install.msi
-            Start-Process msiexec.exe -Wait -ArgumentList "/i install.msi /qn"
-
 jobs:
 
   lint:
@@ -205,16 +195,34 @@ jobs:
 
   test-windows:
     description: |
-      Run tests on MS-Windows using the system's JDK version and Clojure 1.12.
+      Run tests on MS-Windows with Temurin JDK 21 and Clojure 1.12.
     executor: win/default
     steps:
-      - setup-windows
+      - checkout
+      - run:
+          name: Install the JDK and the Clojure CLI
+          command: |
+            choco install temurin21 --no-progress -y; if(-not $?){exit 9}
+            Invoke-WebRequest -Uri "https://github.com/casselc/clj-msi/releases/download/v1.12.5.1645/clojure-1.12.5.1645.msi" -OutFile install.msi
+            Start-Process msiexec.exe -Wait -ArgumentList "/i install.msi /qn"
+      - restore_cache:
+          key: windows-cache-1-{{ checksum "deps.edn" }}
       - run:
           name: Running tests on Windows
           command: |
+            $env:JAVA_HOME = (Get-ChildItem 'C:\Program Files\Eclipse Adoptium\jdk-21*' | Select-Object -First 1).FullName
+            if (-not $env:JAVA_HOME) { Write-Error "Temurin JDK 21 not found"; exit 9 }
+            $env:Path = "$env:JAVA_HOME\bin;$env:Path"
             java -version; if(-not $?){exit 9}
             clojure -T:build javac :with-tests true; if(-not $?){exit 9}
             clojure -M:dev:test; if(-not $?){exit 9}
+      - save_cache:
+          key: windows-cache-1-{{ checksum "deps.edn" }}
+          paths:
+            - C:\Users\circleci\.m2
+            - .cpcache
+      - store_test_results:
+          path: test-results
 
 run_always: &run_always
   filters:
