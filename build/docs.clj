@@ -20,16 +20,21 @@
   (str/join (for [[k v] msg-slot-docs]
               (format "* `%s` %s\n" (pr-str k) (markdown-escape v)))))
 
+(defn- version-note
+  "The optional nREPL version to mention in the generated header."
+  [version]
+  (when version
+    (str " (nREPL v" version ")")))
+
 (defn- describe-markdown
   "Given a message containing the response to a verbose :describe message,
 generates a markdown string conveying the information therein, suitable for
 use in e.g. wiki pages, github, etc."
   [{:keys [ops]} version]
-  (apply str "# Supported nREPL operations
-
-<small>generated from a verbose 'describe' response (nREPL v"
-         version
-         ")</small>\n\n## Operations"
+  (apply str "# Supported nREPL operations\n\n"
+         "<small>generated from a verbose 'describe' response"
+         (version-note version)
+         "</small>\n\n## Operations"
          (for [[op {:keys [doc optional requires returns]}] (sort ops)]
            (str "\n\n### `" (pr-str op) "`\n\n"
                 (markdown-escape doc) "\n\n"
@@ -61,9 +66,9 @@ use in e.g. wiki pages, github, etc."
   use in e.g. wiki pages, github, etc."
   [{:keys [ops]} version]
   (apply str "= Supported nREPL operations\n\n"
-         "[small]#generated from a verbose 'describe' response (nREPL v"
-         version
-         ")#\n\n== Operations"
+         "[small]#generated from a verbose 'describe' response"
+         (version-note version)
+         "#\n\n== Operations"
          (for [[op {:keys [doc optional requires returns]}] (sort ops)]
            (str "\n\n=== `" (name op) "`\n\n"
                 (adoc-escape doc) "\n\n"
