@@ -29,7 +29,7 @@ cloverage:
 	clojure -M:cloverage
 
 docs:
-	clojure -X:docs :file '"doc/modules/ROOT/pages/ops.adoc"' :version '"1.7.0"'
+	clojure -X:docs :file '"doc/modules/ROOT/pages/ops.adoc"'
 
 # Regenerate ops.adoc and fail if it differs from the committed version.
 # This catches cases where middleware descriptors changed but the generated
