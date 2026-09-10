@@ -36,12 +36,25 @@
 
 (defcmd clean [opts] (b/delete {:path (:target opts)}))
 
+(defn- javac-opts
+  "Compile for Java 8, the oldest version nREPL supports. `--release` also
+  checks API usage against the Java 8 class library, so a JDK 9+ API slipping
+  in fails on every JDK rather than only on the JDK 8 CI jobs, but the flag
+  itself only exists on JDK 9+. Newer JDKs warn that 8 is obsolete; targeting
+  it is the whole point here, so that lint category is switched off."
+  []
+  (let [spec (System/getProperty "java.specification.version")
+        major (if (.startsWith ^String spec "1.") 8 (Integer/parseInt spec))]
+    (if (>= major 9)
+      ["--release" "8" "-Xlint:-options"]
+      ["-source" "8" "-target" "8"])))
+
 (defcmd javac [{:keys [with-tests] :as opts}]
   (b/javac (assoc opts
                   :src-dirs (if with-tests
                               ["src/java" "test/java"]
                               ["src/java"])
-                  :javac-opts ["-source" "8" "-target" "8"])))
+                  :javac-opts (javac-opts))))
 
 ;; Hack to propagate scope into pom.
 (alter-var-root
