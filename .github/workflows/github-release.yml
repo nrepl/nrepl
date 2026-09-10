@@ -7,6 +7,8 @@ on:
 
 jobs:
   create-release:
+    # Snapshot tags only exist to exercise the deploy pipeline.
+    if: ${{ !endsWith(github.ref_name, '-SNAPSHOT') }}
     runs-on: ubuntu-latest
 
     permissions:
