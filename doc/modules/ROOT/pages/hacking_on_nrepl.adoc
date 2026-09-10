@@ -24,11 +24,13 @@ Building nREPL locally is a very simple process:
 $ make install
 ----
 
-Afterwards you can simply do something like:
+That installs nREPL as version `99.99` into your local Maven repository
+(set `PROJECT_VERSION` to pick another one), so afterwards you can simply
+do something like:
 
 [source,shell]
 ----
-$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.7.0"}}}' -M -m nrepl.cmdline --interactive
+$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "99.99"}}}' -M -m nrepl.cmdline --interactive
 ----
 
 Now you can start playing with the server you've built.
