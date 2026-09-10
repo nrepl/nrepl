@@ -16,7 +16,7 @@ javac-test:
 test: javac-test
 	clojure -M:$(CLOJURE_VERSION):dev:test$(EXTRA_ALIASES)
 
-eastwood: clean javac-test
+eastwood: javac-test
 	clojure -M:eastwood
 
 cljfmt:
