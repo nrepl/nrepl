@@ -7,7 +7,7 @@ jobs:
     name: Check spelling with codespell
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: codespell-project/actions-codespell@v2
         with:
           skip: ./test/*.txt
@@ -16,7 +16,7 @@ jobs:
     name: Check spelling with misspell
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install misspell
         run: curl -sSfL https://raw.githubusercontent.com/golangci/misspell/v0.8.0/install-misspell.sh | sh -s -- -b . v0.8.0
       - name: Misspell
