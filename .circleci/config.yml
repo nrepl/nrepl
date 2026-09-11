@@ -68,10 +68,7 @@ commands:
       - run:
           name: Generate Cache Checksum
           command: |
-            for file in << parameters.files >>
-            do
-              find . -name $file -exec cat {} +
-            done | sha256sum | awk '{print $1}' > /tmp/clojure_cache_seed
+            cat << parameters.files >> | sha256sum | awk '{print $1}' > /tmp/clojure_cache_seed
       - restore_cache:
           key: cache-<< parameters.cache_version >>-{{ checksum "/tmp/clojure_cache_seed" }}
       - steps: << parameters.steps >>
