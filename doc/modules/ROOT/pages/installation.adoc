@@ -27,28 +27,40 @@ want to embed an nREPL server directly in your application. In those
 scenarios some kind of an installation will be in order - just adding
 nREPL as a dependency to your project.
 
-nREPL is available in https://clojars.org/nrepl[Clojars]. Add this to your Leiningen
-`project.clj` `:dependencies`:
+nREPL is available in https://clojars.org/nrepl[Clojars]. Add it as a
+dependency with your build tool of choice:
+
+[tabs]
+======
+Leiningen::
++
+--
+Add this to the `:dependencies` in your `project.clj`:
 
 [source,clojure,subs="attributes+"]
 ----
 [nrepl "{nrepl-version}"]
 ----
 
-[TIP]
-====
-You can override the version of nREPL supplied by Leiningen by adding nREPL as a
-dependency to your project.
-====
+TIP: Adding nREPL as a dependency also overrides the version that Leiningen
+itself ships.
+--
 
-Or, add this to your `deps.edn`:
+tools.deps::
++
+--
+Add this to your `deps.edn`:
 
 [source,clojure,subs="attributes+"]
 ----
 nrepl/nrepl {:mvn/version "{nrepl-version}"}
 ----
+--
 
-Or, add this to your Gradle project's `build.gradle`:
+Gradle::
++
+--
+Add this to your `build.gradle`:
 
 [source,groovy,subs="attributes+"]
 ----
@@ -60,8 +72,12 @@ dependencies {
   nrepl 'nrepl:nrepl:{nrepl-version}'
 }
 ----
+--
 
-Or, add this to your Maven project's `pom.xml`:
+Maven::
++
+--
+Add this to your `pom.xml`:
 
 [source,xml,subs="attributes+"]
 ----
@@ -71,6 +87,8 @@ Or, add this to your Maven project's `pom.xml`:
   <version>{nrepl-version}</version>
 </dependency>
 ----
+--
+======
 
 [[jvmti]]
 == Enable libnrepl JVMTI agent
