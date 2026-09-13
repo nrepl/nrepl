@@ -224,6 +224,33 @@ You can also easily leverage more powerful pretty-printers like `fipp` or `zprin
      (z/zprint value options))))
 ----
 
+=== Configuring the default printer
+
+Using `set!` on `\*print-fn*` only changes the current session. To set the
+default for _every_ session a server serves, put it in
+xref:server.adoc#_configuration_keys[the nREPL configuration file] (`.nrepl.edn`
+or the global `nrepl.edn`), under the same keys a request would use:
+
+[source,clojure]
+----
+{:nrepl.middleware.print/print   my.namespace/zprint-pprint
+ :nrepl.middleware.print/options {:width 60}}
+----
+
+`:nrepl.middleware.print/print` is a namespace-qualified symbol resolving to a
+function with the signature `[value writer options]`, the same shape the request
+option takes (and the `zprint` wrapper above).
+`:nrepl.middleware.print/options` is an optional map handed to it as the third
+argument.
+
+The server installs this as the default printer when it starts, so a per-request
+printer or a `set!` inside a session still wins. A symbol that can't be resolved
+is logged and ignored, leaving the built-in printer in place.
+
+NOTE: Configurable default printers were added in nREPL 1.8. The feature is
+experimental - the configuration keys and the way the printer is installed
+may still change in a future release.
+
 == Evaluation Errors
 
 The dynamic var `nrepl.middleware.caught/\*caught-fn*` can be `set!` at the REPL

@@ -9,7 +9,7 @@
    nrepl.middleware.io
    nrepl.middleware.load-file
    nrepl.middleware.lookup
-   nrepl.middleware.print
+   [nrepl.middleware.print :as print]
    nrepl.middleware.session
    [nrepl.misc :refer [log log-exceptions response-for]]
    [nrepl.socket :as socket :refer [inet-socket unix-server-socket]]
@@ -214,6 +214,9 @@
     (let [msg "tls? is true, but neither tls-keys-str nor tls-keys-file is present"]
       (log msg)
       (throw (ex-info msg {:nrepl/kind ::invalid-start-request}))))
+  ;; A printer configured in the nREPL configuration file becomes the default
+  ;; for every session this server serves.
+  (print/configure-default-printer!)
   (let [transport-fn (or transport-fn t/bencode)
         port (or port 0)
         bind (or bind "127.0.0.1")
