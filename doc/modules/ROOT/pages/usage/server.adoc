@@ -496,7 +496,7 @@ The following keys are recognized in `.nrepl.edn` and `~/.nrepl/nrepl.edn`:
 | :dynamic-vars
 | map
 | `{}`
-| A map from fully-qualified var symbols to default values applied to new sessions. See <<_dynamic_var_defaults>>.
+| A map from fully-qualified var symbols to default values applied to new sessions. See <<dynamic-var-defaults>>.
 
 | :tls-keys-file
 | string
@@ -511,7 +511,7 @@ The following keys are recognized in `.nrepl.edn` and `~/.nrepl/nrepl.edn`:
 | :enable-jvmti-agent
 | boolean
 | `true`
-| Whether to load the native JVMTI agent for thread stopping on Java 21+. See xref:../installation.adoc#jvmti[JVMTI agent].
+| Whether to load the native JVMTI agent for thread stopping on Java 21+. See xref:installation.adoc#jvmti[JVMTI agent].
 
 | :repl-fn
 | symbol
