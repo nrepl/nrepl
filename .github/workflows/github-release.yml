@@ -7,6 +7,9 @@ on:
 
 jobs:
   create-release:
+    # This tag exists to hand the docs site a corrected copy of the release's
+    # docs; it publishes nothing.
+    if: ${{ !endsWith(github.ref_name, '-antora') }}
     runs-on: ubuntu-latest
 
     permissions:
