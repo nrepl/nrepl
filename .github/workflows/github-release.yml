@@ -7,8 +7,9 @@ on:
 
 jobs:
   create-release:
-    # Snapshot tags only exist to exercise the deploy pipeline.
-    if: ${{ !endsWith(github.ref_name, '-SNAPSHOT') }}
+    # Snapshot tags only exist to exercise the deploy pipeline, and -antora
+    # tags only exist to give the docs site a corrected copy of a release.
+    if: ${{ !endsWith(github.ref_name, '-SNAPSHOT') && !endsWith(github.ref_name, '-antora') }}
     runs-on: ubuntu-latest
 
     permissions:
