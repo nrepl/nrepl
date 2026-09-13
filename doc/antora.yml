@@ -4,3 +4,10 @@ title: nREPL
 version: ~
 nav:
 - modules/ROOT/nav.adoc
+asciidoc:
+  attributes:
+    # The versions the manual's snippets pin. Bump nrepl-version on the release
+    # commit, together with the version above. Pages reference them as
+    # {nrepl-version}; code blocks need subs="attributes+" for that.
+    nrepl-version: '1.7.0'
+    drawbridge-version: '0.4.0'

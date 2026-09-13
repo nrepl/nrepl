@@ -29,9 +29,9 @@ nREPL as a dependency to your project.
 nREPL is available in https://clojars.org/nrepl[Clojars]. Add this to your Leiningen
 `project.clj` `:dependencies`:
 
-[source,clojure]
+[source,clojure,subs="attributes+"]
 ----
-[nrepl "1.7.0"]
+[nrepl "{nrepl-version}"]
 ----
 
 [TIP]
@@ -42,32 +42,32 @@ dependency to your project.
 
 Or, add this to your `deps.edn`:
 
-[source,clojure]
+[source,clojure,subs="attributes+"]
 ----
-nrepl/nrepl {:mvn/version "1.7.0"}
+nrepl/nrepl {:mvn/version "{nrepl-version}"}
 ----
 
 Or, add this to your Gradle project's `build.gradle`:
 
-[source,groovy]
+[source,groovy,subs="attributes+"]
 ----
 dependencies {
   // to use as a library in your code
-  implementation 'nrepl:nrepl:1.7.0'
+  implementation 'nrepl:nrepl:{nrepl-version}'
 
   // or to override the version of nREPL used by the clojureRepl task
-  nrepl 'nrepl:nrepl:1.7.0'
+  nrepl 'nrepl:nrepl:{nrepl-version}'
 }
 ----
 
 Or, add this to your Maven project's `pom.xml`:
 
-[source,xml]
+[source,xml,subs="attributes+"]
 ----
 <dependency>
   <groupId>nrepl</groupId>
   <artifactId>nrepl</artifactId>
-  <version>1.7.0</version>
+  <version>{nrepl-version}</version>
 </dependency>
 ----
 

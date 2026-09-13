@@ -58,11 +58,11 @@ nREPL ships with a very simple command-line client that you can use for some bas
 interactions with the server. The following command will start an nREPL server
 and connect with it using the built-in client.
 
-[source,shell]
+[source,shell,subs="attributes+"]
 ----
-$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.7.0"}}}' -M -m nrepl.cmdline --interactive
+$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "{nrepl-version}"}}}' -M -m nrepl.cmdline --interactive
 nREPL server started on port 59403 on host 127.0.0.1 - nrepl://127.0.0.1:59403
-nREPL 1.7.0
+nREPL {nrepl-version}
 Clojure 1.9.0
 Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
 user=> (+ 1 2)
@@ -71,10 +71,10 @@ user=> (+ 1 2)
 
 If you want to connect to a server that's already running you can do it like this:
 
-[source,shell]
+[source,shell,subs="attributes+"]
 ----
-$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.7.0"}}}' -M -m nrepl.cmdline --connect --host host --port port
-nREPL 1.7.0
+$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "{nrepl-version}"}}}' -M -m nrepl.cmdline --connect --host host --port port
+nREPL {nrepl-version}
 Clojure 1.9.0
 Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
 user=> (+ 1 2)
@@ -83,10 +83,10 @@ user=> (+ 1 2)
 
 If you want to connect to a unix domain socket, you can do it like this:
 
-[source,shell]
+[source,shell,subs="attributes+"]
 ----
-$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.7.0"}}}' -M -m nrepl.cmdline --connect --socket /some/where/safe/nrepl
-nREPL 1.7.0
+$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "{nrepl-version}"}}}' -M -m nrepl.cmdline --connect --socket /some/where/safe/nrepl
+nREPL {nrepl-version}
 Clojure 1.9.0
 Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
 user=> (+ 1 2)
@@ -97,10 +97,10 @@ You can also connect using a URL, by passing it as the `--host` value. The
 transport and the address both come from the URL, so `--transport`, `--port`
 and `--socket` are refused when combined with one:
 
-[source,shell]
+[source,shell,subs="attributes+"]
 ----
-$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.7.0"}}}' -M -m nrepl.cmdline --connect --host nrepl://127.0.0.1:59403
-nREPL 1.7.0
+$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "{nrepl-version}"}}}' -M -m nrepl.cmdline --connect --host nrepl://127.0.0.1:59403
+nREPL {nrepl-version}
 Clojure 1.9.0
 Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
 user=> (+ 1 2)
@@ -117,9 +117,9 @@ A TLS-enabled server advertises a TLS URL in its startup message - `nrepls://`
 still have to supply the client keys, so combine it with `--tls-keys-file` (or
 `--tls-keys-str`; see the xref:usage/tls.adoc[TLS documentation]):
 
-[source,shell]
+[source,shell,subs="attributes+"]
 ----
-$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.7.0"}}}' -M -m nrepl.cmdline --connect --host nrepls://127.0.0.1:4001 --tls-keys-file client.keys
+$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "{nrepl-version}"}}}' -M -m nrepl.cmdline --connect --host nrepls://127.0.0.1:4001 --tls-keys-file client.keys
 ----
 
 Connecting over HTTP or HTTPS is also
@@ -127,9 +127,9 @@ supported via the https://github.com/nrepl/drawbridge[Drawbridge] library -
 add `nrepl/drawbridge` to your dependencies and connect with an `http://` or
 `https://` URL:
 
-[source,shell]
+[source,shell,subs="attributes+"]
 ----
-$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "1.7.0"} nrepl/drawbridge {:mvn/version "0.4.0"}}}' -M -m nrepl.cmdline --connect --host https://your-app.example.com/repl
+$ clj -Sdeps '{:deps {nrepl/nrepl {:mvn/version "{nrepl-version}"} nrepl/drawbridge {:mvn/version "{drawbridge-version}"}}}' -M -m nrepl.cmdline --connect --host https://your-app.example.com/repl
 ----
 
 If Drawbridge isn't on the classpath, the client will tell you to add it.
