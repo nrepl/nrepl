@@ -1,4 +1,6 @@
 = Extensions
+:page-aliases: third_party_middleware.adoc
+:description: Official and third-party middleware that extend what an nREPL server can do.
 
 Here's a list of notable nREPL extensions (middleware or transports) you might encounter in the wild.
 

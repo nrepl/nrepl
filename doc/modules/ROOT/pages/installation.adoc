@@ -1,4 +1,5 @@
 = Installation
+:description: Adding nREPL to a Leiningen, tools.deps, Gradle or Maven project, and enabling the JVMTI agent on Java 21+.
 
 [NOTE]
 ====
@@ -26,50 +27,68 @@ want to embed an nREPL server directly in your application. In those
 scenarios some kind of an installation will be in order - just adding
 nREPL as a dependency to your project.
 
-nREPL is available in https://clojars.org/nrepl[Clojars]. Add this to your Leiningen
-`project.clj` `:dependencies`:
+nREPL is available in https://clojars.org/nrepl[Clojars]. Add it as a
+dependency with your build tool of choice:
 
-[source,clojure]
+[tabs]
+======
+Leiningen::
++
+--
+Add this to the `:dependencies` in your `project.clj`:
+
+[source,clojure,subs="attributes+"]
 ----
-[nrepl "1.7.0"]
-----
-
-[TIP]
-====
-You can override the version of nREPL supplied by Leiningen by adding nREPL as a
-dependency to your project.
-====
-
-Or, add this to your `deps.edn`:
-
-[source,clojure]
-----
-nrepl/nrepl {:mvn/version "1.7.0"}
+[nrepl "{nrepl-version}"]
 ----
 
-Or, add this to your Gradle project's `build.gradle`:
+TIP: Adding nREPL as a dependency also overrides the version that Leiningen
+itself ships.
+--
 
-[source,groovy]
+tools.deps::
++
+--
+Add this to your `deps.edn`:
+
+[source,clojure,subs="attributes+"]
+----
+nrepl/nrepl {:mvn/version "{nrepl-version}"}
+----
+--
+
+Gradle::
++
+--
+Add this to your `build.gradle`:
+
+[source,groovy,subs="attributes+"]
 ----
 dependencies {
   // to use as a library in your code
-  implementation 'nrepl:nrepl:1.7.0'
+  implementation 'nrepl:nrepl:{nrepl-version}'
 
   // or to override the version of nREPL used by the clojureRepl task
-  nrepl 'nrepl:nrepl:1.7.0'
+  nrepl 'nrepl:nrepl:{nrepl-version}'
 }
 ----
+--
 
-Or, add this to your Maven project's `pom.xml`:
+Maven::
++
+--
+Add this to your `pom.xml`:
 
-[source,xml]
+[source,xml,subs="attributes+"]
 ----
 <dependency>
   <groupId>nrepl</groupId>
   <artifactId>nrepl</artifactId>
-  <version>1.7.0</version>
+  <version>{nrepl-version}</version>
 </dependency>
 ----
+--
+======
 
 [[jvmti]]
 == Enable libnrepl JVMTI agent

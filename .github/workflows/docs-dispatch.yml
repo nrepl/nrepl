@@ -1,0 +1,26 @@
+name: Ask nrepl.org to rebuild
+
+# The docs site is built from this repo's doc/ directory by the nrepl.org
+# repository, which rebuilds daily on its own. This asks for a rebuild right
+# away when a doc change lands, provided a token for nrepl.org is configured.
+
+on:
+  push:
+    branches: [master]
+    paths: ["doc/**"]
+
+env:
+  DISPATCH_TOKEN: ${{ secrets.DOCS_DISPATCH_TOKEN }}
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send docs-updated to nrepl/nrepl.org
+        # Skipped until the DOCS_DISPATCH_TOKEN secret exists.
+        if: ${{ env.DISPATCH_TOKEN != '' }}
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ env.DISPATCH_TOKEN }}
+          repository: nrepl/nrepl.org
+          event-type: docs-updated

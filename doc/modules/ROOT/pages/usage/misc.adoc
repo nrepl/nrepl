@@ -1,4 +1,5 @@
 = Misc Functionality
+:description: Completion, symbol lookup, pretty printing, error reporting, hot-loading dependencies and output forwarding in nREPL.
 
 This page covers some of the non-essential functionality provided by nREPL.
 Why "non-essential"? For two reasons:

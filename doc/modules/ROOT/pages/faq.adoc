@@ -1,4 +1,5 @@
 = FAQ
+:description: Frequently asked questions about nREPL.
 
 == What's the difference between contrib's nREPL and this one?
 
@@ -45,7 +46,7 @@ xref:design/transports.adoc[Transports] for details.
 nREPL reads configuration from two EDN files: a global `~/.nrepl/nrepl.edn`
 and a project-local `.nrepl.edn`. You can set the bind address, port,
 transport, middleware, and more. Command-line flags override config file values.
-See xref:usage/server.adoc#_server_configuration[Server Configuration] for the
+See xref:usage/server.adoc#server-configuration[Server Configuration] for the
 full details.
 
 == Can I use nREPL with Unix domain sockets?

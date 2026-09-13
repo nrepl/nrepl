@@ -1,7 +1,8 @@
 = nREPL
 :notitle:
+:description: nREPL is a network REPL for Clojure: a server, a client and a simple protocol that editors and tools build on.
 
-image::logo-w1280.png[nREPL's logo]
+image::logo-w1280.png[nREPL's logo,480]
 
 == Overview
 
@@ -61,3 +62,10 @@ before the introduction of the built-in Socket REPL in Clojure 1.8.]
 Given the massive community investment in developing all sorts of
 tooling on top of nREPL, nREPL's team pledges to evolve the project only in
 a responsible manner and backwards-compatible ways.
+
+== Where to Go Next
+
+* xref:installation.adoc[Installation] to add nREPL to a project.
+* xref:usage/server.adoc[Server] to start and configure an nREPL server.
+* xref:usage/clients.adoc[Clients] to connect an editor, a command-line client or your own code.
+* xref:design/overview.adoc[Design] to understand the protocol before building on it.

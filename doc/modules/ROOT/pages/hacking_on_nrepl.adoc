@@ -1,4 +1,5 @@
 = Hacking on nREPL
+:description: Building, testing, documenting and releasing nREPL itself.
 
 This section is dedicated to people who're hacking on nREPL itself (e.g. to fix bugs or to enhance
 existing functionality).
@@ -175,8 +176,12 @@ Here's the process for cutting a new release (e.g. version `1.6.0`):
 the new version and date (e.g. `1.6.0 (2026-02-26)`), and add a fresh
 `master (unreleased)` section above it.
 
-. Set `version` in `doc/antora.yml` to the major.minor version (e.g. `1.6`
-for a `1.6.0` or `1.6.1` release). Do not include the patch number.
+. In `doc/antora.yml`, set `version` to the major.minor version, quoted
+(e.g. `"1.6"` for a `1.6.0` or `1.6.1` release; unquoted, YAML reads `2.0` as
+the number 2). Do not include the patch number. Set `nrepl-version` under
+`asciidoc.attributes` to the full version, so the manual's snippets pin the
+release. `make deploy` refuses a release tag whose docs version is still `~`,
+since a tag can't be fixed after the fact.
 
 . Commit and tag:
 +

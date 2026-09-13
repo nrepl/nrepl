@@ -1,4 +1,6 @@
 = nREPL Server
+:page-aliases: usage.adoc
+:description: Starting an nREPL server from the command line, embedding one in an application, discovering servers and every server option.
 
 == Starting a server
 
@@ -16,13 +18,13 @@ If you're into the `clj` command you can take advantage of nREPL's built-in comm
 
 Add this alias to `~/.clojure/deps.edn`:
 
-[source,clojure]
+[source,clojure,subs="attributes+"]
 ----
 {
 ;; ...
 :aliases {:nREPL
           {:extra-deps
-            {nrepl/nrepl {:mvn/version "1.7.0"}}}}
+            {nrepl/nrepl {:mvn/version "{nrepl-version}"}}}}
 }
 ----
 
@@ -37,13 +39,13 @@ A good practice is to add whatever nREPL middleware you want to use to
 the `nREPL` profile, so you can easily activate them when needed. Here's
 how you can easily start a ClojureScript capable nREPL:
 
-[source,clojure]
+[source,clojure,subs="attributes+"]
 ----
 {
 ;; ...
 :aliases {:nREPL
           {:extra-deps
-           {nrepl/nrepl {:mvn/version "1.7.0"}
+           {nrepl/nrepl {:mvn/version "{nrepl-version}"}
             cider/piggieback {:mvn/version "0.6.1"}}}}
 }
 ----
@@ -59,13 +61,13 @@ can ask it to listen on a UNIX domain (filesystem) socket instead. This is
 supported natively on JDK 17 and newer; for earlier versions you need to add a
 https://kohlschutter.github.io/junixsocket/[junixsocket] dependency:
 
-[source,clojure]
+[source,clojure,subs="attributes+"]
 ----
 {
 ;; ...
 :aliases {:nREPL
           {:extra-deps
-           {nrepl/nrepl {:mvn/version "1.7.0"}
+           {nrepl/nrepl {:mvn/version "{nrepl-version}"}
             com.kohlschutter.junixsocket/junixsocket-core {:mvn/version "2.10.1"}}}}
 }
 ----
@@ -216,10 +218,10 @@ Refer to Leiningen's https://github.com/technomancy/leiningen/blob/main/sample.p
 You can see the version of nREPL used by Leiningen in the message that it will display once the REPL
 has been started.
 
-[source,shell]
+[source,shell,subs="attributes+"]
 ----
 nREPL server started on port 56249 on host 127.0.0.1 - nrepl://127.0.0.1:56249
-REPL-y 0.4.3, nREPL 1.7.0
+REPL-y 0.4.3, nREPL {nrepl-version}
 Clojure 1.10.0
 Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
     Docs: (doc function-name-here)
@@ -232,7 +234,7 @@ Java HotSpot(TM) 64-Bit Server VM 10.0.1+10
 user=>
 ----
 
-Here you can see that Leiningen has started an nREPL 1.7.0 server and has connected to it using REPL-y 0.4.3.
+Here you can see that Leiningen has started an nREPL {nrepl-version} server and has connected to it using REPL-y 0.4.3.
 
 ====
 
@@ -332,13 +334,13 @@ public class App {
 
 You can pull in the needed dependencies by adding this to your pom.xml:
 
-[source,xml]
+[source,xml,subs="attributes+"]
 ----
 <dependencies>
     <dependency>
         <groupId>nrepl</groupId>
         <artifactId>nrepl</artifactId>
-        <version>1.7.0</version>
+        <version>{nrepl-version}</version>
     </dependency>
     <dependency>
         <groupId>org.clojure</groupId>
@@ -496,7 +498,7 @@ The following keys are recognized in `.nrepl.edn` and `~/.nrepl/nrepl.edn`:
 | :dynamic-vars
 | map
 | `{}`
-| A map from fully-qualified var symbols to default values applied to new sessions. See <<_dynamic_var_defaults>>.
+| A map from fully-qualified var symbols to default values applied to new sessions. See <<dynamic-var-defaults>>.
 
 | :tls-keys-file
 | string
@@ -511,7 +513,7 @@ The following keys are recognized in `.nrepl.edn` and `~/.nrepl/nrepl.edn`:
 | :enable-jvmti-agent
 | boolean
 | `true`
-| Whether to load the native JVMTI agent for thread stopping on Java 21+. See xref:../installation.adoc#jvmti[JVMTI agent].
+| Whether to load the native JVMTI agent for thread stopping on Java 21+. See xref:installation.adoc#jvmti[JVMTI agent].
 
 | :repl-fn
 | symbol
