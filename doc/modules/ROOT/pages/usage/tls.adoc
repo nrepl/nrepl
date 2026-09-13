@@ -1,4 +1,5 @@
 = TLS (Transport Layer Security) support
+:description: Securing nREPL connections with TLS: generating keys, starting a TLS server and connecting to it.
 
 NOTE: TLS support was introduced in nREPL 1.1.
 

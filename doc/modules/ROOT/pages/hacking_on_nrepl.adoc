@@ -1,4 +1,5 @@
 = Hacking on nREPL
+:description: Building, testing, documenting and releasing nREPL itself.
 
 This section is dedicated to people who're hacking on nREPL itself (e.g. to fix bugs or to enhance
 existing functionality).

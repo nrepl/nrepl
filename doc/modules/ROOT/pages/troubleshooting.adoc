@@ -1,4 +1,5 @@
 = Troubleshooting
+:description: Diagnosing nREPL connection, evaluation, middleware, TLS and build tool problems.
 
 This section of the manual tries to summarize the most common problems that you may encounter
 while using nREPL and their solutions.

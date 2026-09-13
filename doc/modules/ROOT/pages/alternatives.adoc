@@ -1,4 +1,5 @@
 = Alternatives
+:description: How nREPL compares to the socket REPL, prepl and the Language Server Protocol.
 
 nREPL is certainly not the only project that aims to provide a common foundation for (Clojure) development tooling.
 footnote:[nREPL was the first such effort in the Clojure community, though.]

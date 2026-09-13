@@ -1,4 +1,5 @@
 = nREPL Clients
+:description: Connecting to an nREPL server from editors, command-line clients, libraries, the built-in client or your own code.
 
 Most of the time, you will connect to an nREPL server using an existing
 library/client/tool. Below is a listing of many such clients.
