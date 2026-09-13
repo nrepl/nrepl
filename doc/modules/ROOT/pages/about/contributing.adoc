@@ -30,71 +30,44 @@ https://antora.org[Antora] is used to convert the manual into HTML.
 The filesystem layout is described at https://docs.antora.org/antora/latest/standard-directories/[the Antora docs].
 
 To make changes to the manual you simply have to change the files under `doc`.
-The site will be regenerated manually periodically.
+The site is rebuilt and published automatically: on every push to the
+https://github.com/nrepl/nrepl.org[nrepl.org] repository, once a day, and
+whenever a doc change lands on `master` here.
 
-==== Installing Antora
-
-NOTE: The instructions here assume you already have (the right version of) node.js installed.
-
-Installing Antora is super simple:
-
-[source]
-----
-$ npm i -g @antora/cli @antora/site-generator
-----
-
-Check out https://docs.antora.org/antora/latest/install/install-antora/[the detailed installation instructions]
-if you run into any problems.
+When you rename or move a page, add a `:page-aliases:` attribute naming the old
+file to the new page, so the old URL keeps working.
 
 ==== Building the Site
 
-You can build the documentation locally from the https://github.com/nrepl/nrepl.org[nrepl.org] repo.
+The site lives in the https://github.com/nrepl/nrepl.org[nrepl.org] repository,
+which pins the Antora version it builds with, so clone it next to your nREPL
+checkout and use its Makefile rather than a globally installed Antora:
 
-[source]
+[source,shell]
 ----
 $ cd nrepl.org
-$ antora --fetch antora-playbook.yml
+$ make
 ----
 
-After you're done with the initial setup you can use the `deploy` script to push changes to the site:
+That fetches nREPL's `master` and every released version from GitHub and
+writes the site to `build/site`; open `build/site/index.html` in your browser.
 
-[source]
+==== Previewing Local Changes
+
+To build the site from your local nREPL checkout instead, uncommitted changes
+included, use the local playbook:
+
+[source,shell]
 ----
-./deploy
+$ cd nrepl.org
+$ npm run antora -- antora-playbook-local.yml
 ----
 
-NOTE: You'll need commit access to the repository for this to work.
-
-To check the generated site you can simply open `docs/index.html` in your favourite browser.
+It builds whatever branch `../nrepl` has checked out, so only that one version
+shows up in the version menu.
 
 If you want to make changes to the manual's page structure you'll have to edit
 https://github.com/nrepl/nrepl/blob/master/doc/modules/ROOT/nav.adoc[nav.adoc].
-
-==== Testing Local Changes
-
-By default Antora will build the documentation for nREPL's `master` branch and all recent stable
-releases by fetching the data from nREPL main GitHub repository.
-
-If you want to check changes you've made locally you'll have to update the `antora-playbook.yml`
-file in the `nrepl.org` repository. There you should instruct Antora to build the docs from your
-local git repo instead of the main repo on GitHub:
-
-[source,yaml]
-----
-# you have to change this
-content:
-   sources:
-   - url: https://github.com/nrepl/nrepl.git
-     branches: ['master']
-     tags: ['0.5.3', '0.6.0', '0.7.0', '0.8.0']
-
-# to something like
-content:
-   sources:
-   - url: /path/to/local/nrepl/clone
-     branches: ['issues/207']
-     start_path: doc
-----
 
 == Releasing
 
