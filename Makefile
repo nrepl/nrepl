@@ -53,6 +53,12 @@ deploy: check-env
 		echo "[Error] CIRCLE_TAG $(CIRCLE_TAG) must start with 'v'."; \
 		exit 1; \
 	fi
+	# A release tag has to carry the docs version, or the release never makes
+	# it into the site's version menu: the tag can't be fixed after the fact.
+	@if echo "$(CIRCLE_TAG)" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$$' && grep -q '^version: ~' doc/antora.yml; then \
+		echo "[Error] doc/antora.yml still says 'version: ~'; the release commit must set it."; \
+		exit 1; \
+	fi
 	# Clean is performed inside deploy task, no need to clean in Make
 	export PROJECT_VERSION=$$(echo "$(CIRCLE_TAG)" | sed 's/^v//'); \
 	clojure -T:build deploy :version "\"$$PROJECT_VERSION\""
