@@ -106,7 +106,7 @@ session for a long-running evaluation while keeping the original session
 responsive.
 
 When `:session` is omitted, the new session starts with default bindings
-(see xref:usage/server.adoc#_dynamic_var_defaults[Dynamic var defaults]).
+(see xref:usage/server.adoc#dynamic-var-defaults[Dynamic var defaults]).
 
 == Best Practices
 
