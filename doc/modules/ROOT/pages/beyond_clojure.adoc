@@ -1,4 +1,5 @@
 = Beyond Clojure
+:description: nREPL servers and clients for languages other than Clojure.
 
 As mentioned earlier the nREPL protocol is language-agnostic and can
 be leveraged for many languages that have the ability to evaluate code

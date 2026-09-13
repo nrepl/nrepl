@@ -1,4 +1,5 @@
 = Installation
+:description: Adding nREPL to a Leiningen, tools.deps, Gradle or Maven project, and enabling the JVMTI agent on Java 21+.
 
 [NOTE]
 ====

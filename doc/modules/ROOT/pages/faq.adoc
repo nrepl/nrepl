@@ -1,4 +1,5 @@
 = FAQ
+:description: Frequently asked questions about nREPL.
 
 == What's the difference between contrib's nREPL and this one?
 

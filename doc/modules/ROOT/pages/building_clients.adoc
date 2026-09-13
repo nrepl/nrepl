@@ -1,4 +1,5 @@
 = Building Clients
+:description: What an nREPL client has to do: the protocol basics, sessions, and how to debug the conversation.
 
 == Overview
 

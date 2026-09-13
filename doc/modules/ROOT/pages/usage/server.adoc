@@ -1,4 +1,6 @@
 = nREPL Server
+:page-aliases: usage.adoc
+:description: Starting an nREPL server from the command line, embedding one in an application, discovering servers and every server option.
 
 == Starting a server
 

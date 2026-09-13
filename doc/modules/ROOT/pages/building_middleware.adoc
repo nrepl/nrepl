@@ -1,4 +1,5 @@
 = Building Middleware
+:description: How to write nREPL middleware that adds operations to a server, with testing and best practices.
 
 == Overview
 

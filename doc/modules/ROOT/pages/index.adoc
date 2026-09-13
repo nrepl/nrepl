@@ -1,5 +1,6 @@
 = nREPL
 :notitle:
+:description: nREPL is a network REPL for Clojure: a server, a client and a simple protocol that editors and tools build on.
 
 image::logo-w1280.png[nREPL's logo]
 

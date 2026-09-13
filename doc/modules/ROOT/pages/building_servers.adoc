@@ -1,4 +1,5 @@
 = Building Servers
+:description: What it takes to implement an nREPL server for another language or runtime.
 
 == Overview
 
