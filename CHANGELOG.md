@@ -30,6 +30,7 @@
 - [#472](https://github.com/nrepl/nrepl/pull/472): Report stdin EOF that arrives behind buffered input.
 - [#474](https://github.com/nrepl/nrepl/pull/474): Keep the session alive when evaluated code closes or rebinds `*in*` or `*out*`.
 - [#489](https://github.com/nrepl/nrepl/pull/489): [session] Re-create persistent session thread on faulty exec thunks.
+- [#487](https://github.com/nrepl/nrepl/pull/487): Fix a race in `nrepl.core/client` that could split responses between concurrent first reads.
 
 ## 1.7.0 (2026-04-14)
 
