@@ -586,10 +586,12 @@
 
 (defn- disconnection-exception?
   [e]
-  ;; thrown? should check for the root cause!
+  ;; thrown? should check for the root cause! The JDK reports a peer that went
+  ;; away either as a reset or, once the transport notices the EOF, as the
+  ;; transport's own "lost its connection" message.
   (let [^Throwable cause (root-cause e)]
     (and (instance? SocketException cause)
-         (re-find #"(lost.*connection|socket closed)" (.getMessage cause)))))
+         (re-find #"(?i)(lost.*connection|socket closed|connection reset)" (.getMessage cause)))))
 
 (deftest transports-fail-on-disconnects
   (testing "Ensure that transports fail ASAP when the server they're connected to goes down."
