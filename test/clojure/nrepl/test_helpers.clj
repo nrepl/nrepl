@@ -63,6 +63,18 @@
        (try ~@body
             (finally (.destroy ~binding))))))
 
+(defmacro with-timeout
+  "Runs BODY on another thread and gives up after MS milliseconds, throwing
+  instead of hanging the whole test run. For code that blocks on responses
+  with no timeout of its own, like the built-in client."
+  [ms & body]
+  `(let [f# (future ~@body)
+         v# (deref f# ~ms ::timeout)]
+     (if (identical? v# ::timeout)
+       (do (future-cancel f#)
+           (throw (ex-info (str "Timed out after " ~ms "ms") {:timeout-ms ~ms})))
+       v#)))
+
 (defn free-port []
   (let [sock (ServerSocket. 0)
         port (.getLocalPort sock)]

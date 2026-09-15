@@ -13,7 +13,7 @@
    [nrepl.middleware :as middleware]
    [nrepl.server :as server]
    [nrepl.socket :refer [as-nrepl-uri unix-domain-flavor]]
-   [nrepl.test-helpers :refer [eval-value1 free-port is+ win? with-process]]
+   [nrepl.test-helpers :refer [eval-value1 free-port is+ win? with-process with-timeout]]
    [nrepl.transport :as transport])
   (:import
    (clojure.lang LineNumberingPushbackReader)
@@ -191,12 +191,13 @@
         (binding [*in* (java.io.PushbackReader. (java.io.StringReader. test-input))]
           (with-redefs [cmd/clean-up-and-exit >devnull]
             (let [results (atom [])]
-              (#'cmd/run-repl (:host *server*) (:port *server*)
-                              {:transport *transport-fn*
-                               :prompt >devnull
-                               :err >devnull
-                               :out >devnull
-                               :value #(swap! results conj %)})
+              (with-timeout 60000
+                (#'cmd/run-repl (:host *server*) (:port *server*)
+                                {:transport *transport-fn*
+                                 :prompt >devnull
+                                 :err >devnull
+                                 :out >devnull
+                                 :value #(swap! results conj %)}))
               (is (= expected-output @results)))))))))
 
 (deftest raw-input-handling
@@ -211,11 +212,12 @@
                         errors (atom "")]
                     (binding [*in* (java.io.StringReader. input)]
                       (with-redefs [cmd/clean-up-and-exit >devnull]
-                        (#'cmd/run-repl "127.0.0.1" (:port server)
-                                        {:prompt >devnull
-                                         :err #(swap! errors str %)
-                                         :out >devnull
-                                         :value #(swap! values conj %)})))
+                        (with-timeout 60000
+                          (#'cmd/run-repl "127.0.0.1" (:port server)
+                                          {:prompt >devnull
+                                           :err #(swap! errors str %)
+                                           :out >devnull
+                                           :value #(swap! values conj %)}))))
                     {:values @values :errors @errors}))]
       (testing "a reader typo doesn't kill the session"
         (let [{:keys [values errors]} (drive ")\n(+ 1 2)")]
@@ -368,12 +370,13 @@
                 results (atom [])]
             (binding [*in* (java.io.PushbackReader. (java.io.StringReader. "(+ 1 2)"))]
               (with-redefs [cmd/clean-up-and-exit >devnull]
-                (#'cmd/run-repl url nil
-                                {:tls-keys-str client-keys
-                                 :prompt >devnull
-                                 :err    >devnull
-                                 :out    >devnull
-                                 :value  #(swap! results conj %)})
+                (with-timeout 60000
+                  (#'cmd/run-repl url nil
+                                  {:tls-keys-str client-keys
+                                   :prompt >devnull
+                                   :err    >devnull
+                                   :out    >devnull
+                                   :value  #(swap! results conj %)}))
                 (is (= ["3"] @results)
                     (str "connecting via " url))))))))))
 
@@ -388,11 +391,12 @@
         (binding [*in* (java.io.PushbackReader. (java.io.StringReader. "(+ 1 2)"))]
           (with-redefs [cmd/clean-up-and-exit >devnull]
             (let [results (atom [])]
-              (#'cmd/run-repl url nil
-                              {:prompt >devnull
-                               :err    >devnull
-                               :out    >devnull
-                               :value  #(swap! results conj %)})
+              (with-timeout 60000
+                (#'cmd/run-repl url nil
+                                {:prompt >devnull
+                                 :err    >devnull
+                                 :out    >devnull
+                                 :value  #(swap! results conj %)}))
               (is (= ["3"] @results)))))))))
 
 ;;; Unix domain socket tests
@@ -453,12 +457,13 @@
         (with-server-every-transport nil
           (binding [*in* (java.io.PushbackReader. (java.io.StringReader. test-input))]
             (let [results (atom [])]
-              (#'cmd/run-repl (:host *server*) (:port *server*)
-                              {:transport *transport-fn*
-                               :prompt >devnull
-                               :err >devnull
-                               :out >devnull
-                               :value #(swap! results conj %)})
+              (with-timeout 60000
+                (#'cmd/run-repl (:host *server*) (:port *server*)
+                                {:transport *transport-fn*
+                                 :prompt >devnull
+                                 :err >devnull
+                                 :out >devnull
+                                 :value #(swap! results conj %)}))
               (is (= expected-output @results)))))))))
 
 (deftest ^:slow can-connect-to-unix-socket
@@ -479,10 +484,11 @@
           (with-server-every-transport (fn [] {:socket (str (create-tmpdir "target" "socket-test-") "/socket")})
             (binding [*in* (java.io.PushbackReader. (java.io.StringReader. test-input))]
               (let [results (atom [])]
-                (#'cmd/run-repl {:server  *server*
-                                 :options {:transport *transport-fn*
-                                           :prompt >devnull
-                                           :err >devnull
-                                           :out >devnull
-                                           :value #(swap! results conj %)}})
+                (with-timeout 60000
+                  (#'cmd/run-repl {:server  *server*
+                                   :options {:transport *transport-fn*
+                                             :prompt >devnull
+                                             :err >devnull
+                                             :out >devnull
+                                             :value #(swap! results conj %)}}))
                 (is (= expected-output @results))))))))))
