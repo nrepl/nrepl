@@ -31,7 +31,9 @@
                             "--transport" "nrepl.transport/tty"])]
     (try
       (let [c (doto (TelnetClient.)
-                (attempt-connection "localhost" port 100000))]
+                (attempt-connection "localhost" port 100000)
+                ;; A missing reply must fail the test, not hang the run.
+                (.setSoTimeout 60000))]
         (with-open [out (PrintStream. (.getOutputStream c))
                     br  (io/reader (.getInputStream c))]
           (doseq [l ["(System/getProperty \"nreplacktest\")"
