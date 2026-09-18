@@ -29,6 +29,7 @@
 - [#470](https://github.com/nrepl/nrepl/pull/470): [session] Fix race condition between stdin consumer and producer.
 - [#472](https://github.com/nrepl/nrepl/pull/472): Report stdin EOF that arrives behind buffered input.
 - [#474](https://github.com/nrepl/nrepl/pull/474): Keep the session alive when evaluated code closes or rebinds `*in*` or `*out*`.
+- [#489](https://github.com/nrepl/nrepl/pull/489): [session] Re-create persistent session thread on faulty exec thunks.
 
 ## 1.7.0 (2026-04-14)
 
