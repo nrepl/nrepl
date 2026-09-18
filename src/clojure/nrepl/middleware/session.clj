@@ -192,6 +192,7 @@
   [session]
   (let [id (:id (meta session))
         state (atom nil)
+        reset-state-holder (atom nil)
         session-loop
         #(try
            (loop []
@@ -219,7 +220,11 @@
                                               (assoc state-d :running nil)))
                    (some-> ack .run)
                    (recur)))))
-           (catch InterruptedException _e))
+           (catch InterruptedException _e)
+           (catch Exception _e
+             ;; This should never happen with valid middleware and clients. If
+             ;; it does, at least make sure the session remains healthy.
+             (@reset-state-holder)))
         reset-state
         #(let [thread (SessionThread. session-loop (str "nREPL-session-" id)
                                       (classloader/dynamic-classloader))]
@@ -227,6 +232,7 @@
                           :running nil
                           :thread thread})
            (.start thread))]
+    (reset! reset-state-holder reset-state)
     (reset-state)
     ;; This map is added to the meta of the session object by `register-session`,
     ;; it contains functions that are accessed by `interrupt-session` and `close-session`.
