@@ -1059,3 +1059,8 @@
     (is+ [4 65536.0] (repl-values session "(+ 1 3) (Math/pow 2 16)"))
     (is+ [4 20 1 0] (repl-values session "(+ 2 2) (* *1 5) (/ *2 4) (- *3 4)"))
     (is+ [0] (repl-values session "*1"))))
+
+(def-repl-test faulty-eval-request-doesnt-kill-persistent-session-test
+  ;; Send bad request that fails at runtime on the persistent session thread
+  (dorun (message timeout-session {:op "eval" :code "1" :line "abc"}))
+  (is+ [2] (doall (repl-values timeout-session "(+ 1 1)"))))
