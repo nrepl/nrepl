@@ -422,33 +422,21 @@ Exit:      Control+D or (exit) or (quit)"
   [key sym]
   (when-not (symbol? sym)
     (die (format "nREPL %s: %s is not a symbol\n" (name key) (pr-str sym))))
-  (let [space (some-> (namespace sym) symbol)]
-    (when-not space
-      (die (format "nREPL %s: %s has no namespace\n" (name key) sym)))
-    (require space)
-    (or (ns-resolve space (-> sym name symbol))
-        (die (format "nREPL %s: unable to resolve %s\n" (name key) sym)))))
+  (when-not (namespace sym)
+    (die (format "nREPL %s: %s has no namespace\n" (name key) sym)))
+  (requiring-resolve sym))
 
-(defn- safe-require-and-resolve
-  "Like require-and-resolve but returns nil when sym can't be resolved"
-  [key sym]
-  (if-let [space (and (symbol? sym) (namespace sym))]
-    (try (require (symbol space))
-         (ns-resolve (symbol space) (-> sym name symbol))
-         (catch FileNotFoundException _))
-    (die (format "nREPL %s: %s is not a qualified symbol\n" (name key) (pr-str sym)))))
+(defn- resolve-mware-by-name [sym]
+  (try (require-and-resolve :middleware sym)
+       (catch FileNotFoundException _
+         (when-not (:optional (meta sym))
+           (die (format "nREPL %s: unable to resolve %s\n" (name key) sym))))))
 
-(def ^:private resolve-mw-xf
-  (comp (map #(if (-> % meta :optional)
-                (safe-require-and-resolve :middleware %)
-                (require-and-resolve :middleware %)))
-        (keep identity)))
-
-(defn- handle-seq-var
+(defn- expand-list-of-mware
   [var]
   (let [x @var]
     (if (sequential? x)
-      (into [] resolve-mw-xf x)
+      (into [] (keep resolve-mware-by-name) x)
       [var])))
 
 (defn- handle-interrupt
@@ -461,14 +449,11 @@ Exit:      Control+D or (exit) or (quit)"
           (System/exit 0)))
       (System/exit 0))))
 
-(def ^:private mw-xf
-  (comp (map symbol)
-        resolve-mw-xf
-        (mapcat handle-seq-var)))
-
 (defn- ->mw-list
   [middleware-var-strs]
-  (into [] mw-xf middleware-var-strs))
+  (into [] (comp (keep #(resolve-mware-by-name (symbol %)))
+                 (mapcat expand-list-of-mware))
+        middleware-var-strs))
 
 (defn- build-handler
   "Build an nREPL handler from `middleware`.
