@@ -7,21 +7,17 @@
    [com.github.ivarref.locksmith :as locksmith]
    [matcher-combinators.matchers :as m]
    [nrepl.ack :as ack]
-   [nrepl.bencode :refer [write-bencode]]
    [nrepl.cmdline :as cmd]
    [nrepl.core :as nrepl]
    [nrepl.core-test :refer [*server* *transport-fn* transport-fns]]
    [nrepl.middleware :as middleware]
    [nrepl.server :as server]
-   [nrepl.socket
-    :refer [as-nrepl-uri find-class unix-domain-flavor unix-socket-address]]
+   [nrepl.socket :refer [as-nrepl-uri unix-domain-flavor]]
    [nrepl.test-helpers :refer [eval-value1 free-port is+ win? with-process]]
    [nrepl.transport :as transport])
   (:import
    (clojure.lang LineNumberingPushbackReader)
    (java.lang ProcessBuilder$Redirect)
-   (java.net Socket SocketAddress)
-   (java.nio.channels Channels SocketChannel)
    (java.nio.file Files)
    (nrepl.server Server)))
 
@@ -401,71 +397,38 @@
 
 ;;; Unix domain socket tests
 
-(defn send-jdk-socket-message [message path]
-  (let [^SocketAddress addr (unix-socket-address path)
-        sock (SocketChannel/open addr)]
+(defn send-unix-socket-message [message path]
+  (with-open [sock (nrepl.socket/unix-client-socket path)]
     ;; Assume it's safe to use Channels input/output streams here since
     ;; we're never reading and writing at the same time.
-    ;; (cf. https://bugs.openjdk.java.net/browse/JDK-4509080 - not fixed
-    ;; as of at least JDK 16).
-    (with-open [out (Channels/newOutputStream sock)]
-      (write-bencode out message))))
+    ;; (cf. https://bugs.openjdk.java.net/browse/JDK-4509080).
+    (let [out (nrepl.socket/buffered-output sock)]
+      (#'transport/safe-write-bencode out message)
+      (.flush ^java.io.Flushable out))))
 
-(defn send-junixsocket-message [message path]
-  (let [^Class sock-class (find-class 'org.newsclub.net.unix.AFUNIXSocket)
-        new-instance (.getDeclaredMethod sock-class "newInstance" nil)
-        addr (unix-socket-address path)]
-    (with-open [^Socket sock (.invoke new-instance nil nil)]
-      (.connect sock addr)
-      (write-bencode (.getOutputStream sock) message))))
+(defn socket-file-connectable? [sock-path]
+  (try (with-open [^java.io.Closeable _ (nrepl.socket/unix-client-socket sock-path)]
+         true)
+       (catch Exception _ false)))
 
-(defn socket-file-exists?
-  "Check whether the unix SOCK-FILE exists."
-  [^java.io.File sock-file]
-  (case unix-domain-flavor
-    :jdk (.exists sock-file)
-    :junixsocket
-    ;; The .exists operation for socket files does not work on MS-Windows, thus
-    ;; we attempt a socket connection.
-    (try
-      (let [sock-path (str sock-file)
-            ^Class sock-class (find-class 'org.newsclub.net.unix.AFUNIXSocket)
-            new-instance (.getDeclaredMethod sock-class "newInstance" nil)
-            addr (unix-socket-address sock-path)]
-        (with-open [^Socket sock (.invoke new-instance nil nil)]
-          (.connect sock addr)
-          true))
-      (catch Exception _e
-        false))))
-
-(when unix-domain-flavor
-  (deftest ^:slow basic-fs-socket-behavior
+(deftest ^:slow basic-fs-socket-behavior
+  (when (is unix-domain-flavor)
     (let [tmpdir (create-tmpdir "target" "socket-test-")
           sock-path (str tmpdir "/socket")
           sock-file (as-file sock-path)]
       (try
         ;; Use a Process rather than sh so we can see server errors
-        (let [cmd (into-array ["java"
-                               "-cp" (System/getProperty "java.class.path")
-                               "nrepl.main" "-s" sock-path])
-              server (.start (doto (ProcessBuilder. ^"[Ljava.lang.String;" cmd)
+        (let [cmd ["java" "-cp" (System/getProperty "java.class.path")
+                   "nrepl.main" "-s" sock-path]
+              server (.start (doto (ProcessBuilder. ^java.util.List cmd)
                                (.redirectOutput ProcessBuilder$Redirect/INHERIT)
                                (.redirectError ProcessBuilder$Redirect/INHERIT)))]
           (try
-            ;; we want to ensure the server is up before trying to connect to it
-            ;; this is done by waiting till the socket file is created, and then
-            ;; waiting an extra 1s. (extra wait seems to help with test reliability
-            ;; in CI. Question: why are we not using ack to do this? To investigate
-            (while (not (socket-file-exists? sock-file))
+            (while (not (socket-file-connectable? sock-path))
               (Thread/sleep 100))
-            (Thread/sleep 1000)
-            (case unix-domain-flavor
-              :jdk
-              (send-jdk-socket-message {:code "(System/exit 42)" :op :eval}
-                                       sock-path)
-              :junixsocket
-              (send-junixsocket-message {:code "(System/exit 42)" :op :eval}
-                                        sock-path))
+            (Thread/sleep 1000) ;; Extra wait to ensure the server is up.
+            (send-unix-socket-message {:code "(System/exit 42)" :op :eval}
+                                      sock-path)
             (is (= 42 (.waitFor server)))
             (finally
               (.destroy server))))
@@ -498,8 +461,8 @@
                                :value #(swap! results conj %)})
               (is (= expected-output @results)))))))))
 
-(when unix-domain-flavor
-  (deftest ^:slow can-connect-to-unix-socket
+(deftest ^:slow can-connect-to-unix-socket
+  (when (is unix-domain-flavor)
     (testing "We can connect to unix domain socker from the cli."
       (let [test-input      (str/join \newline ["::a"
                                                 "(ns a)" "::a"
