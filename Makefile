@@ -19,7 +19,7 @@ test: javac-test
 	clojure -M:$(CLOJURE_VERSION):dev:test$(EXTRA_ALIASES)
 
 eastwood: javac-test
-	clojure -M:eastwood
+	clojure -M:eastwood:+junixsocket
 
 cljfmt:
 	clojure -M:cljfmt check

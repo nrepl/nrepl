@@ -47,8 +47,7 @@
              :main-opts ["-m" "eastwood.lint"
                          {:config-files ["eastwood.clj"]
                           :ignored-faults {:unused-ret-vals {nrepl.util.completion-test true
-                                                             nrepl.bencode true}
-                                           :reflection {nrepl.socket.dynamic true}}}]}
+                                                             nrepl.bencode true}}}]}
 
   :cloverage {:extra-deps {cloverage/cloverage {:mvn/version "1.2.4"}}
               :main-opts ["-m" "cloverage.coverage"

@@ -21,6 +21,7 @@
 - [#458](https://github.com/nrepl/nrepl/pull/458): Document the TLS security model and include the `--tls-keys-file`/`--tls-keys-str` options in the command-line help output.
 - [#458](https://github.com/nrepl/nrepl/pull/458): Detect and accept a swapped CA/own certificate order in TLS key material containing exactly two certificates.
 - [#458](https://github.com/nrepl/nrepl/pull/458): Support Ed25519 (PKCS#8) private keys for TLS on Java 15+.
+- [#492](https://github.com/nrepl/nrepl/pull/492): [socket] Use SocketChannel API for socket connections powered by junixsocket library.
 
 ### Bugs fixed
 
