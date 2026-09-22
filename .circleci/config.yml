@@ -132,7 +132,8 @@ jobs:
           cache_version: "util_v3_<< parameters.clojure_version >>"
           steps:
             - prepare_deps:
-                aliases: ":eastwood :cljfmt :kondo"
+                # Eastwood lints all namespaces, add junixsocket to classpath.
+                aliases: ":eastwood :cljfmt :kondo :+junixsocket"
             - run:
                 name: Running Eastwood
                 command: |
@@ -261,6 +262,7 @@ workflows:
             parameters:
               clojure_version: ["1.10", "1.11"]
               jdk_version: [jdk8, jdk26]
+              extra_aliases: [":+junixsocket"]
           <<: *run_always
       - test-windows:
           <<: *run_always
