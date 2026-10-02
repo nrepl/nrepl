@@ -172,7 +172,7 @@ NOTE: This section is relevant only to nREPL maintainers with push access to the
 
 Here's the process for cutting a new release (e.g. version `1.6.0`):
 
-. Update `CHANGELOG.md` — rename the `master (unreleased)` section to
+. Update `CHANGELOG.md`: rename the `master (unreleased)` section to
 the new version and date (e.g. `1.6.0 (2026-02-26)`), and add a fresh
 `master (unreleased)` section above it.
 
@@ -182,6 +182,10 @@ the number 2). Do not include the patch number. Set `nrepl-version` under
 `asciidoc.attributes` to the full version, so the manual's snippets pin the
 release. `make deploy` refuses a release tag whose docs version is still `~`,
 since a tag can't be fixed after the fact.
+
+. Bump the two versions the attribute can't reach: the example in the
+`nrepl.tls-client-proxy` namespace docstring and the sample `describe`
+response in `building_clients.adoc`.
 
 . Commit and tag:
 +
@@ -206,13 +210,18 @@ $ git push origin master --tags
 ----
 
 . The rest is automated:
-  * *Clojars deploy* — pushing the tag triggers a CircleCI `deploy` job
+  * *Clojars deploy*: pushing the tag triggers a CircleCI `deploy` job
   (after tests and lint pass) that publishes the artifact to
   https://clojars.org/nrepl/nrepl[Clojars]. The version is derived from
   the tag name. The tag must match `v<major>.<minor>.<patch>` (with an
   optional `-alpha<N>`, `-beta<N>` or `-rc<N>` suffix).
-  * *GitHub Release* — a GitHub Actions workflow creates a GitHub Release
+  * *GitHub Release*: a GitHub Actions workflow creates a GitHub Release
   whose notes are the version's section of `CHANGELOG.md`.
+
+. Add the new tag to the `tags` list in the
+https://github.com/nrepl/nrepl.org/blob/master/antora-playbook.yml[nrepl.org
+playbook]. The site only builds the tags listed there, so the release's docs
+won't show up in its version menu until you do.
 
 TIP: Pushing a tag like `v1.6.0-SNAPSHOT` runs the same pipeline, tests
 included, and deploys a snapshot to Clojars. That's a cheap way to
