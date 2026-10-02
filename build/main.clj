@@ -21,7 +21,10 @@
                   [:url "http://www.eclipse.org/legal/epl-v10.html"]]]]
 
      ;; Build section
-     :basis (b/create-basis {})
+     ;; junixsocket is optional, so the pom lists it as provided: cljdoc only
+     ;; puts the pom's deps on the classpath, and can't load
+     ;; nrepl.socket.junixsocket without it.
+     :basis (b/create-basis {:aliases [:+junixsocket]})
      :target target
      :class-dir (str target "/classes")
      :jar-file (some->> version (format "%s/%s-%s.jar" target (name lib) version))}))
