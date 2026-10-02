@@ -6,6 +6,8 @@
 
 ## master (unreleased)
 
+## 1.8.0 (2026-10-02)
+
 ### New features
 
 - [#455](https://github.com/nrepl/nrepl/pull/455): The built-in command-line client can now connect using a URL (`--connect --host <url>`), including the `nrepls://`/`nrepl+edns://` URLs TLS servers advertise (combined with `--tls-keys-file`/`--tls-keys-str`), the `nrepl+unix:` URLs filesystem-socket servers advertise, and `http(s)://` when `nrepl/drawbridge` is on the classpath.
