@@ -25,8 +25,8 @@
   :1.12 {:override-deps {org.clojure/clojure {:mvn/version "1.12.5"}}}
   :1.13 {:override-deps {org.clojure/clojure {:mvn/version "1.13.0-alpha5"}}}
 
-  :+junixsocket {:extra-deps {com.kohlschutter.junixsocket/junixsocket-common {:mvn/version "2.10.1"}
-                              com.kohlschutter.junixsocket/junixsocket-native-common {:mvn/version "2.10.1"}}}
+  :+junixsocket {:extra-deps {com.kohlschutter.junixsocket/junixsocket-common {:mvn/version "2.10.1" :mvn/scope "provided"}
+                              com.kohlschutter.junixsocket/junixsocket-native-common {:mvn/version "2.10.1" :mvn/scope "provided"}}}
 
   ;; Docs generation alias
   ;; Usage: clj -X:docs :file '"doc/modules/ROOT/pages/ops.adoc"'
