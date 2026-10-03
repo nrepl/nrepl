@@ -64,7 +64,7 @@ nREPL's bencode encoder/decoder performs the following type conversions:
 | Set        | List           | Vector
 |=======================================
 
-In addition, nREPL server performs a `keywordize-keys` operation on the received
+In addition, nREPL server keywordizes all map keys in the received
 map, restoring the likes of `:op` and `:code` to keywords. Thus, the use of
 keywords in writing nREPL message is mainly for clarity. The following messages,
 when encoded using nREPL's bencode encoder and received by nREPL, are equivalent:
