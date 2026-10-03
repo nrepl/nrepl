@@ -140,12 +140,6 @@
                                    :status ::error}))
       print-var)))
 
-(defn- booleanize-bencode-val [m key]
-  (if (contains? m key)
-    ;; As a convention, empty list is treated as logical false.
-    (update m key #(if (= % []) false (boolean %)))
-    m))
-
 (defn wrap-print
   "Middleware that provides printing functionality to other middlewares.
 
@@ -185,10 +179,10 @@
                      (fn [value writer]
                        (print-var value writer options))
                      (misc/resolve-in-session msg *print-fn*))
-          msg (-> msg
-                  (assoc ::print-fn print-fn)
-                  (booleanize-bencode-val ::stream?))]
-      (handler (assoc msg :transport (printing-transport msg))))))
+          msg (assoc msg ::print-fn print-fn)]
+      (handler (assoc msg
+                      :transport (printing-transport msg)
+                      ::print-fn print-fn)))))
 
 (set-descriptor! #'wrap-print {:requires #{"clone"}
                                :expects #{}

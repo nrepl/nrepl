@@ -8,6 +8,7 @@
 
 ### Changes
 
+- [#495](https://github.com/nrepl/nrepl/pull/495): **(Breaking)** Automatically nil out empty lists for ?-ending keys in Bencode transport.
 - [#498](https://github.com/nrepl/nrepl/pull/498): The `:interrupt` function of `nrepl.middleware.session/session-exec` returns the message of the execution it interrupted instead of its id.
 
 ### Bugs fixed
