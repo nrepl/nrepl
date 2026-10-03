@@ -89,10 +89,7 @@
           opts (cond-> (select-keys msg configuration-keys)
                  ;; no caught-fn provided in the request, so defer to the response
                  (nil? caught-var)
-                 (dissoc ::caught-fn)
-                 ;; in bencode empty list is logical false
-                 (contains? msg ::print?)
-                 (update ::print? #(if (= [] %) false (boolean %))))]
+                 (dissoc ::caught-fn))]
       (handler (assoc msg :transport (caught-transport msg opts))))))
 
 (set-descriptor! #'wrap-caught {:requires #{"clone" #'print/wrap-print}

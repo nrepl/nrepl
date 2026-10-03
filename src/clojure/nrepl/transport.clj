@@ -14,15 +14,14 @@
   (:require
    [clojure.edn :as edn]
    [clojure.java.io :as io]
-   [clojure.walk :as walk]
+   [clojure.string :as str]
    [nrepl.bencode :as bencode]
    [nrepl.misc :refer [response-for uuid]]
    [nrepl.socket :as socket]
    [nrepl.util.threading :as threading]
    nrepl.version)
   (:import
-   (clojure.lang RT
-                 LineNumberingPushbackReader)
+   (clojure.lang LineNumberingPushbackReader)
    (java.io ByteArrayOutputStream
             Closeable
             EOFException
@@ -78,27 +77,8 @@
       write
       (fn [] (close) (.cancel fut true))))))
 
-(defmulti ^:private <bytes class)
-
-(defmethod <bytes :default
-  [input]
-  input)
-
-(defmethod <bytes (RT/classForName "[B")
-  [#^"[B" input]
-  (String. input "UTF-8"))
-
-(defmethod <bytes clojure.lang.IPersistentVector
-  [input]
-  (vec (map <bytes input)))
-
-(defmethod <bytes clojure.lang.IPersistentMap
-  [input]
-  (->> input
-       (map (fn [[k v]] [k (<bytes v)]))
-       (into {})))
-
-(defmacro ^{:private true} rethrow-on-disconnection
+(defmacro ^:private rethrow-on-disconnection
+  {:style/indent 1}
   [s & body]
   `(try
      ~@body
@@ -118,7 +98,7 @@
          (throw (SocketException. "The transport's socket appears to have lost its connection to the nREPL server"))
          (throw e#)))))
 
-(defn ^{:private true} safe-write-bencode
+(defn- safe-write-bencode
   "Similar to `bencode/write-bencode`, except it will only writes to the output
    stream if the whole `thing` is writable. In practice, it avoids sending partial
     messages down the transport, which is almost always bad news for the client.
@@ -129,6 +109,30 @@
     (bencode/write-bencode buffer thing)
     (socket/write output (.toByteArray buffer))))
 
+(defn- parse-bencode-payload
+  "Read the object received from Bencode transport, parse it into
+  Clojure data structures, and perform the following transforms:
+  - Convert string keys in maps to keywords.
+  - For keys that end with \"?\", convert empty lists to nil (as per Lisp convention).
+  - Skip decoding values for the list of keys specified in key \"-unencoded\"."
+  [payload]
+  (let [->string #(if (bytes? %) (String. ^bytes % "UTF-8") %)
+        unencoded-keys (some->> (get payload "-unencoded") (map ->string) set)
+        walk (fn walk [obj top?]
+               (cond (map? obj)
+                     (reduce-kv
+                      (fn [acc k v]
+                        (assoc acc (keyword k)
+                               (cond (and top? (contains? unencoded-keys k)) v
+                                     (and (str/ends-with? k "?") (= v ())) nil
+                                     :else (walk v false))))
+                      {} obj)
+
+                     (sequential? obj) (mapv #(walk % false) obj)
+                     (bytes? obj) (->string obj)
+                     :else obj))]
+    (walk payload true)))
+
 (defn bencode
   "Returns a Transport implementation that serializes messages
    over the given Socket or InputStream/OutputStream using bencode."
@@ -137,16 +141,12 @@
    (let [in (PushbackInputStream. (socket/buffered-input in))
          out (socket/buffered-output out)]
      (fn-transport
-      #(let [payload (rethrow-on-disconnection s (bencode/read-nrepl-message in))
-             unencoded (<bytes (payload "-unencoded"))
-             to-decode (apply dissoc payload "-unencoded" unencoded)]
-         (walk/keywordize-keys (merge (dissoc payload "-unencoded")
-                                      (when unencoded {"-unencoded" unencoded})
-                                      (<bytes to-decode))))
       #(rethrow-on-disconnection s
-                                 (locking out
-                                   (safe-write-bencode out %)
-                                   (.flush ^Flushable out)))
+         (parse-bencode-payload (bencode/read-nrepl-message in)))
+      #(rethrow-on-disconnection s
+         (locking out
+           (safe-write-bencode out %)
+           (.flush ^Flushable out)))
       (fn []
         (if s
           (.close ^Closeable s)
@@ -165,12 +165,12 @@
      (fn-transport
       #(rethrow-on-disconnection s (edn/read in))
       #(rethrow-on-disconnection s
-                                 (locking out
-                                   (binding [*print-readably* true
-                                             *print-length*   nil
-                                             *print-level*    nil]
-                                     (socket/write out (.getBytes ^String (str %) "UTF-8"))
-                                     (.flush ^Flushable out))))
+         (locking out
+           (binding [*print-readably* true
+                     *print-length*   nil
+                     *print-level*    nil]
+             (socket/write out (.getBytes ^String (str %) "UTF-8"))
+             (.flush ^Flushable out))))
       (fn []
         (if s
           (.close ^Closeable s)
