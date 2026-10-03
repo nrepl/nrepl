@@ -35,15 +35,6 @@
   limit will be used if not set."
   nil)
 
-(defn- bound-configuration
-  "Returns a map, suitable for merging into responses handled by this middleware,
-  of the currently-bound dynamic vars used for configuration."
-  []
-  {::print-fn *print-fn*
-   ::stream? *stream?*
-   ::buffer-size *buffer-size*
-   ::quota *quota*})
-
 (def configuration-keys
   [::print-fn ::stream? ::buffer-size ::quota ::keys])
 
@@ -61,17 +52,15 @@
   of the content written to that `PrintWriter` will be sent as messages on the
   transport of `msg`, keyed by `key`."
   ^java.io.PrintWriter
-  [key msg {:keys [::buffer-size ::quota]}]
+  [key msg opts]
   (-> (CallbackBufferedOutputStream. #(transport/respond-to msg key %)
-                                     (or buffer-size 1024))
+                                     (or (::buffer-size opts) *buffer-size* 1024))
       (OutputStreamWriter.)
-      (with-quota-bound-writer quota)
+      (with-quota-bound-writer (::quota opts *quota*))
       (PrintWriter. true)))
 
 (defn- send-streamed
-  [{:keys [transport] :as msg}
-   resp
-   {:keys [::print-fn ::keys] :as opts}]
+  [msg resp print-fn {:keys [::keys] :as opts}]
   ;; Iterator is used instead of reduce for cleaner stacktrace if an exception
   ;; gets thrown during printing.
   (let [it (RT/iter keys)]
@@ -82,12 +71,10 @@
                (print-fn value writer))
              (catch QuotaExceeded _
                (transport/respond-to msg :status ::truncated))))))
-  (transport/send transport (apply dissoc resp keys)))
+  (transport/respond-to msg (apply dissoc resp keys)))
 
 (defn- send-nonstreamed
-  [{:keys [transport]}
-   resp
-   {:keys [::print-fn ::quota ::keys]}]
+  [msg resp print-fn {:keys [::keys] :as opts}]
   ;; Iterator is used instead of reduce for cleaner stacktrace if an exception
   ;; gets thrown during printing.
   (let [it (RT/iter keys)]
@@ -95,7 +82,7 @@
       (if (.hasNext it)
         (let [key (.next it)
               value (get resp key)
-              writer (with-quota-bound-writer (StringWriter.) quota)
+              writer (with-quota-bound-writer (StringWriter.) (::quota opts *quota*))
               truncated? (volatile! false)]
           (try (print-fn value writer)
                (catch QuotaExceeded _
@@ -103,42 +90,43 @@
           (recur (cond-> (assoc resp key (str writer))
                    @truncated? (update ::truncated-keys (fnil conj []) key))))
 
-        (transport/send transport (cond-> resp
+        (transport/respond-to msg (cond-> resp
                                     (::truncated-keys resp)
                                     (update :status #(set (conj % ::truncated)))))))))
 
+(defn- resolve-print
+  [{:keys [::print ::options] :as msg}]
+  (when-let [var-sym (some-> print (symbol))]
+    (if-let [print-var (try
+                         (requiring-resolve var-sym)
+                         ;; The symbol comes from the client, so a missing
+                         ;; namespace or an unqualified name is a user error.
+                         (catch Exception _ nil))]
+      (fn [value writer]
+        (print-var value writer options))
+      (do (transport/respond-to msg {::error (str "Couldn't resolve var " var-sym)
+                                     :status ::error})
+          nil))))
+
 (defn- printing-transport
   [{:keys [transport] :as msg}]
-  (reify Transport
-    (recv [_this]
-      (transport/recv transport))
-    (recv [_this timeout]
-      (transport/recv transport timeout))
-    (send [this resp]
-      (let [resp-pr (::print-fn resp)
-            ;; Request config has priority over response config, but if the
-            ;; request didn't have explicit ::print set, prefer ::print-fn from
-            ;; the response.
-            opts (cond-> (merge (bound-configuration) resp msg)
-                   (and resp-pr (nil? (::print msg))) (assoc ::print-fn resp-pr))
-            resp (apply dissoc resp configuration-keys)]
-        (if (::stream? opts)
-          (send-streamed msg resp opts)
-          (send-nonstreamed msg resp opts)))
-      this)))
-
-(defn- resolve-print
-  [{:keys [::print] :as msg}]
-  (when-let [var-sym (some-> print (symbol))]
-    (let [print-var (try
-                      (requiring-resolve var-sym)
-                      ;; The symbol comes from the client, so a missing
-                      ;; namespace or an unqualified name is a user error.
-                      (catch Exception _ nil))]
-      (when-not print-var
-        (transport/respond-to msg {::error (str "Couldn't resolve var " var-sym)
-                                   :status ::error}))
-      print-var)))
+  (let [print-fn-from-req (resolve-print msg)]
+    (reify Transport
+      (recv [_this]
+        (transport/recv transport))
+      (recv [_this timeout]
+        (transport/recv transport timeout))
+      (send [this resp]
+        ;; Request config has priority over response config.
+        (let [print-fn (or print-fn-from-req
+                           (::print-fn resp)
+                           (misc/resolve-in-session msg *print-fn*))
+              opts (merge resp msg)
+              resp (apply dissoc resp configuration-keys)]
+          (if (::stream? opts *stream?*)
+            (send-streamed msg resp print-fn opts)
+            (send-nonstreamed msg resp print-fn opts)))
+        this))))
 
 (defn wrap-print
   "Middleware that provides printing functionality to other middlewares.
@@ -173,16 +161,8 @@
   its transport. If any options are specified in both, those in the request will
   be preferred."
   [handler]
-  (fn [{:keys [::options] :as msg}]
-    (let [print-var (resolve-print msg)
-          print-fn (if print-var
-                     (fn [value writer]
-                       (print-var value writer options))
-                     (misc/resolve-in-session msg *print-fn*))
-          msg (assoc msg ::print-fn print-fn)]
-      (handler (assoc msg
-                      :transport (printing-transport msg)
-                      ::print-fn print-fn)))))
+  (fn [msg]
+    (handler (assoc msg :transport (printing-transport msg)))))
 
 (set-descriptor! #'wrap-print {:requires #{"clone"}
                                :expects #{}
