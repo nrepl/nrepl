@@ -13,12 +13,16 @@ may seem peculiar, but is motivated by two factors:
   code like `"(+ 1 2) (def a 6)"`).
 
 Thus, messages provided to nREPL handlers are guaranteed to contain a
-`:transport` entry containing the xref:design/transports.adoc[transports] that should be used
-to send all responses precipitated by a given message.  (This slot is added by
-the nREPL server itself, thus, if a client sends any message containing a
-`"transport"` entry, it will be bashed out by the `Transport` that was the
-source of the message.)  Further, all messages provided to nREPL handlers have
-keyword keys (as per `clojure.walk/keywordize-keys`).
+`:transport` entry containing the xref:design/transports.adoc[transports] that
+should be used to send all responses precipitated by a given message. (This slot
+is added by the nREPL server itself, thus, if a client sends any message
+containing a `"transport"` entry, it will be bashed out by the `Transport` that
+was the source of the message). Further, all messages provided to nREPL handlers
+have keyword keys, and for keys that end with `?` if the value is `()`, it will
+be transformed to `nil` (this gives the protocol a way to represent boolean
+values if necessary). If the message contains a list under `"-unencoded"` key,
+elements in that list will be treated as keys where values don't need to be
+decoded by the protocol.
 
 Depending on its `:op`, a message might be required to contain other slots, and
 might optionally contain others.  It is generally the case that request

@@ -6,6 +6,10 @@
 
 ## master (unreleased)
 
+### Changes
+
+- [#495](https://github.com/nrepl/nrepl/pull/495): **(Breaking)** Automatically nil out empty lists for ?-ending keys in Bencode transport.
+
 ## 1.8.0 (2026-10-02)
 
 ### New features
