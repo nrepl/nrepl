@@ -10,6 +10,7 @@
   (:require [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]
             [matcher-combinators.matchers :as mc]
+            [nrepl.config :as config]
             [nrepl.core :refer [combine-responses]]
             [nrepl.middleware.print :as print]
             [nrepl.test-helpers :refer [is+]]
@@ -74,6 +75,49 @@
                   ::print/print   `custom-printer
                   ::print/keys    #{:value}
                   ::print/options {:sub "bar"}}))))
+
+(deftest config-printer
+  (testing "the configured printer is resolved, with its options applied"
+    (with-redefs [config/config {::print/print   `custom-printer
+                                 ::print/options {:sub "cfg"}}]
+      (binding [print/*print-fn* (#'print/config-printer)]
+        (testing-print "it prints values that carry no printer of their own"
+          (is+ [{:value "<foo 42 cfg>"}]
+               (handle {:value       42
+                        ::print/keys #{:value}})))
+        (testing-print "a printer on the request still wins"
+          (is+ [{:value "<foo 42 req>"}]
+               (handle {:value          42
+                        ::print/keys    #{:value}
+                        ::print/print   `custom-printer
+                        ::print/options {:sub "req"}}))))))
+
+  (testing "nothing configured leaves the built-in printer in place"
+    (with-redefs [config/config {}]
+      (is (nil? (#'print/config-printer)))))
+
+  (testing "an unresolvable printer is reported and ignored"
+    (with-redefs [config/config {::print/print 'my.missing.ns/printer}]
+      (is (nil? (binding [*err* (java.io.StringWriter.)]
+                  (#'print/config-printer))))))
+
+  (testing "configure-default-printer! installs it as the root default"
+    (let [original print/*print-fn*]
+      (try
+        (with-redefs [config/config {::print/print `custom-printer}]
+          (print/configure-default-printer!))
+        (testing-print "so a plain request uses it"
+          (is+ [{:value "<foo 42 ...>"}]
+               (handle {:value       42
+                        ::print/keys #{:value}})))
+        (finally
+          (alter-var-root #'print/*print-fn* (constantly original))))))
+
+  (testing "the root default is restored after that test"
+    (testing-print "so a plain request prints normally again"
+      (is+ [{:value "42"}]
+           (handle {:value       42
+                    ::print/keys #{:value}})))))
 
 (deftest override-value-printing
   (testing-print "custom ::print/keys"
