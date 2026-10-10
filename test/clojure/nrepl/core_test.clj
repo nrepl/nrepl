@@ -517,7 +517,36 @@
              {:value "\"Clean stop!\""}
              ;; Response to `close`
              {:status #{:done :session-closed}}])
-           (mapv clean-response responses)))))
+           (mapv clean-response responses))))
+  (testing "from another connection"
+    (let [sid (-> timeout-session meta ::nrepl/taking-until :session)
+          resp (message timeout-session {:op "eval" :code (code (try (Thread/sleep 30000)
+                                                                     (catch InterruptedException _)))})]
+      (Thread/sleep 100)
+      (with-open [^nrepl.transport.FnTransport
+                  transport2 (connect :port (:port *server*)
+                                      :transport-fn *transport-fn*)]
+        (is+ {:status #{:done}}
+             (-> (nrepl/client transport2 1000)
+                 (nrepl/client-session :session sid)
+                 (message {:op "interrupt"})
+                 combine-responses
+                 clean-response)))
+      ;; The interrupted eval gets its done on the connection it came from.
+      (is+ {:status #{:done :interrupted}} (-> resp combine-responses clean-response))
+      (is (= [3] (repl-values timeout-session "(+ 1 2)")))))
+  (testing "after the connection it came from is gone"
+    (let [sid (with-open [^nrepl.transport.FnTransport
+                          gone (connect :port (:port *server*)
+                                        :transport-fn *transport-fn*)]
+                (let [sid (-> (nrepl/client gone 1000) new-session)]
+                  (transport/send gone {:op "eval" :session sid
+                                        :code (code (Thread/sleep 30000))})
+                  (Thread/sleep 100)
+                  sid))
+          session' (nrepl/client-session timeout-client :session sid)]
+      (is+ {:status #{:done}} (-> session' (message {:op "interrupt"}) combine-responses clean-response))
+      (message session' {:op "close"}))))
 
 (when-not win?
   (def-repl-test non-interruptible-stop-thread
