@@ -186,8 +186,9 @@
   - `:interrupt` - takes an id and tries to interrupt the matching execution
     (submitted with :exec above). A nil id is meant to match the currently
     running execution. The return value can be either: `:idle` (no running
-    execution), the interrupted id, or nil when the running id doesn't match the
-    id argument. Upon successful interruption the backing thread is replaced.
+    execution), the message of the interrupted execution with its id as `:id`,
+    or nil when the running id doesn't match the id argument. Upon successful
+    interruption the backing thread is replaced.
   - `:close` - terminates the backing thread."
   [session]
   (let [id (:id (meta session))
@@ -198,9 +199,9 @@
            (loop []
              (let [{:keys [^LinkedBlockingQueue queue]} @state
                    [exec-id ^Runnable r ^Runnable ack msg] (.take queue)
-                   exec-id (or exec-id (uuid)) ;; :id may be absent in msg.
+                   running (assoc msg :id (or exec-id (uuid))) ;; :id may be absent in msg.
                    bindings (add-per-message-bindings msg @session)]
-               (swap! state assoc :running exec-id)
+               (swap! state assoc :running running)
                (push-thread-bindings bindings)
                (if (fn? r)
                  (r) ;; -1 stack frame this way.
@@ -215,7 +216,9 @@
                ;; the stack cleaner.
                (pop-thread-bindings)
                (let [state-d @state]
-                 (when (and (= (:running state-d) exec-id)
+                 ;; Not when it got interrupted, even if what runs now has
+                 ;; the same id.
+                 (when (and (identical? (:running state-d) running)
                             (compare-and-set! state state-d
                                               (assoc state-d :running nil)))
                    (some-> ack .run)
@@ -238,11 +241,11 @@
     ;; it contains functions that are accessed by `interrupt-session` and `close-session`.
     {:interrupt (fn [exec-id]
                   ;; nil means interrupt whatever is running
-                  ;; returns :idle, interrupted id or nil
+                  ;; returns :idle, the interrupted message or nil
                   (let [{:keys [running thread] :as state-d} @state]
                     (cond
                       (nil? running) :idle
-                      (and (or (nil? exec-id) (= running exec-id))
+                      (and (or (nil? exec-id) (= (:id running) exec-id))
                            (compare-and-set! state state-d
                                              (assoc state-d :running nil)))
                       (do
@@ -275,24 +278,27 @@
     (t/respond-to msg :status :done, :new-session id)))
 
 (defn- interrupt-session
-  [{:keys [session interrupt-id transport] :as msg}]
-  (let [{:keys [interrupt] session-id :id} (meta session)
-        interrupted-id (when interrupt (interrupt interrupt-id))]
+  [{:keys [session interrupt-id] :as msg}]
+  (let [{:keys [interrupt]} (meta session)
+        interrupted (when interrupt (interrupt interrupt-id))]
     (cond
       (nil? interrupt)
       (t/respond-to msg :status #{:error :session-ephemeral :done})
 
-      (nil? interrupted-id)
+      (nil? interrupted)
       (t/respond-to msg :status #{:error :interrupt-id-mismatch :done})
 
-      (= :idle interrupted-id)
+      (= :idle interrupted)
       (t/respond-to msg :status #{:session-idle :done})
 
       :else
       (do
-        (t/send transport {:status #{:interrupted :done}
-                           :id interrupted-id
-                           :session session-id})
+        ;; Back the way the interrupted request came, which isn't this
+        ;; connection when the interrupt comes from another one.
+        (try
+          (t/respond-to interrupted :status #{:interrupted :done})
+          ;; Its connection is gone, and nobody's waiting for this anymore.
+          (catch Exception _))
         (t/respond-to msg :status #{:done})))))
 
 (defn close-session

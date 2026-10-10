@@ -6,6 +6,14 @@
 
 ## master (unreleased)
 
+### Changes
+
+- [#498](https://github.com/nrepl/nrepl/pull/498): The `:interrupt` function of `nrepl.middleware.session/session-exec` returns the message of the execution it interrupted instead of its id.
+
+### Bugs fixed
+
+- [#498](https://github.com/nrepl/nrepl/pull/498): Send the `done` of an evaluation interrupted from another connection to the evaluation's own connection, rather than the interrupt's, where the client that sent the evaluation never got it.
+
 ## 1.8.0 (2026-10-02)
 
 ### New features
