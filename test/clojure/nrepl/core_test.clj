@@ -683,6 +683,15 @@
   (is+ [""] (repl-values timeout-session "(slurp *in*)"))
   (is+ [2] (repl-values timeout-session "(+ 1 1)")))
 
+(def-repl-test slurping-*in*-keeps-*in*-usable
+  ;; `slurp` closes the reader it is handed, so `(slurp *in*)` must not render
+  ;; the session's stdin permanently unreadable: the client can still send
+  ;; input over the "stdin" op afterwards, and a later `(read-line)` sees it.
+  (dorun (message timeout-session {:op "stdin" :stdin []}))    ; EOF: slurp drains and returns
+  (is+ [""] (repl-values timeout-session "(slurp *in*)"))
+  (dorun (message timeout-session {:op "stdin" :stdin (th/newline->sys "abc\n")}))
+  (is+ ["abc"] (repl-values timeout-session "(read-line)")))
+
 (def-repl-test rebinding-*in*-keeps-the-session-alive
   ;; *in* may be set! to any Reader, not only a PushbackReader.
   (dorun (repl-eval timeout-session

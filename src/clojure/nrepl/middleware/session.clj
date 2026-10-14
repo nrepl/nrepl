@@ -52,6 +52,21 @@
                                 (response-for *msg* :session session-id
                                               :status :need-input))))
 
+(defn- session-in-reader
+  "Returns the reader bound to *in* for a session, wrapping the session's
+  QueuePollingReader in a LineNumberingPushbackReader.
+
+  Closing a session's *in* must not close the underlying reader. Code that
+  slurps or otherwise closes *in* (a common thing to do by accident, as slurp
+  closes whatever it is handed) would otherwise clear the QueuePollingReader's
+  queue and make the session's stdin permanently unreadable: later read-line
+  calls would fail with an IOException, even though the client's subsequent
+  stdin messages are still accepted. The reader lives in the session and is
+  reused across evals, so closing it is never what the caller wants."
+  [^QueuePollingReader qpr]
+  (proxy [LineNumberingPushbackReader] [qpr]
+    (close [] nil)))
+
 (let [state (atom {})]
   (defn- dynvar-defaults-from-config []
     ;; Use simple one-value cache if config hasn't changed (config can currently
@@ -170,7 +185,7 @@
          new-session (atom (assoc (if session
                                     @session
                                     (gather-initial-bindings msg))
-                                  #'*in* (LineNumberingPushbackReader. qpr)
+                                  #'*in* (session-in-reader qpr)
                                   #'*ns* (create-ns 'user))
                            :meta {:id id
                                   :out-limit (or out-limit (:out-limit (meta session)))
