@@ -91,7 +91,12 @@
 (defn- comparator
   [{a-requires :requires a-expects :expects a-handles :handles}
    {b-requires :requires b-expects :expects b-handles :handles}]
-  (let [intersect? (fn [set1 set2] (some (set set1) set2))]
+  (letfn [(intersect? [set1 set2]
+            (let [set1 (set set1)]
+              (reduce (fn [_ el]
+                        (when (contains? set1 el)
+                          (reduced true)))
+                      nil set2)))]
     (cond (intersect? a-requires b-handles) -1
           (intersect? a-expects b-handles) 1
           (intersect? b-requires a-handles) 1
@@ -106,27 +111,29 @@
   - Return descriptor for each middleware."
   [middlewares]
   (let [mware-set (set middlewares)]
-    (->> (for [m middlewares
-               :let [{:keys [expects requires] :as desc} (::descriptor (meta m))]]
-           (do (when (nil? desc)
-                 (misc/log :warning "No nREPL middleware descriptor in metadata of" m
-                           ", see nrepl.middleware/set-descriptor!"))
-               (let [deps (concat expects requires)
-                     missing-deps (for [dep deps
-                                        :when (and (var? dep) (not (mware-set dep)))]
-                                    (do (misc/log :warning (format "Middleware %s is required by %s but is not present in middleware list." dep m))
-                                        dep))]
-                 ;; TODO: stop adding missing deps in future versions.
-                 (concat [m] missing-deps))))
-         (apply concat)
-         distinct
-         (mapv (fn [m]
-                 (let [desc (::descriptor (meta m))]
-                   (-> desc
-                       ;; Conj the middleware Var itself to `:handles` to support direct
-                       ;; reference to middlewares dependencies in `:expects`/`:requires`.
-                       (update :handles #(set (conj (keys %) m)))
-                       (assoc :implemented-by m))))))))
+    (into []
+          (comp (mapcat (fn [m]
+                          (let [{:keys [expects requires] :as desc} (::descriptor (meta m))]
+                            (when (nil? desc)
+                              (misc/log :warning "No nREPL middleware descriptor in metadata of" m
+                                        ", see nrepl.middleware/set-descriptor!"))
+                            (let [deps (concat expects requires)
+                                  missing-deps (for [dep deps
+                                                     :when (and (var? dep) (not (mware-set dep)))]
+                                                 (do (misc/log :warning (format "Middleware %s is required by %s but is not present in middleware list." dep m))
+                                                     dep))]
+                              ;; TODO: stop adding missing deps in future versions.
+                              (into [m] missing-deps)))))
+                (distinct)
+                (map (fn [m]
+                       (let [desc (::descriptor (meta m))]
+                         (-> desc
+                             ;; Conj the middleware Var itself to `:handles` to support direct
+                             ;; reference to middlewares dependencies in `:expects`/`:requires`.
+                             (update :handles #(into #{m} (keys %)))
+                             ;; (update :handles #(into #{m} (keys %)))
+                             (assoc :implemented-by m))))))
+          middlewares)))
 
 (defn- topologically-sort
   "Topologically sorts the given middleware descriptors according to
@@ -138,29 +145,30 @@
         ;; graph algorithm, will translate back into middlewares at
         ;; the end.
         vertices (range (count stack))
-        edges (for [i1 vertices
-                    i2 (range i1)
-                    :let [x (comparator (stack i1) (stack i2))]
-                    :when (not= 0 x)]
-                (if (neg? x) [i1 i2] [i2 i1]))
+        edges (vec (for [i1 vertices
+                         i2 (range i1)
+                         :let [x (comparator (stack i1) (stack i2))]
+                         :when (not= 0 x)]
+                     (if (neg? x) [i1 i2] [i2 i1])))
         connected (into #{} cat edges)
         ;; the trivial vertices have no connections, and we pull them
         ;; out here so we can make sure they get put on the end
         trivial-vertices (remove connected vertices)]
     (loop [sorted-vertices []
            remaining-edges edges
-           remaining-vertices (filter connected vertices)]
+           remaining-vertices (filterv connected vertices)]
       (if (seq remaining-vertices)
-        (let [non-initials (->> remaining-edges
-                                (map second)
-                                (set))
-              next-vertex (->> remaining-vertices
-                               (remove non-initials)
-                               (first))]
+        (let [non-initials (into #{} (map #(nth % 1)) remaining-edges)
+              next-vertex (reduce (fn [_ v]
+                                    (when-not (non-initials v)
+                                      (reduced v)))
+                                  nil remaining-vertices)]
           (if next-vertex
             (recur (conj sorted-vertices next-vertex)
-                   (remove #((set %) next-vertex) remaining-edges)
-                   (remove #{next-vertex} remaining-vertices))
+                   (into [] (remove #(or (= next-vertex (nth % 0))
+                                         (= next-vertex (nth % 1)))
+                                    remaining-edges))
+                   (into [] (remove #(= % next-vertex)) remaining-vertices))
             ;; Cycle detected! Have to actually assemble a cycle so we
             ;; can throw a useful error.
             (let [start (first remaining-vertices)
@@ -173,7 +181,7 @@
               (throw (ex-info
                       "Unable to satisfy nREPL middleware ordering requirements!"
                       data)))))
-        (map stack (concat sorted-vertices trivial-vertices))))))
+        (mapv stack (into sorted-vertices trivial-vertices))))))
 
 (defn linearize-middleware-stack
   "Given a list of middleware vars, sort them topologically, so that least
