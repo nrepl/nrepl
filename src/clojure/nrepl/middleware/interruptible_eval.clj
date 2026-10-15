@@ -219,6 +219,8 @@
                                                "file-name" "Name of source file, e.g. io.clj. Do not confuse with `file` param which contains full path while `file-name` is only the short file name. Both parameters are needed to properly set the bytecode location metadata."
                                                "line" "The line number in [file] at which [code] starts."
                                                "column" "The column number in [file] at which [code] starts."
+                                               "out-quota" "Maximum number of bytes printed into *out* by this evaluation."
+                                               "err-quota" "Maximum number of bytes printed into *err* by this evaluation."
                                                "read-cond" "The options passed to the reader before the evaluation. Useful when middleware in a higher layer wants to process reader conditionals."})
                              :returns {"ns" "*ns*, after successful evaluation of `code`."
                                        "value" "The result of evaluating `code`, often `read`able. This printing is provided by the `print` middleware. Superseded by `ex` and `root-ex` if an exception occurs during evaluation."

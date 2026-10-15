@@ -5,15 +5,17 @@ import java.io.*;
 /**
  * Wrapper around <code>java.io.Writer</code> that throws
  * <code>nrepl.out.QuotaExceeded</code> once it has written more than quota
- * bytes.
+ * bytes and if throwOnExceeded is set to true (otherwise, only stop writing
+ * when quota is reached).
  */
 public class QuotaBoundWriter extends Writer {
 
     private final Writer wrappedWriter;
     private final int quota;
+    private final boolean throwOnExceeded;
     private int remaining;
 
-    public QuotaBoundWriter(Writer writer, int quotaBytes) {
+    public QuotaBoundWriter(Writer writer, int quotaBytes, boolean throwOnExceeded) {
         super();
         if (quotaBytes <= 0) {
             throw new IllegalArgumentException("Invalid quota: " + quotaBytes);
@@ -21,6 +23,7 @@ public class QuotaBoundWriter extends Writer {
         this.wrappedWriter = writer;
         this.quota = quotaBytes;
         this.remaining = quotaBytes;
+        this.throwOnExceeded = throwOnExceeded;
     }
 
     @Override
@@ -32,7 +35,7 @@ public class QuotaBoundWriter extends Writer {
                 wrappedWriter.write(cbuf, off, len);
                 remaining -= len;
             }
-            if (tooBig)
+            if (tooBig && throwOnExceeded)
                 throw new QuotaExceeded();
         }
     }
