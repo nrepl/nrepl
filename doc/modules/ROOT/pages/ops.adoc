@@ -18,7 +18,7 @@ Required parameters::
 Optional parameters::
 * `:client-name` The nREPL client name. e.g. "CIDER"
 * `:client-version` The nREPL client version. e.g. "1.2.3"
-* `:session` The ID of the session to be cloned; if not provided, a new session with default bindings is created, and mapped to the returned session ID.
+* `:session` The ID of the session to be cloned; if not provided, a new session is created with default bindings.
 
 
 Returns::
@@ -91,12 +91,14 @@ Required parameters::
 
 Optional parameters::
 * `:column` The column number in [file] at which [code] starts.
+* `:err-quota` Maximum number of bytes printed into \*err* by this evaluation.
 * `:eval` A fully-qualified symbol naming a var whose function value will be used to evaluate [code], instead of ``clojure.core/eval`` (the default).
 * `:file` The path to the file containing [code]. ``clojure.core/\*file*`` will be bound to this.
 * `:file-name` Name of source file, e.g. io.clj. Do not confuse with ``file`` param which contains full path while ``file-name`` is only the short file name. Both parameters are needed to properly set the bytecode location metadata.
 * `:id` An opaque message ID that will be included in responses related to the evaluation, and which may be used to restrict the scope of a later "interrupt" operation.
 * `:line` The line number in [file] at which [code] starts.
 * `:ns` The namespace in which to perform the evaluation. The supplied namespace must exist already (e.g. be loaded). If no namespace is specified the evaluation falls back to ``\*ns*`` for the session in question.
+* `:out-quota` Maximum number of bytes printed into \*out* by this evaluation.
 * `:read-cond` The options passed to the reader before the evaluation. Useful when middleware in a higher layer wants to process reader conditionals.
 * `:nrepl.middleware.caught/caught` A fully-qualified symbol naming a var whose function to use to convey interactive errors. Must point to a function that takes a ``java.lang.Throwable`` as its sole argument.
 * `:nrepl.middleware.caught/print?` If logical true, the printed value of any interactive errors will be returned in the response (otherwise they will be elided). Delegates to ``nrepl.middleware.print`` to perform the printing. Defaults to false.
@@ -146,7 +148,7 @@ Returns::
 * `:status` 'interrupted' if a request was identified and interruption will be attempted
 'session-idle' if the session is not currently executing any request
 'interrupt-id-mismatch' if the session is currently executing a request sent using a different ID than specified by the "interrupt-id" value
-'session-ephemeral' if the session is an ephemeral session
+'unknown-session' if the session could not be resolved (e.g., it is an ephemeral session)
 
 
 

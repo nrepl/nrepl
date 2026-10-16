@@ -6,6 +6,11 @@
 
 ## master (unreleased)
 
+### Changes
+
+- [#462](https://github.com/nrepl/nrepl/pull/462): **(Breaking)** Remove deprecated function `nrepl.middleware.session/close-all-sessions!`.
+- [#462](https://github.com/nrepl/nrepl/pull/462): Session middleware no longer reacts to `:out-limit` parameter. Instead, `:out-quota` and `:err-quota` are introduced which can be used to limit the number of bytes printed into `*out*` and `*err*` respectively as a response to a single message.
+
 ## 1.8.0 (2026-10-02)
 
 ### New features
