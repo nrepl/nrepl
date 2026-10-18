@@ -34,9 +34,9 @@ executors:
     docker:
       - image: clojure:temurin-25-noble
     <<: *defaults
-  jdk26:
+  jdk27:
     docker:
-      - image: clojure:temurin-26-noble
+      - image: clojure:temurin-27-resolute
     <<: *defaults
 
 # Runs a given set of steps, with some standard pre- and post-
@@ -83,11 +83,9 @@ commands:
     description: |
       Resolve the dependencies for the build tooling and the given alias
       groups up front, retrying on failure. Computing a classpath occasionally
-      dies with a ClassCastException from HashMap internals: Maven's model
-      validator caches the coordinates it has validated in an unsynchronized
-      HashSet, and tools.deps resolves on several threads at once. It strikes
-      whenever .cpcache misses, on JDK 8 and JDK 26 alike, and a retry is all
-      it takes.
+      dies with a ClassCastException from HashMap internals (Maven's model
+      validator caches the coordinates in an unsynchronized HashSet, and
+      tools.deps resolves on several threads at once, triggering a race).
     parameters:
       aliases:
         description: |
@@ -123,7 +121,7 @@ jobs:
       clojure_version:
         type: string
         default: "1.12"
-    executor: jdk26
+    executor: jdk27
     environment:
       CLOJURE_VERSION: << parameters.clojure_version >>
     steps:
@@ -237,7 +235,7 @@ workflows:
             alias: "test-1.12"
             parameters:
               clojure_version: ["1.12"]
-              jdk_version: [jdk17, jdk21, jdk25, jdk26]
+              jdk_version: [jdk17, jdk21, jdk25, jdk27]
           <<: *run_always
       - test:
           matrix:
@@ -254,14 +252,14 @@ workflows:
             alias: "test-1.13"
             parameters:
               clojure_version: ["1.13"]
-              jdk_version: [jdk17, jdk21, jdk25, jdk26]
+              jdk_version: [jdk17, jdk21, jdk25, jdk27]
           <<: *run_always
       - test:
           matrix:
             alias: "test-older"
             parameters:
               clojure_version: ["1.10", "1.11"]
-              jdk_version: [jdk8, jdk26]
+              jdk_version: [jdk8, jdk27]
               extra_aliases: [":+junixsocket"]
           <<: *run_always
       - test-windows:
