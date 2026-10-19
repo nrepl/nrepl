@@ -6,6 +6,10 @@
 
 ## master (unreleased)
 
+### Bugs fixed
+
+- [#494](https://github.com/nrepl/nrepl/pull/494): Declare junixsocket as a `provided` dependency in the pom, so cljdoc can analyze `nrepl.socket.junixsocket`.
+
 ## 1.8.0 (2026-10-02)
 
 ### New features
