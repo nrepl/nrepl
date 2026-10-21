@@ -18,7 +18,7 @@ Required parameters::
 Optional parameters::
 * `:client-name` The nREPL client name. e.g. "CIDER"
 * `:client-version` The nREPL client version. e.g. "1.2.3"
-* `:session` The ID of the session to be cloned; if not provided, a new session with default bindings is created, and mapped to the returned session ID.
+* `:session` The ID of the session to be cloned; if not provided, a new session is created with default bindings.
 
 
 Returns::
@@ -146,7 +146,7 @@ Returns::
 * `:status` 'interrupted' if a request was identified and interruption will be attempted
 'session-idle' if the session is not currently executing any request
 'interrupt-id-mismatch' if the session is currently executing a request sent using a different ID than specified by the "interrupt-id" value
-'session-ephemeral' if the session is an ephemeral session
+'unknown-session' if the session could not be resolved (e.g., it is an ephemeral session)
 
 
 

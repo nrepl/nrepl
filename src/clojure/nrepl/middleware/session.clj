@@ -19,24 +19,6 @@
 
 (def ^:private sessions (atom {}))
 
-(defn ^{:deprecated "1.4.0"} close-all-sessions!
-  "Use this fn to manually shut down all sessions. Since each new session spawns
-   a new thread, and sessions need to be otherwise explicitly closed, we can
-   accumulate too many active sessions for the JVM. This occurs when we are
-   running tests in watch mode."
-  []
-  (run! (fn [[id session]]
-          (when-let [close (:close (meta session))]
-            (close))
-          (swap! sessions dissoc id))
-        @sessions))
-
-;; TODO: the way this is currently, :out and :err will continue to be
-;; associated with a particular *msg* (and session) even when produced from a future,
-;; agent, etc. due to binding conveyance.  This may or may not be desirable
-;; depending upon the expectations of the client/user.  I'm not sure at the moment
-;; how best to make it configurable though...
-
 (def ephemeral-executor
   "Executor for running eval requests in ephemeral sessions."
   (delay (Executors/newCachedThreadPool
@@ -96,6 +78,7 @@
           #'*3                       nil
           #'*e                       nil
           #'*read-eval*              *read-eval*
+          #'*ns*                     (create-ns 'user)
           #'s/*explain-out*          s/*explain-out*})
         m
 
@@ -158,26 +141,6 @@
                     (finally (pop-thread-bindings))))]
       (.submit ^ExecutorService @ephemeral-executor ^Runnable f))))
 
-(defn- create-session
-  "Return a new session atom that contains a map of dynamic variables needed for
-  `interruptible-eval`. If `session` is present in the message, base the new
-  session on it, otherwise make one from scratch. The returned session is always
-  an ephemeral one, with an ephemeral `:exec` function. To make it persistent,
-  `register-session` has to be called next."
-  ([{:keys [transport session out-limit] :as msg}]
-   (let [id (uuid)
-         qpr (session-in id transport)
-         new-session (atom (assoc (if session
-                                    @session
-                                    (gather-initial-bindings msg))
-                                  #'*in* (LineNumberingPushbackReader. qpr)
-                                  #'*ns* (create-ns 'user))
-                           :meta {:id id
-                                  :out-limit (or out-limit (:out-limit (meta session)))
-                                  ::queue-reader qpr})]
-     (alter-meta! new-session assoc :exec (make-ephemeral-exec-fn new-session msg))
-     new-session)))
-
 (defn session-exec
   "Takes a session and returns a map of three functions:
   - `:exec` - takes an id (typically a msg-id), a thunk and an ack runnables.
@@ -190,9 +153,8 @@
     or nil when the running id doesn't match the id argument. Upon successful
     interruption the backing thread is replaced.
   - `:close` - terminates the backing thread."
-  [session]
-  (let [id (:id (meta session))
-        state (atom nil)
+  [session & [session-id]]
+  (let [state (atom nil)
         reset-state-holder (atom nil)
         session-loop
         #(try
@@ -229,7 +191,7 @@
              ;; it does, at least make sure the session remains healthy.
              (@reset-state-holder)))
         reset-state
-        #(let [thread (SessionThread. session-loop (str "nREPL-session-" id)
+        #(let [thread (SessionThread. session-loop (str "nREPL-session-" session-id)
                                       (classloader/dynamic-classloader))]
            (reset! state {:queue (LinkedBlockingQueue.)
                           :running nil
@@ -237,8 +199,6 @@
            (.start thread))]
     (reset! reset-state-holder reset-state)
     (reset-state)
-    ;; This map is added to the meta of the session object by `register-session`,
-    ;; it contains functions that are accessed by `interrupt-session` and `close-session`.
     {:interrupt (fn [exec-id]
                   ;; nil means interrupt whatever is running
                   ;; returns :idle, the interrupted message or nil
@@ -267,28 +227,42 @@
              ([exec-id r ack msg]
               (.put ^LinkedBlockingQueue (:queue @state) [exec-id r ack msg])))}))
 
-(defn- register-session
-  "Registers a new session containing the baseline bindings contained in the
-   given message's :session."
-  [msg]
-  (let [session (create-session msg)
+(defn- create-session
+  "Return a new session atom that contains a map of dynamic variables needed for
+  `interruptible-eval`. If `base-session` is not nil, base the new session on it,
+  otherwise make one from scratch. If `persistent?` is true, return a persistent
+  reusable session, otherwise an ephemeral one-shot session."
+  [{:keys [transport] :as msg} base-session persistent?]
+  (let [id (uuid)
+        qpr (session-in id transport)
+        new-session (atom (assoc (or (some-> base-session deref)
+                                     (gather-initial-bindings msg))
+                                 #'*in* (LineNumberingPushbackReader. qpr)))]
+    (reset-meta! new-session
+                 (merge {:id id, ::queue-reader qpr}
+                        (if persistent?
+                          (session-exec new-session id)
+                          {:exec (make-ephemeral-exec-fn new-session msg)})))
+    new-session))
+
+(defn- clone-session
+  "Clone bindings of the provided session (or create a fresh one) and
+  register the new session as a persistent one."
+  [msg base-session]
+  (let [session (create-session msg base-session true)
         {:keys [id]} (meta session)]
-    (alter-meta! session into (session-exec session))
     (swap! sessions assoc id session)
     (t/respond-to msg :status :done, :new-session id)))
 
 (defn- interrupt-session
-  [{:keys [session interrupt-id] :as msg}]
+  [{:keys [interrupt-id] :as msg} session]
   (let [{:keys [interrupt]} (meta session)
-        interrupted (when interrupt (interrupt interrupt-id))]
+        interrupted-msg (when interrupt (interrupt interrupt-id))]
     (cond
-      (nil? interrupt)
-      (t/respond-to msg :status #{:error :session-ephemeral :done})
-
-      (nil? interrupted)
+      (nil? interrupted-msg)
       (t/respond-to msg :status #{:error :interrupt-id-mismatch :done})
 
-      (= :idle interrupted)
+      (= :idle interrupted-msg)
       (t/respond-to msg :status #{:session-idle :done})
 
       :else
@@ -296,7 +270,7 @@
         ;; Back the way the interrupted request came, which isn't this
         ;; connection when the interrupt comes from another one.
         (try
-          (t/respond-to interrupted :status #{:interrupted :done})
+          (t/respond-to interrupted-msg :status #{:interrupted :done})
           ;; Its connection is gone, and nobody's waiting for this anymore.
           (catch Exception _))
         (t/respond-to msg :status #{:done})))))
@@ -310,7 +284,7 @@
 
 (defn- handle-session-close
   "Close the session associated with the given message and notify the user."
-  [{:keys [session] :as msg}]
+  [msg session]
   (close-session session)
   (t/respond-to msg :status #{:done :session-closed}))
 
@@ -340,21 +314,25 @@
    and *err* content can be associated with the originating message)."
   [h]
   (fn [{:keys [op session] :as msg}]
-    (let [the-session (if session
-                        (@sessions session)
-                        (create-session msg))]
-      (if-not the-session
+    (let [resolved-session (when session (@sessions session))]
+      (if (and (nil? resolved-session)
+               (or session (#{"interrupt" "close"} op)))
+        ;; Report error if session couldn't be resolved but was provided, or
+        ;; always for ops that require an existing session.
         (t/respond-to msg :status #{:error :unknown-session :done})
-        (let [msg (assoc msg :session the-session)]
-          (case op
-            "clone" (register-session msg)
-            "interrupt" (interrupt-session msg)
-            "close" (handle-session-close msg)
-            "ls-sessions" (t/respond-to msg {:sessions (or (keys @sessions) [])
-                                             :status   :done})
+
+        (case op
+          "interrupt" (interrupt-session msg resolved-session)
+          "close" (handle-session-close msg resolved-session)
+          "ls-sessions" (t/respond-to msg {:sessions (or (keys @sessions) [])
+                                           :status   :done})
+          "clone" (clone-session msg resolved-session)
+
+          (let [msg (assoc msg :session (or resolved-session
+                                            (create-session msg nil false)))]
             (binding [*msg* msg]
-              ;; Bind *msg* so it can later be accessed by persistent session
-              ;; functions like session-exec.
+              ;; Bind *msg* so it can later be accessed by persistent
+              ;; session's :exec.
               (h msg))))))))
 
 (set-descriptor! #'session
@@ -366,7 +344,7 @@
                   :handles {"clone"
                             {:doc "Clones the current session, returning the ID of the newly-created session."
                              :requires {}
-                             :optional {"session" "The ID of the session to be cloned; if not provided, a new session with default bindings is created, and mapped to the returned session ID."
+                             :optional {"session" "The ID of the session to be cloned; if not provided, a new session is created with default bindings."
                                         "client-name" "The nREPL client name. e.g. \"CIDER\""
                                         "client-version" "The nREPL client version. e.g. \"1.2.3\""}
                              :returns {"new-session" "The ID of the new session."}}
@@ -377,7 +355,7 @@
                              :returns {"status" "'interrupted' if a request was identified and interruption will be attempted
 'session-idle' if the session is not currently executing any request
 'interrupt-id-mismatch' if the session is currently executing a request sent using a different ID than specified by the \"interrupt-id\" value
-'session-ephemeral' if the session is an ephemeral session"}}
+'unknown-session' if the session could not be resolved (e.g., it is an ephemeral session)"}}
                             "close"
                             {:doc "Closes the specified session."
                              :requires {"session" "The ID of the session to be closed."}

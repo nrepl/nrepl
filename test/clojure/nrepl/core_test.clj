@@ -450,12 +450,6 @@
             (mapv clean-response))))
 
 (def-repl-test interrupt
-  (testing "ephemeral session"
-    (is+ {:status #{:error :session-ephemeral :done}}
-         (clean-response (first (message client {:op "interrupt"}))))
-    (is+ {:status #{:error :session-ephemeral :done}}
-         (clean-response (first (message client {:op "interrupt" :interrupt-id "foo"})))))
-
   (testing "registered session"
     (is+ {:status #{:done :session-idle}}
          (clean-response (first (message session {:op "interrupt"}))))
