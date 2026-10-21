@@ -40,23 +40,25 @@
 
 (defn with-quota-bound-writer
   "Returns a `java.io.Writer` that wraps `writer` and throws `QuotaExceeded` once
-  it has written more than `quota` bytes."
+  it has written more than `quota` bytes if `throw-on-exceeded?` is true, otherwise
+  only truncate the output."
   ^Writer
-  [^Writer writer quota]
+  [^Writer writer quota throw-on-exceeded?]
   (if quota
-    (QuotaBoundWriter. writer quota)
+    (QuotaBoundWriter. writer quota throw-on-exceeded?)
     writer))
 
 (defn replying-PrintWriter
   "Returns a `java.io.PrintWriter` suitable for binding as `*out*` or `*err*`. All
   of the content written to that `PrintWriter` will be sent as messages on the
-  transport of `msg`, keyed by `key`."
+  transport of `msg`, keyed by `key`. `::throw-on-quota-exceeded?` should
+  only be set to false by session middleware to create *out*/*err* streams."
   ^java.io.PrintWriter
   [key msg opts]
   (-> (CallbackBufferedOutputStream. #(transport/respond-to msg key %)
                                      (or (::buffer-size opts) *buffer-size* 1024))
       (OutputStreamWriter.)
-      (with-quota-bound-writer (::quota opts *quota*))
+      (with-quota-bound-writer (::quota opts *quota*) (::throw-on-quota-exceeded? opts true))
       (PrintWriter. true)))
 
 (defn- send-streamed
@@ -82,7 +84,7 @@
       (if (.hasNext it)
         (let [key (.next it)
               value (get resp key)
-              writer (with-quota-bound-writer (StringWriter.) (::quota opts *quota*))
+              writer (with-quota-bound-writer (StringWriter.) (::quota opts *quota*) true)
               truncated? (volatile! false)]
           (try (print-fn value writer)
                (catch QuotaExceeded _
