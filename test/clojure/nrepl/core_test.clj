@@ -286,20 +286,39 @@
                                        (.setTimeZone (java.util.TimeZone/getTimeZone "GMT"))))))
            combine-responses)))
 
-(def-repl-test streaming-out-without-explicit-flushing
-  (is (= ["(0 1 "
-          "2 3 4"
-          " 5 6 "
-          "7 8 9"
-          " 10)"]
-         ;; new session
-         (->> (message client {:op "eval" :out-limit 5 :code "(print (range 11))"})
-              (map :out)
-              (remove nil?))
-         ;; existing session
-         (->> (message session {:op "eval" :out-limit 5 :code "(print (range 11))"})
-              (map :out)
-              (remove nil?)))))
+(def-repl-test streaming-out-without-explicit-flushing-buffers-1024-bytes
+  (testing "new session"
+    (is+ [(mc/via count 1024)
+          (mc/via count 1024)
+          (mc/via count 1024)
+          (mc/via count 819)]
+         (->> (message client {:op "eval" :code (code (print (range 1000)))})
+              (keep :out))))
+  (testing "existing session"
+    (is+ [(mc/via count 1024)
+          (mc/via count 1024)
+          (mc/via count 1024)
+          (mc/via count 819)]
+         (->> (message session {:op "eval" :code (code (print (range 1000)))})
+              (keep :out)))))
+
+(def-repl-test out-quota-test
+  (testing "new session"
+    (is+ ["(0 1 "]
+         (->> (message client {:op "eval" :out-quota 5 :code (code (print (range 1000)))})
+              (keep :out)))
+    (is+ ["(0 1 "]
+         (->> (message client {:op "eval" :err-quota 5 :code (code (binding [*out* *err*]
+                                                                     (print (range 1000))))})
+              (keep :err))))
+  (testing "existing session"
+    (is+ ["(0 1 "]
+         (->> (message session {:op "eval" :out-quota 5 :code (code (print (range 1000)))})
+              (keep :out)))
+    (is+ ["(0 1 "]
+         (->> (message session {:op "eval" :err-quota 5 :code (code (binding [*out* *err*]
+                                                                      (print (range 1000))))})
+              (keep :err)))))
 
 (def-repl-test reader-conditional-option
   (is+ {:value ["#?(:clj (+ 1 2) :cljs (+ 2 3))"]}

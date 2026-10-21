@@ -101,13 +101,12 @@
 
 (defn- add-per-message-bindings
   "Add dynamic bindings to `bindings-map` that must be rebound for each message."
-  [{:keys [session file out-limit] :as msg} bindings-map]
+  [{:keys [file out-quota err-quota] :as msg} bindings-map]
   (let [;; *out* and *err* must be rebound on each new message.
-        ;; TODO: out-limit -> out-buffer-size | err-buffer-size
-        ;; TODO: new options: out-quota | err-quota
-        opts {::print/buffer-size (or out-limit (get (meta session) :out-limit))}
-        out (print/replying-PrintWriter :out msg opts)
-        err (print/replying-PrintWriter :err msg opts)
+        out (print/replying-PrintWriter
+             :out msg {::print/quota out-quota ::print/throw-on-quota-exceeded? false})
+        err (print/replying-PrintWriter
+             :err msg {::print/quota err-quota ::print/throw-on-quota-exceeded? false})
         ctxcl (.getContextClassLoader (Thread/currentThread))]
     (-> bindings-map
         (assoc #'*msg* msg
@@ -229,7 +228,7 @@
 
 (defn- create-session
   "Return a new session atom that contains a map of dynamic variables needed for
-  `interruptible-eval`. If `base-session` is not nil, base the new session on it,
+  `interruptible-eval`. If `base-session` is not nil, take dynvar values from it,
   otherwise make one from scratch. If `persistent?` is true, return a persistent
   reusable session, otherwise an ephemeral one-shot session."
   [{:keys [transport] :as msg} base-session persistent?]
