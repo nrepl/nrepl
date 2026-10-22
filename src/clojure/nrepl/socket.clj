@@ -115,6 +115,10 @@
     "Accepts a connection on s.  Throws ClosedChannelException if s is
     closed."))
 
+;; TCP connections get TCP_NODELAY. A reply is usually several small
+;; messages written one after another, like an eval's value and then its
+;; done, and with Nagle's algorithm each one waits for the client to
+;; acknowledge the one before, which Linux delays by up to 40ms.
 (extend-protocol Acceptable
   ServerSocketChannel
   (accept [s] (.accept s))
@@ -123,13 +127,15 @@
   (accept [s]
     (when (.isClosed s)
       (throw (ClosedChannelException.)))
-    (tls/accept s))
+    (doto ^Socket (tls/accept s)
+      (.setTcpNoDelay true)))
 
   ServerSocket
   (accept [s]
     (when (.isClosed s)
       (throw (ClosedChannelException.)))
-    (.accept s)))
+    (doto (.accept s)
+      (.setTcpNoDelay true))))
 
 (defprotocol Connectable
   (is-connected? [s]
