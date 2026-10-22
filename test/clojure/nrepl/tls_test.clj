@@ -4,6 +4,7 @@
             [com.github.ivarref.locksmith :as locksmith]
             [nrepl.core :as nrepl]
             [nrepl.server :as server]
+            [nrepl.socket :as socket]
             [nrepl.test-helpers :refer [eval-value1 win?]]
             [nrepl.tls :as tls]
             [nrepl.tls-client-proxy :as tls-client-proxy]
@@ -236,6 +237,16 @@
                                         :transport-fn transport/bencode})]
       (let [client (nrepl/client transport 30000)]
         (is (= 2 (eval-value1 client '(+ 1 1))))))))
+
+(deftest accept-sets-tcp-nodelay
+  (let [[server-keys client-keys] (gen-key-pair)]
+    (with-open [server (tls/server-socket (tls/ssl-context-or-throw server-keys nil) "127.0.0.1" 0)]
+      (let [client (future
+                     (doto (tls/socket (tls/ssl-context-or-throw client-keys nil) "127.0.0.1" (.getLocalPort server) 1000)
+                       (.startHandshake)))]
+        (with-open [^Socket accepted (socket/accept server)
+                    ^Socket _client @client]
+          (is (.getTcpNoDelay accepted)))))))
 
 (deftest regular-connection-times-out
   (let [[server-keys _] (gen-key-pair)
