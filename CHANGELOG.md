@@ -16,6 +16,7 @@
 ### Bugs fixed
 
 - [#498](https://github.com/nrepl/nrepl/pull/498): Send the `done` of an evaluation interrupted from another connection to the evaluation's own connection, rather than the interrupt's, where the client that sent the evaluation never got it.
+- [#507](https://github.com/nrepl/nrepl/issues/507): Set `TCP_NODELAY` on accepted connections, so that on Linux an eval's `done` no longer waits up to 40ms behind its value.
 
 ## 1.8.0 (2026-10-02)
 
