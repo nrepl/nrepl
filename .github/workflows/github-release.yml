@@ -19,6 +19,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v7
 
+      # CircleCI's deploy runs the same check, but only after the test matrix.
+      - name: Check the release commit
+        run: make check-release-tag CIRCLE_TAG="$GITHUB_REF_NAME"
+
       # The release notes are the version's section of the changelog. A
       # prerelease usually has no section of its own yet, so it gets the
       # unreleased one. If neither has anything, fall back to GitHub's

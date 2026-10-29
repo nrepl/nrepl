@@ -176,12 +176,10 @@ Here's the process for cutting a new release (e.g. version `1.6.0`):
 the new version and date (e.g. `1.6.0 (2026-02-26)`), and add a fresh
 `master (unreleased)` section above it.
 
-. In `doc/antora.yml`, set `version` to the major.minor version, quoted
-(e.g. `"1.6"` for a `1.6.0` or `1.6.1` release; unquoted, YAML reads `2.0` as
-the number 2). Do not include the patch number. Set `nrepl-version` under
-`asciidoc.attributes` to the full version, so the manual's snippets pin the
-release. `make deploy` refuses a release tag whose docs version is still `~`,
-since a tag can't be fixed after the fact.
+. In `doc/antora.yml`, set `nrepl-version` under `asciidoc.attributes` to
+the new version, so the manual's snippets pin the release. The release
+workflows refuse a release tag that doesn't match it. The docs version itself
+comes from the tag (`v1.6.0` becomes `1.6`).
 
 . Bump the two versions the attribute can't reach: the example in the
 `nrepl.tls-client-proxy` namespace docstring and the sample `describe`
@@ -195,14 +193,7 @@ $ git commit -am "Release 1.6.0"
 $ git tag v1.6.0
 ----
 
-. Reset `version` in `doc/antora.yml` back to `~` and commit:
-+
-[source,shell]
-----
-$ git commit -am "Begin next development iteration"
-----
-
-. Push the commits and tag:
+. Push the commit and the tag:
 +
 [source,shell]
 ----

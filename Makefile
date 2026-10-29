@@ -1,4 +1,4 @@
-.PHONY: test eastwood cljfmt kondo cloverage install deploy clean lint javac javac-test docs verify-docs verify-cljdoc check-env
+.PHONY: test eastwood cljfmt kondo cloverage install deploy clean lint javac javac-test docs verify-docs verify-cljdoc check-env check-release-tag
 .DEFAULT_GOAL := install
 
 # Set bash instead of sh for the @if [[ conditions,
@@ -48,15 +48,9 @@ lint: kondo cljfmt eastwood
 
 # Deployment is performed via CI by creating a git tag prefixed with "v".
 # Please do not deploy locally as it skips various measures.
-deploy: check-env
+deploy: check-env check-release-tag
 	@if ! echo "$(CIRCLE_TAG)" | grep -q "^v"; then \
 		echo "[Error] CIRCLE_TAG $(CIRCLE_TAG) must start with 'v'."; \
-		exit 1; \
-	fi
-	# A release tag has to carry the docs version, or the release never makes
-	# it into the site's version menu: the tag can't be fixed after the fact.
-	@if echo "$(CIRCLE_TAG)" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$$' && grep -q '^version: ~' doc/antora.yml; then \
-		echo "[Error] doc/antora.yml still says 'version: ~'; the release commit must set it."; \
 		exit 1; \
 	fi
 	# Clean is performed inside deploy task, no need to clean in Make
@@ -69,6 +63,15 @@ install:
 
 clean:
 	clojure -T:build clean
+
+# The docs of a release tag have to pin that release in their snippets. The
+# GitHub release workflow runs this too, before the release or its docs get
+# published.
+check-release-tag:
+	@if echo "$(CIRCLE_TAG)" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$$' && ! grep -q "^ *nrepl-version: '$(CIRCLE_TAG:v%=%)'$$" doc/antora.yml; then \
+		echo "[Error] doc/antora.yml doesn't set nrepl-version to $(CIRCLE_TAG:v%=%); the release commit must."; \
+		exit 1; \
+	fi
 
 check-env:
 ifndef CLOJARS_USERNAME
