@@ -25,13 +25,13 @@ Consider improving and extending this manual.
 
 === Working on the Docs Site
 
-The https://nrepl.org[documentation site] is generated from the AsciiDoc files in the https://github.com/nrepl/nrepl/tree/master/doc[doc] folder of nREPL's GitHub repo and is published to https://nrepl.org.
+The https://docs.nrepl.org[documentation site] is generated from the AsciiDoc files in the https://github.com/nrepl/nrepl/tree/master/doc[doc] folder of nREPL's GitHub repo and is published to https://docs.nrepl.org.
 https://antora.org[Antora] is used to convert the manual into HTML.
 The filesystem layout is described at https://docs.antora.org/antora/latest/standard-directories/[the Antora docs].
 
 To make changes to the manual you simply have to change the files under `doc`.
 The site is rebuilt and published automatically: on every push to the
-https://github.com/nrepl/nrepl.org[nrepl.org] repository, once a day, and
+https://github.com/nrepl/docs.nrepl.org[docs.nrepl.org] repository, once a day, and
 whenever a doc change lands on `master` here.
 
 When you rename or move a page, add a `:page-aliases:` attribute naming the old
@@ -39,13 +39,13 @@ file to the new page, so the old URL keeps working.
 
 ==== Building the Site
 
-The site lives in the https://github.com/nrepl/nrepl.org[nrepl.org] repository,
+The site lives in the https://github.com/nrepl/docs.nrepl.org[docs.nrepl.org] repository,
 which pins the Antora version it builds with, so clone it next to your nREPL
 checkout and use its Makefile rather than a globally installed Antora:
 
 [source,shell]
 ----
-$ cd nrepl.org
+$ cd docs.nrepl.org
 $ make
 ----
 
@@ -59,7 +59,7 @@ included, use the local playbook:
 
 [source,shell]
 ----
-$ cd nrepl.org
+$ cd docs.nrepl.org
 $ npm run antora -- antora-playbook-local.yml
 ----
 

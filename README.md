@@ -16,7 +16,7 @@ provides a REPL server and client, along with some common APIs
 of use to IDEs and other tools that may need to evaluate Clojure
 code in remote environments.
 
-nREPL powers [many well-known development tools](https://nrepl.org/nrepl/usage/clients.html).
+nREPL powers [many well-known development tools](https://docs.nrepl.org/nrepl/usage/clients.html).
 
 ## Usage
 
@@ -24,7 +24,7 @@ nREPL powers [many well-known development tools](https://nrepl.org/nrepl/usage/c
 * Connect to the server using any nREPL client (e.g. CIDER, Calva, vim-fireplace, rebel-readline)
 * Start hacking!
 
-See the [documentation](https://nrepl.org/nrepl/usage/server.html) for way more information on the subject.
+See the [documentation](https://docs.nrepl.org/nrepl/usage/server.html) for way more information on the subject.
 
 ## API Documentation
 
@@ -46,11 +46,11 @@ documentation, but even those are fairly stable by most standards.
 ### How is this different from the "contrib" [tools.nrepl](https://github.com/clojure/tools.nrepl/) project?
 
 Check the brief history of nREPL, available
-[here](https://nrepl.org/nrepl/about/history.html).
+[here](https://docs.nrepl.org/nrepl/about/history.html).
 
 ### How does nREPL compare to other REPL servers (e.g. `prepl`)?
 
-Check out [this detailed comparison](https://nrepl.org/nrepl/alternatives.html).
+Check out [this detailed comparison](https://docs.nrepl.org/nrepl/alternatives.html).
 
 ### Does nREPL support ClojureScript?
 
@@ -59,8 +59,8 @@ via the Piggieback middleware. In the future there may be implementations of nRE
 
 ### Does nREPL support other programming languages besides Clojure?
 
-The nREPL protocol is language-agnostic and implementations of nREPL servers exist for [several programming languages](https://nrepl.org/nrepl/beyond_clojure.html).
-Implementing new nREPL servers is [pretty simple](https://nrepl.org/nrepl/building_servers.html).
+The nREPL protocol is language-agnostic and implementations of nREPL servers exist for [several programming languages](https://docs.nrepl.org/nrepl/beyond_clojure.html).
+Implementing new nREPL servers is [pretty simple](https://docs.nrepl.org/nrepl/building_servers.html).
 
 ## Testing and Hacking around
 

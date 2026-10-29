@@ -219,7 +219,7 @@ $ git push origin master --tags
   whose notes are the version's section of `CHANGELOG.md`.
 
 . Add the new tag to the `tags` list in the
-https://github.com/nrepl/nrepl.org/blob/master/antora-playbook.yml[nrepl.org
+https://github.com/nrepl/docs.nrepl.org/blob/master/antora-playbook.yml[docs.nrepl.org
 playbook]. The site only builds the tags listed there, so the release's docs
 won't show up in its version menu until you do.
 

@@ -71,7 +71,7 @@
 
     (not (misc/attach-self-enabled?))
     (misc/log "Cannot stop thread on JDK21+ without -Djdk.attach.allowAttachSelf"
-              "enabled, see https://nrepl.org/nrepl/installation.html#jvmti.")))
+              "enabled, see https://docs.nrepl.org/nrepl/installation.html#jvmti.")))
 
 (def ^:private force-stop-delay-ms 5000)
 
