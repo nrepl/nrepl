@@ -208,11 +208,10 @@ $ git push origin master --tags
   optional `-alpha<N>`, `-beta<N>` or `-rc<N>` suffix).
   * *GitHub Release*: a GitHub Actions workflow creates a GitHub Release
   whose notes are the version's section of `CHANGELOG.md`.
-
-. Add the new tag to the `tags` list in the
-https://github.com/nrepl/docs.nrepl.org/blob/master/antora-playbook.yml[docs.nrepl.org
-playbook]. The site only builds the tags listed there, so the release's docs
-won't show up in its version menu until you do.
+  * *Docs*: the same workflow adds the tag to the
+  https://github.com/nrepl/docs.nrepl.org/blob/master/antora-playbook.yml[docs.nrepl.org
+  playbook], which publishes the release's docs. A patch release replaces the
+  docs of its minor version, and prereleases leave the docs alone.
 
 TIP: Pushing a tag like `v1.6.0-SNAPSHOT` runs the same pipeline, tests
 included, and deploys a snapshot to Clojars. That's a cheap way to

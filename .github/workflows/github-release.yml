@@ -15,6 +15,9 @@ jobs:
     permissions:
       contents: write
 
+    env:
+      DISPATCH_TOKEN: ${{ secrets.DOCS_DISPATCH_TOKEN }}
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
@@ -56,3 +59,14 @@ jobs:
           bodyFile: ${{ steps.notes.outputs.found == 'true' && 'release-notes.md' || '' }}
           generateReleaseNotes: ${{ steps.notes.outputs.found != 'true' }}
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Adds the tag to docs.nrepl.org's playbook, which publishes the docs of
+      # the release. Prereleases leave the docs alone.
+      - name: Publish the docs
+        if: ${{ env.DISPATCH_TOKEN != '' && !contains(github.ref_name, '-') }}
+        uses: peter-evans/repository-dispatch@v4
+        with:
+          token: ${{ env.DISPATCH_TOKEN }}
+          repository: nrepl/docs.nrepl.org
+          event-type: release
+          client-payload: '{"tag": "${{ github.ref_name }}"}'
