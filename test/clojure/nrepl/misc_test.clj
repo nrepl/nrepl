@@ -1,5 +1,5 @@
 (ns nrepl.misc-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [clojure.test :refer [deftest is testing]]
             [nrepl.misc :as misc]
             [nrepl.test-helpers :as th]
             [clojure.java.io :as io])
@@ -15,4 +15,7 @@
          (:file (misc/sanitize-meta {:file (io/file "/foo/bar/baz.clj")}))))
 
   (is (= "https://foo.bar"
-         (:file (misc/sanitize-meta {:file (.toURL (URI. "https://foo.bar"))})))))
+         (:file (misc/sanitize-meta {:file (.toURL (URI. "https://foo.bar"))}))))
+
+  (testing "no :file for metadata without one, as Bencode has no nil"
+    (is (not (contains? (misc/sanitize-meta {:name 'x}) :file)))))
