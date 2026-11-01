@@ -162,7 +162,7 @@
       (update :ns str)
       (update :name str)
       (update :protocol str)
-      (update :file handle-file-meta)
+      (cond-> (:file m) (update :file handle-file-meta))
       (cond-> (:deprecated m) (update :deprecated str))
       (cond-> (:macro m) (update :macro str))
       (cond-> (:special-form m) (update :special-form str))
