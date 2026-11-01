@@ -1,5 +1,6 @@
 (ns nrepl.util.lookup-test
   (:require [clojure.test :refer :all]
+            [matcher-combinators.matchers :as matchers]
             [nrepl.bencode :as bencode]
             [nrepl.test-helpers :refer [is+]]
             [nrepl.util.lookup :as l :refer [lookup]])
@@ -43,7 +44,38 @@
          (lookup 'clojure.core 'let)))
 
   (testing "Java sym lookup"
-    (is+ nil (lookup 'clojure.core 'String))))
+    (is+ nil (lookup 'clojure.core 'String)))
+
+  (testing "namespace lookup"
+    (is+ {:ns "clojure.string"
+          :name "clojure.string"
+          :doc #"Clojure String utilities"
+          :file #"clojure/string\.clj$"}
+         (lookup 'nrepl.util.lookup-test 'clojure.string))
+
+    (testing "by its alias"
+      (is+ {:name "nrepl.bencode"
+            :file #"nrepl/bencode\.clj$"}
+           (lookup 'nrepl.util.lookup-test 'bencode)))
+
+    (testing "from a .cljc file"
+      (is+ {:name "matcher-combinators.matchers"
+            :file #"matcher_combinators/matchers\.cljc$"}
+           (lookup 'nrepl.util.lookup-test 'matcher-combinators.matchers)))
+
+    (testing "without a file"
+      (create-ns 'nrepl.util.lookup-test.no-file)
+      (is+ {:name "nrepl.util.lookup-test.no-file"
+            :file matchers/absent}
+           (lookup 'nrepl.util.lookup-test 'nrepl.util.lookup-test.no-file))))
+
+  (testing "a var before a namespace's alias"
+    (is+ {:ns "clojure.core"
+          :name "str"}
+         (binding [*ns* (create-ns 'nrepl.util.lookup-test.str-alias)]
+           (refer-clojure)
+           (alias 'str 'clojure.string)
+           (lookup 'nrepl.util.lookup-test.str-alias 'str)))))
 
 (defn- bencode-str
   "Bencode a thing and write it into a string."

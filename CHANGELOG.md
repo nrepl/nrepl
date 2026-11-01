@@ -6,6 +6,10 @@
 
 ## master (unreleased)
 
+### New features
+
+- [#511](https://github.com/nrepl/nrepl/pull/511): `lookup` finds namespaces, by their name or an alias, with their doc and the file they load from.
+
 ### Changes
 
 - [#495](https://github.com/nrepl/nrepl/pull/495): **(Breaking)** Automatically nil out empty lists for ?-ending keys in Bencode transport.
