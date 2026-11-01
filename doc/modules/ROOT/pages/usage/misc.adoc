@@ -77,6 +77,10 @@ nREPL bundles a lookup middleware with a flexible interface. By default it will 
 lookup logic in `nrepl.util.lookup`, but you can instruct nREPL to use
 another lookup function (e.g. `info` from `orchard`).
 
+nREPL's own lookup finds vars, special forms and namespaces. A symbol no var
+goes by is looked up as a namespace, by its name or an alias in `ns`, and its
+`:file` is the one it loads from on the classpath.
+
 The lookup function should accept 2 parameters:
 
 * `ns`: The namespace in which to look for completion candidates.
