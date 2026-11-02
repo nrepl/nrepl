@@ -1,5 +1,5 @@
 (ns nrepl.middleware.session
-  "Support for persistent, cross-connection REPL sessions."
+  "Support for persistent REPL sessions."
   {:author "Chas Emerick"}
   (:require
    [clojure.spec.alpha :as s]
@@ -7,17 +7,16 @@
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.middleware.interruptible-eval :refer [*msg*]]
    [nrepl.middleware.print :as print]
-   [nrepl.misc :as misc :refer [uuid response-for log]]
+   [nrepl.misc :as misc :refer [uuid response-for log ignore-exceptions]]
    [nrepl.transport :as t]
    [nrepl.util.classloader :as classloader]
+   [nrepl.util.session :as session-util]
    [nrepl.util.threading :as threading])
   (:import
    (clojure.lang Compiler LineNumberingPushbackReader)
    (java.util.concurrent Executors ExecutorService LinkedBlockingQueue)
    (nrepl SessionThread)
    (nrepl.in QueuePollingReader)))
-
-(def ^:private sessions (atom {}))
 
 (def ephemeral-executor
   "Executor for running eval requests in ephemeral sessions."
@@ -45,7 +44,7 @@
                  (if-not (map? dynvars-map)
                    (log ":dynamic-vars should be a map")
                    (reduce-kv (fn [m k default]
-                                (let [var (try (resolve k) (catch Exception _))]
+                                (let [var (ignore-exceptions (resolve k))]
                                   (if (var? var)
                                     (assoc m var default)
                                     (do (log "Could not resolve var:" (str k))
@@ -152,9 +151,8 @@
     or nil when the running id doesn't match the id argument. Upon successful
     interruption the backing thread is replaced.
   - `:close` - terminates the backing thread."
-  [session & [session-id]]
+  [session session-id]
   (let [state (atom nil)
-        reset-state-holder (atom nil)
         session-loop
         #(try
            (loop []
@@ -177,18 +175,25 @@
                ;; the stack cleaner.
                (pop-thread-bindings)
                (let [state-d @state]
-                 ;; Not when it got interrupted, even if what runs now has
-                 ;; the same id.
-                 (when (and (identical? (:running state-d) running)
+                 ;; A race condition is possible where this thread could have
+                 ;; been interrupted, the session received a new thread and
+                 ;; queue, but this thread survived the interrupt and reached
+                 ;; here. In such case, let it fade peacefully.
+                 (when (and (identical? (:thread state-d) (Thread/currentThread))
                             (compare-and-set! state state-d
                                               (assoc state-d :running nil)))
                    (some-> ack .run)
                    (recur)))))
            (catch InterruptedException _e)
            (catch Exception _e
-             ;; This should never happen with valid middleware and clients. If
-             ;; it does, at least make sure the session remains healthy.
-             (@reset-state-holder)))
+             ;; This should rarely happen with valid middleware and clients
+             ;; (e.g., it does when responding to a closed transport). But make
+             ;; sure we are still the primary thread for the session.
+             (when (identical? (:thread @state) (Thread/currentThread))
+               (ignore-exceptions
+                (some-> (:running @state)
+                        (t/respond-to :status #{:done :error :uncaught-session-exception})))
+               (ignore-exceptions (session-util/close-session session)))))
         reset-state
         #(let [thread (SessionThread. session-loop (str "nREPL-session-" session-id)
                                       (classloader/dynamic-classloader))]
@@ -196,7 +201,6 @@
                           :running nil
                           :thread thread})
            (.start thread))]
-    (reset! reset-state-holder reset-state)
     (reset-state)
     {:interrupt (fn [exec-id]
                   ;; nil means interrupt whatever is running
@@ -238,7 +242,7 @@
                                      (gather-initial-bindings msg))
                                  #'*in* (LineNumberingPushbackReader. qpr)))]
     (reset-meta! new-session
-                 (merge {:id id, ::queue-reader qpr}
+                 (merge {:id id, :transport transport, ::queue-reader qpr}
                         (if persistent?
                           (session-exec new-session id)
                           {:exec (make-ephemeral-exec-fn new-session msg)})))
@@ -250,7 +254,7 @@
   [msg base-session]
   (let [session (create-session msg base-session true)
         {:keys [id]} (meta session)]
-    (swap! sessions assoc id session)
+    (session-util/register-session session)
     (t/respond-to msg :status :done, :new-session id)))
 
 (defn- interrupt-session
@@ -268,23 +272,20 @@
       (do
         ;; Back the way the interrupted request came, which isn't this
         ;; connection when the interrupt comes from another one.
-        (try
-          (t/respond-to interrupted-msg :status #{:interrupted :done})
-          ;; Its connection is gone, and nobody's waiting for this anymore.
-          (catch Exception _))
+        (ignore-exceptions
+         (t/respond-to interrupted-msg :status #{:interrupted :done}))
         (t/respond-to msg :status #{:done})))))
 
 (defn close-session
   "Close the given session."
+  {:deprecated "1.9.0"}
   [session]
-  (let [{:keys [close] session-id :id} (meta session)]
-    (when close (close))
-    (swap! sessions dissoc session-id)))
+  (session-util/close-session session))
 
 (defn- handle-session-close
   "Close the session associated with the given message and notify the user."
   [msg session]
-  (close-session session)
+  (session-util/close-session session)
   (t/respond-to msg :status #{:done :session-closed}))
 
 (defn session
@@ -294,6 +295,8 @@
      new session will be returned in a response message in a :new-session
      slot.  The new session's state (dynamic scope, etc) will be a copy of
      the state of the session identified in the :session slot of the request.
+     The new session is closed automatically when the connection (transport)
+     that cloned it is closed.
    * \"interrupt\", which will attempt to interrupt the current execution with
      id provided in the :interrupt-id slot.
    * \"close\", which drops the session indicated by the
@@ -313,7 +316,7 @@
    and *err* content can be associated with the originating message)."
   [h]
   (fn [{:keys [op session] :as msg}]
-    (let [resolved-session (when session (@sessions session))]
+    (let [resolved-session (when session (session-util/resolve-session session))]
       (if (and (nil? resolved-session)
                (or session (#{"interrupt" "close"} op)))
         ;; Report error if session couldn't be resolved but was provided, or
@@ -323,7 +326,7 @@
         (case op
           "interrupt" (interrupt-session msg resolved-session)
           "close" (handle-session-close msg resolved-session)
-          "ls-sessions" (t/respond-to msg {:sessions (or (keys @sessions) [])
+          "ls-sessions" (t/respond-to msg {:sessions (session-util/all-session-ids)
                                            :status   :done})
           "clone" (clone-session msg resolved-session)
 
@@ -341,7 +344,7 @@
                                  (when (instance? clojure.lang.Atom session)
                                    {:current-ns (-> @session (get #'*ns*) str)}))
                   :handles {"clone"
-                            {:doc "Clones the current session, returning the ID of the newly-created session."
+                            {:doc "Clones the current session, returning the ID of the newly-created session. The new session is closed automatically when the connection that cloned it is closed."
                              :requires {}
                              :optional {"session" "The ID of the session to be cloned; if not provided, a new session is created with default bindings."
                                         "client-name" "The nREPL client name. e.g. \"CIDER\""

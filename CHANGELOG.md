@@ -16,6 +16,8 @@
 - [#498](https://github.com/nrepl/nrepl/pull/498): The `:interrupt` function of `nrepl.middleware.session/session-exec` returns the message of the execution it interrupted instead of its id.
 - [#501](https://github.com/nrepl/nrepl/pull/501): **(Breaking)** Remove deprecated function `nrepl.middleware.session/close-all-sessions!`.
 - [#501](https://github.com/nrepl/nrepl/pull/501): **(Breaking)** Session middleware no longer reacts to `:out-limit` parameter. Instead, `:out-quota` and `:err-quota` are introduced which can be used to limit the number of bytes printed into `*out*` and `*err*` respectively as a response to a single message.
+- [#512](https://github.com/nrepl/nrepl/pull/XXX): **(Breaking)** Close persistent sessions when the connection that created them is closed.
+- [#512](https://github.com/nrepl/nrepl/pull/XXX): Uncaught exceptions inside session `:exec` handler now kill the session with a `:uncaught-session-exception` status.
 
 ### Bugs fixed
 

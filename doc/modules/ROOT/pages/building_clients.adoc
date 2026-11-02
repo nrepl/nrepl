@@ -64,7 +64,8 @@ for building well-behaved clients.
 nREPL has two kinds of sessions:
 
 * *Persistent sessions* are created by the `clone` op and remain alive until
-  explicitly closed with the `close` op. They have a dedicated thread, support
+  explicitly closed with the `close` op, or until the connection (transport)
+  which created them is closed. They have a dedicated thread, support
   interruption, and persist dynamic bindings across evaluations (e.g. changing
   `\*ns*` in one eval is visible in the next).
 
@@ -87,7 +88,8 @@ A typical session lifecycle looks like this:
   `completions`, etc.). The server routes these to the correct session and
   applies the session's bindings.
 . *Close* -- Send `{:op "close" :session "..."}` when the session is no longer
-  needed. This terminates the session thread and releases resources.
+  needed. This terminates the session thread and releases resources. Sessions
+  are also closed automatically when the connection that cloned them is closed.
 
 === Multiple sessions
 
