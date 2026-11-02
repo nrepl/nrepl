@@ -16,8 +16,9 @@
    [clojure.java.io :as io]
    [clojure.string :as str]
    [nrepl.bencode :as bencode]
-   [nrepl.misc :refer [response-for uuid]]
+   [nrepl.misc :refer [response-for uuid ignore-exceptions]]
    [nrepl.socket :as socket]
+   [nrepl.util.session :as session-util]
    [nrepl.util.threading :as threading]
    nrepl.version)
   (:import
@@ -63,19 +64,26 @@
                      (.put read-queue nil))
                    (catch Throwable t
                      (.put read-queue t)
-                     (.interrupt (Thread/currentThread))))))]
-     (FnTransport.
-      (let [failure (atom nil)]
-        #(if @failure
-           (throw @failure)
-           (let [msg (.poll read-queue % TimeUnit/MILLISECONDS)]
-             (if (instance? Throwable msg)
-               (do (reset! failure msg)
-                   (.cancel fut true)
-                   (throw msg))
-               msg))))
-      write
-      (fn [] (close) (.cancel fut true))))))
+                     (.interrupt (Thread/currentThread))))))
+         transport-promise (promise)
+         transport (->FnTransport
+                    (let [failure (atom nil)]
+                      #(if @failure
+                         (throw @failure)
+                         (let [msg (.poll read-queue % TimeUnit/MILLISECONDS)]
+                           (if (instance? Throwable msg)
+                             (do (reset! failure msg)
+                                 (.cancel fut true)
+                                 (throw msg))
+                             msg))))
+                    write
+                    (fn []
+                      (ignore-exceptions (close))
+                      (ignore-exceptions (.cancel fut true))
+                      (ignore-exceptions
+                       (session-util/close-transport-sessions @transport-promise))))]
+     (deliver transport-promise transport)
+     transport)))
 
 (defmacro ^:private rethrow-on-disconnection
   {:style/indent 1}

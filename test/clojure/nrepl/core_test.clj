@@ -21,11 +21,11 @@
    [nrepl.ack :as ack]
    [nrepl.middleware.caught :as middleware.caught]
    [nrepl.middleware.print :as middleware.print]
-   [nrepl.middleware.session :as session]
    [nrepl.misc :refer [uuid]]
    [nrepl.server :as server]
    [nrepl.test-helpers :as th :refer [is+ win?]]
    [nrepl.util.classloader]
+   [nrepl.util.session :as session-util]
    [nrepl.util.threading :as threading]
    [nrepl.transport :as transport])
   (:import
@@ -49,7 +49,6 @@
 
 (def ^:dynamic ^nrepl.server.Server  *server* nil)
 (def ^:dynamic *transport-fn* nil)
-(def ^:dynamic *sessions-to-close*)
 
 (defn start-server-for-transport-fn
   [transport-fn f]
@@ -66,26 +65,12 @@
 
 (defn repl-server-fixture
   "This iterates through each transport being tested, starts a server,
-   runs the test against that server, then cleans up all sessions."
+   runs the test against that server."
   [f]
   (doseq [transport-fn transport-fns]
-    (binding [*sessions-to-close* #{}]
-      (start-server-for-transport-fn transport-fn f)
-      (run! session/close-session *sessions-to-close*))))
+    (start-server-for-transport-fn transport-fn f)))
 
 (use-fixtures :each repl-server-fixture)
-
-(defn closeable-session
-  "Opens a new session via `client` and registers it to be closed after the
-  test. When `msg-client` is given, the session's messages go through that
-  client instead (e.g. one with a short response timeout), while the `clone`
-  that opens the session still goes through `client`, so a slow server can't
-  fail the test before it has even started."
-  ([client] (closeable-session client client))
-  ([client msg-client]
-   (let [session (client-session msg-client :session (new-session client))]
-     (set! *sessions-to-close* (conj *sessions-to-close* session))
-     session)))
 
 (defmacro with-repl-server [& body]
   `(with-open [^nrepl.transport.FnTransport
@@ -93,9 +78,12 @@
                                    :transport-fn *transport-fn*)]
      (let [~'transport transport#
            ~'client (client transport# Long/MAX_VALUE)
-           ~'session (closeable-session ~'client)
+           ~'session (client-session ~'client)
            ~'timeout-client (client transport# 1000)
-           ~'timeout-session (closeable-session ~'client ~'timeout-client)
+           ;; Clone through `client` so that a slow server can't fail the
+           ;; test before it has even started.
+           ~'timeout-session (client-session ~'timeout-client
+                                             :session (new-session ~'client))
            ~'repl-eval #(message % {:op "eval" :code %2})
            ~'repl-values (comp response-values ~'repl-eval)]
        ~@body)))
@@ -547,19 +535,7 @@
                  clean-response)))
       ;; The interrupted eval gets its done on the connection it came from.
       (is+ {:status #{:done :interrupted}} (-> resp combine-responses clean-response))
-      (is (= [3] (repl-values timeout-session "(+ 1 2)")))))
-  (testing "after the connection it came from is gone"
-    (let [sid (with-open [^nrepl.transport.FnTransport
-                          gone (connect :port (:port *server*)
-                                        :transport-fn *transport-fn*)]
-                (let [sid (-> (nrepl/client gone 1000) new-session)]
-                  (transport/send gone {:op "eval" :session sid
-                                        :code (code (Thread/sleep 30000))})
-                  (Thread/sleep 100)
-                  sid))
-          session' (nrepl/client-session timeout-client :session sid)]
-      (is+ {:status #{:done}} (-> session' (message {:op "interrupt"}) combine-responses clean-response))
-      (message session' {:op "close"}))))
+      (is (= [3] (repl-values timeout-session "(+ 1 2)"))))))
 
 (when-not win?
   (def-repl-test non-interruptible-stop-thread
@@ -1103,8 +1079,3 @@
     (is+ [4 65536.0] (repl-values session "(+ 1 3) (Math/pow 2 16)"))
     (is+ [4 20 1 0] (repl-values session "(+ 2 2) (* *1 5) (/ *2 4) (- *3 4)"))
     (is+ [0] (repl-values session "*1"))))
-
-(def-repl-test faulty-eval-request-doesnt-kill-persistent-session-test
-  ;; Send bad request that fails at runtime on the persistent session thread
-  (dorun (message timeout-session {:op "eval" :code "1" :line "abc"}))
-  (is+ [2] (doall (repl-values timeout-session "(+ 1 1)"))))

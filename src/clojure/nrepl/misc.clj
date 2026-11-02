@@ -36,6 +36,11 @@
   [x & body]
   `(let [x# ~x] ~@body x#))
 
+(defmacro ignore-exceptions
+  "Execute `body`. If any Exception is thrown, then return `nil`."
+  [& body]
+  `(try ~@body (catch Exception _#)))
+
 (defn uuid
   "Returns a new UUID string."
   []

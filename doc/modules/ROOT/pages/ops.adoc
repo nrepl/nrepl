@@ -10,7 +10,7 @@ This file is _generated_ by #'build.docs/docs
 
 === `clone`
 
-Clones the current session, returning the ID of the newly-created session.
+Clones the current session, returning the ID of the newly-created session. The new session is closed automatically when the connection that cloned it is closed.
 
 Required parameters::
 {blank}

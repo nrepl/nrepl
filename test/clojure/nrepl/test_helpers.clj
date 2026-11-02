@@ -75,6 +75,18 @@
            (throw (ex-info (str "Timed out after " ~ms "ms") {:timeout-ms ~ms})))
        v#)))
 
+(defn wait-for
+  "Poll `pred` every 50 ms until it returns a truthy value or nil if
+  `timeout-ms` (default: 5000) elapses."
+  ([pred] (wait-for pred 5000))
+  ([pred timeout-ms]
+   (let [deadline (+ (System/currentTimeMillis) timeout-ms)]
+     (loop []
+       (or (pred)
+           (when (< (System/currentTimeMillis) deadline)
+             (Thread/sleep 50)
+             (recur)))))))
+
 (defn free-port []
   (let [sock (ServerSocket. 0)
         port (.getLocalPort sock)]
