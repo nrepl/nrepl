@@ -2,22 +2,22 @@
   (:require [clojure.test :refer :all]
             [matcher-combinators.matchers :as matchers]
             [nrepl.bencode :as bencode]
-            [nrepl.test-helpers :refer [is+]]
+            [nrepl.test-helpers :refer [is+ not-blank?]]
             [nrepl.util.lookup :as l :refer [lookup]])
   (:import (java.io ByteArrayOutputStream)))
 
 (deftest lookup-test
   (testing "special sym lookup"
-    (is (not-empty (lookup 'clojure.core 'if))))
+    (is+ not-empty (lookup 'clojure.core 'if)))
 
   (testing "fully qualified sym lookup"
-    (is (not-empty (lookup 'nrepl.util.lookup 'clojure.core/map))))
+    (is+ not-empty (lookup 'nrepl.util.lookup 'clojure.core/map)))
 
   (testing "aliased sym lookup"
-    (is (not-empty (lookup 'nrepl.util.lookup 'clojure.string/upper-case))))
+    (is+ not-empty (lookup 'nrepl.util.lookup 'clojure.string/upper-case)))
 
   (testing "non-qualified lookup"
-    (is (not-empty (lookup 'clojure.core 'map)))
+    (is+ not-empty (lookup 'clojure.core 'map))
 
     (is+ {:ns "clojure.core"
           :name "map"
@@ -90,15 +90,13 @@
 (defn- lookup-public-vars
   "Look up every public var in all namespaces in the classpath and return the result as a set."
   []
-  (transduce
-   (comp
-    (mapcat ns-publics)
-    (map (comp meta val))
-    (map #(lookup (.getName ^clojure.lang.Namespace (:ns %)) (:name %))))
-   conj
-   #{}
-   (all-ns)))
+  (into #{}
+        (comp
+         (mapcat ns-publics)
+         (map (comp meta val))
+         (keep #(lookup (ns-name (:ns %)) (:name %))))
+        (all-ns)))
 
 (deftest bencode-test
   (doseq [m (lookup-public-vars)]
-    (is ((comp string? not-empty) (bencode-str m)))))
+    (is+ not-blank? (bencode-str m))))
