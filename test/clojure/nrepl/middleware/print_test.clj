@@ -10,11 +10,12 @@
   (:require [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]
             [matcher-combinators.matchers :as mc]
-            [nrepl.core :refer [combine-responses]]
+            [nrepl.core :as nrepl :refer [code]]
             [nrepl.middleware.print :as print]
-            [nrepl.test-helpers :refer [is+]]
+            [nrepl.misc :refer [ignore-exceptions]]
+            [nrepl.test-helpers :refer :all]
             [nrepl.transport :as t])
-  (:import [java.io Writer]))
+  (:import (java.io Writer)))
 
 (defn echo-handler
   [{:keys [transport] :as msg}]
@@ -35,14 +36,13 @@
   [doc & body]
   `(testing ~doc
      (let [~'handle (fn [msg#]
-                      (let [print-handler#  (print/wrap-print echo-handler)
-                            resps#          (atom [])
-                            resp-transport# (test-transport resps#)]
+                      (let [print-handler# (print/wrap-print echo-handler)
+                            resps#         (atom [])]
                         (print-handler# (assoc msg#
-                                               :transport resp-transport#
-                                               ::print/keys (or (get msg# ::print/keys)
+                                               :transport (test-transport resps#)
+                                               ::print/keys (or (::print/keys msg#)
                                                                 #{:value})))
-                        (doall @resps#)))]
+                        @resps#))]
        ~@body)))
 
 (defn custom-printer
@@ -82,13 +82,13 @@
                   :out         [1 2 3 4 5]
                   ::print/keys [:out]})))
   (testing-print "empty ::print/keys"
-    (is+ [{}]
+    (is+ [(mc/equals {})]
          (handle {:value       [1 2 3 4 5]
                   ::print/keys []}))))
 
 (deftest streamed-printing
   (testing-print "value response arrives before ns response"
-    (is+ [{:value "(0 1 2 3 4 5 6 7 8 9)"} {}]
+    (is+ [{:value "(0 1 2 3 4 5 6 7 8 9)"} (mc/equals {})]
          (handle {:value          (range 10)
                   ::print/stream? 1})))
   (testing-print "large output should be streamed"
@@ -124,24 +124,23 @@
                   ::print/options {:sub "bar"}}))))
 
 (deftest streamed-printing-with-newlines
-  (testing-print "custom ::print/keys"
+  (testing-print ""
     (is+ [{:value "abcd\nefgh\n"} {:value "ijkl"} {}]
          (handle {:value        (symbol "abcd\nefgh\nijkl")
-                  ::print/keys  #{:value}
                   ::print/stream? 1}))))
 
 (deftest multiple-keys
   (testing-print "respects buffer-size option"
     (is+ [{:value "(0 1 2 3"}
           {:value " 4 5 6)"}
-          {:out "(6 5 4 3"}
-          {:out " 2 1 0)"}
+          {:something-else "(6 5 4 3"}
+          {:something-else " 2 1 0)"}
           {}]
          (handle {:value              (range 7)
-                  :out                (reverse (range 7))
+                  :something-else     (reverse (range 7))
                   ::print/stream?     1
                   ::print/buffer-size 8
-                  ::print/keys        [:value :out]}))))
+                  ::print/keys        [:value :something-else]}))))
 
 (deftest print-quota
   (testing-print "quota option respected"
@@ -153,7 +152,7 @@
   (testing-print "works with streamed printing"
     (is+ [{:value "(0 1 2 3"}
           {:status #{::print/truncated}}
-          {}]
+          (mc/equals {})]
          (handle {:value          (range 512)
                   ::print/stream? 1
                   ::print/quota   8})))
@@ -168,7 +167,7 @@
   (testing-print "works with custom printer and streamed printing"
     (is+ [{:value "<foo (0 "}
           {:status #{::print/truncated}}
-          {}]
+          (mc/equals {})]
          (handle {:value          (range 512)
                   ::print/print   `custom-printer
                   ::print/stream? 1
@@ -244,3 +243,48 @@
                     ;; of replying-PrintWriter.
                     ::print/stream?     1
                     ::print/buffer-size 100000})))))
+
+(def-repl-test streamed-printing-2
+  (testing "multiple forms"
+    (is+ [{:value "(0 1 2 3 4 5 6 7 8 9)"}
+          {:ns "user"}
+          {:value "(0 1 2 3 4 5 6 7 8 9)"}
+          {:ns "user"}
+          {:status #{:done}}]
+         (message {:op "eval"
+                   :code (code (range 10)
+                               (range 10))
+                   ::print/stream? 1})))
+
+  (testing "*out* still handled correctly"
+    (is+ [{:out "0\n"}
+          {:out "1\n"}
+          {:value "(nil nil)"}
+          {:ns "user"}
+          {:status #{:done}}]
+         (message {:op "eval"
+                   :code (code (->> (range 2)
+                                    (map println)))
+                   ::print/stream? 1}))))
+
+;; TODO: this test is commented because the JVMTI StopThread doesn't reliably
+;; kill the endlessly printing thread for some reason. This should be
+;; investigated in the future.
+#_(def-repl-test streamed-printing-interrupt
+  ;; Making the buffer size large expose the odd of interrupting half way through
+  ;; a message being written, which was the cause of https://github.com/nrepl/nrepl/issues/132
+    (with-redefs [nrepl.util.threading/force-stop-delay-ms 500]
+      (let [eval-responses
+            (message session {:op "eval"
+                              :code (code
+                                     (do (nrepl.test-helpers/capture-state "thread" (Thread/currentThread))
+                                         (range 1000000)))
+                              ::print/stream? 1
+                              ::print/buffer-size 100000})
+            ^Thread eval-thread (wait-for #(get-state "thread"))]
+        (when (is eval-thread)
+        ;; Don't check the result of the next message as it sometimes dies because
+        ;; of session close.
+          (ignore-exceptions (message! session {:op "interrupt"}))
+          (is (wait-for #(not (.isAlive eval-thread)) 5000))
+          (is+ {:value #"^\(0 1 2 3"} (first eval-responses))))))

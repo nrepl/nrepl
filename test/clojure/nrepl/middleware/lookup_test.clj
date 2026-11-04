@@ -3,12 +3,7 @@
   (:require
    [clojure.test :refer :all]
    [nrepl.core :as nrepl]
-   [nrepl.core-test :refer [def-repl-test repl-server-fixture project-base-dir clean-response]]
-   [nrepl.test-helpers :refer [is+]])
-  (:import
-   (java.io File)))
-
-(use-fixtures :each repl-server-fixture)
+   [nrepl.test-helpers :refer :all]))
 
 (defn dummy-lookup [ns sym]
   {:foo 1
@@ -30,27 +25,19 @@
               {:op "lookup" :sym "protocol-method" :ns "nrepl.middleware.lookup-test"}
               {:op "lookup" :sym "fn-with-coll-in-arglist" :ns "nrepl.middleware.lookup-test"}]]
     (is+ {:status #{:done}, :info not-empty}
-         (-> (nrepl/message session op)
-             nrepl/combine-responses
-             clean-response))))
+         (message! op))))
 
 (def-repl-test lookup-op-error
   (is+ {:status #{:done :error :lookup-error}}
-       (-> (nrepl/message session {:op "lookup"})
-           nrepl/combine-responses
-           clean-response)))
+       (message! session {:op "lookup"})))
 
 (def-repl-test lookup-op-custom-fn
   (is+ {:status #{:done}, :info {:foo 1 :bar 2}}
-       (-> (nrepl/message session {:op "lookup" :sym "map" :ns "clojure.core" :lookup-fn "nrepl.middleware.lookup-test/dummy-lookup"})
-           nrepl/combine-responses
-           clean-response)))
+       (message! session {:op "lookup" :sym "map" :ns "clojure.core" :lookup-fn "nrepl.middleware.lookup-test/dummy-lookup"})))
 
 (def-repl-test lookup-op-unresolvable-custom-fn
   ;; An unresolvable :lookup-fn falls back to the default rather than failing
   ;; the request, whether its namespace is missing or it isn't qualified.
   (doseq [bad ["my.missing.ns/lookup" "unqualified"]]
     (is+ {:status #{:done}, :info {:name "map"}}
-         (-> (nrepl/message session {:op "lookup" :sym "map" :ns "clojure.core" :lookup-fn bad})
-             nrepl/combine-responses
-             clean-response))))
+         (message! session {:op "lookup" :sym "map" :ns "clojure.core" :lookup-fn bad}))))
