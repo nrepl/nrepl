@@ -1,16 +1,11 @@
 (ns nrepl.describe-test
   {:author "Chas Emerick"}
   (:require
-   [clojure.test :refer [is testing use-fixtures]]
    [matcher-combinators.matchers :as mc]
-   [nrepl.core :as nrepl]
-   [nrepl.core-test :refer [clean-response def-repl-test repl-server-fixture]]
    [nrepl.middleware :as middleware]
    [nrepl.server :as server]
-   [nrepl.test-helpers :refer [is+]]
+   [nrepl.test-helpers :refer :all]
    [nrepl.version :as version]))
-
-(use-fixtures :once repl-server-fixture)
 
 (def built-in-ops
   (->> (conj server/default-middleware #'middleware/wrap-describe)
@@ -36,16 +31,11 @@
                      "#'nrepl.middleware.print/wrap-print"
                      "#'nrepl.middleware.session/add-stdin"
                      "#'nrepl.middleware.session/session"]}
-       (->> (nrepl/message timeout-client {:op "describe"})
-            (map clean-response)
-            nrepl/combine-responses)))
+       (message! {:op "describe"})))
 
 (def-repl-test verbose-describe
   (is+ {:ops (mc/all-of
               (mc/via #(set (map name (keys %))) built-in-ops)
               (fn [ops] (every? #(seq (:doc %)) (vals ops))))
         :aux {:current-ns "user"}}
-       (->> (nrepl/message timeout-client
-                           {:op "describe" :verbose? "true"})
-            (map clean-response)
-            nrepl/combine-responses)))
+       (message! {:op "describe" :verbose? "true"})))

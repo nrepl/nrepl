@@ -9,11 +9,10 @@
    [nrepl.ack :as ack]
    [nrepl.cmdline :as cmd]
    [nrepl.core :as nrepl]
-   [nrepl.core-test :refer [*server* *transport-fn* transport-fns]]
    [nrepl.middleware :as middleware]
    [nrepl.server :as server]
    [nrepl.socket :refer [as-nrepl-uri unix-domain-flavor]]
-   [nrepl.test-helpers :refer [eval-value1 free-port is+ win? with-process with-timeout]]
+   [nrepl.test-helpers :refer :all]
    [nrepl.transport :as transport])
   (:import
    (clojure.lang LineNumberingPushbackReader)
@@ -28,31 +27,13 @@
                             {:requires #{}
                              :expects #{}})
 
-(defn create-tmpdir
-  "Creates a temporary directory in parent (something clojure.java.io/as-path
-  can handle) and returns its Path."
-  [parent prefix]
-  (let [nio-path (.toPath (as-file parent))]
-    (Files/createTempDirectory nio-path prefix (into-array java.nio.file.attribute.FileAttribute []))))
-
-(defn- run-f-with-server-and-every-transport [server-opts-fn f]
-  (doseq [transport-fn transport-fns]
-    (with-open [^Server server
-                (apply server/start-server
-                       (apply concat (assoc (if server-opts-fn (server-opts-fn) {})
-                                            :transport-fn transport-fn
-                                            :handler (ack/handle-ack (server/default-handler)))))]
-      (binding [*transport-fn* transport-fn
-                *server* server
-                *print-level* *print-level*
-                *print-length* *print-length*]
-        (ack/reset-ack-port!)
-        (f)))))
-
 (defmacro with-server-every-transport
   {:style/indent 1}
-  [server-opts-fn & body]
-  `(run-f-with-server-and-every-transport ~server-opts-fn (fn [] ~@body)))
+  [server-config & body]
+  `(with-every-transport
+     (with-nrepl-server ~server-config
+       (ack/reset-ack-port!)
+       ~@body)))
 
 (defn- var->str
   [sym]
@@ -154,23 +135,23 @@
            (cmd/server-started-message server {:transport #'transport/bencode})))))
 
 (deftest ^:slow ack
-  (with-server-every-transport nil
+  (with-server-every-transport {:port 0, :handler (ack/handle-ack (server/default-handler))}
     (with-process [_ ["java" "-Dnreplacktest=y"
                       "-cp" (System/getProperty "java.class.path")
                       "nrepl.main"
                       "--ack" (str (:port *server*))
-                      "--transport" (var->str *transport-fn*)]]
+                      "--transport" (var->str (:fn *transport*))]]
       (let [acked-port (ack/wait-for-ack 100000)]
         (when (is acked-port "Timed out waiting for ack")
           (with-open [^nrepl.transport.FnTransport
                       transport-2 (nrepl/connect :port acked-port
-                                                 :transport-fn *transport-fn*)]
+                                                 :transport-fn (:fn *transport*))]
             (let [client (nrepl/client transport-2 1000)]
               ;; just a sanity check
               (is (= "y" (eval-value1 client '(System/getProperty "nreplacktest")))))))))))
 
 (deftest ^:slow explicit-port-argument
-  (with-server-every-transport nil
+  (with-server-every-transport {:port 0, :handler (ack/handle-ack (server/default-handler))}
     (let [ack-port (:port *server*)
           bind-port (free-port)]
       (with-process [_ ["java" "-Dnreplacktest=y"
@@ -178,11 +159,11 @@
                         "nrepl.main"
                         "--port" (str bind-port)
                         "--ack" (str ack-port)
-                        "--transport" (var->str *transport-fn*)]]
+                        "--transport" (var->str (:fn *transport*))]]
         (is (= bind-port (ack/wait-for-ack 100000)))))))
 
 (deftest can-define-dynamic-vars
-  (with-server-every-transport nil
+  (with-server-every-transport {:port 0}
     (testing "when a dynamic var is defined from CLI client, it stays dynamic (#271)"
       (let [test-input      (str/join "\n" ["(def ^:dynamic *dyn* 1)"
                                             "(binding [*dyn* 2] *dyn*)"])
@@ -193,7 +174,7 @@
             (let [results (atom [])]
               (with-timeout 60000
                 (#'cmd/run-repl (:host *server*) (:port *server*)
-                                {:transport *transport-fn*
+                                {:transport (:fn *transport*)
                                  :prompt >devnull
                                  :err >devnull
                                  :out >devnull
@@ -205,7 +186,7 @@
   ;; text to the server, so reader context that exists only in the server
   ;; session (aliases, data readers) doesn't matter on the client, and broken
   ;; input can't kill the REPL.
-  (with-open [^Server server (server/start-server :handler (server/default-handler))]
+  (with-nrepl-server {:port 0}
     (let [drive (fn [input]
                   (let [>devnull (fn [& _] nil)
                         values (atom [])
@@ -213,7 +194,7 @@
                     (binding [*in* (java.io.StringReader. input)]
                       (with-redefs [cmd/clean-up-and-exit >devnull]
                         (with-timeout 60000
-                          (#'cmd/run-repl "127.0.0.1" (:port server)
+                          (#'cmd/run-repl "127.0.0.1" (:port *server*)
                                           {:prompt >devnull
                                            :err #(swap! errors str %)
                                            :out >devnull
@@ -351,11 +332,9 @@
         ;; ... as are out-of-range ports
         "nrepls://localhost:444401"    {:tls-keys-str "irrelevant"} #"Invalid port"))))
 
-(deftest can-connect-via-tls-url
-  (if win?
-    ;; TLS is not exercised on Windows (see nrepl.tls-test); assert something
-    ;; so the test isn't reported as running without assertions.
-    (is win? "TLS tests are skipped on Windows")
+(when-not win?
+  ;; TLS is not exercised on Windows (see nrepl.tls-test).
+  (deftest can-connect-via-tls-url
     (let [{:keys [ca-cert server-cert server-key client-cert client-key]} (locksmith/gen-certs {:duration-days 1})
           server-keys (str ca-cert server-cert server-key)
           client-keys (str ca-cert client-cert client-key)]
@@ -381,10 +360,10 @@
                     (str "connecting via " url))))))))))
 
 (deftest can-connect-via-url
-  (with-server-every-transport nil
+  (with-server-every-transport {:port 0}
     (testing "the built-in client can connect using a URL routed through url-connect"
       (let [url      (format "%s://%s:%d"
-                             (transport/uri-scheme *transport-fn*)
+                             (:slug *transport*)
                              (:host *server*)
                              (:port *server*))
             >devnull (fn [& _] nil)]
@@ -399,7 +378,7 @@
                                  :value  #(swap! results conj %)}))
               (is (= ["3"] @results)))))))))
 
-;;; Unix domain socket tests
+;; Unix domain socket tests
 
 (defn send-unix-socket-message [message path]
   (with-open [sock (nrepl.socket/unix-client-socket path)]
@@ -417,28 +396,22 @@
 
 (deftest ^:slow basic-fs-socket-behavior
   (when (is unix-domain-flavor)
-    (let [tmpdir (create-tmpdir "target" "socket-test-")
-          sock-path (str tmpdir "/socket")
-          sock-file (as-file sock-path)]
-      (try
-        ;; Use a Process rather than sh so we can see server errors
-        (let [cmd ["java" "-cp" (System/getProperty "java.class.path")
-                   "nrepl.main" "-s" sock-path]
-              server (.start (doto (ProcessBuilder. ^java.util.List cmd)
-                               (.redirectOutput ProcessBuilder$Redirect/INHERIT)
-                               (.redirectError ProcessBuilder$Redirect/INHERIT)))]
-          (try
-            (while (not (socket-file-connectable? sock-path))
-              (Thread/sleep 100))
-            (Thread/sleep 1000) ;; Extra wait to ensure the server is up.
-            (send-unix-socket-message {:code "(System/exit 42)" :op :eval}
-                                      sock-path)
-            (is (= 42 (.waitFor server)))
-            (finally
-              (.destroy server))))
-        (finally
-          (.delete sock-file)
-          (Files/delete tmpdir))))))
+    (let [sock-path (temp-file-name)]
+      ;; Use a Process rather than sh so we can see server errors
+      (let [cmd ["java" "-cp" (System/getProperty "java.class.path")
+                 "nrepl.main" "-s" sock-path]
+            server (.start (doto (ProcessBuilder. ^java.util.List cmd)
+                             (.redirectOutput ProcessBuilder$Redirect/INHERIT)
+                             (.redirectError ProcessBuilder$Redirect/INHERIT)))]
+        (try
+          (while (not (socket-file-connectable? sock-path))
+            (Thread/sleep 100))
+          (Thread/sleep 1000) ;; Extra wait to ensure the server is up.
+          (send-unix-socket-message {:code "(System/exit 42)" :op :eval}
+                                    sock-path)
+          (is (= 42 (.waitFor server)))
+          (finally
+            (.destroy server)))))))
 
 (deftest cmdline-namespace-resolution
   (testing "Ensuring that namespace resolution works in the cmdline repl"
@@ -454,12 +427,12 @@
                            "nil" ":a/a"]
           >devnull (fn [& _] nil)]
       (with-redefs [cmd/clean-up-and-exit >devnull]
-        (with-server-every-transport nil
+        (with-server-every-transport {:port 0}
           (binding [*in* (java.io.PushbackReader. (java.io.StringReader. test-input))]
             (let [results (atom [])]
               (with-timeout 60000
                 (#'cmd/run-repl (:host *server*) (:port *server*)
-                                {:transport *transport-fn*
+                                {:transport (:fn *transport*)
                                  :prompt >devnull
                                  :err >devnull
                                  :out >devnull
@@ -481,12 +454,12 @@
                              "nil" ":a/a"]
             >devnull        (fn [& _] nil)]
         (with-redefs [cmd/clean-up-and-exit >devnull]
-          (with-server-every-transport (fn [] {:socket (str (create-tmpdir "target" "socket-test-") "/socket")})
+          (with-server-every-transport {} ;; socket server is default
             (binding [*in* (java.io.PushbackReader. (java.io.StringReader. test-input))]
               (let [results (atom [])]
                 (with-timeout 60000
                   (#'cmd/run-repl {:server  *server*
-                                   :options {:transport *transport-fn*
+                                   :options {:transport (:fn *transport*)
                                              :prompt >devnull
                                              :err >devnull
                                              :out >devnull
