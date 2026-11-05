@@ -1,7 +1,7 @@
 (ns nrepl.util.out-test
   (:require [clojure.test :refer :all]
             [clojure.string :as str]
-            [nrepl.test-helpers :refer [is+ newline->sys]]
+            [nrepl.test-helpers :refer [is+ newline->sys wait-for]]
             [nrepl.util.out :as out])
   (:import nrepl.out.CallbackBufferedOutputStream))
 
@@ -12,18 +12,6 @@
   (f))
 
 (use-fixtures :each reset-callbacks-fixture)
-
-(defn- wait-for
-  "Polls `pred` until it returns a truthy value or `timeout-ms` elapses.
-  Callbacks are invoked on nREPL's transport executor, so the tests have to
-  wait for them to have run instead of assuming they already have."
-  [pred timeout-ms]
-  (let [deadline (+ (System/currentTimeMillis) timeout-ms)]
-    (loop []
-      (or (pred)
-          (when (< (System/currentTimeMillis) deadline)
-            (Thread/sleep 10)
-            (recur))))))
 
 (deftest test-wrap-standard-streams-idempotency
   (testing "wrap-standard-streams is idempotent"
@@ -53,6 +41,8 @@
       ;; Write to streams
       (.println System/out "Hello stdout")
       (.println System/err "Hello stderr")
+      ;; Callbacks are invoked on nREPL's transport executor, so the tests have
+      ;; to wait for them to have run instead of assuming they already have.
       (wait-for #(and (= 2 (count @out-calls)) (= 1 (count @err-calls))) 5000)
 
       (is+ #{[:test1 (newline->sys "Hello stdout\n")]
