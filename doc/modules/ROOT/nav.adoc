@@ -14,6 +14,7 @@
 * Reference
 ** xref:ops.adoc[Built-in Ops]
 ** https://spec.nrepl.org[Protocol Spec]
+** https://github.com/nrepl/proof[Compatibility Suite]
 * Ecosystem
 ** xref:extensions.adoc[Extensions]
 ** xref:beyond_clojure.adoc[Beyond Clojure]

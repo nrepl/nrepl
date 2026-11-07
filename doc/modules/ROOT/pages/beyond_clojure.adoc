@@ -16,6 +16,11 @@ will cause bugs when used with other servers, while other clients are
 designed with language-agnosticism in mind. Usually the nREPL servers would mention in their
 documentation which clients are known to work well with them.
 
+TIP: nREPL's compatibility suite, https://github.com/nrepl/proof[proof], checks
+servers against the clients people use, and its
+https://nrepl.github.io/proof/[compatibility matrix] shows how a number of
+servers do.
+
 * https://gitlab.com/technomancy/jeejah[JeeJah] - an nREPL server for https://fennel-lang.org/[Fennel] and https://www.lua.org/[Lua]
 
 * https://gitlab.com/technomancy/ogion[Ogion] - an nREPL server for https://racket-lang.org/[Racket]

@@ -133,6 +133,16 @@ your client Clojure-agnostic.
 * Use sequential message ids in the scope of a session - this makes it easier to track the flow of messages.
 * Provide some debug mode where you can see a dump of the requests and the responses.
 
+== Testing Your Client
+
+https://github.com/nrepl/proof[proof], nREPL's compatibility suite, can check
+clients as well as servers. `proof proxy` sits between your client and a server,
+records what the client sends and checks it (e.g. that every request has an `id`
+and that sessions get closed in the end). `proof serve` is a small server that
+behaves like nREPL itself, or like some other server in one particular way (say,
+sending back only the value of the last form), so you can see how your client
+copes with other servers without installing them all.
+
 == Debugging the Communication with nREPL
 
 Occasionally it'd be useful to inspect the communication between your client and

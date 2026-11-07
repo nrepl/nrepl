@@ -48,6 +48,19 @@ Here are a few simple nREPL implementations that you can peruse for inspiration:
 It might also be a good idea to see the message exchange between some nREPL server and client.
 CIDER provides a https://docs.cider.mx/cider/troubleshooting.html#debugging-the-communication-with-nrepl[convenient solution] for this.
 
+== Testing Your Server
+
+https://github.com/nrepl/proof[proof] is nREPL's compatibility suite. It talks
+to your server over a socket like any client would and checks it against what
+the clients people use (CIDER, Calva, Conjure, vim-fireplace, REPL-y and so on)
+expect. For every check that fails it tells you which clients will break and why,
+with links to the client code in question. When the protocol spec and the clients
+disagree, proof sides with the clients.
+
+proof comes with profiles for nREPL itself, Babashka, nbb, Basilisp, ClojureCLR,
+jank and a few more servers, which make a good starting point for your own, and
+its https://nrepl.github.io/proof/[compatibility matrix] shows how all of them do.
+
 == Best Practices
 
 * Write an `.nrepl-port` file on server startup.
