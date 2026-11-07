@@ -13,11 +13,14 @@ servers written in any language.
 * https://github.com/nrepl/neorepl[neorepl] (terminal REPL for Clojure and friends, developed by nREPL's team)
 * https://github.com/trptcolin/reply/[REPL-y] (command-line client for nREPL)
 * https://github.com/bhauman/rebel-readline/tree/master/rebel-readline-nrepl[rebel-readline] (advanced command-line client for nREPL)
+* https://github.com/clojure/clojure-cli.repl[clojure-cli.repl] (The Clojure team's terminal REPL for the Clojure CLI. It starts nREPL with some middleware of its own, but it can connect to other servers too)
+* https://github.com/babashka/babashka[babashka] (`bb repl --connect` connects to an nREPL server, since babashka 1.13.222)
 * https://github.com/eraserhd/rep[rep] (A single-shot nREPL client designed for shell invocation.)
 * https://git.sr.ht/~technomancy/shevek/[shevek] (A command-line nREPL client written in https://fennel-lang.org/[Fennel], works with non-Clojure servers)
 * https://github.com/kanej/parle[Parle] (A command-line nREPL client using node.js written in ClojureScript)
 * https://github.com/licht1stein/brepl[brepl] (A fast babashka based command-line nREPL client)
 * https://github.com/waddie/nautilos[Nautilos] (An LLM-oriented command-line nREPL client written in https://janet-lang.org[Janet], works with non-Clojure servers)
+* https://github.com/nrepl/mezcaml[mezcaml] (A minimal nREPL client library and command-line tool written in https://ocaml.org[OCaml], developed by nREPL's team, works with non-Clojure servers)
 
 TIP: If you're not sure which one to pick, go with neorepl. It's built by
 nREPL's own team and it brings the core of CIDER's tooling (completion,
@@ -30,7 +33,8 @@ NOTE: Leiningen uses REPL-y internally as its command-line nREPL client.
 
 * https://github.com/clojure-emacs/cider[CIDER] (Clojure Interactive
   Development Environment that Rocks for Emacs)
-* https://cursiveclojure.com[Cursive] (Clojure IDE/plugin for IntelliJ Idea)
+* https://cursive-ide.com[Cursive] (Clojure IDE/plugin for IntelliJ Idea)
+* https://github.com/nrepl/neat[neat] (small, language-agnostic nREPL client for Emacs, developed by nREPL's team, works with non-Clojure servers)
 * https://github.com/sanel/monroe[monroe] (nREPL client for Emacs, works with non-Clojure servers)
 * https://github.com/Sasanidas/Rail[Rail] (generic nREPL client for Emacs that should work with any nREPL server)
 * https://github.com/tpope/vim-fireplace[fireplace.vim] (Clojure + nREPL
