@@ -7,9 +7,9 @@ at runtime.
 
 == Alternative Server Implementations
 
-Those server implementations are developed and
+Most of those server implementations are developed and
 maintained by third-parties (as opposed to nREPL's team), and their
-maturity might vary.
+maturity might vary. The ones from nREPL's team are marked as such.
 
 NOTE: Certain nREPL clients may make Clojure-specific assumptions which
 will cause bugs when used with other servers, while other clients are
@@ -35,6 +35,20 @@ servers do.
 
 * https://github.com/viesti/nrepl-cljs-sci[nrepl-cljs-sci] - a native Node.js nREPL server implementation using https://github.com/borkdude/sci[SCI].
 
+* https://github.com/babashka/nbb[nbb] - Clojure scripting on Node.js using SCI, with an nREPL server built in
+
+* https://github.com/babashka/sci.nrepl[sci.nrepl] - the nREPL server of https://github.com/babashka/scittle[scittle], which runs SCI in the browser, connected to clients through a websocket relay that runs on babashka or the JVM
+
+* https://github.com/nrepl/nrepl-sci[nrepl-sci] - an nREPL server for SCI that runs in a web page, developed by nREPL's team
+
+* https://github.com/basilisp-lang/basilisp[Basilisp] - a Clojure-compatible(-ish) Lisp dialect hosted on Python, with an nREPL server built in
+
+* https://github.com/clojure/clr.tools.nrepl[clr.tools.nrepl] - an nREPL server for https://github.com/clojure/clojure-clr[ClojureCLR]
+
+* https://github.com/jank-lang/jank[jank] - a native Clojure dialect with C++ interop, with an nREPL server built in
+
+* https://github.com/nooga/let-go[let-go] - almost Clojure, written in Go, with an nREPL server built in
+
 * https://git.sr.ht/~abcdw/guile-ares-rs[guile-ares-rs] - an Asynchronous Reliable Extensible Sleek RPC Server for Guile based on the nREPL protocol.
 
 * https://git.sr.ht/~ngraves/nrepl-scilab[nrepl-scilab] - an nREPL server for https://www.scilab.org/[Scilab]
@@ -42,5 +56,7 @@ servers do.
 * https://github.com/waddie/nrepl-janet[nrepl-janet] - an nREPL client/server library for https://janet-lang.org/[Janet]
 
 * https://github.com/waddie/nrepl-steel[nrepl-steel] - a minimal nREPL server for https://github.com/mattwparas/steel[Steel Scheme]
+
+* https://github.com/nrepl/nrepl-beam[nrepl-beam] - nREPL servers for https://www.erlang.org/[Erlang] (dialtone) and https://elixir-lang.org/[Elixir] (repartee), developed by nREPL's team
 
 As you can see nREPL has implementations for many popular Lisp dialects, but it's certainly not limited to Lisp dialects.
