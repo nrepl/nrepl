@@ -10,6 +10,7 @@ servers written in any language.
 
 == Command-line Clients
 
+* https://github.com/nrepl/neorepl[neorepl] (terminal REPL for Clojure and friends, developed by nREPL's team)
 * https://github.com/trptcolin/reply/[REPL-y] (command-line client for nREPL)
 * https://github.com/bhauman/rebel-readline/tree/master/rebel-readline-nrepl[rebel-readline] (advanced command-line client for nREPL)
 * https://github.com/eraserhd/rep[rep] (A single-shot nREPL client designed for shell invocation.)
@@ -17,6 +18,11 @@ servers written in any language.
 * https://github.com/kanej/parle[Parle] (A command-line nREPL client using node.js written in ClojureScript)
 * https://github.com/licht1stein/brepl[brepl] (A fast babashka based command-line nREPL client)
 * https://github.com/waddie/nautilos[Nautilos] (An LLM-oriented command-line nREPL client written in https://janet-lang.org[Janet], works with non-Clojure servers)
+
+TIP: If you're not sure which one to pick, go with neorepl. It's built by
+nREPL's own team and it brings the core of CIDER's tooling (completion,
+documentation lookup, the inspector, test runs and so on) to the terminal.
+Its command-line tools work just as well in scripts and for coding agents.
 
 NOTE: Leiningen uses REPL-y internally as its command-line nREPL client.
 
