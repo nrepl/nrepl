@@ -1,4 +1,4 @@
-(ns nrepl.socket.junixsocket
+(ns ^:no-doc nrepl.socket.junixsocket
   "Should only be required if junixsocket is present on the classpath."
   (:import
    (java.io File)
