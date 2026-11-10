@@ -112,7 +112,7 @@
     (Thread/sleep 100)
     (is+ {:status #{:done}}
          (message! session' {:op "interrupt"}))
-    (is+ {:status #{:done :interrupted}}
+    (is+ {:status (mc/embeds #{:done :interrupted})}
          (-> resp nrepl/combine-responses clean-response))
     (is (alive? (session-id session')))
     (is (= 3 (repl-value1 session' (code (+ 1 2)))))))

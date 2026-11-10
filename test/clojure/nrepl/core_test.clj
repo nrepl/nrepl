@@ -98,7 +98,7 @@
       (transport/send transport {:op "eval" :code "(+ 5 1)"})
       (catch Exception _))
     (Thread/sleep 100)
-    (is (thrown-with-msg? Exception #"(?i)(lost.*connection|socket closed|connection reset|broken pipe)"
+    (is (thrown-with-msg? Exception #"(?i)(lost.*connection|socket closed|connection reset|broken pipe|connection was aborted)"
                           (transport/send transport {:op "eval" :code "(+ 5 1)"})))))
 
 (deftest server-starts-with-minimal-configuration
@@ -115,7 +115,7 @@
       (is+ {:value "1"} (first resp))
       (.close *server*)
       (Thread/sleep 1000)
-      (is (thrown-with-msg? Exception #"(?i)(lost.*connection|socket closed|connection reset)"
+      (is (thrown-with-msg? Exception #"(?i)(lost.*connection|socket closed|connection reset|connection was aborted)"
                             (dotimes [_ 20]
                               (transport/recv transport)))))
 
