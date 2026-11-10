@@ -82,7 +82,7 @@ Returns::
 
 === `eval`
 
-Evaluates code. Note that unlike regular stream-based Clojure REPLs, nREPL's ``"eval"`` short-circuits on first read error and will not try to read and execute the remaining code in the message.
+Evaluates code. Note that unlike regular stream-based Clojure REPLs, nREPL's ``"eval"`` short-circuits on first error (regardless whether it occurs during read, eval, or print) and will not try to read and execute the remaining code in the message.
 
 Required parameters::
 * `:code` The code to be evaluated.

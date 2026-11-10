@@ -77,23 +77,18 @@
   sent via that Transport."
   [msg]
   (fn run []
-    (let [{:keys [eval ns code file file-name line column]} msg
+    (let [{:keys [eval ns code file line column]} msg
           ;; Qualified read-fn and eval-fn are a way for middleware to provide
           ;; custom read and eval functions which can be runtime closures.
           ;; `:eval` parameter that can come from a client can only be a symbol
           ;; pointing to a var.
-          read-fn (or (::read-fn msg) clojure.core/read)
-          eval-fn (or (::eval-fn msg) (some-> eval symbol find-var))
-          ;; Needed exclusively by `load-file` middleware to say that if error
-          ;; happens anywhere during the evaluation of the file, don't try
-          ;; evaluating subsequent forms.
-          stop-on-error? (::stop-on-error msg)
+          read-fn (::read-fn msg clojure.core/read)
+          eval-fn (::eval-fn msg (some-> eval symbol find-var))
           ;; A way to provide extra temporary bindings (not session-persisted).
-          bindings (or (::bindings msg) {})
-          file-name (or file-name (short-file-name file))
+          bindings (::bindings msg {})
+          file-name (:file-name msg (short-file-name file))
           explicit-ns (some-> ns symbol find-ns)
           eof (Object.)
-          errored? (volatile! false)
           read-cond (keyword (:read-cond msg :allow))
           read (cond (string? code)
                      (let [reader (source-logging-pushback-reader code line column)]
@@ -113,15 +108,7 @@
                      (let [code (.iterator ^Iterable code)]
                        #(if (.hasNext code)
                           (.next code)
-                          eof)))
-          caught (fn [^Throwable e]
-                   (set! *e e)
-                   (vreset! errored? true)
-                   (when-not (interrupted? e)
-                     (t/respond-to msg {::caught/throwable e
-                                        :status #{:eval-error}
-                                        :ex (str (class e))
-                                        :root-ex (str (class (clojure.main/root-cause e)))})))]
+                          eof)))]
       (push-thread-bindings (merge (when explicit-ns {#'*ns* explicit-ns})
                                    (when (and file file-name)
                                      {Compiler/SOURCE_PATH file
@@ -129,45 +116,41 @@
                                    bindings))
       (try
         (loop []
-          (let [input (try
-                        (clojure.main/with-read-known (read))
-                        (catch Throwable e
-                          (let [e (if (instance? LispReader$ReaderException e)
-                                    (ex-info nil {:clojure.error/phase :read-source} e)
-                                    e)]
-                            ;; If error happens during read phase, call
-                            ;; caught-hook but don't continue executing.
-                            (caught e)
-                            eof)))]
+          ;; Read
+          (let [input (try (clojure.main/with-read-known (read))
+                           (catch LispReader$ReaderException e
+                             (throw (ex-info nil {:clojure.error/phase :read-source} e))))]
             (when-not (identical? input eof)
-              (try
-                (let [value (if eval-fn
-                              (eval-fn input)
-                              ;; If eval-fn is not provided, call
-                              ;; Compiler/eval directly for slimmer stack.
-                              (Compiler/eval input true))]
-                  (set! *3 *2)
-                  (set! *2 *1)
-                  (set! *1 value)
-                  (try
-                    ;; *out* has :tag metadata; *err* does not
-                    (.flush ^Writer *err*)
-                    (.flush *out*)
-                    (t/respond-to msg {:ns (str (ns-name *ns*))
-                                       :value value
-                                       ::print/keys #{:value}})
-                    (catch Throwable e
-                      (throw (ex-info nil {:clojure.error/phase :print-eval-result} e)))))
-                (catch Throwable e
-                  (caught e)))
-              ;; Otherwise, when errors happen during eval/print phase,
-              ;; report the exception but continue executing the
-              ;; remaining readable forms, unless we load the whole file.
-              (when-not (and stop-on-error? @errored?)
-                (recur)))))
+              ;; Eval
+              (let [value (if (nil? eval-fn)
+                            ;; If eval-fn is not provided, call
+                            ;; Compiler/eval directly for slimmer stack.
+                            (Compiler/eval input true)
+                            (eval-fn input))]
+                (set! *3 *2)
+                (set! *2 *1)
+                (set! *1 value)
+
+                ;; Print
+                (try
+                  (.flush ^Writer *err*)
+                  (.flush ^Writer *out*)
+                  (t/respond-to msg {:ns (str (ns-name *ns*))
+                                     :value value
+                                     ::print/keys #{:value}})
+                  (catch Throwable e
+                    (throw (ex-info nil {:clojure.error/phase :print-eval-result} e)))))
+
+              ;; Loop
+              (recur))))
 
         (catch Throwable e
-          (caught e))
+          (set! *e e)
+          (when-not (interrupted? e)
+            (t/respond-to msg {::caught/throwable e
+                               :status #{:eval-error}
+                               :ex (str (class e))
+                               :root-ex (str (class (clojure.main/root-cause e)))})))
         (finally
           ;; The evaluated code may have closed *out* or *in* (e.g. `(slurp
           ;; *in*)`). An exception escaping from here would kill the session
@@ -207,7 +190,7 @@
                  {:requires #{"clone" "close" #'caught/wrap-caught #'print/wrap-print}
                   :expects #{}
                   :handles {"eval"
-                            {:doc "Evaluates code. Note that unlike regular stream-based Clojure REPLs, nREPL's `\"eval\"` short-circuits on first read error and will not try to read and execute the remaining code in the message."
+                            {:doc "Evaluates code. Note that unlike regular stream-based Clojure REPLs, nREPL's `\"eval\"` short-circuits on first error (regardless whether it occurs during read, eval, or print) and will not try to read and execute the remaining code in the message."
                              :requires {"code" "The code to be evaluated."
                                         "session" "The ID of the session within which to evaluate the code."}
                              :optional (merge caught/wrap-caught-optional-arguments
