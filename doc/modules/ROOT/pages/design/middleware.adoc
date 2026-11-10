@@ -225,7 +225,8 @@ dedicated thread so a running eval can't block another op.
 *Long-lived sessions* provide two things, persistence of values between
 messages, and a guarantee for serial execution of messages. The only way to
 create a long-lived session is to clone an existing session (even an
-ephemeral one).
+ephemeral one). A long-lived session lives until it's closed with the `close`
+op or the connection that cloned it is closed.
 
 Sessions persist https://clojure.org/reference/vars[dynamic vars]
 (collected by `get-thread-bindings`) against a unique lookup. This allows

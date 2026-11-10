@@ -91,6 +91,11 @@ A typical session lifecycle looks like this:
   needed. This terminates the session thread and releases resources. Sessions
   are also closed automatically when the connection that cloned them is closed.
 
+If a session's thread hits an error it can't recover from, the server closes
+the session and answers the message it was running with the
+`uncaught-session-exception` status (alongside `done` and `error`). Clients
+should treat that session as gone and clone a new one.
+
 === Multiple sessions
 
 Clients typically maintain at least two sessions:
