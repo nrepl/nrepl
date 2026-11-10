@@ -66,7 +66,6 @@
                             (.send transport resp)))))]
     (-> (dissoc msg :file-path)
         (assoc :op "eval", :code file, :transport wrapped-t, :file file-path
-               ::eval/stop-on-error true
                ::eval/bindings (per-file-bindings msg)))))
 
 (defn wrap-load-file
