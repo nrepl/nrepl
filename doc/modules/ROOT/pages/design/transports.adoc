@@ -77,6 +77,10 @@ when encoded using nREPL's bencode encoder and received by nREPL, are equivalent
  {"op" :eval ...}
 ----
 
+Bencode has no booleans or nil, so for keys ending in `?` the server reads an
+empty list as `nil`. A client can send `[]` under a key like
+`:nrepl.middleware.print/stream?` to mean false.
+
 There's nothing special you have to do to use the bencode transport,
 as it's the default transport for `nrepl.server/start-server`.
 

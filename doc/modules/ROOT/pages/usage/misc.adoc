@@ -130,7 +130,7 @@ All values are strings or numbers, so they survive the Bencode transport.
 A custom `lookup-fn` is free to return a different set of keys.
 
 NOTE: nREPL's default lookup function is pretty basic and it can only handle symbols that resolve to special
-forms and vars.
+forms, vars and namespaces.
 
 You can either specify a custom lookup function in the requests (via the `lookup-fn` key) or by
 setting `nrepl.middleware.lookup/\*lookup-fn*`.
