@@ -100,7 +100,10 @@
   (is (= true (repl-value1 "(.contains (str *e) \"bad, bad code\")"))))
 
 (def-repl-test multiple-expressions-return
-  (is (= [5 18] (repl-values "5 (/ 5 0) (+ 5 6 7)"))))
+  (testing "evaluation stops at the first error"
+    (is (= [5 18] (repl-values "5 (+ 5 6 7) (/ 5 0)")))
+    (is (= [5] (repl-values "5 (/ 5 0) (+ 5 6 7)")))
+    (is (= [] (repl-values "(/ 5 0) 5 (+ 5 6 7)")))))
 
 (def-repl-test return-on-incomplete-expr
   (is+ {:status #{:done :eval-error}, :value mc/absent}
