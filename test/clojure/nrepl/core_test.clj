@@ -9,6 +9,11 @@
    [nrepl.util.classloader])
   (:import (java.net SocketException)))
 
+(def ^:private disconnected-re
+  "Matches the messages a transport fails with once its peer is gone. Windows
+  reports an aborted write as \"An established connection was aborted\"."
+  #"(?i)(lost.*connection|socket closed|connection reset|broken pipe|connection was aborted)")
+
 (deftest version-sanity-check
   (is (let [v (System/getenv "CLOJURE_VERSION")]
         (println "Running on Clojure" (clojure-version) ", expected:" v)
@@ -87,7 +92,7 @@
       (Thread/sleep 100)
       (.close *server*)
       (Thread/sleep 100)
-      (is (thrown-with-msg? Exception #"(?i)(lost.*connection|socket closed|connection reset)"
+      (is (thrown-with-msg? Exception disconnected-re
                             (deref reader 1000 :timeout))))
 
     (is (thrown? SocketException (transport/recv transport)))
@@ -98,7 +103,7 @@
       (transport/send transport {:op "eval" :code "(+ 5 1)"})
       (catch Exception _))
     (Thread/sleep 100)
-    (is (thrown-with-msg? Exception #"(?i)(lost.*connection|socket closed|connection reset|broken pipe)"
+    (is (thrown-with-msg? Exception disconnected-re
                           (transport/send transport {:op "eval" :code "(+ 5 1)"})))))
 
 (deftest server-starts-with-minimal-configuration
@@ -115,7 +120,7 @@
       (is+ {:value "1"} (first resp))
       (.close *server*)
       (Thread/sleep 1000)
-      (is (thrown-with-msg? Exception #"(?i)(lost.*connection|socket closed|connection reset)"
+      (is (thrown-with-msg? Exception disconnected-re
                             (dotimes [_ 20]
                               (transport/recv transport)))))
 
@@ -123,7 +128,7 @@
     ;; to trigger an exception on send to an unavailable server
     (try (repl-eval! session "(+ 1 1)") (catch Throwable _))
     (Thread/sleep 100)
-    (is (thrown-with-msg? Exception #"(?i)(lost.*connection|socket closed|connection reset|broken pipe)"
+    (is (thrown-with-msg? Exception disconnected-re
                           (repl-eval session "(+ 1 1)")))))
 
 (deftest test-url-connect
