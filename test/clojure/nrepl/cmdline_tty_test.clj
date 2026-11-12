@@ -11,7 +11,7 @@
            (org.apache.commons.net.telnet TelnetClient)))
 
 (defn- attempt-connection [client host port timeout-ms]
-  (loop [n (/ timeout-ms 500)]
+  (loop [n (/ timeout-ms 100)]
     (or (try
           (.connect ^TelnetClient client ^String host ^int port)
           client
@@ -19,7 +19,7 @@
             (when-not (pos? n)
               (throw ex))))
         (do
-          (Thread/sleep 500)
+          (Thread/sleep 100)
           (recur (dec n))))))
 
 (deftest ^:slow tty-server
