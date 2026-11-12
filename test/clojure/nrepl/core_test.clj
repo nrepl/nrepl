@@ -148,6 +148,15 @@
                                         :ack-port (:port s))]
       (is (= (:port s2) (ack/wait-for-ack 10000))))))
 
+(deftest ack-reply-carries-the-request-id
+  ;; send-ack waits for a reply to its own request, so one without the :id
+  ;; held up every server started with :ack-port by the client's timeout.
+  (ack/reset-ack-port!)
+  (let [sent (atom [])]
+    ((ack/handle-ack identity) {:op "ack" :id "42" :port 1234
+                                :transport (transport/fn-transport nil #(swap! sent conj %))})
+    (is (= [{:id "42" :status #{:done}}] @sent))))
+
 (def-repl-test print-namespace-maps-binding
   (when (resolve '*print-namespace-maps*)
     (let [set-true (dorun (repl-eval session "(set! *print-namespace-maps* true)"))
