@@ -52,7 +52,10 @@
                   :file-name "source.clj"})))
 
 (def-repl-test load-file-huge-file
-  (let [very-long-code (clojure.string/join "\n" (repeat 3000 "(+ 1 2 3 4 5 6 7 8 9 0)"))]
+  ;; A few forms padded out with comments, since compiling thousands of small
+  ;; forms costs far more than the size being tested.
+  (let [padding (apply str ";" (repeat 4000 "x"))
+        very-long-code (clojure.string/join "\n" (repeat 20 (str "(+ 1 2 3 4 5 6 7 8 9 0) " padding)))]
     (is (< 65536 (count very-long-code)))
     (is+ {:status #{:done}
           :value ["45"]}

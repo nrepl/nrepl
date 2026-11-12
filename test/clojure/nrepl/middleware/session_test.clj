@@ -218,7 +218,7 @@
 (when-not win?
   (def-repl-test non-interruptible-stop-thread
     (testing "non-interruptible code can still be interrupted"
-      (with-redefs [nrepl.util.threading/force-stop-delay-ms 500]
+      (with-redefs [nrepl.util.threading/force-stop-delay-ms 100]
         (let [resp (repl-eval session (code
                                        (do (def vol (volatile! 0))
                                            (nrepl.test-helpers/capture-state "thread" (Thread/currentThread))
@@ -230,7 +230,7 @@
           (is (wait-for #(not (.isAlive ^Thread (nrepl.test-helpers/get-state "thread")))))
           ;; Verify that volatile is not changed anymore.
           (let [v (repl-values session "@vol")]
-            (Thread/sleep 500)
+            (Thread/sleep 200)
             (is (= v (repl-values session "@vol")))))))))
 
 (def-repl-test interrupt-load-file

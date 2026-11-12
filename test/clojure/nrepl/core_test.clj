@@ -55,9 +55,9 @@
 (def-repl-test read-timeout
   ;; Clone through `client` so that a slow server can't fail the test before it
   ;; has even started.
-  (let [short-session (nrepl/client-session (nrepl/client transport 500)
+  (let [short-session (nrepl/client-session (nrepl/client transport 200)
                                             :session (nrepl/new-session client))]
-    (is (empty? (repl-values short-session "(Thread/sleep 1500) :ok")))))
+    (is (empty? (repl-values short-session "(Thread/sleep 1000) :ok")))))
 
 (def-repl-test concurrent-message-handling
   (testing "multiple messages can be handled on the same connection concurrently"
@@ -70,7 +70,7 @@
                                     (is (= [nil] (nrepl/response-values responses)))
                                     (- (System/currentTimeMillis) start-time))))
                               sessions
-                              [1000 500 0])]
+                              [600 300 0])]
       (is (apply > (map deref elapsed-times))))))
 
 (def-repl-test ^:tcp-and-unix ensure-transport-closeable
@@ -119,7 +119,6 @@
     (let [resp (repl-eval client "1 2 3 4 5 6 7 8 9 10")]
       (is+ {:value "1"} (first resp))
       (.close *server*)
-      (Thread/sleep 1000)
       (is (thrown-with-msg? Exception disconnected-re
                             (dotimes [_ 20]
                               (transport/recv transport)))))
