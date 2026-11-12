@@ -108,9 +108,9 @@
 
 (deftest server-starts-with-minimal-configuration
   (testing "Ensure server starts with minimal configuration"
-    (with-open [server (server/start-server)]
-      (let [transport (nrepl/connect :port (:port server))
-            client (nrepl/client transport Long/MAX_VALUE)]
+    (with-open [server (server/start-server)
+                ^java.io.Closeable transport (nrepl/connect :port (:port server))]
+      (let [client (nrepl/client transport Long/MAX_VALUE)]
         (is+ {:value "3"}
              (first (nrepl/message client {:op "eval" :code "(- 4 1)"})))))))
 
@@ -148,13 +148,10 @@
       (is (= (:port s2) (ack/wait-for-ack 10000))))))
 
 (def-repl-test print-namespace-maps-binding
-  (when (resolve '*print-namespace-maps*)
-    (let [set-true (dorun (repl-eval session "(set! *print-namespace-maps* true)"))
-          true-val (first (repl-values session "*print-namespace-maps*"))
-          set-false (dorun (repl-eval session "(set! *print-namespace-maps* false)"))
-          false-val (first (repl-values session "*print-namespace-maps*"))]
-      (is (= true true-val))
-      (is (= false false-val)))))
+  (repl-eval! session "(set! *print-namespace-maps* true)")
+  (is (true? (repl-value1 session "*print-namespace-maps*")))
+  (repl-eval! session "(set! *print-namespace-maps* false)")
+  (is (false? (repl-value1 session "*print-namespace-maps*"))))
 
 ;;;; Classloader-related tests
 
