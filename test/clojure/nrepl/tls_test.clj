@@ -51,6 +51,24 @@
   (let [e (noisy-deref exception-promise)]
     (instance? SSLException e)))
 
+(defn- handshake-tolerant-bencode
+  "A bencode transport-fn for connections that are meant to fail the TLS
+  handshake, which can also make setting up the transport throw."
+  [& args]
+  (try
+    (apply transport/bencode args)
+    (catch Exception e
+      (is (instance? SSLHandshakeException e)))))
+
+(defn- evals-over-tls?
+  "Whether a client using `client-keys` can eval on `server`."
+  [server client-keys]
+  (with-open [transport (tls-connect {:tls-keys-str client-keys
+                                      :host         "127.0.0.1"
+                                      :port         (:port server)
+                                      :transport-fn transport/bencode})]
+    (= 2 (eval-value1 (nrepl/client transport 30000) '(+ 1 1)))))
+
 (deftest bad-config
   (is (thrown? ExceptionInfo (server/start-server :tls? true)))
   (is (= :nrepl.server/invalid-start-request
@@ -134,13 +152,8 @@
   (let [{:keys [ca-cert server-cert server-key client-cert client-key]} (locksmith/gen-certs {:duration-days 1})
         server-keys (str server-cert ca-cert server-key)
         client-keys (str client-cert ca-cert client-key)]
-    (with-open [server (server/start-server :tls? true :tls-keys-str server-keys)
-                transport (tls-connect {:tls-keys-str client-keys
-                                        :host         "127.0.0.1"
-                                        :port         (:port server)
-                                        :transport-fn transport/bencode})]
-      (let [client (nrepl/client transport 30000)]
-        (is (= 2 (eval-value1 client '(+ 1 1))))))))
+    (with-open [server (server/start-server :tls? true :tls-keys-str server-keys)]
+      (is (evals-over-tls? server client-keys)))))
 
 (deftest bad-keys
   (let [[server-keys _] (gen-key-pair)
@@ -152,16 +165,7 @@
                 transport (tls-connect {:tls-keys-str client-keys
                                         :host         "127.0.0.1"
                                         :port         (:port server)
-                                        :transport-fn (fn [& args]
-                                                        ;; there appears to be
-                                                        ;; a (race?) condition
-                                                        ;; that the
-                                                        ;; transport-fn could
-                                                        ;; also be called.
-                                                        (try
-                                                          (apply transport/bencode args)
-                                                          (catch Exception e
-                                                            (is (instance? SSLHandshakeException e)))))})]
+                                        :transport-fn handshake-tolerant-bencode})]
       (let [client (nrepl/client transport 30000)]
         (is (thrown? Exception (eval-value1 client '(+ 1 1))))
         (is (tls-socket-exception? exception))))))
@@ -176,25 +180,11 @@
       (with-open [transport (tls-connect {:tls-keys-str bad-client-keys
                                           :host         "127.0.0.1"
                                           :port         (:port server)
-                                          :transport-fn (fn [& args]
-                                                          ;; there appears to be
-                                                          ;; a (race?) condition
-                                                          ;; that the
-                                                          ;; transport-fn could
-                                                          ;; also be called.
-                                                          (try
-                                                            (apply transport/bencode args)
-                                                            (catch Exception e
-                                                              (is (instance? SSLHandshakeException e)))))})]
+                                          :transport-fn handshake-tolerant-bencode})]
         (let [client (nrepl/client transport 30000)]
           (is (thrown? Exception (eval-value1 client '(+ 1 1))))
           (is (tls-socket-exception? exception))))
-      (with-open [transport (tls-connect {:tls-keys-str good-client-keys
-                                          :host         "127.0.0.1"
-                                          :port         (:port server)
-                                          :transport-fn transport/bencode})]
-        (let [client (nrepl/client transport 30000)]
-          (is (= 2 (eval-value1 client '(+ 1 1)))))))))
+      (is (evals-over-tls? server good-client-keys)))))
 
 (deftest bad-keys-then-good-no-consume-exception
   (let [[server-keys good-client-keys] (gen-key-pair)
@@ -207,12 +197,7 @@
                                           :transport-fn transport/bencode})]
         (let [client (nrepl/client transport 30000)]
           (is (thrown? Exception (eval-value1 client '(+ 1 1))))))
-      (with-open [transport (tls-connect {:tls-keys-str good-client-keys
-                                          :host         "127.0.0.1"
-                                          :port         (:port server)
-                                          :transport-fn transport/bencode})]
-        (let [client (nrepl/client transport 30000)]
-          (is (= 2 (eval-value1 client '(+ 1 1)))))))))
+      (is (evals-over-tls? server good-client-keys)))))
 
 (deftest conn-close-then-ok
   (let [[server-keys good-client-keys] (gen-key-pair)]
@@ -221,22 +206,12 @@
       (with-open [sock (Socket.)]
         (let [addr (InetSocketAddress. "127.0.0.1" ^int (:port server))]
           (.connect sock addr 1000)))
-      (with-open [transport (tls-connect {:tls-keys-str good-client-keys
-                                          :host         "127.0.0.1"
-                                          :port         (:port server)
-                                          :transport-fn transport/bencode})]
-        (let [client (nrepl/client transport 30000)]
-          (is (= 2 (eval-value1 client '(+ 1 1)))))))))
+      (is (evals-over-tls? server good-client-keys)))))
 
 (deftest happy-case
   (let [[server-keys client-keys] (gen-key-pair)]
-    (with-open [server (server/start-server :tls? true :tls-keys-str server-keys)
-                transport (tls-connect {:tls-keys-str client-keys
-                                        :host         "127.0.0.1"
-                                        :port         (:port server)
-                                        :transport-fn transport/bencode})]
-      (let [client (nrepl/client transport 30000)]
-        (is (= 2 (eval-value1 client '(+ 1 1))))))))
+    (with-open [server (server/start-server :tls? true :tls-keys-str server-keys)]
+      (is (evals-over-tls? server client-keys)))))
 
 (deftest accept-sets-tcp-nodelay
   (let [[server-keys client-keys] (gen-key-pair)]
@@ -278,25 +253,11 @@
       (with-open [transport (tls-connect {:tls-keys-str server-keys
                                           :host         "127.0.0.1"
                                           :port         (:port server)
-                                          :transport-fn (fn [& args]
-                                                          ;; there appears to be
-                                                          ;; a (race?) condition
-                                                          ;; that the
-                                                          ;; transport-fn could
-                                                          ;; also be called.
-                                                          (try
-                                                            (apply transport/bencode args)
-                                                            (catch Exception e
-                                                              (is (instance? SSLHandshakeException e)))))})]
+                                          :transport-fn handshake-tolerant-bencode})]
         (let [client (nrepl/client transport 30000)]
           (is (thrown? Exception (eval-value1 client '(+ 1 1))))
           (is (tls-socket-exception? exception))))
-      (with-open [transport (tls-connect {:tls-keys-str good-client-keys
-                                          :host         "127.0.0.1"
-                                          :port         (:port server)
-                                          :transport-fn transport/bencode})]
-        (let [client (nrepl/client transport 30000)]
-          (is (= 2 (eval-value1 client '(+ 1 1)))))))))
+      (is (evals-over-tls? server good-client-keys)))))
 
 (deftest tls-client-proxy-test
   (let [[server-keys client-keys] (gen-key-pair)]
