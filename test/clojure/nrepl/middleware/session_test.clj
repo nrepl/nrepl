@@ -108,12 +108,17 @@
 
 (def-repl-test interrupt-keeps-session-alive-test
   (let [session' (nrepl/client-session client)
-        resp (nrepl/message session' {:op "eval" :code "(Thread/sleep 30000)"})]
-    (Thread/sleep 100)
+        resp (nrepl/message session' {:op "eval"
+                                      :code (code (do (nrepl.test-helpers/capture-state "thread" (Thread/currentThread))
+                                                      (Thread/sleep 30000)))})]
+    (is (wait-for #(get-state "thread")))
     (is+ {:status #{:done}}
          (message! session' {:op "interrupt"}))
-    (is+ {:status #{:done :interrupted}}
-         (-> resp nrepl/combine-responses clean-response))
+    ;; As in the interrupt test, an InterruptedException can race in first.
+    (is+ (mc/any-of (mc/embeds [{:status #{:done :interrupted}}])
+                    (mc/embeds [{:ex "class java.lang.InterruptedException"
+                                 :status #{:eval-error}}]))
+         (mapv clean-response resp))
     (is (alive? (session-id session')))
     (is (= 3 (repl-value1 session' (code (+ 1 2)))))))
 
@@ -239,7 +244,7 @@
                                      :file (slurp "load-file-test/nrepl/load_file_sample2.clj")
                                      :file-path "nrepl/load_file_sample2.clj"
                                      :file-name "load_file_sample2.clj"})]
-    (wait-for #(some-> (resolve 'nrepl.load-file-sample2/started) deref))
+    (is (wait-for #(some-> (resolve 'nrepl.load-file-sample2/started) deref)))
     (is+ {:status #{:done}} (message! session {:op "interrupt"}))
     (is+ {:status (mc/embeds #{:interrupted})}
          (-> resp
