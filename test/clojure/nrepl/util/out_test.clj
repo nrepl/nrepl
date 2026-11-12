@@ -43,6 +43,8 @@
       (.println System/err "Hello stderr")
       ;; Callbacks are invoked on nREPL's transport executor, so the tests have
       ;; to wait for them to have run instead of assuming they already have.
+      ;; The waits here aren't wrapped in `is`: the reporter prints a progress
+      ;; dot for every passing assertion, and the callbacks would catch it.
       (wait-for #(and (= 2 (count @out-calls)) (= 1 (count @err-calls))) 5000)
 
       (is+ #{[:test1 (newline->sys "Hello stdout\n")]
