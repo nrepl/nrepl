@@ -37,6 +37,42 @@
   [sym]
   (subs (str sym) 2))
 
+(defn- throwing-die
+  "Stands in for `cmd/die`, which would exit the JVM."
+  [& msg]
+  (throw (ex-info (apply str msg) {})))
+
+(defn- run-cli
+  "Runs the built-in client's REPL loop over `input`, calling `start` with the
+  client options that collect what it prints. Returns the printed values and
+  the error output."
+  [input start]
+  (let [>devnull (fn [& _] nil)
+        values (atom [])
+        errors (atom "")]
+    (binding [*in* (java.io.StringReader. input)]
+      (with-redefs [cmd/clean-up-and-exit >devnull]
+        (with-timeout 60000
+          (start {:prompt >devnull
+                  :out >devnull
+                  :err #(swap! errors str %)
+                  :value #(swap! values conj %)}))))
+    {:values @values :errors @errors}))
+
+(def ^:private ns-resolution-input
+  (str/join \newline ["::a"
+                      "(ns a)" "::a"
+                      "(ns b)" "::a"
+                      "(ns user)" "::a"
+                      "(require '[a :as z])" "::z/a"]))
+
+(defn- ns-resolution-output []
+  [(str (keyword (str *ns*) "a"))
+   "nil" ":a/a"
+   "nil" ":b/a"
+   "nil" ":user/a"
+   "nil" ":a/a"])
+
 (deftest repl-intro
   (is+ #"nREPL" (cmd/repl-intro)))
 
@@ -133,51 +169,33 @@
            (cmd/server-started-message server {:transport #'transport/bencode})))))
 
 (deftest ^:slow ack
+  ;; The child gets an explicit --port, so this also checks that the port it
+  ;; binds is the one it acks.
   (with-server-every-transport {:port 0, :handler (ack/handle-ack (server/default-handler))}
-    (with-process [_ ["java" "-Dnreplacktest=y"
-                      "-cp" (System/getProperty "java.class.path")
-                      "nrepl.main"
-                      "--ack" (str (:port *server*))
-                      "--transport" (var->str (:fn *transport*))]]
-      (let [acked-port (ack/wait-for-ack 100000)]
-        (when (is acked-port "Timed out waiting for ack")
-          (with-open [^nrepl.transport.FnTransport
-                      transport-2 (nrepl/connect :port acked-port
-                                                 :transport-fn (:fn *transport*))]
-            (let [client (nrepl/client transport-2 1000)]
-              ;; just a sanity check
-              (is (= "y" (eval-value1 client '(System/getProperty "nreplacktest")))))))))))
-
-(deftest ^:slow explicit-port-argument
-  (with-server-every-transport {:port 0, :handler (ack/handle-ack (server/default-handler))}
-    (let [ack-port (:port *server*)
-          bind-port (free-port)]
+    (let [bind-port (free-port)]
       (with-process [_ ["java" "-Dnreplacktest=y"
                         "-cp" (System/getProperty "java.class.path")
                         "nrepl.main"
                         "--port" (str bind-port)
-                        "--ack" (str ack-port)
+                        "--ack" (str (:port *server*))
                         "--transport" (var->str (:fn *transport*))]]
-        (is (= bind-port (ack/wait-for-ack 100000)))))))
+        (let [acked-port (ack/wait-for-ack 100000)]
+          (when (is (= bind-port acked-port))
+            (with-open [^nrepl.transport.FnTransport
+                        transport-2 (nrepl/connect :port acked-port
+                                                   :transport-fn (:fn *transport*))]
+              (let [client (nrepl/client transport-2 1000)]
+                ;; just a sanity check
+                (is (= "y" (eval-value1 client '(System/getProperty "nreplacktest"))))))))))))
 
 (deftest can-define-dynamic-vars
   (with-server-every-transport {:port 0}
     (testing "when a dynamic var is defined from CLI client, it stays dynamic (#271)"
-      (let [test-input      (str/join "\n" ["(def ^:dynamic *dyn* 1)"
-                                            "(binding [*dyn* 2] *dyn*)"])
-            expected-output ["#'user/*dyn*" "2"]
-            >devnull        (fn [& _] nil)]
-        (binding [*in* (java.io.PushbackReader. (java.io.StringReader. test-input))]
-          (with-redefs [cmd/clean-up-and-exit >devnull]
-            (let [results (atom [])]
-              (with-timeout 60000
-                (#'cmd/run-repl (:host *server*) (:port *server*)
-                                {:transport (:fn *transport*)
-                                 :prompt >devnull
-                                 :err >devnull
-                                 :out >devnull
-                                 :value #(swap! results conj %)}))
-              (is (= expected-output @results)))))))))
+      (is (= ["#'user/*dyn*" "2"]
+             (:values (run-cli (str/join "\n" ["(def ^:dynamic *dyn* 1)"
+                                               "(binding [*dyn* 2] *dyn*)"])
+                               #(#'cmd/run-repl (:host *server*) (:port *server*)
+                                                (assoc % :transport (:fn *transport*))))))))))
 
 (deftest raw-input-handling
   ;; The client reads input only to find form boundaries and sends the raw
@@ -186,18 +204,7 @@
   ;; input can't kill the REPL.
   (with-nrepl-server {:port 0}
     (let [drive (fn [input]
-                  (let [>devnull (fn [& _] nil)
-                        values (atom [])
-                        errors (atom "")]
-                    (binding [*in* (java.io.StringReader. input)]
-                      (with-redefs [cmd/clean-up-and-exit >devnull]
-                        (with-timeout 60000
-                          (#'cmd/run-repl "127.0.0.1" (:port *server*)
-                                          {:prompt >devnull
-                                           :err #(swap! errors str %)
-                                           :out >devnull
-                                           :value #(swap! values conj %)}))))
-                    {:values @values :errors @errors}))]
+                  (run-cli input #(#'cmd/run-repl "127.0.0.1" (:port *server*) %)))]
       (testing "a reader typo doesn't kill the session"
         (let [{:keys [values errors]} (drive ")\n(+ 1 2)")]
           (is (= ["3"] values))
@@ -277,17 +284,14 @@
   (testing "schemes handled by nREPL itself need no extra setup"
     (is (nil? (#'cmd/ensure-url-scheme-support! "nrepl")))
     (is (nil? (#'cmd/ensure-url-scheme-support! "nrepl+edn"))))
-  (testing "telnet is rejected, since the built-in client can't drive a tty transport"
-    (let [died (fn [& msg] (throw (ex-info (apply str msg) {})))]
-      (with-redefs [cmd/die died]
-        (is (thrown-with-msg? clojure.lang.ExceptionInfo #"does not support the tty transport"
-                              (#'cmd/ensure-url-scheme-support! "telnet"))))))
-  (testing "http(s) needs drawbridge, which isn't on the test classpath"
-    (let [died (fn [& msg] (throw (ex-info (apply str msg) {})))]
-      (with-redefs [cmd/die died]
-        (doseq [scheme ["http" "https"]]
-          (is (thrown-with-msg? clojure.lang.ExceptionInfo #"requires the nrepl/drawbridge library"
-                                (#'cmd/ensure-url-scheme-support! scheme))))))))
+  (with-redefs [cmd/die throwing-die]
+    (testing "telnet is rejected, since the built-in client can't drive a tty transport"
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo #"does not support the tty transport"
+                            (#'cmd/ensure-url-scheme-support! "telnet"))))
+    (testing "http(s) needs drawbridge, which isn't on the test classpath"
+      (doseq [scheme ["http" "https"]]
+        (is (thrown-with-msg? clojure.lang.ExceptionInfo #"requires the nrepl/drawbridge library"
+                              (#'cmd/ensure-url-scheme-support! scheme)))))))
 
 (deftest unix-socket-url-test
   (are [in out] (= out (#'cmd/unix-socket-url in))
@@ -302,33 +306,31 @@
 (deftest url-conflicting-options-test
   ;; A URL already says where to connect and over which transport, so options
   ;; that decide the same things are refused rather than silently dropped.
-  (let [died (fn [& msg] (throw (ex-info (apply str msg) {})))]
-    (with-redefs [cmd/die died]
-      (are [opts pattern] (thrown-with-msg?
-                           clojure.lang.ExceptionInfo pattern
-                           (#'cmd/reject-conflicting-url-options! "nrepl://h:1" opts))
-        {:socket "/tmp/s"}            #"--socket can't be combined"
-        {:port 12345}                 #"--port can't be combined"
-        {:transport #'transport/edn}  #"--transport can't be combined")
-      (testing "the defaults alone are not a conflict"
-        (is (nil? (#'cmd/reject-conflicting-url-options!
-                   "nrepl://h:1" {:transport #'transport/bencode})))))))
+  (with-redefs [cmd/die throwing-die]
+    (are [opts pattern] (thrown-with-msg?
+                         clojure.lang.ExceptionInfo pattern
+                         (#'cmd/reject-conflicting-url-options! "nrepl://h:1" opts))
+      {:socket "/tmp/s"}            #"--socket can't be combined"
+      {:port 12345}                 #"--port can't be combined"
+      {:transport #'transport/edn}  #"--transport can't be combined")
+    (testing "the defaults alone are not a conflict"
+      (is (nil? (#'cmd/reject-conflicting-url-options!
+                 "nrepl://h:1" {:transport #'transport/bencode}))))))
 
 (deftest tls-url-option-validation
-  (let [died (fn [& msg] (throw (ex-info (apply str msg) {})))]
-    (with-redefs [cmd/die died]
-      (are [url opts re] (thrown-with-msg? clojure.lang.ExceptionInfo re
-                                           (#'cmd/run-repl url nil opts))
-        ;; TLS URLs demand the TLS keys options
-        "nrepls://localhost:12345"     {}                          #"require --tls-keys-file or --tls-keys-str"
-        "nrepl+edns://localhost:12345" {}                          #"require --tls-keys-file or --tls-keys-str"
-        ;; TLS keys options are rejected for non-TLS URL schemes
-        "nrepl://localhost:12345"      {:tls-keys-str "irrelevant"} #"only supported for nrepls:// or nrepl\+edns://"
-        ;; TLS URLs without a usable host are rejected
-        "nrepls://"                    {:tls-keys-str "irrelevant"} #"Invalid URL"
-        "nrepls:///nohost"             {:tls-keys-str "irrelevant"} #"Can't extract a host"
-        ;; ... as are out-of-range ports
-        "nrepls://localhost:444401"    {:tls-keys-str "irrelevant"} #"Invalid port"))))
+  (with-redefs [cmd/die throwing-die]
+    (are [url opts re] (thrown-with-msg? clojure.lang.ExceptionInfo re
+                                         (#'cmd/run-repl url nil opts))
+      ;; TLS URLs demand the TLS keys options
+      "nrepls://localhost:12345"     {}                          #"require --tls-keys-file or --tls-keys-str"
+      "nrepl+edns://localhost:12345" {}                          #"require --tls-keys-file or --tls-keys-str"
+      ;; TLS keys options are rejected for non-TLS URL schemes
+      "nrepl://localhost:12345"      {:tls-keys-str "irrelevant"} #"only supported for nrepls:// or nrepl\+edns://"
+      ;; TLS URLs without a usable host are rejected
+      "nrepls://"                    {:tls-keys-str "irrelevant"} #"Invalid URL"
+      "nrepls:///nohost"             {:tls-keys-str "irrelevant"} #"Can't extract a host"
+      ;; ... as are out-of-range ports
+      "nrepls://localhost:444401"    {:tls-keys-str "irrelevant"} #"Invalid port")))
 
 (when-not win?
   ;; TLS is not exercised on Windows (see nrepl.tls-test).
@@ -342,39 +344,19 @@
                                                         :transport-fn transport-fn)]
           ;; Connect via the exact URL the server advertises in its startup
           ;; message (nrepls:// or nrepl+edns://).
-          (let [url (str (as-nrepl-uri server (transport/uri-scheme transport-fn)))
-                >devnull (fn [& _] nil)
-                results (atom [])]
-            (binding [*in* (java.io.PushbackReader. (java.io.StringReader. "(+ 1 2)"))]
-              (with-redefs [cmd/clean-up-and-exit >devnull]
-                (with-timeout 60000
-                  (#'cmd/run-repl url nil
-                                  {:tls-keys-str client-keys
-                                   :prompt >devnull
-                                   :err    >devnull
-                                   :out    >devnull
-                                   :value  #(swap! results conj %)}))
-                (is (= ["3"] @results)
-                    (str "connecting via " url))))))))))
+          (let [url (str (as-nrepl-uri server (transport/uri-scheme transport-fn)))]
+            (is (= ["3"] (:values (run-cli "(+ 1 2)"
+                                           #(#'cmd/run-repl url nil (assoc % :tls-keys-str client-keys)))))
+                (str "connecting via " url))))))))
 
 (deftest can-connect-via-url
   (with-server-every-transport {:port 0}
     (testing "the built-in client can connect using a URL routed through url-connect"
-      (let [url      (format "%s://%s:%d"
-                             (:slug *transport*)
-                             (:host *server*)
-                             (:port *server*))
-            >devnull (fn [& _] nil)]
-        (binding [*in* (java.io.PushbackReader. (java.io.StringReader. "(+ 1 2)"))]
-          (with-redefs [cmd/clean-up-and-exit >devnull]
-            (let [results (atom [])]
-              (with-timeout 60000
-                (#'cmd/run-repl url nil
-                                {:prompt >devnull
-                                 :err    >devnull
-                                 :out    >devnull
-                                 :value  #(swap! results conj %)}))
-              (is (= ["3"] @results)))))))))
+      (let [url (format "%s://%s:%d"
+                        (:slug *transport*)
+                        (:host *server*)
+                        (:port *server*))]
+        (is (= ["3"] (:values (run-cli "(+ 1 2)" #(#'cmd/run-repl url nil %)))))))))
 
 ;; Unix domain socket tests
 
@@ -402,9 +384,8 @@
                              (.redirectOutput ProcessBuilder$Redirect/INHERIT)
                              (.redirectError ProcessBuilder$Redirect/INHERIT)))]
         (try
-          (while (not (socket-file-connectable? sock-path))
-            (Thread/sleep 100))
-          (Thread/sleep 1000) ;; Extra wait to ensure the server is up.
+          (is (wait-for #(socket-file-connectable? sock-path) 60000)
+              "Timed out waiting for the server's socket")
           (send-unix-socket-message {:code "(System/exit 42)" :op :eval}
                                     sock-path)
           (is (= 42 (.waitFor server)))
@@ -413,53 +394,17 @@
 
 (deftest cmdline-namespace-resolution
   (testing "Ensuring that namespace resolution works in the cmdline repl"
-    (let [test-input (str/join \newline ["::a"
-                                         "(ns a)" "::a"
-                                         "(ns b)" "::a"
-                                         "(ns user)" "::a"
-                                         "(require '[a :as z])" "::z/a"])
-          expected-output [(str (keyword (str *ns*) "a"))
-                           "nil" ":a/a"
-                           "nil" ":b/a"
-                           "nil" ":user/a"
-                           "nil" ":a/a"]
-          >devnull (fn [& _] nil)]
-      (with-redefs [cmd/clean-up-and-exit >devnull]
-        (with-server-every-transport {:port 0}
-          (binding [*in* (java.io.PushbackReader. (java.io.StringReader. test-input))]
-            (let [results (atom [])]
-              (with-timeout 60000
-                (#'cmd/run-repl (:host *server*) (:port *server*)
-                                {:transport (:fn *transport*)
-                                 :prompt >devnull
-                                 :err >devnull
-                                 :out >devnull
-                                 :value #(swap! results conj %)}))
-              (is (= expected-output @results)))))))))
+    (with-server-every-transport {:port 0}
+      (is (= (ns-resolution-output)
+             (:values (run-cli ns-resolution-input
+                               #(#'cmd/run-repl (:host *server*) (:port *server*)
+                                                (assoc % :transport (:fn *transport*))))))))))
 
-(deftest ^:slow can-connect-to-unix-socket
+(deftest can-connect-to-unix-socket
   (when (is unix-domain-flavor)
-    (testing "We can connect to unix domain socker from the cli."
-      (let [test-input      (str/join \newline ["::a"
-                                                "(ns a)" "::a"
-                                                "(ns b)" "::a"
-                                                "(ns user)" "::a"
-                                                "(require '[a :as z])" "::z/a"])
-            expected-output [(str (keyword (str *ns*) "a"))
-                             "nil" ":a/a"
-                             "nil" ":b/a"
-                             "nil" ":user/a"
-                             "nil" ":a/a"]
-            >devnull        (fn [& _] nil)]
-        (with-redefs [cmd/clean-up-and-exit >devnull]
-          (with-server-every-transport {} ;; socket server is default
-            (binding [*in* (java.io.PushbackReader. (java.io.StringReader. test-input))]
-              (let [results (atom [])]
-                (with-timeout 60000
-                  (#'cmd/run-repl {:server  *server*
-                                   :options {:transport (:fn *transport*)
-                                             :prompt >devnull
-                                             :err >devnull
-                                             :out >devnull
-                                             :value #(swap! results conj %)}}))
-                (is (= expected-output @results))))))))))
+    (testing "We can connect to unix domain socket from the cli."
+      (with-server-every-transport {} ;; socket server is default
+        (is (= (ns-resolution-output)
+               (:values (run-cli ns-resolution-input
+                                 #(#'cmd/run-repl {:server  *server*
+                                                   :options (assoc % :transport (:fn *transport*))})))))))))
