@@ -7,6 +7,7 @@
   {:added "0.4"}
   (:require
    [nrepl.core :as nrepl]
+   [nrepl.misc :refer [response-for]]
    [nrepl.transport :as t]))
 
 ;; could be a lot fancier, but it'll do for now
@@ -45,7 +46,7 @@
       (h msg)
       (try
         (deliver @ack-port-promise port)
-        (t/send transport {:status :done})
+        (t/send transport (response-for msg :status :done))
         (catch Throwable _e)))))
 
 ;; TODO: could stand to have some better error handling around all of this
