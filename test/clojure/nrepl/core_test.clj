@@ -55,9 +55,9 @@
 (def-repl-test read-timeout
   ;; Clone through `client` so that a slow server can't fail the test before it
   ;; has even started.
-  (let [short-session (nrepl/client-session (nrepl/client transport 500)
+  (let [short-session (nrepl/client-session (nrepl/client transport 200)
                                             :session (nrepl/new-session client))]
-    (is (empty? (repl-values short-session "(Thread/sleep 1500) :ok")))))
+    (is (empty? (repl-values short-session "(Thread/sleep 1000) :ok")))))
 
 (def-repl-test concurrent-message-handling
   (testing "multiple messages can be handled on the same connection concurrently"
@@ -70,7 +70,7 @@
                                     (is (= [nil] (nrepl/response-values responses)))
                                     (- (System/currentTimeMillis) start-time))))
                               sessions
-                              [1000 500 0])]
+                              [600 300 0])]
       (is (apply > (map deref elapsed-times))))))
 
 (def-repl-test ^:tcp-and-unix ensure-transport-closeable
@@ -108,9 +108,9 @@
 
 (deftest server-starts-with-minimal-configuration
   (testing "Ensure server starts with minimal configuration"
-    (with-open [server (server/start-server)]
-      (let [transport (nrepl/connect :port (:port server))
-            client (nrepl/client transport Long/MAX_VALUE)]
+    (with-open [server (server/start-server)
+                ^java.io.Closeable transport (nrepl/connect :port (:port server))]
+      (let [client (nrepl/client transport Long/MAX_VALUE)]
         (is+ {:value "3"}
              (first (nrepl/message client {:op "eval" :code "(- 4 1)"})))))))
 
@@ -119,7 +119,6 @@
     (let [resp (repl-eval client "1 2 3 4 5 6 7 8 9 10")]
       (is+ {:value "1"} (first resp))
       (.close *server*)
-      (Thread/sleep 1000)
       (is (thrown-with-msg? Exception disconnected-re
                             (dotimes [_ 20]
                               (transport/recv transport)))))
@@ -149,13 +148,10 @@
       (is (= (:port s2) (ack/wait-for-ack 10000))))))
 
 (def-repl-test print-namespace-maps-binding
-  (when (resolve '*print-namespace-maps*)
-    (let [set-true (dorun (repl-eval session "(set! *print-namespace-maps* true)"))
-          true-val (first (repl-values session "*print-namespace-maps*"))
-          set-false (dorun (repl-eval session "(set! *print-namespace-maps* false)"))
-          false-val (first (repl-values session "*print-namespace-maps*"))]
-      (is (= true true-val))
-      (is (= false false-val)))))
+  (repl-eval! session "(set! *print-namespace-maps* true)")
+  (is (true? (repl-value1 session "*print-namespace-maps*")))
+  (repl-eval! session "(set! *print-namespace-maps* false)")
+  (is (false? (repl-value1 session "*print-namespace-maps*"))))
 
 ;;;; Classloader-related tests
 
