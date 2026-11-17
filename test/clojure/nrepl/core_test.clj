@@ -147,6 +147,10 @@
                                         :ack-port (:port s))]
       (is (= (:port s2) (ack/wait-for-ack 10000))))))
 
+(deftest wait-for-ack-gives-up
+  (ack/reset-ack-port!)
+  (is (nil? (ack/wait-for-ack 10))))
+
 (deftest ack-reply-carries-the-request-id
   ;; send-ack waits for a reply to its own request, so one without the :id
   ;; held up every server started with :ack-port by the client's timeout.
