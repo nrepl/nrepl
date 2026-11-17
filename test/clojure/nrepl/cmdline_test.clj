@@ -93,6 +93,10 @@
   (is+ [{:middleware :middleware :repl "true"} ["extra" "args"]]
        (cmd/args->cli-options ["-m" ":middleware" "-r" "true" "extra" "args"]))
 
+  (testing "-C is short for --color and takes no value"
+    (is+ {:color true :interactive true}
+         (first (cmd/args->cli-options ["-C" "-i"]))))
+
   (testing "having ^:concat metadata groups together collection values coming from CLI and config"
     (with-redefs [nrepl.config/config {:middleware (with-meta '[foo/middleware bar/middleware] {:concat true})}]
       (is+ [{:middleware '[foo/middleware bar/middleware baz/middleware]} []]

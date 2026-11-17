@@ -347,6 +347,7 @@ Exit:      Control+D or (exit) or (quit)"
 
 (def ^:private option-shorthands
   {"-i" "--interactive"
+   "-C" "--color"
    "-r" "--repl"
    "-f" "--repl-fn"
    "-c" "--connect"
