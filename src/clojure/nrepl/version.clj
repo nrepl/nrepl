@@ -35,12 +35,20 @@
   See also `version`."
   (get-version))
 
+(defn- parse-version
+  "Splits a version string into a map like `*clojure-version*`, where
+  :qualifier is nil for a release."
+  [version-string]
+  (let [[major minor incremental qualifier]
+        (rest (re-find #"(\d+)\.(\d+)\.(\d+)-?(.*)" version-string))
+        ->int #(some-> % Integer/parseInt)]
+    {:major (->int major)
+     :minor (->int minor)
+     :incremental (->int incremental)
+     :qualifier (not-empty qualifier)
+     :version-string version-string}))
+
 (def version
   "Current version of nREPL.
   Map of :major, :minor, :incremental, :qualifier, and :version-string."
-  (assoc (->> version-string
-              (re-find #"(\d+)\.(\d+)\.(\d+)-?(.*)")
-              rest
-              (map #(try (Integer/parseInt %) (catch Exception _e nil)))
-              (zipmap [:major :minor :incremental :qualifier]))
-         :version-string version-string))
+  (parse-version version-string))
