@@ -6,7 +6,7 @@
             [nrepl.util.lookup :as l :refer [lookup]])
   (:import (java.io ByteArrayOutputStream)))
 
-(deftest lookup-test
+(deftest lookup-info
   (testing "special sym lookup"
     (is+ not-empty (lookup 'clojure.core 'if)))
 
@@ -97,6 +97,6 @@
          (keep #(lookup (ns-name (:ns %)) (:name %))))
         (all-ns)))
 
-(deftest bencode-test
+(deftest lookup-results-are-bencodable
   (doseq [m (lookup-public-vars)]
     (is+ not-blank? (bencode-str m))))

@@ -11,7 +11,7 @@
 (def ^:dynamic *test-var1*)
 (def ^:dynamic *test-var2* :root)
 
-(deftest dynvar-defaults-test
+(deftest dynvar-defaults
   (testing "dynvar receives a default value from config"
     (with-redefs [config/config {:dynamic-vars {'nrepl.middleware.session-test/*test-var1* 1}}]
       (with-nrepl-server {}
@@ -33,7 +33,7 @@
 
 (def captured-thread (atom nil))
 
-(deftest sessions-closed-with-connection-test
+(deftest sessions-closed-with-connection
   (with-every-transport
     (reset! captured-thread nil)
     (let [idle-sess (promise)
@@ -83,7 +83,7 @@
         cloned-sess (nrepl/client-session client :session new-sess-id)]
     (is+ 3 (repl-value1 cloned-sess "*1"))))
 
-(deftest stop-server-closes-sessions-test
+(deftest stop-server-closes-sessions
   (with-every-transport
     (let [sid (promise)]
       (with-nrepl-server {}
@@ -99,14 +99,14 @@
   (is (= ["badpath" true]
          (repl-value1 session (code [*compile-path* *warn-on-reflection*])))))
 
-(def-repl-test exception-in-session-loop-test
+(def-repl-test exception-in-session-loop
   (testing "uncaught exception thrown by the exec task kills the session"
     (let [sess (nrepl/client-session client)]
       (is+ {:status #{:done :uncaught-session-exception :error}}
            (message! sess {:op "eval" :code "(+ 1 2)" :line "bad"}))
       (is (not (alive? (session-id sess)))))))
 
-(def-repl-test interrupt-keeps-session-alive-test
+(def-repl-test interrupt-keeps-session-alive
   (let [session' (nrepl/client-session client)
         resp (nrepl/message session' {:op "eval"
                                       :code (code (do (nrepl.test-helpers/capture-state "thread" (Thread/currentThread))
@@ -122,7 +122,7 @@
     (is (alive? (session-id session')))
     (is (= 3 (repl-value1 session' (code (+ 1 2)))))))
 
-(def-repl-test dynvars-across-sessions-test
+(def-repl-test dynvars-across-sessions
   (repl-eval! session (code (+ 2 3)))
   (is (= 5 (repl-value1 "*1")))
 
@@ -157,7 +157,7 @@
          (->> (repl-eval session (code (print (range 1000))))
               (mapv clean-response)))))
 
-(def-repl-test out-quota-test
+(def-repl-test out-quota
   (testing "new session"
     (is+ {:out "(0 1 "}
          (message! client {:op "eval"

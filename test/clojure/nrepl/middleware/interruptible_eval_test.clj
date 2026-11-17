@@ -192,7 +192,7 @@
   (some #(when (str/ends-with? (.getClassName ^StackTraceElement %) suffix) %)
         (.getStackTrace ex)))
 
-(def-repl-test preserves-source-location-test
+(def-repl-test preserves-source-location
   (testing "plain eval remembers source file for the compiled function"
     (repl-eval! (code (in-ns 'nrepl.middleware.interruptible-eval-test)))
     (message! {:op "eval" :code "(defn div0 [] (/ 1 0))"

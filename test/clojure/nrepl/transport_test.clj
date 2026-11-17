@@ -5,14 +5,14 @@
             [nrepl.transport :as sut])
   (:import (java.io BufferedInputStream BufferedOutputStream ByteArrayInputStream ByteArrayOutputStream)))
 
-(deftest bencode-safe-write-test
+(deftest bencode-safe-write
   (testing "safe-write-bencode only writes if the whole message is writable"
     (let [out (ByteArrayOutputStream.)]
       (is (thrown? IllegalArgumentException
                    (#'sut/safe-write-bencode out {"obj" (Object.)})))
       (is (empty? (.toByteArray out))))))
 
-(deftest malformed-bencode-input-test
+(deftest malformed-bencode-input
   (testing "if non-bencode input is passed, throw an informative error"
     (let [in (-> (.getBytes "123456789123456789123456789")
                  ByteArrayInputStream.
@@ -31,7 +31,7 @@
                             #"^nREPL message must be a map."
                             (sut/recv (sut/bencode in out)))))))
 
-(deftest parse-bencode-test
+(deftest parse-bencode
   (testing "keys are keywordized and byte strings are decoded, at any depth"
     (is (= {:op "eval"
             :code "(+ 1 2)"
@@ -45,7 +45,7 @@
              "nested" {"list" [(.getBytes "a") 1 {"deep" (.getBytes "b")}]}
              "nrepl.middleware.print/print" (.getBytes "clojure.core/pr")})))))
 
-(deftest parse-bencode-question-mark-keys-test
+(deftest parse-bencode-question-mark-keys
   (testing "empty list under a ?-ending key is treated as nil"
     (is (= {:op "eval"
             :nrepl.middleware.print/stream? nil
@@ -61,7 +61,7 @@
              "non-empty-value?" [1 2 3]
              "doesnt-end-with-q" []})))))
 
-(deftest parse-bencode-unencoded-test
+(deftest parse-bencode-unencoded
   ;; Bytes that are not valid UTF-8, so any decoding would corrupt them.
   (let [binary-data (byte-array [-119 80 78 71 13 10 26 10 0 -1 -2 -128])]
     (is+ (mc/equals

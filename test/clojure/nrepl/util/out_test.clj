@@ -13,7 +13,7 @@
 
 (use-fixtures :each reset-callbacks-fixture)
 
-(deftest test-wrap-standard-streams-idempotency
+(deftest wrap-standard-streams-idempotency
   (testing "wrap-standard-streams is idempotent"
     (let [original-out (:out @@#'out/original-print-streams)
           original-err (:err @@#'out/original-print-streams)]
@@ -29,7 +29,7 @@
         (is (identical? first-out System/out))
         (is (identical? first-err System/err))))))
 
-(deftest test-output-interception
+(deftest output-interception
   (testing "callbacks are invoked when output is written"
     (out/wrap-standard-streams)
     (let [out-calls (atom [])
@@ -53,7 +53,7 @@
       (is+ [[:test3 (newline->sys "Hello stderr\n")]]
            @err-calls))))
 
-(deftest test-root-binding-updates
+(deftest root-binding-updates
   (testing "*out* and *err* root bindings are updated to point to wrapped streams"
     (out/wrap-standard-streams)
     (let [out-calls (atom [])
@@ -74,7 +74,7 @@
       (is+ [[:test3 (newline->sys "Hello stderr\n")]]
            @err-calls))))
 
-(deftest test-error-handling-in-callbacks
+(deftest error-handling-in-callbacks
   (testing "exceptions in one callback shouldn't break others"
     (out/wrap-standard-streams)
     (let [out-calls (atom [])]
@@ -88,7 +88,7 @@
       (is+ (vec (repeat 10 (newline->sys "1\n")))
            @out-calls))))
 
-(deftest test-multibyte-character-handling
+(deftest multibyte-character-handling
   (doseq [buffer-len (range 10 20)
           prefix-len (range 1 (inc buffer-len))]
     (let [chunks   (atom [])

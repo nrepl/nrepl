@@ -3,7 +3,7 @@
    [clojure.test :refer [are deftest]]
    [nrepl.version :as version]))
 
-(deftest parse-version-test
+(deftest parse-version
   (are [s parsed] (= (assoc parsed :version-string s) (#'version/parse-version s))
     "1.8.0"          {:major 1 :minor 8 :incremental 0 :qualifier nil}
     "1.8.1-SNAPSHOT" {:major 1 :minor 8 :incremental 1 :qualifier "SNAPSHOT"}

@@ -259,7 +259,7 @@
           (is (tls-socket-exception? exception))))
       (is (evals-over-tls? server good-client-keys)))))
 
-(deftest tls-client-proxy-test
+(deftest client-proxy-forwards-to-tls-server
   (let [[server-keys client-keys] (gen-key-pair)]
     (with-redefs [tls-client-proxy/atomic-println (fn [& _] nil)]
       (with-open [server (server/start-server :tls? true :tls-keys-str server-keys)]

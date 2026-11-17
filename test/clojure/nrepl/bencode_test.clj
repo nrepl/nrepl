@@ -56,38 +56,38 @@
       (decode (or reader read-bencode))
       <bytes))
 
-(deftest test-netstring-reading
+(deftest netstring-reading
   (are [x y] (= (>input x read-netstring) y)
     "0:,"                ""
     "13:Hello, World!,"  "Hello, World!"
     "16:Hällö, Würld!,"  "Hällö, Würld!"
     "25:Здравей, Свят!," "Здравей, Свят!"))
 
-(deftest test-string-reading
+(deftest string-reading
   (are [x y] (= (>input x) y)
     "0:"                ""
     "13:Hello, World!"  "Hello, World!"
     "16:Hällö, Würld!"  "Hällö, Würld!"
     "25:Здравей, Свят!" "Здравей, Свят!"))
 
-(deftest test-integer-reading
+(deftest integer-reading
   (are [x y] (= (>input x) y)
     "i0e"     0
     "i42e"   42
     "i-42e" -42))
 
-(deftest test-list-reading
+(deftest list-reading
   (are [x y] (= (>input x) y)
     "le"                    []
     "l6:cheesee"            ["cheese"]
     "l6:cheese3:ham4:eggse" ["cheese" "ham" "eggs"]))
 
-(deftest test-map-reading
+(deftest map-reading
   (are [x y] (= (>input x) y)
     "de"            {}
     "d3:ham4:eggse" {"ham" "eggs"}))
 
-(deftest test-nested-reading
+(deftest nested-reading
   (are [x y] (= (>input x) y)
     "l6:cheesei42ed3:ham4:eggsee" ["cheese" 42 {"ham" "eggs"}]
     "d6:cheesei42e3:haml4:eggsee" {"cheese" 42 "ham" ["eggs"]}))
@@ -102,35 +102,35 @@
   [thing & [writer]]
   (.toString (>stream thing (or writer write-bencode)) "UTF-8"))
 
-(deftest test-netstring-writing
+(deftest netstring-writing
   (are [x y] (= (>output (>bytes x) write-netstring) y)
     ""               "0:,"
     "Hello, World!"  "13:Hello, World!,"
     "Hällö, Würld!"  "16:Hällö, Würld!,"
     "Здравей, Свят!" "25:Здравей, Свят!,"))
 
-(deftest test-byte-array-writing
+(deftest byte-array-writing
   (are [x y] (= (>output (>bytes x)) y)
     ""               "0:"
     "Hello, World!"  "13:Hello, World!"
     "Hällö, Würld!"  "16:Hällö, Würld!"
     "Здравей, Свят!" "25:Здравей, Свят!"))
 
-(deftest test-string-writing
+(deftest string-writing
   (are [x y] (= (>output x) y)
     ""               "0:"
     "Hello, World!"  "13:Hello, World!"
     "Hällö, Würld!"  "16:Hällö, Würld!"
     "Здравей, Свят!" "25:Здравей, Свят!"))
 
-(deftest test-input-stream-writing
+(deftest input-stream-writing
   (are [x y] (= (>output (ByteArrayInputStream. (>bytes x))) y)
     ""               "0:"
     "Hello, World!"  "13:Hello, World!"
     "Hällö, Würld!"  "16:Hällö, Würld!"
     "Здравей, Свят!" "25:Здравей, Свят!"))
 
-(deftest test-integer-writing
+(deftest integer-writing
   (are [x y] (= (>output x) y)
     0 "i0e"
     42 "i42e"
@@ -144,21 +144,21 @@
     (Integer/parseInt "42" 10) "i42e"
     (Long/parseLong "42" 10)   "i42e"))
 
-(deftest test-named-writing
+(deftest named-writing
   (are [x y] (= (>output x) y)
     :foo      "3:foo"
     :foo/bar  "7:foo/bar"
     'foo      "3:foo"
     'foo/bar  "7:foo/bar"))
 
-(deftest test-list-writing
+(deftest list-writing
   (are [x y] (= (>output x) y)
     nil                     "le"
     []                      "le"
     ["cheese"]              "l6:cheesee"
     ["cheese" "ham" "eggs"] "l6:cheese3:ham4:eggse"))
 
-(deftest test-map-writing
+(deftest map-writing
   (are [x y] (= (>output x) y)
     {}             "de"
     {"ham" "eggs"} "d3:ham4:eggse"
@@ -166,12 +166,12 @@
     {'ham "eggs"}  "d3:ham4:eggse"
     {:h/am "eggs"} "d4:h/am4:eggse"))
 
-(deftest test-nested-writing
+(deftest nested-writing
   (are [x y] (= (>output x) y)
     ["cheese" 42 {"ham" "eggs"}] "l6:cheesei42ed3:ham4:eggsee"
     {"cheese" 42 "ham" ["eggs"]} "d6:cheesei42e3:haml4:eggsee"))
 
-(deftest test-lexicographic-sorting
+(deftest lexicographic-sorting
   (let [source (zipmap ["ham" "eggs" "hamburger" "hamburg" "cheese"] (range))]
     (is (= "d6:cheesei4e4:eggsi1e3:hami0e7:hamburgi3e9:hamburgeri2ee"
            (>output source)))))
@@ -218,7 +218,7 @@
 ;; making any changes to `nrepl.bencode`, make sure to increase this number and
 ;; extensively run this locally.
 
-(defspec generative-roundtrip-test {:num-tests 30}
+(defspec generative-roundtrip {:num-tests 30}
   (tc.prop/for-all
    [value valid-bencode-input-generator]
    (= value (>input (>output value)))))

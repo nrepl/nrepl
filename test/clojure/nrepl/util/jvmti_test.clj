@@ -4,7 +4,7 @@
             [clojure.test :refer :all]))
 
 (when (and (>= misc/java-version 21) (not win?))
-  (deftest stop-thread-test
+  (deftest stop-thread
     (let [vol (volatile! 0)
           t (doto (Thread. #(while (vswap! vol inc))) .start)]
       ((requiring-resolve 'nrepl.util.jvmti/stop-thread) t)
