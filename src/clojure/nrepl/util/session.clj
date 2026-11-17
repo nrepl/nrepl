@@ -1,6 +1,8 @@
 (ns nrepl.util.session
   "Utilities and functions extracted from `nrepl.middleware.session`
-  to prevent a circular dependency between it and `nrepl.transport`.")
+  to prevent a circular dependency between it and `nrepl.transport`."
+  (:require
+   [nrepl.util.out :as out]))
 
 (def ^:private sessions
   "Stores the mapping session-id->session for all sessions of the process."
@@ -26,6 +28,9 @@
   [session]
   (let [{:keys [close id]} (meta session)]
     (when close (close))
+    ;; Output forwarded with `forward-system-output` is sent as the session's.
+    (out/remove-callback :out id)
+    (out/remove-callback :err id)
     (swap! sessions dissoc id)))
 
 (defn close-transport-sessions

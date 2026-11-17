@@ -7,7 +7,8 @@
    [nrepl.util.out :as out]))
 
 (defn forward-system-output-reply
-  "Add msg to `tracked-sessions-map`."
+  "Starts sending what's written to `System/out` and `System/err` as responses
+  to `msg`, until its session is closed."
   [{:keys [session] :as msg}]
   (when-let [session-id (:id (meta session))]
     ;; Idempotent - safe to call multiple times.
@@ -19,7 +20,7 @@
 
 (defn wrap-out
   "Enable forwarding of System/out and System/err output to client. To cancel
-  forwarding, discard the current session and create a new one.
+  forwarding, close the session it was requested in.
 
   NB: do not enable stdout forwarding if the client runs inside the same process
   as the server. This will lead to an infinite loop."
