@@ -156,6 +156,14 @@
                                 :transport (transport/fn-transport nil #(swap! sent conj %))})
     (is (= [{:id "42" :status #{:done}}] @sent))))
 
+(deftest failed-ack-stops-the-server
+  (let [ack-port (free-port)
+        port (free-port)]
+    (is (thrown? java.net.ConnectException
+                 (server/start-server :port port :ack-port ack-port)))
+    (is (thrown? java.net.ConnectException
+                 (nrepl/connect :port port)))))
+
 (def-repl-test print-namespace-maps-binding
   (repl-eval! session "(set! *print-namespace-maps* true)")
   (is (true? (repl-value1 session "*print-namespace-maps*")))
