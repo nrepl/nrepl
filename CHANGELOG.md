@@ -29,6 +29,7 @@
 - [#524](https://github.com/nrepl/nrepl/pull/524): `nrepl.version/version` has the `:qualifier` of a pre-release version (e.g. `"SNAPSHOT"`) instead of always `nil`.
 - [#524](https://github.com/nrepl/nrepl/pull/524): Make `-C` work as the shorthand for `--color` that `--help` says it is.
 - [#524](https://github.com/nrepl/nrepl/pull/524): Report a middleware that can't be found by name instead of failing with a `ClassCastException`.
+- [#524](https://github.com/nrepl/nrepl/pull/524): Exit with an error message instead of a stack trace when filesystem sockets aren't available.
 - [#511](https://github.com/nrepl/nrepl/pull/511): `lookup` leaves `:file` out for a var with no file, rather than sending an empty list in its place.
 - [#494](https://github.com/nrepl/nrepl/pull/494): Mark `nrepl.socket.junixsocket` as `^:no-doc`, so cljdoc can analyze nREPL without junixsocket on the classpath.
 
