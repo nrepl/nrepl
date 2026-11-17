@@ -34,8 +34,7 @@
    => (wait-for-ack)
    59872 ; the port of the server started via start-server"
   [timeout]
-  (let [f (future @@ack-port-promise)]
-    (deref f timeout nil)))
+  (deref @ack-port-promise timeout nil))
 
 (defn handle-ack
   "Middleware that handles the \"ack\" op by delivering the port value
