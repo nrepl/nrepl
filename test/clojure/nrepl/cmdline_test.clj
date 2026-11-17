@@ -282,7 +282,7 @@
         (is (= "(+ 3 4)" (:code (#'cmd/read-form-for-server rdr))))
         (is (= :nrepl.cmdline/eof (#'cmd/read-form-for-server rdr)))))))
 
-(deftest connect-url-scheme-test
+(deftest connect-url-scheme
   (are [in out] (= out (#'cmd/connect-url-scheme in))
     "nrepl://localhost:7888" "nrepl"
     "NREPL://localhost"      "nrepl"
@@ -295,7 +295,7 @@
     ""                       nil
     nil                      nil))
 
-(deftest ensure-url-scheme-support-test
+(deftest ensure-url-scheme-support
   (testing "schemes handled by nREPL itself need no extra setup"
     (is (nil? (#'cmd/ensure-url-scheme-support! "nrepl")))
     (is (nil? (#'cmd/ensure-url-scheme-support! "nrepl+edn"))))
@@ -308,7 +308,7 @@
         (is (thrown-with-msg? clojure.lang.ExceptionInfo #"requires the nrepl/drawbridge library"
                               (#'cmd/ensure-url-scheme-support! scheme)))))))
 
-(deftest unix-socket-url-test
+(deftest unix-socket-url
   (are [in out] (= out (#'cmd/unix-socket-url in))
     "nrepl+unix:/tmp/n.sock"     [#'transport/bencode "/tmp/n.sock"]
     "nrepl+edn+unix:/tmp/n.sock" [#'transport/edn "/tmp/n.sock"]
@@ -318,7 +318,7 @@
     "/tmp/n.sock"                nil
     nil                          nil))
 
-(deftest url-conflicting-options-test
+(deftest url-conflicting-options
   ;; A URL already says where to connect and over which transport, so options
   ;; that decide the same things are refused rather than silently dropped.
   (with-redefs [cmd/die throwing-die]

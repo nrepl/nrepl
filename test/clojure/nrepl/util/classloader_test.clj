@@ -8,14 +8,14 @@
                  (take-while identity)
                  last))
 
-(deftest find-topmost-dcl-test
+(deftest find-topmost-dcl
   (let [dcl1 (DynamicClassLoader. top-cl)
         dcl2 (DynamicClassLoader. dcl1)]
     (is (= nil (classloader/find-topmost-dcl top-cl)))
     (is (= dcl1 (classloader/find-topmost-dcl dcl1)))
     (is (= dcl1 (classloader/find-topmost-dcl dcl2)))))
 
-(deftest dynamic-classloader-test
+(deftest dynamic-classloader
   (let [dcl1 (DynamicClassLoader. top-cl)
         dcl2 (DynamicClassLoader. dcl1)]
     (is (instance? DynamicClassLoader (classloader/dynamic-classloader top-cl)))

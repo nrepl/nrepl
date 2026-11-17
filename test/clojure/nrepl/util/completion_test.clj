@@ -26,7 +26,7 @@
   ([prefix ns]
    (apply distinct? (candidates prefix ns))))
 
-(deftest completions-test
+(deftest completion-candidates
   (testing "var completion"
     (is+ ["alength" "alias" "all-ns" "alter" "alter-meta!" "alter-var-root" "aset-long"]
          (candidates "al" 'clojure.core))
@@ -103,7 +103,7 @@
     (is+ (mc/embeds [{:candidate ".toString" :type :method}])
          (completions ".toString" 'clojure.core))))
 
-(deftest keyword-completions-test
+(deftest keyword-completions
   (testing "colon prefix"
     (is+ (mc/embeds [":doc" ":refer" ":refer-clojure"])
          (candidates ":" *ns*)))

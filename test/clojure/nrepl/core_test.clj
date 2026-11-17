@@ -19,7 +19,7 @@
         (println "Running on Clojure" (clojure-version) ", expected:" v)
         (or (nil? v) (.startsWith ^String (clojure-version) v)))))
 
-(def-repl-test ^:tcp-and-unix sanity-test
+(def-repl-test ^:tcp-and-unix sanity
   (testing "eval"
     (are [expr result] (= result (repl-value1 (code expr)))
       (+ 1 2) 3
@@ -130,7 +130,7 @@
     (is (thrown-with-msg? Exception disconnected-re
                           (repl-eval session "(+ 1 1)")))))
 
-(deftest test-url-connect
+(deftest url-connect
   (with-nrepl-server {:port 0}
     (with-open [^nrepl.transport.FnTransport
                 conn (nrepl/url-connect (format "%s://127.0.0.1:%s"
@@ -138,7 +138,7 @@
       (let [cli (nrepl/client conn Long/MAX_VALUE)]
         (is (= 2 (eval-value1 cli '(+ 1 1))))))))
 
-(deftest test-ack
+(deftest server-acks-its-port
   (with-open [s (server/start-server :transport-fn (:fn *transport*)
                                      :handler (-> (server/default-handler)
                                                   ack/handle-ack))]
@@ -186,7 +186,7 @@
         (iterate #(.getParent ^ClassLoader %))
         (take-while boolean))))
 
-(def-repl-test common-classloader-test
+(def-repl-test common-classloader
   (testing "Check if RT/baseLoader and ContexClassLoader have a common DCL ancestor"
     (repl-eval! (code (nrepl.test-helpers/capture-state
                        "base-loader"
@@ -199,7 +199,7 @@
       (is base-loader)
       (is (= base-loader ccl)))))
 
-(def-repl-test classloader-chain-doesnt-grow-test
+(def-repl-test classloader-chain-doesnt-grow
   (testing "after doing regular evals, the classloader chain remains of the same length"
     (let [chain-length (repl-value1 (code (count
                                            (nrepl.core-test/classloader-hierarchy))))]

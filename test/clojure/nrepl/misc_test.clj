@@ -5,7 +5,7 @@
             [clojure.java.io :as io])
   (:import [java.net URI]))
 
-(deftest sanitize-meta-test
+(deftest sanitize-meta
   (is (not-empty (:file (misc/sanitize-meta {:file "clojure/core.clj"}))))
 
   (is (= "/foo/bar/baz.clj"

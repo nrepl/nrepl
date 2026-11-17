@@ -233,7 +233,7 @@
            (handle {:value        (range 512)
                     ::print/quota 16})))))
 
-(deftest unicode-printing-test
+(deftest unicode-printing
   (testing-print "unicode characters are handled correctly"
     (let [big-naughty-string (slurp (io/resource "blns.txt"))]
       (is+ [{:value (pr-str big-naughty-string)}

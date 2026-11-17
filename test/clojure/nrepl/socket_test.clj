@@ -3,7 +3,7 @@
             [nrepl.socket :as socket])
   (:import (java.net InetSocketAddress ServerSocket Socket)))
 
-(deftest accept-sets-tcp-nodelay-test
+(deftest accept-sets-tcp-nodelay
   (with-open [^ServerSocket server (socket/inet-socket "127.0.0.1" 0)
               client (Socket.)]
     (.connect client (InetSocketAddress. "127.0.0.1" (.getLocalPort server)))
