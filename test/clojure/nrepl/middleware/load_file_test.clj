@@ -52,11 +52,14 @@
                   :file-name "source.clj"})))
 
 (def-repl-test load-file-huge-file
-  ;; Enough forms that compiling the file as a single unit would overflow the
-  ;; JVM's 64KB limit on a method's bytecode ("Method code too large!"), which
-  ;; is what happens somewhere past a thousand of these.
+  ;; "Huge" is about the bytecode the file compiles to, not its length in
+  ;; characters: a method's bytecode can't exceed 64KB on the JVM, so a file
+  ;; this size only loads if its forms are compiled one by one. The number of
+  ;; forms is the point, and padding the file out some cheaper way (comments,
+  ;; long strings) would leave nothing to test.
   (let [very-long-code (clojure.string/join "\n" (repeat 3000 "(+ 1 2 3 4 5 6 7 8 9 0)"))]
-    (is (< 65536 (count very-long-code)))
+    (testing "the file is too big to compile as a single unit"
+      (is (thrown? Exception (eval (read-string (str "(fn [] " very-long-code ")"))))))
     (is+ {:status #{:done}
           :value ["45"]}
          (message! {:op "load-file"
