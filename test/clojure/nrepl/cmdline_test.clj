@@ -38,7 +38,7 @@
   (subs (str sym) 2))
 
 (defn- throwing-die
-  "Stands in for `cmd/die`, which would exit the JVM."
+  "Stands in for `cmd/die`, putting its message where a test can match it."
   [& msg]
   (throw (ex-info (apply str msg) {})))
 
@@ -154,8 +154,9 @@
         (is+ base-middleware-stack (meta (:handler result)))))
 
     (testing "required middleware missing still fails"
-      (is (thrown? Exception
-                   (cmd/server-opts {:middleware ['nonexistent/required]}))))))
+      (with-redefs [cmd/die throwing-die]
+        (is (thrown-with-msg? clojure.lang.ExceptionInfo #"unable to resolve nonexistent/required"
+                              (cmd/server-opts {:middleware ['nonexistent/required]})))))))
 
 (deftest server-started-message
   (testing "default bind uses 127.0.0.1 in message and URI"

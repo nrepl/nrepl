@@ -28,6 +28,7 @@
 - [#524](https://github.com/nrepl/nrepl/pull/524): `wait-for-ack` no longer leaves a thread blocked forever when it times out.
 - [#524](https://github.com/nrepl/nrepl/pull/524): `nrepl.version/version` has the `:qualifier` of a pre-release version (e.g. `"SNAPSHOT"`) instead of always `nil`.
 - [#524](https://github.com/nrepl/nrepl/pull/524): Make `-C` work as the shorthand for `--color` that `--help` says it is.
+- [#524](https://github.com/nrepl/nrepl/pull/524): Report a middleware that can't be found by name instead of failing with a `ClassCastException`.
 - [#511](https://github.com/nrepl/nrepl/pull/511): `lookup` leaves `:file` out for a var with no file, rather than sending an empty list in its place.
 - [#494](https://github.com/nrepl/nrepl/pull/494): Mark `nrepl.socket.junixsocket` as `^:no-doc`, so cljdoc can analyze nREPL without junixsocket on the classpath.
 
