@@ -235,5 +235,11 @@
       (log-exceptions
        (accept-connection-loop server consume-exception)))
     (when ack-port
-      ((requiring-resolve 'nrepl.ack/send-ack) (:port server) ack-port transport-fn))
+      (try
+        ((requiring-resolve 'nrepl.ack/send-ack) (:port server) ack-port transport-fn)
+        (catch Throwable t
+          ;; The caller gets the exception instead of the server, so nothing
+          ;; else could ever stop it.
+          (stop-server server)
+          (throw t))))
     server))
