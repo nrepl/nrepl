@@ -697,7 +697,7 @@ Exit:      Control+D or (exit) or (quit)"
       (let [{:keys [:nrepl/kind ::status]} (ex-data ex)]
         (case kind
           ::exit (clean-up-and-exit status)
-          (:nrepl.server/no-filesystem-sockets
+          (:nrepl.socket/no-filesystem-sockets
            :nrepl.server/invalid-start-request)
           (do
             (binding [*out* *err*]

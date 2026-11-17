@@ -79,6 +79,16 @@
 (deftest help
   (is+ #"Usage:" (cmd/help)))
 
+(deftest main-exits-cleanly-without-filesystem-sockets
+  (let [status (atom nil)
+        err (java.io.StringWriter.)]
+    (with-redefs [cmd/dispatch-commands (fn [_] (#'nrepl.socket/throw-no-sockets))
+                  cmd/clean-up-and-exit #(reset! status %)]
+      (binding [*err* err]
+        (cmd/-main)))
+    (is (= 2 @status))
+    (is+ #"filesystem sockets" (str err))))
+
 (deftest parse-cli-values
   (is+ {:other "string"
         :middleware :middleware
