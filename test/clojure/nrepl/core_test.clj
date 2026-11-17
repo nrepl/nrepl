@@ -59,6 +59,18 @@
                                             :session (nrepl/new-session client))]
     (is (empty? (repl-values short-session "(Thread/sleep 1000) :ok")))))
 
+(def-repl-test new-session-clones-by-id-or-map
+  (repl-eval! session "(set! *print-length* 7)")
+  (let [id (session-id session)]
+    (testing "an unrelated new session starts from the defaults"
+      (is (nil? (repl-value1 (nrepl/client-session client) "*print-length*"))))
+    (testing "the session to clone given as an id"
+      (is (= 7 (repl-value1 (nrepl/client-session client :clone id) "*print-length*"))))
+    (testing "the session to clone given in a map"
+      (is (= 7 (repl-value1 (nrepl/client-session client :clone {:session id
+                                                                 :client-name "test"})
+                            "*print-length*"))))))
+
 (def-repl-test concurrent-message-handling
   (testing "multiple messages can be handled on the same connection concurrently"
     (let [sessions (vec (repeatedly 3 #(nrepl/client-session client)))

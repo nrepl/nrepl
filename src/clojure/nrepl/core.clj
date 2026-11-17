@@ -77,12 +77,15 @@
 
 (defn new-session
   "Provokes the creation and retention of a new session, optionally as a clone
-   of an existing retained session, the id of which must be provided as a :clone
-   kwarg.  Returns the new session's id."
+   of an existing retained session.  The :clone kwarg is either the id of the
+   session to clone, or a map with that id under :session that can also carry
+   the :client-name and :client-version to send along.  Returns the new
+   session's id."
   [client & {:keys [clone]}]
   (let [resp (first (message client (merge {:op "clone"}
-                                           (when clone
-                                             (select-keys clone [:client-name :client-version :session])))))]
+                                           (cond
+                                             (map? clone) (select-keys clone [:client-name :client-version :session])
+                                             clone {:session clone}))))]
     (or (:new-session resp)
         (throw (IllegalStateException.
                 (str "Could not open new session; :clone response: " resp))))))
@@ -92,7 +95,8 @@
    client provided with a fixed :session id added to it.  Returns the
    head of the client's response seq, filtered to include only
    messages related to the :session id that will terminate when the session is
-   closed."
+   closed.  Without a :session, a new one is created, as a clone of :clone if
+   that's given (see `new-session`)."
   [client & {:keys [session clone]}]
   (let [session (or session (apply new-session client (when clone [:clone clone])))]
     (delimited-transport-seq client #{"session-closed" :session-closed} {:session session})))
