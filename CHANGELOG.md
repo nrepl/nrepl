@@ -26,6 +26,7 @@
 - [#507](https://github.com/nrepl/nrepl/issues/507): Set `TCP_NODELAY` on accepted connections, so that on Linux an eval's `done` no longer waits up to 40ms behind its value.
 - [#521](https://github.com/nrepl/nrepl/pull/521): Reply to `ack` requests with their `:id`, so that a server started with `:ack-port` (which is how `lein repl` starts one) no longer waits a second for a reply it couldn't recognise.
 - [#523](https://github.com/nrepl/nrepl/pull/523): Stop the server when `start-server` fails to deliver its ack, instead of throwing and leaving it running with no way to stop it.
+- [#527](https://github.com/nrepl/nrepl/pull/527): Stop forwarding `System/out` and `System/err` output to a session that asked for it with `forward-system-output` once that session is closed.
 - [#524](https://github.com/nrepl/nrepl/pull/524): `wait-for-ack` no longer leaves a thread blocked forever when it times out.
 - [#524](https://github.com/nrepl/nrepl/pull/524): `nrepl.version/version` has the `:qualifier` of a pre-release version (e.g. `"SNAPSHOT"`) instead of always `nil`.
 - [#524](https://github.com/nrepl/nrepl/pull/524): Make `-C` work as the shorthand for `--color` that `--help` says it is.
