@@ -386,6 +386,45 @@ to auto-discover the server, you need to write the port file yourself:
   (spit ".nrepl-port" (:port server)))
 ----
 
+=== Acknowledging the port to a launcher
+
+A tool that launches a server itself doesn't have to go through the port
+file or parse the server's output. It can ask the server to report its
+port back over nREPL, with what's known as an "ack". This is how
+`lein repl` finds the server it has started in the project's JVM.
+
+The launcher runs a small nREPL server of its own that handles the `ack`
+op, and passes that server's port to the one it launches:
+
+[source,clojure]
+----
+(require '[nrepl.ack :as ack]
+         '[nrepl.server :as server])
+
+(def ack-server
+  (server/start-server :handler (ack/handle-ack server/unknown-op)))
+
+(ack/reset-ack-port!)
+
+;; Launch the real server, pointing it at (:port ack-server), e.g. with
+;;   clj -M:nREPL -m nrepl.cmdline --ack <ack-port>
+;; or, in the other process, (server/start-server :ack-port <ack-port>)
+
+(ack/wait-for-ack 60000)
+;; => the port of the launched server, or nil after a minute
+----
+
+Unlike the port file, an ack can't be stale, doesn't depend on the working
+directory, and arrives only once the server accepts connections. There are
+a few limitations to keep in mind, though:
+
+* A process can wait for one ack at a time, so servers have to be launched
+  one after the other.
+* The ack is sent to `localhost` over TCP, and only by servers listening on
+  a port. A server listening on a filesystem socket has no port to report.
+* `start-server` throws if it can't deliver the ack, and the server it
+  started is stopped.
+
 === Version control
 
 Since `.nrepl-port` is a transient runtime artifact, you should add it to
