@@ -26,6 +26,7 @@
 - [#521](https://github.com/nrepl/nrepl/pull/521): Reply to `ack` requests with their `:id`, so that a server started with `:ack-port` (which is how `lein repl` starts one) no longer waits a second for a reply it couldn't recognise.
 - [#523](https://github.com/nrepl/nrepl/pull/523): Stop the server when `start-server` fails to deliver its ack, instead of throwing and leaving it running with no way to stop it.
 - [#524](https://github.com/nrepl/nrepl/pull/524): `wait-for-ack` no longer leaves a thread blocked forever when it times out.
+- [#524](https://github.com/nrepl/nrepl/pull/524): `nrepl.version/version` has the `:qualifier` of a pre-release version (e.g. `"SNAPSHOT"`) instead of always `nil`.
 - [#511](https://github.com/nrepl/nrepl/pull/511): `lookup` leaves `:file` out for a var with no file, rather than sending an empty list in its place.
 - [#494](https://github.com/nrepl/nrepl/pull/494): Mark `nrepl.socket.junixsocket` as `^:no-doc`, so cljdoc can analyze nREPL without junixsocket on the classpath.
 
