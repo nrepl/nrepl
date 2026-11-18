@@ -8,12 +8,11 @@
 
 ### New features
 
-- [#511](https://github.com/nrepl/nrepl/pull/511): `lookup` finds namespaces, by their name or an alias, with their doc and the file they load from.
+- [#511](https://github.com/nrepl/nrepl/pull/511): `lookup` is now able to locate namespaces.
 
 ### Changes
 
 - [#495](https://github.com/nrepl/nrepl/pull/495): **(Breaking)** Automatically nil out empty lists for ?-ending keys in Bencode transport.
-- [#498](https://github.com/nrepl/nrepl/pull/498): The `:interrupt` function of `nrepl.middleware.session/session-exec` returns the message of the execution it interrupted instead of its id.
 - [#501](https://github.com/nrepl/nrepl/pull/501): **(Breaking)** Remove deprecated function `nrepl.middleware.session/close-all-sessions!`.
 - [#501](https://github.com/nrepl/nrepl/pull/501): **(Breaking)** Session middleware no longer reacts to `:out-limit` parameter. Instead, `:out-quota` and `:err-quota` are introduced which can be used to limit the number of bytes printed into `*out*` and `*err*` respectively as a response to a single message.
 - [#512](https://github.com/nrepl/nrepl/pull/512): **(Breaking)** Close persistent sessions when the connection that created them is closed.
@@ -22,19 +21,17 @@
 
 ### Bugs fixed
 
-- [#498](https://github.com/nrepl/nrepl/pull/498): Send the `done` of an evaluation interrupted from another connection to the evaluation's own connection, rather than the interrupt's, where the client that sent the evaluation never got it.
-- [#507](https://github.com/nrepl/nrepl/issues/507): Set `TCP_NODELAY` on accepted connections, so that on Linux an eval's `done` no longer waits up to 40ms behind its value.
-- [#521](https://github.com/nrepl/nrepl/pull/521): Reply to `ack` requests with their `:id`, so that a server started with `:ack-port` (which is how `lein repl` starts one) no longer waits a second for a reply it couldn't recognise.
-- [#523](https://github.com/nrepl/nrepl/pull/523): Stop the server when `start-server` fails to deliver its ack, instead of throwing and leaving it running with no way to stop it.
-- [#527](https://github.com/nrepl/nrepl/pull/527): Stop forwarding `System/out` and `System/err` output to a session that asked for it with `forward-system-output` once that session is closed.
+- [#498](https://github.com/nrepl/nrepl/pull/498): Send the `done` of an evaluation interrupted from another connection to the evaluation's own connection, so the client knows the evaluation has ended.
+- [#507](https://github.com/nrepl/nrepl/issues/507): Set `TCP_NODELAY` on accepted connections (removes 40ms lag before `done` message).
+- [#521](https://github.com/nrepl/nrepl/pull/521): Reply to `ack` requests with their `:id`.
+- [#523](https://github.com/nrepl/nrepl/pull/523): Stop the server when `start-server` fails to deliver its ack.
+- [#527](https://github.com/nrepl/nrepl/pull/527): Stop forwarding `System/out` and `System/err` output to closed sessions.
 - [#524](https://github.com/nrepl/nrepl/pull/524): `wait-for-ack` no longer leaves a thread blocked forever when it times out.
 - [#524](https://github.com/nrepl/nrepl/pull/524): `nrepl.version/version` has the `:qualifier` of a pre-release version (e.g. `"SNAPSHOT"`) instead of always `nil`.
-- [#524](https://github.com/nrepl/nrepl/pull/524): Make `-C` work as the shorthand for `--color` that `--help` says it is.
-- [#524](https://github.com/nrepl/nrepl/pull/524): Report a middleware that can't be found by name instead of failing with a `ClassCastException`.
-- [#524](https://github.com/nrepl/nrepl/pull/524): Exit with an error message instead of a stack trace when filesystem sockets aren't available.
+- [#524](https://github.com/nrepl/nrepl/pull/524): Make `-C` work as the shorthand for `--color`.
+- [#524](https://github.com/nrepl/nrepl/pull/524): Report middleware that can't be found by name.
+- [#524](https://github.com/nrepl/nrepl/pull/524): Exit with an helpful message when filesystem sockets aren't available.
 - [#526](https://github.com/nrepl/nrepl/pull/526): `nrepl.core/new-session` and `client-session` accept the id of the session to clone as `:clone` again, which had been throwing since 1.4.0 changed it to a map.
-- [#511](https://github.com/nrepl/nrepl/pull/511): `lookup` leaves `:file` out for a var with no file, rather than sending an empty list in its place.
-- [#494](https://github.com/nrepl/nrepl/pull/494): Mark `nrepl.socket.junixsocket` as `^:no-doc`, so cljdoc can analyze nREPL without junixsocket on the classpath.
 
 ## 1.8.0 (2026-10-02)
 
