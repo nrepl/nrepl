@@ -1,7 +1,7 @@
 (ns nrepl.cmdline
-  "A proof-of-concept command-line client for nREPL.  Please see
-  e.g. REPL-y for a proper command-line nREPL client @
-  https://github.com/trptcolin/reply/"
+  "The command-line entry point of nREPL: starts a server, and comes with a
+  basic command-line client.  Please see e.g. REPL-y for a proper command-line
+  nREPL client @ https://github.com/trptcolin/reply/"
   {:author "Chas Emerick"}
   (:require
    [clojure.edn :as edn]
@@ -418,8 +418,10 @@ Exit:      Control+D or (exit) or (quit)"
   --verbose                   Show verbose output.")
 
 (defn- require-and-resolve
-  "Attempts to resolve the config `key`'s `value` as a namespaced symbol
-  and returns the related var if successful.  Otherwise calls `die`."
+  "Requires the namespace of `sym`, the value of the config `key`, and returns
+  the var it names, or nil if the namespace has no such var.  Calls `die` if
+  `sym` isn't a namespaced symbol, and throws if the namespace can't be
+  loaded."
   [key sym]
   (when-not (symbol? sym)
     (die (format "nREPL %s: %s is not a symbol\n" (name key) (pr-str sym))))
@@ -595,10 +597,10 @@ Exit:      Control+D or (exit) or (quit)"
             :repl-fn (options->repl-fn options)})))
 
 (defn interactive-repl
-  "Runs an interactive repl if :interactive CLI option is true otherwise
-  puts the current thread to sleep
+  "Runs an interactive REPL connected to `server`, using the :repl-fn of the
+  options.
   Takes nREPL server map and processed CLI options map.
-  Returns nil."
+  Returns once the REPL is done."
   [server options]
   (let [transport (:transport options)
         repl-fn (:repl-fn options)
@@ -643,8 +645,8 @@ Exit:      Control+D or (exit) or (quit)"
               port host uri))))
 
 (defn save-port-file
-  "Writes a file relative to project classpath with port number so other tools
-  can infer the nREPL server port.
+  "Writes the port number to `.nrepl-port` in the current directory, so other
+  tools can infer the nREPL server port.
   Takes nREPL server map and processed CLI options map.
   Returns nil."
   [server _options]
@@ -672,7 +674,8 @@ Exit:      Control+D or (exit) or (quit)"
 
 (defn dispatch-commands
   "Look at options to dispatch a specified command.
-  Takes CLI options map. May return a server map, nil, or exit."
+  Takes CLI options map. When starting a server, runs the interactive REPL
+  if asked to and otherwise blocks for as long as the server is running."
   [options]
   (cond (:help options)    (display-help)
         (:version options) (display-version)

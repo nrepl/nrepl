@@ -155,7 +155,6 @@
 ;; still happens (via thread dump when hung) with jdk 17.
 
 (defprotocol Writable
-  ;; Underscores were added to satisfy clj-kondo
   (write
     [w byte-array]
     [w byte-array offset length]
@@ -206,7 +205,7 @@
 
 (defprotocol AsBufferedOutputStreamSubset
   (buffered-output [x]
-    "Returns a buffered stream (subset of BufferedOutputStream) reading from x."))
+    "Returns a buffered stream (subset of BufferedOutputStream) writing to x."))
 
 (extend-protocol AsBufferedOutputStreamSubset
   ;; Use the Channels stream for input but not output to avoid the deadlock

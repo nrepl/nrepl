@@ -147,7 +147,7 @@
 
 ;; Parameters for Load File
 
-;; `file-name` and `file-path` are required.
+;; `file-name` and `file-path` are optional.
 ;; Return params are similar to `eval`
 
 (s/def ::file-name string?)

@@ -47,7 +47,7 @@
 
 (defn stop-thread
   "Stop the given `thread` using JVMTI StopThread function. Risks state
-  corruption. Should not be used prior to JDK21."
+  corruption. Should not be used prior to JDK20."
   [thread]
   @agent-loaded
   (JvmtiAgent/stopThread thread))

@@ -3,7 +3,7 @@ package nrepl.out;
 import java.io.*;
 
 /**
- * TeeOutputStream wraps a regular OutputStream and an additional Writer.
+ * TeeOutputStream wraps two OutputStreams.
  * Everything that goes through this stream is teed into both wrapped outputs.
  */
 public class TeeOutputStream extends OutputStream {

@@ -155,7 +155,8 @@
 (defrecord
  Server
  ;;A record representing an nREPL server.
- [server-socket ;; A java.net.ServerSocket for underlying server connection
+ [server-socket ;; A java.net.ServerSocket for underlying server connection,
+                ;; or a ServerSocketChannel for a filesystem socket server
   host ;; When starting an IP server, the hostname the server is bound to
   port ;; When starting an IP server, the port the server is bound to
   socket ;; When starting a filesystem socket server, the string path to the
@@ -181,7 +182,8 @@
        Note that POSIX does not specify the effect (if any) of the
        socket file's permissions (and some systems have ignored them),
        so any access control should be arranged via parent directories.
-   * :tls? - specify `true` to use TLS.
+   * :tls? - specify `true` to use TLS. Implied by either of the two
+     options below.
    * :tls-keys-file - A file that contains the certificates and private key.
    * :tls-keys-str - A string that contains the certificates and private key.
      :tls-keys-file or :tls-keys-str must be given if :tls? is true.
@@ -189,7 +191,7 @@
        defaults to the result of `(default-handler)`
    * :transport-fn — a function that, given a java.net.Socket corresponding
        to an incoming connection, will return a value satisfying the
-       nrepl.Transport protocol for that Socket.
+       nrepl.transport/Transport protocol for that Socket.
    * :ack-port — if specified, the port of an already-running server
        that will be connected to inform of the new server's port.
        Useful only by Clojure tooling implementations.

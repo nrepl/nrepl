@@ -216,9 +216,9 @@
 
    This is a multimethod that dispatches on the scheme of the URI provided
    (which can be a string or java.net.URI).  By default, implementations for
-   nrepl (corresponding to using the default bencode transport) and
-   telnet (using the `nrepl.transport/tty` transport) are
-   registered.  Alternative implementations may add support for other schemes,
+   nrepl (corresponding to using the default bencode transport), nrepl+edn
+   (using the `nrepl.transport/edn` transport) and telnet (using the
+   `nrepl.transport/tty` transport) are registered.  Alternative implementations may add support for other schemes,
    such as HTTP, HTTPS, JMX, existing message queues, etc."
   uri-scheme)
 
