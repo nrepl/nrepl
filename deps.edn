@@ -41,7 +41,7 @@
            :main-opts ["-m" "cljfmt.main"]}
 
   :kondo {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2026.05.25"}}
-          :main-opts ["-m" "clj-kondo.main" "--lint" "src"]}
+          :main-opts ["-m" "clj-kondo.main" "--lint" "src" "test"]}
 
   :eastwood {:extra-deps {jonase/eastwood {:mvn/version "1.4.3"}}
              :main-opts ["-m" "eastwood.lint"
