@@ -77,6 +77,20 @@
                                     #'nrepl.middleware.print/wrap-print
                                     #'nrepl.middleware.print/wrap-print])))
 
+(deftest dependency-cycle
+  ;; It takes three to make a cycle: between two middleware that require each
+  ;; other, one requirement simply wins.
+  (let [middleware (fn [id requires]
+                     (with-meta {:id id}
+                       {::middleware/descriptor
+                        {:expects #{} :requires #{requires} :handles {(name id) {}}}}))
+        ex (try (linearize-middleware-stack [(middleware :a "b")
+                                             (middleware :b "c")
+                                             (middleware :c "a")])
+                (catch clojure.lang.ExceptionInfo e e))]
+    (is+ #"Unable to satisfy nREPL middleware ordering requirements" (ex-message ex))
+    (is (= #{:a :b :c} (set (map (comp :id :implemented-by) (:cycle (ex-data ex))))))))
+
 (deftest NREPL-53-regression
   (is (= [0 1 2]
          (map :id
