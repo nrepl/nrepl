@@ -127,6 +127,7 @@
              (candidates "::core/ali" *ns*))))
 
   (testing "namespace aliases"
+    ;; Completes the `set` alias from the ns form, which is its only use.
     (is+ (mc/embeds ["::set/"])
          (candidates "::s" 'nrepl.util.completion-test)))
 

@@ -1,7 +1,6 @@
 (ns nrepl.middleware-test
   (:require
    [clojure.test :refer [deftest is are]]
-   [matcher-combinators.matchers :as mc]
    [nrepl.middleware :as middleware :refer [linearize-middleware-stack]]
    nrepl.middleware.interruptible-eval
    [nrepl.server :refer [default-middleware]]

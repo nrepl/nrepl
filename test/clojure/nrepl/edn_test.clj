@@ -7,8 +7,7 @@
             [nrepl.transport :as transport])
   (:import
    (java.lang AutoCloseable)
-   (java.nio.file Files)
-   (nrepl.server Server)))
+   (java.nio.file Files)))
 
 (deftest edn-transport-communication
   (with-open [server (server/start-server :transport-fn transport/edn)

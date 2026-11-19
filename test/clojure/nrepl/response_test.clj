@@ -4,7 +4,7 @@
    [nrepl.core :as nrepl]
    [nrepl.transport :as t])
   (:import
-   (java.util.concurrent BlockingQueue CountDownLatch LinkedBlockingQueue TimeUnit)))
+   (java.util.concurrent CountDownLatch)))
 
 (deftest response-seq
   (let [[local remote] (t/piped-transports)]

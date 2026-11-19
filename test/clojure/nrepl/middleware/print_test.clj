@@ -8,11 +8,10 @@
    IDs, and message IDs"
   (:refer-clojure :exclude [print])
   (:require [clojure.java.io :as io]
-            [clojure.test :refer [deftest is testing]]
+            [clojure.test :refer [deftest testing]]
             [matcher-combinators.matchers :as mc]
             [nrepl.core :as nrepl :refer [code]]
             [nrepl.middleware.print :as print]
-            [nrepl.misc :refer [ignore-exceptions]]
             [nrepl.test-helpers :refer :all]
             [nrepl.transport :as t])
   (:import (java.io Writer)))
