@@ -376,18 +376,23 @@
   [h]
   (fn [{:keys [op stdin session] :as msg}]
     (if (= op "stdin")
-      (let [^QueuePollingReader qpr (::queue-reader (meta session))]
-        (if (empty? stdin)
-          (.addEof qpr)
-          (.addInput qpr stdin))
-        (t/respond-to msg :status :done))
+      ;; Input given to the one-off session of a request that named none
+      ;; could never be read by anything.
+      (if-not (session-util/resolve-session (:id (meta session)))
+        (t/respond-to msg :status #{:error :unknown-session :done})
+        (let [^QueuePollingReader qpr (::queue-reader (meta session))]
+          (if (empty? stdin)
+            (.addEof qpr)
+            (.addInput qpr stdin))
+          (t/respond-to msg :status :done)))
       (h msg))))
 
 (set-descriptor! #'add-stdin
                  {:requires #{#'session}
-                  :expects #{"eval"}
+                  :expects #{}
                   :handles {"stdin"
-                            {:doc "Add content from the value of \"stdin\" to *in* in the current session."
-                             :requires {"stdin" "Content to add to *in*."}
+                            {:doc "Add content from the value of \"stdin\" to *in* in the current session. Send it when an evaluation reports the 'need-input' status, which means the code is waiting to read from *in*."
+                             :requires {"stdin" "Content to add to *in*. An empty value signals the end of the input."
+                                        "session" "The ID of the session to add the content to."}
                              :optional {}
-                             :returns {"status" "A status of \"need-input\" will be sent if a session's *in* requires content in order to satisfy an attempted read operation."}}}})
+                             :returns {"status" "'unknown-session' if the session could not be resolved or the request names none"}}}})

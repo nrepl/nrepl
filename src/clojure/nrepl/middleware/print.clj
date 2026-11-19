@@ -31,8 +31,8 @@
   1024)
 
 (def ^:dynamic *quota*
-  "A hard limit on the number of bytes printed for each value. Defaults to nil. No
-  limit will be used if not set."
+  "A hard limit on the number of characters printed for each value. Defaults to
+  nil. No limit will be used if not set."
   nil)
 
 (def configuration-keys
@@ -40,7 +40,7 @@
 
 (defn with-quota-bound-writer
   "Returns a `java.io.Writer` that wraps `writer` and throws `QuotaExceeded` once
-  it has written more than `quota` bytes if `throw-on-exceeded?` is true, otherwise
+  it has written more than `quota` characters if `throw-on-exceeded?` is true, otherwise
   only truncate the output."
   ^Writer
   [^Writer writer quota throw-on-exceeded?]
@@ -155,7 +155,7 @@
   * `::buffer-size` – the size of the buffer to use when streaming results.
   Defaults to 1024.
 
-  * `::quota` – a hard limit on the number of bytes printed for each value.
+  * `::quota` – a hard limit on the number of characters printed for each value.
 
   * `::keys` – a seq of the keys in the response whose values should be printed.
 
@@ -177,5 +177,5 @@
    "nrepl.middleware.print/options" "A map of options to pass to the printing function. Defaults to `nil`."
    "nrepl.middleware.print/stream?" "If logical true, the result of printing each value will be streamed to the client over one or more messages."
    "nrepl.middleware.print/buffer-size" "The size of the buffer to use when streaming results. Defaults to 1024."
-   "nrepl.middleware.print/quota" "A hard limit on the number of bytes printed for each value."
+   "nrepl.middleware.print/quota" "A hard limit on the number of characters printed for each value."
    "nrepl.middleware.print/keys" "A seq of the keys in the response whose values should be printed."})

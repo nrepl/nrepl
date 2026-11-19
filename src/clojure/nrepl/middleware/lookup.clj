@@ -26,6 +26,8 @@
 
 (defn lookup-reply
   [{:keys [session sym ns lookup-fn] :as msg}]
+  (when-not sym
+    (throw (IllegalArgumentException. "The \"sym\" parameter is required.")))
   (let [the-ns (if ns (symbol ns) (symbol (str (@session #'*ns*))))
         sym (symbol sym)
         lookup-fn (or (try
@@ -58,5 +60,5 @@
                              :requires {"sym" "The symbol to lookup."}
                              :optional {"ns" "The namespace in which we want to do lookup. Defaults to `*ns*`."
                                         "lookup-fn" "The fully qualified name of a lookup function to use instead of the default one (e.g. `my.ns/lookup`)."}
-                             :returns {"info" "A map of the symbol's info."}}}
+                             :returns {"info" "A map of the symbol's info. Empty if the symbol can't be resolved."}}}
                   :session-dynvars #{#'*lookup-fn*}})

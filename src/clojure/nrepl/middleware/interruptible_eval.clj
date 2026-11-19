@@ -191,21 +191,31 @@
                   :expects #{}
                   :handles {"eval"
                             {:doc "Evaluates code. Note that unlike regular stream-based Clojure REPLs, nREPL's `\"eval\"` short-circuits on first error (regardless whether it occurs during read, eval, or print) and will not try to read and execute the remaining code in the message."
-                             :requires {"code" "The code to be evaluated."
-                                        "session" "The ID of the session within which to evaluate the code."}
+                             :requires {"code" "The code to be evaluated."}
                              :optional (merge caught/wrap-caught-optional-arguments
                                               print/wrap-print-optional-arguments
-                                              {"id" "An opaque message ID that will be included in responses related to the evaluation, and which may be used to restrict the scope of a later \"interrupt\" operation."
+                                              {"session" "The ID of the session within which to evaluate the code. Without one, the code is evaluated in a one-off session that is discarded afterwards: nothing it sets (`*ns*`, `*1`, `*e` and other dynamic vars) carries over to later requests, it can't be interrupted, and it can't be given input, so code reading from `*in*` waits forever."
+                                               "id" "An opaque message ID that will be included in responses related to the evaluation, and which may be used to restrict the scope of a later \"interrupt\" operation."
                                                "eval" "A fully-qualified symbol naming a var whose function value will be used to evaluate [code], instead of `clojure.core/eval` (the default)."
                                                "ns" "The namespace in which to perform the evaluation. The supplied namespace must exist already (e.g. be loaded). If no namespace is specified the evaluation falls back to `*ns*` for the session in question."
                                                "file" "The path to the file containing [code]. `clojure.core/*file*` will be bound to this."
-                                               "file-name" "Name of source file, e.g. io.clj. Do not confuse with `file` param which contains full path while `file-name` is only the short file name. Both parameters are needed to properly set the bytecode location metadata."
+                                               "file-name" "Name of source file, e.g. io.clj. Do not confuse with `file` param which contains full path while `file-name` is only the short file name. Defaults to the last component of `file`."
                                                "line" "The line number in [file] at which [code] starts."
                                                "column" "The column number in [file] at which [code] starts."
-                                               "out-quota" "Maximum number of bytes printed into *out* by this evaluation."
-                                               "err-quota" "Maximum number of bytes printed into *err* by this evaluation."
-                                               "read-cond" "The options passed to the reader before the evaluation. Useful when middleware in a higher layer wants to process reader conditionals."})
-                             :returns {"ns" "*ns*, after successful evaluation of `code`."
-                                       "value" "The result of evaluating `code`, often `read`able. This printing is provided by the `print` middleware. Superseded by `ex` and `root-ex` if an exception occurs during evaluation."
+                                               "out-quota" "Maximum number of characters printed into *out* by this evaluation. Anything past it is dropped."
+                                               "err-quota" "Maximum number of characters printed into *err* by this evaluation. Anything past it is dropped."
+                                               "read-cond" "How the reader treats reader conditionals: \"allow\" (the default) or \"preserve\". Useful when middleware in a higher layer wants to process reader conditionals."})
+                             :returns {"ns" "*ns*, after the evaluation of a form in `code`. Sent along with each `value`."
+                                       "value" "The result of evaluating a form in `code`, often `read`able. One is sent for every form evaluated. This printing is provided by the `print` middleware. Superseded by `ex` and `root-ex` if an exception occurs during evaluation."
+                                       "out" "Content written to *out* by the evaluated code."
+                                       "err" "Content written to *err* by the evaluated code, including the report of an exception it threw."
                                        "ex" "The type of exception thrown, if any. If present, then `:value` will be absent."
-                                       "root-ex" "The type of the root exception thrown, if any. If present, then `:value` will be absent."}}}})
+                                       "root-ex" "The type of the root exception thrown, if any. If present, then `:value` will be absent."
+                                       "nrepl.middleware.print/truncated-keys" "The keys of the response whose printed values were cut short by `nrepl.middleware.print/quota`."
+                                       "status" "'eval-error' along with `ex` and `root-ex` if an exception was thrown
+'need-input' if the evaluated code is waiting to read from *in*; answer with the \"stdin\" op
+'interrupted' if the evaluation was stopped by the \"interrupt\" op
+'nrepl.middleware.print/truncated' if a printed value was cut short by `nrepl.middleware.print/quota`
+'namespace-not-found' if `ns` names a namespace that isn't loaded
+'no-code' if `code` is missing
+'unknown-code-type' if `code` is neither a string nor a collection of forms"}}}})

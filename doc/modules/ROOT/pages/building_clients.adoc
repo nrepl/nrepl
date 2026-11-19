@@ -38,8 +38,9 @@ A typical message exchange between a client and a server would be:
 status `done` signals that the `eval` message has been fully processed.
 
 NOTE: If you don't pass a session explicitly to some op, the server is supposed to create
-a transient (one-off) session on the fly. That's fine for most ops, as they don't interact
-with the session state, but it's generally a bad idea for user evaluations.
+a transient (one-off) session on the fly. That's fine for ops that don't interact
+with the session state, but it's generally a bad idea for user evaluations, and
+some ops don't work without a real session at all. See <<session-types>> below.
 
 The reference nREPL implementation bundles a
 https://github.com/nrepl/nrepl/blob/master/src/clojure/nrepl/cmdline.clj[simple command-line client implementation]
@@ -69,13 +70,40 @@ nREPL has two kinds of sessions:
   interruption, and persist dynamic bindings across evaluations (e.g. changing
   `\*ns*` in one eval is visible in the next).
 
-* *Ephemeral sessions* are created automatically when a message arrives without
-  a `:session` ID. They exist only for the duration of that single message --
-  dynamic binding changes are not preserved. Ephemeral sessions cannot be
-  interrupted.
+* *Ephemeral sessions* (or one-off sessions) are created automatically when a
+  message arrives without a `:session` ID. They exist only for the duration of
+  that single message -- dynamic binding changes are not preserved. Ephemeral
+  sessions cannot be interrupted.
 
 For user-facing evaluations, always use a persistent session. Ephemeral sessions
 are fine for stateless operations like `describe` or `ls-sessions`.
+
+What to expect when a request names no session:
+
+[cols="1,3"]
+|===
+| Op | Without a session
+
+| `describe`, `ls-sessions`, `clone`
+| Work the same.
+
+| `eval`, `load-file`
+| Run, but nothing the code sets (`\*ns*`, `\*1`, `\*e`, other dynamic vars)
+  is there for the next request, the evaluation can't be interrupted, and code
+  that reads from `\*in*` waits forever, as there is no way to answer its
+  `need-input`.
+
+| `completions`, `lookup`
+| Work, resolving against the default namespace (`user`) unless the request has
+  an `:ns`.
+
+| `interrupt`, `close`, `stdin`, `forward-system-output`
+| Fail with the `unknown-session` status.
+|===
+
+The responses to such a request still have a `:session` entry, holding the id of
+the one-off session. Don't hold on to it: the session is gone once the request
+is done, and sending that id back gets you `unknown-session`.
 
 === Lifecycle
 

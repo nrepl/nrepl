@@ -166,7 +166,7 @@ some or all of these options.
 * `\*buffer-size*`: size of the buffer to use when streaming results. Defaults
   to 1024.
 
-* `\*quota*`: a hard limit on the number of bytes printed for each value.
+* `\*quota*`: a hard limit on the number of characters printed for each value.
   Defaults to nil (no limit).
 
 ** Your nREPL client may not indicate if truncation has occurred.
