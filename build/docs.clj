@@ -15,10 +15,23 @@
   [^String s]
   (.replaceAll s "([*_])" "\\\\$1"))
 
+(defn- deprecation-text
+  "What a descriptor's deprecation map says, as a sentence or three."
+  [{:keys [since use note]}]
+  (str "Deprecated"
+       (when since (str " since " since))
+       "."
+       (when use (str " Use `" use "` instead."))
+       (when note (str " " note))))
+
 (defn- message-slot-markdown
-  [msg-slot-docs]
-  (str/join (for [[k v] msg-slot-docs]
-              (format "* `%s` %s\n" (pr-str k) (markdown-escape v)))))
+  ([msg-slot-docs] (message-slot-markdown msg-slot-docs nil))
+  ([msg-slot-docs deprecations]
+   (str/join (for [[k v] msg-slot-docs]
+               (format "* `%s` %s%s\n" (pr-str k) (markdown-escape v)
+                       (if-let [deprecation (get deprecations k)]
+                         (str " **" (deprecation-text deprecation) "**")
+                         ""))))))
 
 (defn- version-note
   "The optional nREPL version to mention in the generated header."
@@ -35,15 +48,18 @@ use in e.g. wiki pages, github, etc."
          "<small>generated from a verbose 'describe' response"
          (version-note version)
          "</small>\n\n## Operations"
-         (for [[op {:keys [doc optional requires returns]}] (sort ops)]
+         (for [[op {:keys [doc optional requires returns
+                           deprecated deprecated-params deprecated-returns]}] (sort ops)]
            (str "\n\n### `" (pr-str op) "`\n\n"
+                (when deprecated
+                  (str "**" (deprecation-text deprecated) "**\n\n"))
                 (markdown-escape doc) "\n\n"
                 "###### Required parameters\n\n"
-                (message-slot-markdown (sort requires))
+                (message-slot-markdown (sort requires) deprecated-params)
                 "\n\n###### Optional parameters\n\n"
-                (message-slot-markdown (sort optional))
+                (message-slot-markdown (sort optional) deprecated-params)
                 "\n\n###### Returns\n\n"
-                (message-slot-markdown (sort returns))))))
+                (message-slot-markdown (sort returns) deprecated-returns)))))
 
 ;; because `` is expected to work, this only escapes certain characters. As opposed to using + to properly escape everything.
 (defn- adoc-escape
@@ -54,11 +70,15 @@ use in e.g. wiki pages, github, etc."
       (str/escape {\` "``"})))
 
 (defn- message-slot-adoc
-  [msg-slot-docs]
-  (if (seq msg-slot-docs)
-    (str/join (for [[k v] msg-slot-docs]
-                (format "* `%s` %s\n" (pr-str k) (adoc-escape v))))
-    "{blank}"))
+  ([msg-slot-docs] (message-slot-adoc msg-slot-docs nil))
+  ([msg-slot-docs deprecations]
+   (if (seq msg-slot-docs)
+     (str/join (for [[k v] msg-slot-docs]
+                 (format "* `%s` %s%s\n" (pr-str k) (adoc-escape v)
+                         (if-let [deprecation (get deprecations k)]
+                           (str " *" (adoc-escape (deprecation-text deprecation)) "*")
+                           ""))))
+     "{blank}")))
 
 (defn- describe-adoc
   "Given a message containing the response to a verbose :describe message,
@@ -69,15 +89,18 @@ use in e.g. wiki pages, github, etc."
          "[small]#generated from a verbose 'describe' response"
          (version-note version)
          "#\n\n== Operations"
-         (for [[op {:keys [doc optional requires returns]}] (sort ops)]
+         (for [[op {:keys [doc optional requires returns
+                           deprecated deprecated-params deprecated-returns]}] (sort ops)]
            (str "\n\n=== `" (name op) "`\n\n"
+                (when deprecated
+                  (str "WARNING: " (adoc-escape (deprecation-text deprecated)) "\n\n"))
                 (adoc-escape doc) "\n\n"
                 "Required parameters::\n"
-                (message-slot-adoc (sort requires))
+                (message-slot-adoc (sort requires) deprecated-params)
                 "\n\nOptional parameters::\n"
-                (message-slot-adoc (sort optional))
+                (message-slot-adoc (sort optional) deprecated-params)
                 "\n\nReturns::\n"
-                (message-slot-adoc (sort returns))
+                (message-slot-adoc (sort returns) deprecated-returns)
                 "\n"))))
 
 (defn- format-response [format resp version]

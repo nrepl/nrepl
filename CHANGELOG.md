@@ -9,6 +9,7 @@
 ### New features
 
 - [#511](https://github.com/nrepl/nrepl/pull/511): `lookup` is now able to locate namespaces.
+- [#537](https://github.com/nrepl/nrepl/pull/537): Middleware descriptors can mark ops, request parameters, response slots and whole middleware as deprecated, which shows up in verbose `describe` responses and the ops reference, and flags requests that use a deprecated op or parameter (a `:nrepl/deprecations` slot on the final response, plus a warning in the server log).
 
 ### Changes
 

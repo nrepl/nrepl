@@ -29,7 +29,9 @@
                                 (nrepl.test-helpers/with-nrepl-client
                                  [transport client session message message!
                                   repl-eval repl-eval! repl-values repl-value1])
-                                (nrepl.middleware.print-test/testing-print [handle])]}
+                                (nrepl.middleware.print-test/testing-print [handle])
+                                (nrepl.deprecation-test/with-greetings-server
+                                 [message message!])]}
                      :consistent-alias   {:aliases {clojure.string str}}
                      ;; Enable this opt-in linter:
                      :unsorted-required-namespaces {:level :warning}}}

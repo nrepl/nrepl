@@ -149,7 +149,8 @@
   (let [stack (middleware/linearize-middleware-stack
                (into default-middleware additional-middleware))
         base-handler (middleware/wrap-describe unknown-op-handler stack)
-        full-handler (reduce (fn [handler m] (m handler)) base-handler stack)]
+        full-handler (-> (reduce (fn [handler m] (m handler)) base-handler stack)
+                         (middleware/wrap-deprecations stack))]
     (with-meta full-handler {:stack stack})))
 
 (defrecord

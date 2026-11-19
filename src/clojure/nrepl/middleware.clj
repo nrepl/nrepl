@@ -30,7 +30,19 @@
   provided [middleware-var], after assoc'ing in the var's fully-qualified name
   as the descriptor's \"implemented-by\" value. The value of `:session-dynvars`
   should be a set of dynamic variables that the middleware expects to be made
-  rebindable for each new session."
+  rebindable for each new session.
+
+  Deprecations are declared in the descriptor too, each as a map with any of
+  the string entries `:since` (the version it was deprecated in), `:use` (what
+  to use instead) and `:note` (anything else worth saying):
+
+  * `:deprecated` at the top level deprecates the middleware as a whole.
+  * In the map of an op under `:handles`, `:deprecated` deprecates the op, and
+    `:deprecated-params` and `:deprecated-returns` map the names of request
+    parameters and response keys to their deprecation.
+
+  They show up in verbose \"describe\" responses, and requests that use a
+  deprecated op or parameter are flagged; see `wrap-deprecations`."
   [middleware-var descriptor]
   (let [descriptor (assoc descriptor
                           :implemented-by (-> middleware-var var-name symbol))]
@@ -88,6 +100,88 @@
                                        "versions" "Map containing version maps (like *clojure-version*, e.g. major, minor, incremental, and qualifier keys) for values, component names as keys. Common keys include \"nrepl\" and \"clojure\"."
                                        "aux" "Map of auxiliary data contributed by all of the active nREPL middleware via :describe-fn functions in their descriptors."}}}})
 
+(defn- deprecation-message
+  "The sentence to log about `subject` (e.g. \"Op\") `name` being deprecated."
+  [subject name {:keys [since use note]}]
+  (str subject " " name " is deprecated"
+       (when since (str " since " since))
+       "."
+       (when use (str " Use " use " instead."))
+       (when note (str " " note))))
+
+(def ^:private logged-deprecations
+  "The deprecations that have made it to the log already, as each one is only
+  logged the first time it's run into."
+  (atom #{}))
+
+(defn- deprecations-by-op
+  "Maps the ops handled by the `stack` to what their descriptors deprecate
+  about them, leaving out the ops with nothing deprecated."
+  [stack]
+  (into {}
+        (for [middleware stack
+              [op description] (:handles (::descriptor (meta middleware)))
+              :let [deprecated (select-keys description [:deprecated :deprecated-params])]
+              :when (seq deprecated)]
+          [op deprecated])))
+
+(defn- request-deprecations
+  "The deprecated things `msg` makes use of, given the deprecations of its op."
+  [{:keys [op] :as msg} {:keys [deprecated deprecated-params]}]
+  (concat
+   (when deprecated
+     [(assoc deprecated :kind "op" :name op)])
+   (for [[param deprecation] (sort-by key deprecated-params)
+         :when (contains? msg (keyword param))]
+     (assoc deprecation :kind "param" :name param))))
+
+(defn- done? [{:keys [status]}]
+  (some #{:done "done"} (if (coll? status) status [status])))
+
+(defn- deprecation-reporting-transport
+  "Wraps `transport` to add `deprecations` to the response that completes the
+  request."
+  [transport deprecations]
+  (reify t/Transport
+    (recv [_this] (t/recv transport))
+    (recv [_this timeout] (t/recv transport timeout))
+    (send [this resp]
+      (t/send transport (cond-> resp
+                          (done? resp) (assoc :nrepl/deprecations deprecations)))
+      this)))
+
+(defn wrap-deprecations
+  "Wraps `handler`, which was built from the middleware in `stack`, so that
+  requests using an op or a parameter that a descriptor marks as deprecated
+  are flagged. For such a request:
+
+  * The response that carries the `done` status also has a
+    `:nrepl/deprecations` entry, a list of maps with `:kind` (\"op\" or
+    \"param\"), `:name` (for a parameter, of the parameter) and whichever of
+    `:since`, `:use` and `:note` the descriptor gives.
+  * A warning is logged, the first time each deprecated op or parameter is
+    used.
+
+  Returns `handler` itself when the stack deprecates nothing."
+  [handler stack]
+  (let [by-op (deprecations-by-op stack)]
+    (if (empty? by-op)
+      handler
+      (fn [{:keys [op] :as msg}]
+        (let [deprecations (some->> (by-op op) (request-deprecations msg) seq vec)]
+          (if-not deprecations
+            (handler msg)
+            (do
+              (doseq [{:keys [kind name] :as deprecation} deprecations
+                      :let [id [op kind name]]
+                      :when (not (@logged-deprecations id))]
+                (swap! logged-deprecations conj id)
+                (misc/log :warning
+                          (if (= kind "op")
+                            (deprecation-message "Op" op deprecation)
+                            (deprecation-message (str "Parameter " name " of op") op deprecation))))
+              (handler (update msg :transport deprecation-reporting-transport deprecations)))))))))
+
 (defn- comparator
   [{a-requires :requires a-expects :expects a-handles :handles}
    {b-requires :requires b-expects :expects b-handles :handles}]
@@ -117,6 +211,8 @@
                             (when (nil? desc)
                               (misc/log :warning "No nREPL middleware descriptor in metadata of" m
                                         ", see nrepl.middleware/set-descriptor!"))
+                            (when-let [deprecation (:deprecated desc)]
+                              (misc/log :warning (deprecation-message "Middleware" m deprecation)))
                             (let [deps (concat expects requires)
                                   missing-deps (for [dep deps
                                                      :when (and (var? dep) (not (mware-set dep)))]

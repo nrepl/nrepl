@@ -58,7 +58,21 @@
 
 (s/def ::returns (s/map-of string? string?))
 
-(s/def ::description (s/keys :opt-un [::doc ::requires ::optional ::returns]))
+(s/def ::since string?)
+
+(s/def ::use string?)
+
+(s/def ::note string?)
+
+(s/def ::deprecated (s/keys :opt-un [::since ::use ::note]))
+
+(s/def ::deprecated-params (s/map-of string? ::deprecated))
+
+(s/def ::deprecated-returns (s/map-of string? ::deprecated))
+
+(s/def ::description (s/keys :opt-un [::doc ::requires ::optional ::returns
+                                      ::deprecated ::deprecated-params
+                                      ::deprecated-returns]))
 
 (s/def ::ops (s/map-of string? ::description))
 
