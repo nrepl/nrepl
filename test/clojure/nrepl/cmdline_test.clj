@@ -7,6 +7,7 @@
    [matcher-combinators.matchers :as m]
    [nrepl.ack :as ack]
    [nrepl.cmdline :as cmd]
+   [nrepl.config :as config]
    [nrepl.core :as nrepl]
    [nrepl.middleware :as middleware]
    [nrepl.server :as server]
@@ -108,23 +109,23 @@
          (first (cmd/args->cli-options ["-C" "-i"]))))
 
   (testing "having ^:concat metadata groups together collection values coming from CLI and config"
-    (with-redefs [nrepl.config/config {:middleware (with-meta '[foo/middleware bar/middleware] {:concat true})}]
+    (with-redefs [config/config {:middleware (with-meta '[foo/middleware bar/middleware] {:concat true})}]
       (is+ [{:middleware '[foo/middleware bar/middleware baz/middleware]} []]
            (cmd/args->cli-options ["-m" "[baz/middleware]"])))
-    (with-redefs [nrepl.config/config {:middleware (with-meta '[foo/middleware] {:concat true})}]
+    (with-redefs [config/config {:middleware (with-meta '[foo/middleware] {:concat true})}]
       (is+ [{:middleware '[foo/middleware]} []]
            (cmd/args->cli-options [])))
-    (with-redefs [nrepl.config/config {:middleware '[foo/middleware bar/middleware]}]
+    (with-redefs [config/config {:middleware '[foo/middleware bar/middleware]}]
       (is+ [{:middleware '[foo/middleware bar/middleware baz/middleware]} []]
            (cmd/args->cli-options ["-m" "^:concat [baz/middleware]"])))
     (is+ [{:middleware '[baz/middleware]} []]
          (cmd/args->cli-options ["-m" "^:concat [baz/middleware]"]))
-    (with-redefs [nrepl.config/config {:middleware (with-meta '[foo/middleware bar/middleware] {:concat true})}]
+    (with-redefs [config/config {:middleware (with-meta '[foo/middleware bar/middleware] {:concat true})}]
       (is+ [{:middleware '[foo/middleware bar/middleware baz/middleware]} []]
            (cmd/args->cli-options ["-m" "^:concat [baz/middleware]"]))))
 
   (testing "no ^:concat metadata - CLI overrides config"
-    (with-redefs [nrepl.config/config {:middleware '[old/middleware]}]
+    (with-redefs [config/config {:middleware '[old/middleware]}]
       (is+ [{:middleware '[new/middleware]} []]
            (cmd/args->cli-options ["-m" "[new/middleware]"])))))
 
@@ -391,21 +392,21 @@
 
 (deftest ^:slow basic-fs-socket-behavior
   (when (is unix-domain-flavor)
-    (let [sock-path (temp-file-name)]
-      ;; Use a Process rather than sh so we can see server errors
-      (let [cmd ["java" "-cp" (System/getProperty "java.class.path")
-                 "nrepl.main" "-s" sock-path]
-            server (.start (doto (ProcessBuilder. ^java.util.List cmd)
-                             (.redirectOutput ProcessBuilder$Redirect/INHERIT)
-                             (.redirectError ProcessBuilder$Redirect/INHERIT)))]
-        (try
-          (is (wait-for #(socket-file-connectable? sock-path) 60000)
-              "Timed out waiting for the server's socket")
-          (send-unix-socket-message {:code "(System/exit 42)" :op :eval}
-                                    sock-path)
-          (is (= 42 (.waitFor server)))
-          (finally
-            (.destroy server)))))))
+    (let [sock-path (temp-file-name)
+          ;; Use a Process rather than sh so we can see server errors
+          cmd ["java" "-cp" (System/getProperty "java.class.path")
+               "nrepl.main" "-s" sock-path]
+          server (.start (doto (ProcessBuilder. ^java.util.List cmd)
+                           (.redirectOutput ProcessBuilder$Redirect/INHERIT)
+                           (.redirectError ProcessBuilder$Redirect/INHERIT)))]
+      (try
+        (is (wait-for #(socket-file-connectable? sock-path) 60000)
+            "Timed out waiting for the server's socket")
+        (send-unix-socket-message {:code "(System/exit 42)" :op :eval}
+                                  sock-path)
+        (is (= 42 (.waitFor server)))
+        (finally
+          (.destroy server))))))
 
 (deftest cmdline-namespace-resolution
   (testing "Ensuring that namespace resolution works in the cmdline repl"

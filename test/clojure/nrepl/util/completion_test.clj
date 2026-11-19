@@ -3,8 +3,8 @@
   (:require [clojure.set :as set]
             [clojure.test :refer :all]
             [matcher-combinators.matchers :as mc]
-            [nrepl.util.completion :as completion :refer [completions]]
-            [nrepl.test-helpers :refer [is+]]))
+            [nrepl.test-helpers :refer [is+]]
+            [nrepl.util.completion :as completion :refer [completions]]))
 
 (def t-var "var" nil)
 (defn t-fn "fn" [x] x)

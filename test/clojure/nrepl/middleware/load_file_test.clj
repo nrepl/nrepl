@@ -1,6 +1,7 @@
 (ns nrepl.middleware.load-file-test
   {:author "Chas Emerick"}
   (:require
+   [clojure.string :as str]
    [clojure.test :refer :all]
    [matcher-combinators.matchers :as mc]
    [nrepl.core :as nrepl]
@@ -57,7 +58,7 @@
   ;; this size only loads if its forms are compiled one by one. The number of
   ;; forms is the point, and padding the file out some cheaper way (comments,
   ;; long strings) would leave nothing to test.
-  (let [very-long-code (clojure.string/join "\n" (repeat 3000 "(+ 1 2 3 4 5 6 7 8 9 0)"))]
+  (let [very-long-code (str/join "\n" (repeat 3000 "(+ 1 2 3 4 5 6 7 8 9 0)"))]
     (testing "the file is too big to compile as a single unit"
       (is (thrown? Exception (eval (read-string (str "(fn [] " very-long-code ")"))))))
     (is+ {:status #{:done}

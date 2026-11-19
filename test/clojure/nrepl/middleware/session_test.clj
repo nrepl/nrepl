@@ -6,8 +6,11 @@
    [nrepl.config :as config]
    [nrepl.core :as nrepl :refer [code]]
    [nrepl.test-helpers :refer :all]
-   [nrepl.util.session :as session-util]))
+   [nrepl.util.session :as session-util]
+   [nrepl.util.threading :as threading]))
 
+;; Unbound on purpose: the server config is what gives it a value.
+#_{:clj-kondo/ignore [:uninitialized-var]}
 (def ^:dynamic *test-var1*)
 (def ^:dynamic *test-var2* :root)
 
@@ -223,20 +226,20 @@
 (when-not win?
   (def-repl-test non-interruptible-stop-thread
     (testing "non-interruptible code can still be interrupted"
-      (with-redefs [nrepl.util.threading/force-stop-delay-ms 100]
-        (let [resp (repl-eval session (code
-                                       (do (def vol (volatile! 0))
-                                           (nrepl.test-helpers/capture-state "thread" (Thread/currentThread))
-                                                ;; This never stops on its own.
-                                           (while (vswap! vol inc)))))]
-          (is (wait-for #(nrepl.test-helpers/get-state "thread")))
-          (is+ {:status #{:done}}
-               (message! {:op "interrupt"}))
-          (is (wait-for #(not (.isAlive ^Thread (nrepl.test-helpers/get-state "thread")))))
-          ;; Verify that volatile is not changed anymore.
-          (let [v (repl-values session "@vol")]
-            (Thread/sleep 200)
-            (is (= v (repl-values session "@vol")))))))))
+      (with-redefs [threading/force-stop-delay-ms 100]
+        (repl-eval session (code
+                            (do (def vol (volatile! 0))
+                                (nrepl.test-helpers/capture-state "thread" (Thread/currentThread))
+                                ;; This never stops on its own.
+                                (while (vswap! vol inc)))))
+        (is (wait-for #(nrepl.test-helpers/get-state "thread")))
+        (is+ {:status #{:done}}
+             (message! {:op "interrupt"}))
+        (is (wait-for #(not (.isAlive ^Thread (nrepl.test-helpers/get-state "thread")))))
+        ;; Verify that volatile is not changed anymore.
+        (let [v (repl-values session "@vol")]
+          (Thread/sleep 200)
+          (is (= v (repl-values session "@vol"))))))))
 
 (def-repl-test interrupt-load-file
   (remove-ns 'nrepl.load-file-sample2)

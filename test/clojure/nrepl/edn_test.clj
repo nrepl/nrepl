@@ -1,5 +1,6 @@
 (ns nrepl.edn-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [clojure.java.io :as io]
+            [clojure.test :refer [deftest is testing]]
             [nrepl.core :as nrepl]
             [nrepl.server :as server]
             [nrepl.socket :as socket]
@@ -25,13 +26,13 @@
 (when socket/unix-domain-flavor
   (deftest edn-transport-unix-socket
     (let [tmpdir (Files/createTempDirectory
-                  (.toPath (clojure.java.io/as-file "target"))
+                  (.toPath (io/as-file "target"))
                   "edn-socket-test-"
                   (into-array java.nio.file.attribute.FileAttribute []))
           sock-path (str tmpdir "/socket")]
       (try
-        (with-open [server (server/start-server :transport-fn transport/edn
-                                                :socket sock-path)
+        (with-open [_server (server/start-server :transport-fn transport/edn
+                                                 :socket sock-path)
                     ^AutoCloseable conn (nrepl/connect :transport-fn transport/edn
                                                        :socket sock-path)]
           (let [client (nrepl/client conn 1000)]

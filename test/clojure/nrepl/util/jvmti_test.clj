@@ -1,7 +1,7 @@
 (ns nrepl.util.jvmti-test
-  (:require [nrepl.misc :as misc]
-            [nrepl.test-helpers :refer [wait-for win?]]
-            [clojure.test :refer :all]))
+  (:require [clojure.test :refer :all]
+            [nrepl.misc :as misc]
+            [nrepl.test-helpers :refer [wait-for win?]]))
 
 (when (and (>= misc/java-version 21) (not win?))
   (deftest stop-thread
