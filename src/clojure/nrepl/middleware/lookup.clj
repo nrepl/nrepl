@@ -26,6 +26,8 @@
 
 (defn lookup-reply
   [{:keys [session sym ns lookup-fn] :as msg}]
+  (when-not sym
+    (throw (IllegalArgumentException. "The \"sym\" parameter is required.")))
   (let [the-ns (if ns (symbol ns) (symbol (str (@session #'*ns*))))
         sym (symbol sym)
         lookup-fn (or (try
