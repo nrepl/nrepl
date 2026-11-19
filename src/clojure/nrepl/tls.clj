@@ -226,8 +226,9 @@
    (key-manager key-store key-store-password)))
 
 (defn- ssl-context-generator
-  "Returns a function that yields SSL contexts. Takes a PKCS8 key file, a
-  certificate file, and optionally, a trusted CA certificate used to verify peers."
+  "Returns a function that yields SSL contexts. Takes a private key, its
+  certificate chain, and optionally, a trusted CA certificate used to verify
+  peers."
   ([key certs ca-cert]
    (let [key-manager (key-manager (key-store key certs))
          trust-manager (trust-manager (trust-store ca-cert))]

@@ -7,7 +7,8 @@ import java.nio.charset.Charset;
 /**
  * An OutputStream that buffers incoming bytes and sends complete lines
  * (ending with newline) to a network sender. Incomplete lines are held
- * in buffer until completed.
+ * in buffer until completed, the buffer fills up, or the stream is flushed
+ * or closed.
  */
 public class CallbackBufferedOutputStream extends OutputStream {
     private final IFn callback;

@@ -34,7 +34,8 @@
   (delay (Executors/newCachedThreadPool (thread-factory "nREPL-server-%d"))))
 
 (def transport-executor
-  "Executor used to run the transport handler loop and handle individual requests."
+  "Executor used to run the read loops of transports, the callbacks forwarding
+  system output, and the response printer of the command-line client."
   (delay (Executors/newCachedThreadPool (thread-factory "nREPL-transport-%d"))))
 
 (def handle-executor
@@ -70,7 +71,7 @@
     (misc/jvmti-agent-enabled?) (jvmti-stop-thread t)
 
     (not (misc/attach-self-enabled?))
-    (misc/log "Cannot stop thread on JDK21+ without -Djdk.attach.allowAttachSelf"
+    (misc/log "Cannot stop thread on JDK20+ without -Djdk.attach.allowAttachSelf"
               "enabled, see https://docs.nrepl.org/nrepl/installation.html#jvmti.")))
 
 (def ^:private force-stop-delay-ms 5000)

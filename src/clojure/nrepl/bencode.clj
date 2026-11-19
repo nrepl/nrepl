@@ -154,7 +154,7 @@
 ;; And the public facing API: `read-netstring`.
 
 (defn read-netstring
-  "Reads a classic netstring from input—an InputStream. Returns the
+  "Reads a classic netstring from input—a PushbackInputStream. Returns the
   contained binary data as byte array."
   ^bytes [input]
   (let [content (read-netstring* input)]
