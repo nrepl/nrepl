@@ -116,6 +116,55 @@ the handled `:op` and a value that contains any of four entries:
 ** `:returns`, a map of slots that may be found in messages sent in response
     to handling the indicated `:op`
 
+=== Deprecations
+
+A descriptor is also where a middleware says what it has deprecated. A
+deprecation is a map with any of three string entries: `:since` (the version it
+was deprecated in), `:use` (what to use instead) and `:note` (anything else worth
+saying). It can go in three places:
+
+* `:deprecated` in the map of an op deprecates the op.
+* `:deprecated-params` and `:deprecated-returns` in the map of an op deprecate
+  request parameters and response slots. Both are maps from the name of the slot
+  to its deprecation.
+* `:deprecated` at the top level of the descriptor deprecates the middleware as
+  a whole.
+
+[source,clojure]
+----
+(set-descriptor! #'wrap-greetings
+  {:requires #{}
+   :expects #{}
+   :handles {"hello" {:doc "Says hello."
+                      :returns {"greeting" "The greeting."}
+                      :deprecated {:since "1.9.0" :use "greet"}}
+             "greet" {:doc "Greets."
+                      :optional {"name" "Who to greet."
+                                 "who" "Who to greet."}
+                      :returns {"greeting" "The greeting."}
+                      :deprecated-params {"who" {:since "1.9.0" :use "name"}}}}})
+----
+
+Keep describing a deprecated parameter under `:optional` (or `:requires`) for as
+long as it's accepted: `:deprecated-params` only adds to that.
+
+Declaring a deprecation does three things:
+
+* Verbose `describe` responses carry it, like the rest of the op's description,
+  so clients and tools can check what they use against it. The
+  xref:ops.adoc[ops reference] is generated from the same data and marks
+  deprecated ops and slots.
+* A request that uses a deprecated op, or sends a deprecated parameter, is
+  flagged: the response that completes it (the one with the `done` status)
+  gets a `:nrepl/deprecations` slot listing what it ran into. See
+  xref:building_clients.adoc#deprecations[Deprecations] in the client guide.
+* The server logs a warning the first time each deprecated op or parameter is
+  used, and whenever a handler is built with a deprecated middleware in it.
+
+NOTE: Requests are flagged by handlers built with `nrepl.server/default-handler`.
+If you assemble a handler yourself, wrap it with
+`nrepl.middleware/wrap-deprecations` to get the same.
+
 WARN: Middleware can directly reference other middleware Vars in `:requires` and
 `:expects`, but all desired middleware must be listed explicitly during handler
 construction.  In nREPL 1.6+, referencing a middleware Var in `:requires` or
