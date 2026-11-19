@@ -5,7 +5,7 @@
    [clojure.test :refer :all]
    [matcher-combinators.matchers :as mc]
    [nrepl.core :as nrepl]
-   [nrepl.test-helpers :refer :all]))
+   [nrepl.test-helpers :refer [def-repl-test is+]]))
 
 (def-repl-test load-code-with-debug-info
   (message! {:op "load-file" :file "\n\n\n(defn function [])"})

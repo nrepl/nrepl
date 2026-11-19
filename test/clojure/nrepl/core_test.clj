@@ -4,7 +4,9 @@
    [nrepl.ack :as ack]
    [nrepl.core :as nrepl :refer [code]]
    [nrepl.server :as server]
-   [nrepl.test-helpers :refer :all]
+   [nrepl.test-helpers :refer [*server* *transport* def-repl-test eval-value1
+                               free-port get-state is+ session-id
+                               with-nrepl-client with-nrepl-server]]
    [nrepl.transport :as transport]
    [nrepl.util.classloader])
   (:import (java.net SocketException)))
