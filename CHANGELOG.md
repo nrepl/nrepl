@@ -39,6 +39,7 @@
 - [#536](https://github.com/nrepl/nrepl/pull/536): An evaluation that leaves its thread interrupted no longer breaks its session, or its whole connection over a UNIX socket.
 - [#536](https://github.com/nrepl/nrepl/pull/536): Nothing more is sent for an interrupted evaluation after its `done`, such as the `InterruptedException` it ends with.
 - [#536](https://github.com/nrepl/nrepl/pull/536): `*file*` no longer stays bound in a session after an evaluation with `:file` or a `load-file`.
+- [#536](https://github.com/nrepl/nrepl/pull/536): Write `.nrepl-port` before announcing the server, and never leave it visible half-written.
 
 ## 1.8.0 (2026-10-02)
 
