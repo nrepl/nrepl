@@ -174,6 +174,16 @@
                                 :transport (transport/fn-transport nil #(swap! sent conj %))})
     (is (= [{:id "42" :status #{:done}}] @sent))))
 
+(deftest connect-needs-somewhere-to-connect-to
+  (is (thrown-with-msg? IllegalArgumentException #"host plus port or a socket"
+                        (nrepl/connect)))
+  (is (thrown? java.net.ConnectException
+               (nrepl/connect :port (free-port)))))
+
+(deftest url-connect-rejects-unknown-schemes
+  (is (thrown-with-msg? IllegalArgumentException #"No nREPL support known for scheme gopher"
+                        (nrepl/url-connect "gopher://localhost:7888"))))
+
 (deftest failed-ack-stops-the-server
   (let [ack-port (free-port)
         port (free-port)]

@@ -17,7 +17,7 @@
                                                write-bencode
                                                write-netstring]])
   (:import clojure.lang.RT
-           [java.io ByteArrayInputStream ByteArrayOutputStream PushbackInputStream]))
+           [java.io ByteArrayInputStream ByteArrayOutputStream EOFException IOException PushbackInputStream]))
 
 (defn- >bytes
   [#^String input]
@@ -62,6 +62,20 @@
     "13:Hello, World!,"  "Hello, World!"
     "16:Hällö, Würld!,"  "Hällö, Würld!"
     "25:Здравей, Свят!," "Здравей, Свят!"))
+
+(deftest netstring-missing-its-comma
+  (is (thrown-with-msg? IOException #"',' expected" (>input "3:abcX" read-netstring)))
+  (is (thrown? EOFException (>input "3:abc" read-netstring))))
+
+(deftest truncated-input
+  (are [input] (thrown? EOFException (>input input))
+    ""
+    "5:ab"
+    "i12"
+    "l"
+    "li1e"
+    "d3:foo"
+    "d3:fooi1e"))
 
 (deftest string-reading
   (are [x y] (= (>input x) y)
