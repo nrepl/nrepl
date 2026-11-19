@@ -12,7 +12,7 @@
     (is (= (range 10) (nrepl/response-seq local 0)))
 
     ;; ensure timeouts don't capture later responses
-    (nrepl/response-seq local 100)
+    (is (empty? (nrepl/response-seq local 100)))
     (doseq [x (range 10)] (t/send remote x))
     (is (= (range 10) (nrepl/response-seq local 0)))))
 

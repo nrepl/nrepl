@@ -5,8 +5,9 @@
    [matcher-combinators.matchers :as mc]
    [nrepl.config :as config]
    [nrepl.core :as nrepl :refer [code]]
-   [nrepl.test-helpers :refer [clean-response def-repl-test get-state is+
-                               newline->sys session-id wait-for win?
+   [nrepl.server :as server]
+   [nrepl.test-helpers :refer [*server* clean-response def-repl-test get-state
+                               is+ newline->sys session-id wait-for win?
                                with-every-transport with-nrepl-client
                                with-nrepl-server]]
    [nrepl.util.session :as session-util]
@@ -91,12 +92,14 @@
 
 (deftest stop-server-closes-sessions
   (with-every-transport
-    (let [sid (promise)]
-      (with-nrepl-server {}
-        (with-nrepl-client
-          (deliver sid (session-id (nrepl/client-session client)))
-          (is (alive? @sid))))
-      (is (wait-for #(not (alive? @sid)))))))
+    (with-nrepl-server {}
+      ;; The client stays connected throughout, so it's the server going away
+      ;; that closes the session and not the client hanging up.
+      (with-nrepl-client
+        (let [sid (session-id session)]
+          (is (alive? sid))
+          (server/stop-server *server*)
+          (is (wait-for #(not (alive? sid)))))))))
 
 (def-repl-test session-set!
   (repl-eval! session (code
