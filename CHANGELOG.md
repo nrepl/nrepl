@@ -9,6 +9,7 @@
 ### New features
 
 - [#511](https://github.com/nrepl/nrepl/pull/511): `lookup` is now able to locate namespaces.
+- [#537](https://github.com/nrepl/nrepl/pull/537): Middleware descriptors can mark ops, request parameters, response slots and whole middleware as deprecated, which shows up in verbose `describe` responses and the ops reference, and flags requests that use a deprecated op or parameter (a `:nrepl/deprecations` slot on the final response, plus a warning in the server log).
 
 ### Changes
 
@@ -18,6 +19,8 @@
 - [#512](https://github.com/nrepl/nrepl/pull/512): **(Breaking)** Close persistent sessions when the connection that created them is closed.
 - [#512](https://github.com/nrepl/nrepl/pull/512): Uncaught exceptions inside session `:exec` handler now kill the session with a `:uncaught-session-exception` status.
 - [#517](https://github.com/nrepl/nrepl/pull/517): **(Breaking)** Eval: stop evaluation of remaining forms on first exception.
+- [#534](https://github.com/nrepl/nrepl/pull/534): **(Breaking)** `stdin` and `forward-system-output` reply with `unknown-session` when the request names no session, instead of a `done` that had no effect.
+- [#535](https://github.com/nrepl/nrepl/pull/535): The `stdin` and `forward-system-output` middleware no longer declare that they must wrap `eval`, which neither needs.
 
 ### Bugs fixed
 
@@ -32,6 +35,13 @@
 - [#524](https://github.com/nrepl/nrepl/pull/524): Report middleware that can't be found by name.
 - [#524](https://github.com/nrepl/nrepl/pull/524): Exit with an helpful message when filesystem sockets aren't available.
 - [#526](https://github.com/nrepl/nrepl/pull/526): `nrepl.core/new-session` and `client-session` accept the id of the session to clone as `:clone` again, which had been throwing since 1.4.0 changed it to a map.
+- [#534](https://github.com/nrepl/nrepl/pull/534): `forward-system-output` without a session no longer leaves a forwarder running for the life of the server.
+- [#534](https://github.com/nrepl/nrepl/pull/534): `completions` and `lookup` name the missing parameter when called without `prefix` or `sym`.
+- [#536](https://github.com/nrepl/nrepl/pull/536): An evaluation that leaves its thread interrupted no longer breaks its session, or its whole connection over a UNIX socket.
+- [#536](https://github.com/nrepl/nrepl/pull/536): Nothing more is sent for an interrupted evaluation after its `done`, such as the `InterruptedException` it ends with.
+- [#536](https://github.com/nrepl/nrepl/pull/536): `*file*` no longer stays bound in a session after an evaluation with `:file` or a `load-file`.
+- [#536](https://github.com/nrepl/nrepl/pull/536): Write `.nrepl-port` before announcing the server, and never leave it visible half-written.
+- [#536](https://github.com/nrepl/nrepl/pull/536): Fix a method call with the wrong arguments in the classpath scan behind completion.
 
 ## 1.8.0 (2026-10-02)
 

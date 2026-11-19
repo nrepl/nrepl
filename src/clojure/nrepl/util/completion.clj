@@ -162,7 +162,7 @@
             (let [filename (str (.relativize root-path (.toPath file)))]
               (cond-> filename
                 (not= File/separator "/") (.replace File/separator "/")
-                (.startsWith filename "/") (.substring filename 1)))))))
+                (.startsWith filename "/") (.substring 1)))))))
 
 (defmacro list-jdk9-base-classfiles
   "Because on JDK9+ the classfiles are stored not in rt.jar on classpath, but in\n  modules, we have to do extra work to extract them."

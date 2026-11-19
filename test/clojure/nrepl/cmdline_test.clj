@@ -131,11 +131,18 @@
   (let [port-file (java.io.File. ".nrepl-port")
         previous (when (.exists port-file) (slurp port-file))
         start-server cmd/start-server
-        server (atom nil)]
+        server (atom nil)
+        started-message cmd/server-started-message
+        port-file-at-message (atom nil)]
     (reset! repl-fn-calls [])
     (try
       (let [{:keys [status out]}
-            (with-redefs [cmd/start-server #(reset! server (start-server %))]
+            (with-redefs [cmd/start-server #(reset! server (start-server %))
+                          cmd/server-started-message
+                          (fn [& args]
+                            (reset! port-file-at-message
+                                    (when (.exists port-file) (slurp port-file)))
+                            (apply started-message args))]
               (run-main "--interactive" "--port" "0"
                         "--repl-fn" "nrepl.cmdline-test/recording-repl-fn"))
             {:keys [host port]} @server]
@@ -145,6 +152,8 @@
                                          port host host port))))
         (testing "it leaves the port where tools look for it"
           (is (= (str port) (slurp port-file))))
+        (testing "the port file is there by the time the server is announced"
+          (is (= (str port) @port-file-at-message)))
         (testing "--interactive hands the server over to the REPL function"
           (is+ [[host port {:transport #'transport/bencode}]] @repl-fn-calls)))
       (finally
