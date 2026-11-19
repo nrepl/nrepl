@@ -36,7 +36,7 @@
                          meta
                          (select-keys [:file :line]))))))
 
-(def-repl-test load-file-with-print-vars
+(def-repl-test load-file-defines-vars
   (message! {:op "load-file"
              :file "(def a (+ 1 (+ 2 (+ 3 (+ 4 (+ 5 6))))))
                                    (def b 2) (def c 3) (def ^{:internal true} d 4)"
