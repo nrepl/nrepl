@@ -166,6 +166,12 @@
                (if (fn? r)
                  (r) ;; -1 stack frame this way.
                  (.run r))
+               ;; Code that catches an InterruptedException and re-interrupts
+               ;; its thread, as Java code is supposed to, leaves the flag set.
+               ;; Left like that, the next `.take` would throw and end the
+               ;; thread with the session still registered.
+               (when-not (.-abandoned ^SessionThread (Thread/currentThread))
+                 (Thread/interrupted))
                (swap! session (fn [current]
                                 (-> (merge current (get-thread-bindings))
                                     ;; Remove vars that we don't want to save
@@ -213,6 +219,7 @@
                            (compare-and-set! state state-d
                                              (assoc state-d :running nil)))
                       (do
+                        (set! (.-abandoned ^SessionThread thread) true)
                         (threading/interrupt-stop thread)
                         (reset-state)
                         running))))

@@ -16,7 +16,8 @@
    (clojure.lang Compiler$CompilerException
                  LineNumberingPushbackReader LispReader$ReaderException)
    (java.io PushbackReader StringReader Writer)
-   (java.lang.reflect Field)))
+   (java.lang.reflect Field)
+   (nrepl SessionThread)))
 
 (def ^:dynamic *msg*
   "The message currently being evaluated."
@@ -43,10 +44,20 @@
     (when column (set-column! reader (int column)))
     reader))
 
+(defn- abandoned?
+  "Whether the evaluation running on this thread has been interrupted through
+  nREPL. Its request has been answered with `interrupted` and `done` by then,
+  so there's nobody left to tell anything."
+  []
+  (let [thread (Thread/currentThread)]
+    (and (instance? SessionThread thread)
+         (.-abandoned ^SessionThread thread))))
+
 (defn- interrupted?
   "Returns true if the given throwable was ultimately caused by an interrupt."
   [^Throwable e]
-  (or (instance? ThreadDeath (clojure.main/root-cause e))
+  (or (abandoned?)
+      (instance? ThreadDeath (clojure.main/root-cause e))
       (and (instance? Compiler$CompilerException e)
            (instance? ThreadDeath (.getCause e)))))
 
@@ -127,22 +138,30 @@
                             ;; Compiler/eval directly for slimmer stack.
                             (Compiler/eval input true)
                             (eval-fn input))]
-                (set! *3 *2)
-                (set! *2 *1)
-                (set! *1 value)
+                (when-not (abandoned?)
+                  ;; The code may have left its thread interrupted, which is
+                  ;; what Java code does after catching an
+                  ;; InterruptedException. Writing the response to a socket
+                  ;; channel in that state would close the connection.
+                  (Thread/interrupted)
+                  (set! *3 *2)
+                  (set! *2 *1)
+                  (set! *1 value)
 
-                ;; Print
-                (try
-                  (.flush ^Writer *err*)
-                  (.flush ^Writer *out*)
-                  (t/respond-to msg {:ns (str (ns-name *ns*))
-                                     :value value
-                                     ::print/keys #{:value}})
-                  (catch Throwable e
-                    (throw (ex-info nil {:clojure.error/phase :print-eval-result} e)))))
+                  ;; Print
+                  (try
+                    (.flush ^Writer *err*)
+                    (.flush ^Writer *out*)
+                    (t/respond-to msg {:ns (str (ns-name *ns*))
+                                       :value value
+                                       ::print/keys #{:value}})
+                    (catch Throwable e
+                      (throw (ex-info nil {:clojure.error/phase :print-eval-result} e))))))
 
-              ;; Loop
-              (recur))))
+              ;; Loop, unless the evaluation was interrupted and the code
+              ;; carried on regardless.
+              (when-not (abandoned?)
+                (recur)))))
 
         (catch Throwable e
           (set! *e e)

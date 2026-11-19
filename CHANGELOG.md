@@ -36,6 +36,8 @@
 - [#526](https://github.com/nrepl/nrepl/pull/526): `nrepl.core/new-session` and `client-session` accept the id of the session to clone as `:clone` again, which had been throwing since 1.4.0 changed it to a map.
 - [#534](https://github.com/nrepl/nrepl/pull/534): `forward-system-output` without a session no longer leaves a forwarder running for the life of the server.
 - [#534](https://github.com/nrepl/nrepl/pull/534): `completions` and `lookup` name the missing parameter when called without `prefix` or `sym`.
+- [#536](https://github.com/nrepl/nrepl/pull/536): An evaluation that leaves its thread interrupted no longer breaks its session, or its whole connection over a UNIX socket.
+- [#536](https://github.com/nrepl/nrepl/pull/536): Nothing more is sent for an interrupted evaluation after its `done`, such as the `InterruptedException` it ends with.
 
 ## 1.8.0 (2026-10-02)
 

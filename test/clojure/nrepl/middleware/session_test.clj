@@ -10,6 +10,7 @@
                                is+ newline->sys session-id wait-for win?
                                with-every-transport with-nrepl-client
                                with-nrepl-server]]
+   [nrepl.transport :as t]
    [nrepl.util.session :as session-util]
    [nrepl.util.threading :as threading]))
 
@@ -114,6 +115,28 @@
       (is+ {:status #{:done :uncaught-session-exception :error}}
            (message! sess {:op "eval" :code "(+ 1 2)" :line "bad"}))
       (is (not (alive? (session-id sess)))))))
+
+(def-repl-test ^:tcp-and-unix eval-leaving-its-thread-interrupted
+  ;; Re-interrupting after catching an InterruptedException is what Java code
+  ;; is supposed to do, so library code can easily leave the flag set. It used
+  ;; to end the session's thread, and over a UNIX socket the whole connection.
+  (is+ {:value ["1"], :status #{:done}}
+       (repl-eval! session (code (do (.interrupt (Thread/currentThread)) 1))))
+  (is (= 3 (repl-value1 session "(+ 1 2)"))))
+
+(def-repl-test nothing-follows-the-done-of-an-interrupted-eval
+  (let [sid (session-id session)
+        drain (fn [] (doall (take-while some? (repeatedly #(t/recv transport 500)))))]
+    (t/send transport {:op "eval" :id "eval" :session sid
+                       :code (code (do (nrepl.test-helpers/capture-state "running" true)
+                                       (Thread/sleep 10000)
+                                       :unreachable)
+                                   :not-evaluated)})
+    (is (wait-for #(get-state "running")))
+    (t/send transport {:op "interrupt" :id "interrupt" :session sid :interrupt-id "eval"})
+    (is+ (mc/in-any-order [{:id "eval" :status #{:done :interrupted}}
+                           {:id "interrupt" :status #{:done}}])
+         (map clean-response (drain)))))
 
 (def-repl-test interrupt-keeps-session-alive
   (let [session' (nrepl/client-session client)
