@@ -45,7 +45,9 @@ The structure of the response is unique per each message type, but there are a f
 fundamental properties that will always be around in the responses:
 
 - `:id` The ID of the request for which the response was generated.
-- `:session` The ID of the session for which the response was generated.
+- `:session` The ID of the session for which the response was generated. A request
+that names no session is handled in a one-off session, and the responses carry
+the ID of that one; see xref:design/middleware.adoc#sessions[Sessions].
 - `:status` The status of the response. Here there would either be something like "done"
 if a request has been fully processed or the reason for a failure (e.g. "namespace-not-found"). Not every
 response message would have the status key. If some request generated multiple response messages only the

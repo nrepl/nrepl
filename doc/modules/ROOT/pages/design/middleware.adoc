@@ -227,12 +227,32 @@ and printed even if some of them throw an exception.
 Each nREPL message is evaluated within a session. There are two types of sessions:
 _ephemeral sessions_ and _long-lived sessions_ (or registered sessions).
 
-*Ephemeral sessions* are used for once off processing of a single message. If a message
-arrives without a session id, one is created and assigned to it. This is discarded
-after processing the message. There's no serialisation guarantee with processing
-of messages in ephemeral sessions (though they are serialized in the current
-implementation since they run on the server IO thread). However evals run on a
-dedicated thread so a running eval can't block another op.
+*Ephemeral sessions* (also called one-off sessions) are used for once off
+processing of a single message. If a message arrives without a session id, one
+is created and assigned to it. This is discarded after processing the message.
+Messages in ephemeral sessions are processed independently of each other, with
+no guarantee about their order, and evals run on a thread pool of their own, so
+a running eval can't block another op.
+
+An ephemeral session is a full session for the duration of its one message, but
+since nothing outlives that message there are things it can't do:
+
+* Nothing the message changes is kept. `\*ns*`, `\*1`, `\*e` and any other
+  dynamic var the code sets are back to their defaults for the next message.
+  (Global state, such as vars defined with `def`, is not part of a session and
+  stays.)
+* It isn't registered, so it doesn't show up in `ls-sessions`. The responses do
+  carry a `:session` id, but that id is of no use: a later request that sends it
+  gets `unknown-session`.
+* Its evaluation can't be interrupted. `interrupt` needs the id of a long-lived
+  session, as does `close`.
+* It can't be given input. `stdin` needs a long-lived session, so code that reads
+  from `\*in*` in an ephemeral session reports `need-input` and then waits forever.
+* `forward-system-output` needs a long-lived session too, as closing the session
+  is what stops the forwarding.
+
+Ephemeral sessions are a good fit for requests that don't depend on session
+state, like `describe`, `ls-sessions`, `clone` or a self-contained `lookup`.
 
 *Long-lived sessions* provide two things, persistence of values between
 messages, and a guarantee for serial execution of messages. The only way to
