@@ -202,8 +202,8 @@
                                                "file-name" "Name of source file, e.g. io.clj. Do not confuse with `file` param which contains full path while `file-name` is only the short file name. Defaults to the last component of `file`."
                                                "line" "The line number in [file] at which [code] starts."
                                                "column" "The column number in [file] at which [code] starts."
-                                               "out-quota" "Maximum number of bytes printed into *out* by this evaluation."
-                                               "err-quota" "Maximum number of bytes printed into *err* by this evaluation."
+                                               "out-quota" "Maximum number of characters printed into *out* by this evaluation. Anything past it is dropped."
+                                               "err-quota" "Maximum number of characters printed into *err* by this evaluation. Anything past it is dropped."
                                                "read-cond" "How the reader treats reader conditionals: \"allow\" (the default) or \"preserve\". Useful when middleware in a higher layer wants to process reader conditionals."})
                              :returns {"ns" "*ns*, after the evaluation of a form in `code`. Sent along with each `value`."
                                        "value" "The result of evaluating a form in `code`, often `read`able. One is sent for every form evaluated. This printing is provided by the `print` middleware. Superseded by `ex` and `root-ex` if an exception occurs during evaluation."

@@ -90,14 +90,14 @@ Required parameters::
 
 Optional parameters::
 * `:column` The column number in [file] at which [code] starts.
-* `:err-quota` Maximum number of bytes printed into \*err* by this evaluation.
+* `:err-quota` Maximum number of characters printed into \*err* by this evaluation. Anything past it is dropped.
 * `:eval` A fully-qualified symbol naming a var whose function value will be used to evaluate [code], instead of ``clojure.core/eval`` (the default).
 * `:file` The path to the file containing [code]. ``clojure.core/\*file*`` will be bound to this.
 * `:file-name` Name of source file, e.g. io.clj. Do not confuse with ``file`` param which contains full path while ``file-name`` is only the short file name. Defaults to the last component of ``file``.
 * `:id` An opaque message ID that will be included in responses related to the evaluation, and which may be used to restrict the scope of a later "interrupt" operation.
 * `:line` The line number in [file] at which [code] starts.
 * `:ns` The namespace in which to perform the evaluation. The supplied namespace must exist already (e.g. be loaded). If no namespace is specified the evaluation falls back to ``\*ns*`` for the session in question.
-* `:out-quota` Maximum number of bytes printed into \*out* by this evaluation.
+* `:out-quota` Maximum number of characters printed into \*out* by this evaluation. Anything past it is dropped.
 * `:read-cond` How the reader treats reader conditionals: "allow" (the default) or "preserve". Useful when middleware in a higher layer wants to process reader conditionals.
 * `:session` The ID of the session within which to evaluate the code. Without one, the code is evaluated in a one-off session that is discarded afterwards: nothing it sets (``\*ns*``, ``\*1``, ``*e`` and other dynamic vars) carries over to later requests, it can't be interrupted, and it can't be given input, so code reading from ``\*in*`` waits forever.
 * `:nrepl.middleware.caught/caught` A fully-qualified symbol naming a var whose function to use to convey interactive errors. Must point to a function that takes a ``java.lang.Throwable`` as its sole argument.
@@ -106,7 +106,7 @@ Optional parameters::
 * `:nrepl.middleware.print/keys` A seq of the keys in the response whose values should be printed.
 * `:nrepl.middleware.print/options` A map of options to pass to the printing function. Defaults to ``nil``.
 * `:nrepl.middleware.print/print` A fully-qualified symbol naming a var whose function to use for printing. Must point to a function with signature [value writer options].
-* `:nrepl.middleware.print/quota` A hard limit on the number of bytes printed for each value.
+* `:nrepl.middleware.print/quota` A hard limit on the number of characters printed for each value.
 * `:nrepl.middleware.print/stream?` If logical true, the result of printing each value will be streamed to the client over one or more messages.
 
 
@@ -185,7 +185,7 @@ Optional parameters::
 * `:nrepl.middleware.print/keys` A seq of the keys in the response whose values should be printed.
 * `:nrepl.middleware.print/options` A map of options to pass to the printing function. Defaults to ``nil``.
 * `:nrepl.middleware.print/print` A fully-qualified symbol naming a var whose function to use for printing. Must point to a function with signature [value writer options].
-* `:nrepl.middleware.print/quota` A hard limit on the number of bytes printed for each value.
+* `:nrepl.middleware.print/quota` A hard limit on the number of characters printed for each value.
 * `:nrepl.middleware.print/stream?` If logical true, the result of printing each value will be streamed to the client over one or more messages.
 
 

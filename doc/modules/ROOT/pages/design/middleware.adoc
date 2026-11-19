@@ -343,7 +343,7 @@ specified in both). The following options are supported:
   message – the printing function may also call `flush` on `writer`, which will
   result in a response being sent immediately.
 
-* `:nrepl.middleware.print/quota`: a hard limit on the number of bytes printed
+* `:nrepl.middleware.print/quota`: a hard limit on the number of characters printed
   for each value.
 
 ** A status of `:nrepl.middleware.print/truncated` will be returned by the
