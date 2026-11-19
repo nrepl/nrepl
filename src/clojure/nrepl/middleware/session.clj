@@ -86,8 +86,9 @@
       (cond-> m
         repl (assoc! repl true)))
 
-    ;; This may contain other bindings established when
-    ;; `nrepl.server/start-server` was called.
+    ;; This picks up whatever is bound on the thread handling the request.
+    ;; Bindings around `nrepl.server/start-server` don't get here, since
+    ;; requests are handled on pool threads.
     (reduce conj! m (get-thread-bindings))
 
     ;; Bindings required for other nREPL middleware to work.
@@ -304,16 +305,16 @@
      :session-closed.
    * \"ls-sessions\", which results in a response message
      containing a list of the IDs of the currently-retained sessions in a
-     :session slot.
+     :sessions slot.
 
    Messages indicating other operations are delegated to the given handler,
    with the session identified by the :session ID added to the message. If
    no :session ID is found, a new session is created (which will only
    persist for the duration of the handling of the given message).
 
-   Requires the interruptible-eval middleware (specifically, its binding of
-   *msg* to the currently-evaluated message so that session-specific *out*
-   and *err* content can be associated with the originating message)."
+   Binds `nrepl.middleware.interruptible-eval/*msg*` to the message being
+   handled, so that session-specific *out* and *err* content can be associated
+   with the originating message."
   [h]
   (fn [{:keys [op session] :as msg}]
     (let [resolved-session (when session (session-util/resolve-session session))]
@@ -354,7 +355,7 @@
                             {:doc "Attempts to interrupt some executing request. When interruption succeeds, the thread used for execution is killed, and a new thread spawned for the session. While the session middleware ensures that Clojure dynamic bindings are preserved, other ThreadLocals are not. Hence, when running code intimately tied to the current thread identity, it is best to avoid interruptions. On Java 20 and later, if `-Djdk.attach.allowAttachSelf` is enabled, the JVMTI agent will be used to attempt to stop the thread."
                              :requires {"session" "The ID of the session used to start the request to be interrupted."}
                              :optional {"interrupt-id" "The opaque message ID sent with the request to be interrupted."}
-                             :returns {"status" "'interrupted' if a request was identified and interruption will be attempted
+                             :returns {"status" "'interrupted' if a request was identified and interruption will be attempted (sent in reply to the interrupted request rather than to the interrupt, which only gets 'done')
 'session-idle' if the session is not currently executing any request
 'interrupt-id-mismatch' if the session is currently executing a request sent using a different ID than specified by the \"interrupt-id\" value
 'unknown-session' if the session could not be resolved (e.g., it is an ephemeral session)"}}

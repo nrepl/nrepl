@@ -42,8 +42,8 @@
 
   * `sym` - the symbol which to lookup.
   * `ns`- the namespace in which to do lookup. Defaults to `*ns*`.
-  * `lookup` – a fully-qualified symbol naming a var whose function to use for
-  lookup. Must point to a function with signature [sym ns]."
+  * `lookup-fn` – a fully-qualified symbol naming a var whose function to use for
+  lookup. Must point to a function with signature [ns sym]."
   [h]
   (fn [msg]
     (safe-handle msg
