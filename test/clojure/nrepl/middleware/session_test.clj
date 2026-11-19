@@ -262,6 +262,12 @@
 
 ;;;; *in*-related
 
+(def-repl-test stdin-needs-a-session
+  ;; Nothing could ever read input given to the one-off session of a request
+  ;; that names none.
+  (is+ {:status #{:done :error :unknown-session}}
+       (message! client {:op "stdin" :stdin "lost\n"})))
+
 (def-repl-test request-*in*
   (let [responses (repl-eval session "(read)")]
     (is+ {:status #{:need-input}} (first responses))

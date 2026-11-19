@@ -376,11 +376,15 @@
   [h]
   (fn [{:keys [op stdin session] :as msg}]
     (if (= op "stdin")
-      (let [^QueuePollingReader qpr (::queue-reader (meta session))]
-        (if (empty? stdin)
-          (.addEof qpr)
-          (.addInput qpr stdin))
-        (t/respond-to msg :status :done))
+      ;; Input given to the one-off session of a request that named none
+      ;; could never be read by anything.
+      (if-not (session-util/resolve-session (:id (meta session)))
+        (t/respond-to msg :status #{:error :unknown-session :done})
+        (let [^QueuePollingReader qpr (::queue-reader (meta session))]
+          (if (empty? stdin)
+            (.addEof qpr)
+            (.addInput qpr stdin))
+          (t/respond-to msg :status :done)))
       (h msg))))
 
 (set-descriptor! #'add-stdin
