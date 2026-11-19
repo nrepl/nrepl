@@ -40,7 +40,10 @@
                  {:requires #{"clone"}
                   :expects #{"eval"}
                   :handles {"forward-system-output"
-                            {:doc "Enable forwarding of System/out and System/err output to client. This is a Clojure-specific op, not part of general nREPL spec."
-                             :requires {}
+                            {:doc "Enable forwarding of System/out and System/err output to client. The output keeps arriving as responses to this request, after its 'done', until the session is closed. This is a Clojure-specific op, not part of general nREPL spec."
+                             :requires {"session" "The ID of the session to forward the output to. Closing it is what stops the forwarding."}
                              :optional {}
-                             :returns {}}}})
+                             :returns {"out" "Content written to System/out."
+                                       "err" "Content written to System/err."
+                                       "source" "'system' on every forwarded `out` and `err`, to tell them apart from the output of evaluations."
+                                       "status" "'unknown-session' if the session could not be resolved or the request names none"}}}})
