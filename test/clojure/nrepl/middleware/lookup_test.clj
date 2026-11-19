@@ -2,10 +2,9 @@
   {:author "Bozhidar Batsov"}
   (:require
    [clojure.test :refer :all]
-   [nrepl.core :as nrepl]
    [nrepl.test-helpers :refer :all]))
 
-(defn dummy-lookup [ns sym]
+(defn dummy-lookup [_ns _sym]
   {:foo 1
    :bar 2})
 
