@@ -1,8 +1,35 @@
 {:output            {:progress true}
  :config-in-comment {:linters {:unused-value         {:level :off}
-                               :unresolved-namespace {:level :off}}}
+                               :unresolved-namespace {:level :off}
+                               :unresolved-symbol    {:level :off}}}
+ ;; The forms inside `code` are sent to a server to be evaluated there, so
+ ;; nothing in them has to make sense over here.
+ :config-in-call    {nrepl.core/code {:linters {:unresolved-symbol    {:level :off}
+                                                :unresolved-namespace {:level :off}
+                                                :type-mismatch        {:level :off}
+                                                :unused-value         {:level :off}
+                                                :inline-def           {:level :off}}}}
+ :ns-groups         [{:pattern "nrepl\\..*-test$" :name tests}]
+ :config-in-ns      {tests {:linters {:refer-all {:level :off}}}
+                     ;; These tests write keywords out just to intern them, and
+                     ;; complete the `set` alias without otherwise using it.
+                     nrepl.util.completion-test
+                     {:linters {:unused-value     {:level :off}
+                                :unused-namespace {:exclude [clojure.set]}}}}
+ :lint-as           {nrepl.test-helpers/def-repl-test        clojure.test/deftest
+                     clojure.test.check.clojure-test/defspec clojure.core/def}
  :linters           {:unused-private-var {:level   :warning}
-                     :unresolved-symbol  {:exclude [(clojure.test/is [match?])]}
+                     :unresolved-symbol
+                     {:exclude [(clojure.test/is [match?])
+                                (nrepl.test-helpers/with-process [_])
+                                ;; Bindings the test macros introduce.
+                                (nrepl.test-helpers/def-repl-test
+                                 [transport client session message message!
+                                  repl-eval repl-eval! repl-values repl-value1])
+                                (nrepl.test-helpers/with-nrepl-client
+                                 [transport client session message message!
+                                  repl-eval repl-eval! repl-values repl-value1])
+                                (nrepl.middleware.print-test/testing-print [handle])]}
                      :consistent-alias   {:aliases {clojure.string str}}
                      ;; Enable this opt-in linter:
                      :unsorted-required-namespaces {:level :warning}}}
