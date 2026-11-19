@@ -124,6 +124,11 @@
        (repl-eval! session (code (do (.interrupt (Thread/currentThread)) 1))))
   (is (= 3 (repl-value1 session "(+ 1 2)"))))
 
+(def-repl-test file-of-one-eval-does-not-leak-into-the-next
+  (is+ {:value ["\"/tmp/x.clj\""]}
+       (message! session {:op "eval" :code "*file*" :file "/tmp/x.clj"}))
+  (is (= "NO_SOURCE_PATH" (repl-value1 session "*file*"))))
+
 (def-repl-test nothing-follows-the-done-of-an-interrupted-eval
   (let [sid (session-id session)
         drain (fn [] (doall (take-while some? (repeatedly #(t/recv transport 500)))))]

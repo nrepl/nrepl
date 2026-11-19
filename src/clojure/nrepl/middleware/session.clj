@@ -119,8 +119,9 @@
                ;; much about it besides patching like this. We intentionally
                ;; don't require beforehand in order to not add to loading times.
                (resolve 'clojure.test/*test-out*) out)
-        (cond->
-         file (assoc #'*file* file)))))
+        ;; Bound for every message, so that the session doesn't carry the
+        ;; file of one evaluation over to the next.
+        (assoc #'*file* (or file "NO_SOURCE_PATH")))))
 
 (defn make-ephemeral-exec-fn
   "Return an exec function that should be attached to ephemeral sessions.
