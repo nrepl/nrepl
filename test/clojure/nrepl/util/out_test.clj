@@ -1,6 +1,6 @@
 (ns nrepl.util.out-test
-  (:require [clojure.test :refer :all]
-            [clojure.string :as str]
+  (:require [clojure.string :as str]
+            [clojure.test :refer :all]
             [nrepl.test-helpers :refer [is+ newline->sys wait-for]]
             [nrepl.util.out :as out])
   (:import nrepl.out.CallbackBufferedOutputStream))

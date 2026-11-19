@@ -40,7 +40,8 @@
   (repl-eval! (code (defn x [] 6)))
   (is (= 6 (repl-value1 (code (x))))))
 
-(defn- dumb-alternative-eval
+(defn dumb-alternative-eval
+  "An eval function for the `:eval` option to name."
   [form]
   (let [result (eval form)]
     (if (number? result)

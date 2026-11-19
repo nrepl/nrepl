@@ -9,9 +9,9 @@
 
 (ns nrepl.bencode-test
   (:require [clojure.test :refer [are deftest is testing]]
+            [clojure.test.check.clojure-test :refer [defspec]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as tc.prop]
-            [clojure.test.check.clojure-test :refer [defspec]]
             [nrepl.bencode :as bencode :refer [read-bencode
                                                read-netstring
                                                write-bencode

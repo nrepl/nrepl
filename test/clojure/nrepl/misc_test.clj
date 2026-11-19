@@ -1,8 +1,8 @@
 (ns nrepl.misc-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [clojure.java.io :as io]
+            [clojure.test :refer [deftest is testing]]
             [nrepl.misc :as misc]
-            [nrepl.test-helpers :as th]
-            [clojure.java.io :as io])
+            [nrepl.test-helpers :as th])
   (:import [java.net URI]))
 
 (deftest sanitize-meta

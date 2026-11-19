@@ -3,6 +3,7 @@
    [clojure.test :refer [deftest is are]]
    [nrepl.middleware :as middleware :refer [linearize-middleware-stack]]
    nrepl.middleware.interruptible-eval
+   nrepl.middleware.print
    [nrepl.server :refer [default-middleware]]
    [nrepl.test-helpers :refer [is+]]))
 

@@ -1,5 +1,6 @@
 (ns nrepl.test-helpers
   (:require [clojure.java.io :as io]
+            [clojure.spec.alpha :as s]
             [clojure.string :as str]
             [clojure.test :refer [deftest is testing]]
             [matcher-combinators.test]
@@ -181,7 +182,7 @@
 (defn- check-response-format
   "Check response against nrepl.spec."
   [resp]
-  (clojure.spec.alpha/assert* :nrepl.spec/message resp)
+  (s/assert* :nrepl.spec/message resp)
   resp)
 
 (defn clean-response
