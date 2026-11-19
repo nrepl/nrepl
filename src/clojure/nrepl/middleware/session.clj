@@ -186,8 +186,11 @@
                  ;; A race condition is possible where this thread could have
                  ;; been interrupted, the session received a new thread and
                  ;; queue, but this thread survived the interrupt and reached
-                 ;; here. In such case, let it fade peacefully.
-                 (when (and (identical? (:thread state-d) (Thread/currentThread))
+                 ;; here. In such case, let it fade peacefully. The same goes
+                 ;; for a thread that was interrupted but hasn't been replaced
+                 ;; just yet: its message has had its `done` already.
+                 (when (and (not (.-abandoned ^SessionThread (Thread/currentThread)))
+                            (identical? (:thread state-d) (Thread/currentThread))
                             (compare-and-set! state state-d
                                               (assoc state-d :running nil)))
                    (some-> ack .run)
