@@ -119,8 +119,9 @@
                ;; much about it besides patching like this. We intentionally
                ;; don't require beforehand in order to not add to loading times.
                (resolve 'clojure.test/*test-out*) out)
-        (cond->
-         file (assoc #'*file* file)))))
+        ;; Bound for every message, so that the session doesn't carry the
+        ;; file of one evaluation over to the next.
+        (assoc #'*file* (or file "NO_SOURCE_PATH")))))
 
 (defn make-ephemeral-exec-fn
   "Return an exec function that should be attached to ephemeral sessions.
@@ -166,6 +167,12 @@
                (if (fn? r)
                  (r) ;; -1 stack frame this way.
                  (.run r))
+               ;; Code that catches an InterruptedException and re-interrupts
+               ;; its thread, as Java code is supposed to, leaves the flag set.
+               ;; Left like that, the next `.take` would throw and end the
+               ;; thread with the session still registered.
+               (when-not (.-abandoned ^SessionThread (Thread/currentThread))
+                 (Thread/interrupted))
                (swap! session (fn [current]
                                 (-> (merge current (get-thread-bindings))
                                     ;; Remove vars that we don't want to save
@@ -179,8 +186,11 @@
                  ;; A race condition is possible where this thread could have
                  ;; been interrupted, the session received a new thread and
                  ;; queue, but this thread survived the interrupt and reached
-                 ;; here. In such case, let it fade peacefully.
-                 (when (and (identical? (:thread state-d) (Thread/currentThread))
+                 ;; here. In such case, let it fade peacefully. The same goes
+                 ;; for a thread that was interrupted but hasn't been replaced
+                 ;; just yet: its message has had its `done` already.
+                 (when (and (not (.-abandoned ^SessionThread (Thread/currentThread)))
+                            (identical? (:thread state-d) (Thread/currentThread))
                             (compare-and-set! state state-d
                                               (assoc state-d :running nil)))
                    (some-> ack .run)
@@ -213,6 +223,7 @@
                            (compare-and-set! state state-d
                                              (assoc state-d :running nil)))
                       (do
+                        (set! (.-abandoned ^SessionThread thread) true)
                         (threading/interrupt-stop thread)
                         (reset-state)
                         running))))
@@ -376,18 +387,23 @@
   [h]
   (fn [{:keys [op stdin session] :as msg}]
     (if (= op "stdin")
-      (let [^QueuePollingReader qpr (::queue-reader (meta session))]
-        (if (empty? stdin)
-          (.addEof qpr)
-          (.addInput qpr stdin))
-        (t/respond-to msg :status :done))
+      ;; Input given to the one-off session of a request that named none
+      ;; could never be read by anything.
+      (if-not (session-util/resolve-session (:id (meta session)))
+        (t/respond-to msg :status #{:error :unknown-session :done})
+        (let [^QueuePollingReader qpr (::queue-reader (meta session))]
+          (if (empty? stdin)
+            (.addEof qpr)
+            (.addInput qpr stdin))
+          (t/respond-to msg :status :done)))
       (h msg))))
 
 (set-descriptor! #'add-stdin
                  {:requires #{#'session}
-                  :expects #{"eval"}
+                  :expects #{}
                   :handles {"stdin"
-                            {:doc "Add content from the value of \"stdin\" to *in* in the current session."
-                             :requires {"stdin" "Content to add to *in*."}
+                            {:doc "Add content from the value of \"stdin\" to *in* in the current session. Send it when an evaluation reports the 'need-input' status, which means the code is waiting to read from *in*."
+                             :requires {"stdin" "Content to add to *in*. An empty value signals the end of the input."
+                                        "session" "The ID of the session to add the content to."}
                              :optional {}
-                             :returns {"status" "A status of \"need-input\" will be sent if a session's *in* requires content in order to satisfy an attempted read operation."}}}})
+                             :returns {"status" "'unknown-session' if the session could not be resolved or the request names none"}}}})

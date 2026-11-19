@@ -89,8 +89,15 @@
                              :requires {"file" "Full contents of a file of code."}
                              :optional (merge caught/wrap-caught-optional-arguments
                                               print/wrap-print-optional-arguments
-                                              {"file-path" "Source-path-relative path of the source file, e.g. clojure/java/io.clj"
+                                              {"session" "The ID of the session within which to load the code. Without one, it is loaded in a one-off session, as with \"eval\"."
+                                               "file-path" "Source-path-relative path of the source file, e.g. clojure/java/io.clj"
                                                "file-name" "Name of source file, e.g. io.clj"})
                              :returns (-> (meta #'eval/interruptible-eval)
                                           (get-in [::middleware/descriptor :handles "eval" :returns])
-                                          (dissoc "ns"))}}})
+                                          (dissoc "ns")
+                                          (assoc "value" "The result of evaluating the last form in `file`, often `read`able. Absent if an exception occurs."
+                                                 "status" "'eval-error' along with `ex` and `root-ex` if an exception was thrown
+'need-input' if the loaded code is waiting to read from *in*; answer with the \"stdin\" op
+'interrupted' if the loading was stopped by the \"interrupt\" op
+'nrepl.middleware.print/truncated' if a printed value was cut short by `nrepl.middleware.print/quota`
+'no-code' if `file` is missing"))}}})

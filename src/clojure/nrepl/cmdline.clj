@@ -17,7 +17,8 @@
    [nrepl.version :as version])
   (:import
    [clojure.lang LineNumberingPushbackReader]
-   [java.io FileNotFoundException IOException]))
+   [java.io FileNotFoundException IOException]
+   [java.nio.file CopyOption Files StandardCopyOption]))
 
 (defn- clean-up-and-exit
   "Performs any necessary clean up and calls `(System/exit status)`."
@@ -652,9 +653,15 @@ Exit:      Control+D or (exit) or (quit)"
   [server _options]
   ;; Many clients look for this file to infer the port to connect to
   (let [port (:port server)
-        port-file (io/file ".nrepl-port")]
-    (.deleteOnExit ^java.io.File port-file)
-    (spit port-file port)))
+        port-file (.getAbsoluteFile (io/file ".nrepl-port"))
+        ;; Written elsewhere and moved into place, so that nobody watching for
+        ;; the file can read it before the port is in it.
+        tmp-file (java.io.File/createTempFile ".nrepl-port" ".tmp" (.getParentFile port-file))]
+    (spit tmp-file port)
+    (Files/move (.toPath tmp-file) (.toPath port-file)
+                (into-array CopyOption [StandardCopyOption/ATOMIC_MOVE
+                                        StandardCopyOption/REPLACE_EXISTING]))
+    (.deleteOnExit port-file)))
 
 (defn start-server
   "Creates an nREPL server instance.
@@ -682,8 +689,9 @@ Exit:      Control+D or (exit) or (quit)"
         (:connect options) (connect-to-server (connection-opts options))
         :else (let [options (server-opts options)
                     server (start-server options)]
-                (println (server-started-message server options))
+                ;; Tools take the message as the sign that the file is there.
                 (save-port-file server options)
+                (println (server-started-message server options))
                 (if (:interactive options)
                   (interactive-repl server options)
                   ;; Lock the main thread to prevent process from quitting while
