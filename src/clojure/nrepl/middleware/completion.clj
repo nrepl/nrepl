@@ -2,7 +2,7 @@
   "Code completion middleware.
 
   The middleware is a simple wrapper around the
-  functionality in `nrepl.completion`. Its
+  functionality in `nrepl.util.completion`. Its
   API is inspired by cider-nrepl's \"complete\" middleware.
 
   The middleware can be configured to use a different completion

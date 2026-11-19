@@ -145,7 +145,7 @@ Optional parameters::
 
 
 Returns::
-* `:status` 'interrupted' if a request was identified and interruption will be attempted
+* `:status` 'interrupted' if a request was identified and interruption will be attempted (sent in reply to the interrupted request rather than to the interrupt, which only gets 'done')
 'session-idle' if the session is not currently executing any request
 'interrupt-id-mismatch' if the session is currently executing a request sent using a different ID than specified by the "interrupt-id" value
 'unknown-session' if the session could not be resolved (e.g., it is an ephemeral session)

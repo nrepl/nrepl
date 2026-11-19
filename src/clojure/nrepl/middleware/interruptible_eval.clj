@@ -162,9 +162,9 @@
           (pop-thread-bindings))))))
 
 (defn interruptible-eval
-  "Evaluation middleware that supports interrupts.  Returns a handler that supports
-   \"eval\" and \"interrupt\" :op-erations that delegates to the given handler
-   otherwise."
+  "Evaluation middleware.  Returns a handler that supports the \"eval\"
+   :op-eration and delegates to the given handler otherwise.  Interrupting an
+   evaluation is handled by the session middleware."
   [h & _configuration]
   (fn [{:keys [op session id ns code] :as msg}]
     (let [{:keys [exec]} (meta session)]

@@ -147,7 +147,7 @@
 
   * `::print-fn` – the function to use for printing. In requests, will be
   resolved from the above two options (if provided). Defaults to the equivalent
-  of `clojure.core/pr`. Must have signature [writer options].
+  of `clojure.core/pr`. Must have signature [value writer].
 
   * `::stream?` – if logical true, the result of printing each value will be
   streamed to the client over one or more messages.

@@ -184,8 +184,9 @@
         (mapv stack (into sorted-vertices trivial-vertices))))))
 
 (defn linearize-middleware-stack
-  "Given a list of middleware vars, sort them topologically, so that least
-  dependent middleware come FIRST and ones dependent on come LAST. The returned
+  "Given a list of middleware vars, sort them topologically, so that the
+  middleware that depend on others come FIRST and the ones depended on come
+  LAST. The returned
   order lends itself to being composed as-is into the final handler."
   [middleware-vars]
   (->> (extended-descriptors middleware-vars)
