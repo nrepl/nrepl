@@ -13,9 +13,11 @@
    [nrepl.server :as server]
    [nrepl.socket :refer [as-nrepl-uri unix-domain-flavor]]
    [nrepl.test-helpers :refer [*server* *transport* eval-value1 free-port is+
-                               temp-file-name wait-for win? with-every-transport
-                               with-nrepl-server with-process with-timeout]]
-   [nrepl.transport :as transport])
+                               sys-newline temp-file-name wait-for win?
+                               with-every-transport with-nrepl-server
+                               with-process with-timeout]]
+   [nrepl.transport :as transport]
+   [nrepl.version :as version])
   (:import
    (clojure.lang LineNumberingPushbackReader)
    (java.lang ProcessBuilder$Redirect)
@@ -76,6 +78,18 @@
    "nil" ":user/a"
    "nil" ":a/a"])
 
+(defn- run-main
+  "Runs `cmd/-main` with `args`. Returns what it printed and the status it
+  would have exited with, which is nil if it returned normally."
+  [& args]
+  (let [status (atom nil)
+        err (java.io.StringWriter.)
+        out (with-out-str
+              (binding [*err* err]
+                (with-redefs [cmd/clean-up-and-exit #(reset! status %)]
+                  (apply cmd/-main args))))]
+    {:status @status, :out out, :err (str err)}))
+
 (deftest repl-intro
   (is+ #"nREPL" (cmd/repl-intro)))
 
@@ -91,6 +105,50 @@
         (cmd/-main)))
     (is (= 2 @status))
     (is+ #"filesystem sockets" (str err))))
+
+(deftest main-prints-help-and-version
+  (is+ {:status 0, :out #"Usage:", :err ""} (run-main "--help"))
+  (is+ {:status 0
+        :out (str (:version-string version/version) sys-newline)
+        :err ""}
+       (run-main "--version")))
+
+(deftest main-dies-on-bad-options
+  (is+ {:status 2, :err #"nrepl.transport/tty.*telnet|tty transport"}
+       (run-main "--connect" "--port" "1" "--transport" "nrepl.transport/tty"))
+  (is+ {:status 2, :err #"nREPL middleware: no-namespace has no namespace"}
+       (run-main "--middleware" "[no-namespace]")))
+
+(def ^:private repl-fn-calls (atom []))
+
+(defn recording-repl-fn
+  "A stand-in for the built-in client, for `--repl-fn` to point at."
+  [& args]
+  (swap! repl-fn-calls conj args))
+
+(deftest main-starts-a-server
+  (let [port-file (java.io.File. ".nrepl-port")
+        previous (when (.exists port-file) (slurp port-file))
+        start-server cmd/start-server
+        server (atom nil)]
+    (reset! repl-fn-calls [])
+    (try
+      (let [{:keys [status out]}
+            (with-redefs [cmd/start-server #(reset! server (start-server %))]
+              (run-main "--interactive" "--port" "0"
+                        "--repl-fn" "nrepl.cmdline-test/recording-repl-fn"))
+            {:keys [host port]} @server]
+        (is (nil? status))
+        (testing "it announces where the server is, in the format tools parse"
+          (is (str/includes? out (format "nREPL server started on port %d on host %s - nrepl://%s:%d"
+                                         port host host port))))
+        (testing "it leaves the port where tools look for it"
+          (is (= (str port) (slurp port-file))))
+        (testing "--interactive hands the server over to the REPL function"
+          (is+ [[host port {:transport #'transport/bencode}]] @repl-fn-calls)))
+      (finally
+        (some-> @server server/stop-server)
+        (when previous (spit port-file previous))))))
 
 (deftest parse-cli-values
   (is+ {:other "string"
