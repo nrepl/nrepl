@@ -71,8 +71,9 @@
                       "(ns user)" "::a"
                       "(require '[a :as z])" "::z/a"]))
 
-(defn- ns-resolution-output []
-  [(str (keyword (str *ns*) "a"))
+(def ^:private ns-resolution-output
+  ;; A new session starts out in `user`, whatever `*ns*` is over here.
+  [":user/a"
    "nil" ":a/a"
    "nil" ":b/a"
    "nil" ":user/a"
@@ -471,7 +472,7 @@
 (deftest cmdline-namespace-resolution
   (testing "Ensuring that namespace resolution works in the cmdline repl"
     (with-server-every-transport {:port 0}
-      (is (= (ns-resolution-output)
+      (is (= ns-resolution-output
              (:values (run-cli ns-resolution-input
                                #(#'cmd/run-repl (:host *server*) (:port *server*)
                                                 (assoc % :transport (:fn *transport*))))))))))
@@ -480,7 +481,7 @@
   (when (is unix-domain-flavor)
     (testing "We can connect to unix domain socket from the cli."
       (with-server-every-transport {} ;; socket server is default
-        (is (= (ns-resolution-output)
+        (is (= ns-resolution-output
                (:values (run-cli ns-resolution-input
                                  #(#'cmd/run-repl {:server  *server*
                                                    :options (assoc % :transport (:fn *transport*))})))))))))

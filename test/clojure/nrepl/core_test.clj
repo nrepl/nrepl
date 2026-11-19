@@ -185,12 +185,15 @@
                         (nrepl/url-connect "gopher://localhost:7888"))))
 
 (deftest failed-ack-stops-the-server
-  (let [ack-port (free-port)
-        port (free-port)]
+  (let [stop-server server/stop-server
+        stopped (atom nil)]
+    ;; Going through `stop-server` to learn the port lets the server pick it,
+    ;; rather than hoping a port found free earlier still is.
+    (with-redefs [server/stop-server #(stop-server (reset! stopped %))]
+      (is (thrown? java.net.ConnectException
+                   (server/start-server :port 0 :ack-port (free-port)))))
     (is (thrown? java.net.ConnectException
-                 (server/start-server :port port :ack-port ack-port)))
-    (is (thrown? java.net.ConnectException
-                 (nrepl/connect :port port)))))
+                 (nrepl/connect :port (:port @stopped))))))
 
 (def-repl-test print-namespace-maps-binding
   (repl-eval! session "(set! *print-namespace-maps* true)")
