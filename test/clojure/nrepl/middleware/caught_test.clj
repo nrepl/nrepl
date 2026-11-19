@@ -3,7 +3,7 @@
   (:require
    [clojure.test :refer :all]
    [nrepl.core :as nrepl :refer [code]]
-   [nrepl.test-helpers :as th :refer :all]))
+   [nrepl.test-helpers :as th :refer [def-repl-test is+]]))
 
 (defn custom-repl-caught
   [^Throwable t]

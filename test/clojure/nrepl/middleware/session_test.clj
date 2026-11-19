@@ -5,7 +5,10 @@
    [matcher-combinators.matchers :as mc]
    [nrepl.config :as config]
    [nrepl.core :as nrepl :refer [code]]
-   [nrepl.test-helpers :refer :all]
+   [nrepl.test-helpers :refer [clean-response def-repl-test get-state is+
+                               newline->sys session-id wait-for win?
+                               with-every-transport with-nrepl-client
+                               with-nrepl-server]]
    [nrepl.util.session :as session-util]
    [nrepl.util.threading :as threading]))
 

@@ -5,7 +5,7 @@
    [clojure.test :refer :all]
    [matcher-combinators.matchers :as mc]
    [nrepl.core :as nrepl :refer [code]]
-   [nrepl.test-helpers :refer :all]))
+   [nrepl.test-helpers :refer [def-repl-test is+]]))
 
 (def-repl-test eval-literals
   (are [literal] (= (binding [*ns* (find-ns 'user)] ; needed for the ::keyword

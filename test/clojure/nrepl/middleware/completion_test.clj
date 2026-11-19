@@ -4,7 +4,7 @@
    [clojure.test :refer :all]
    [matcher-combinators.matchers :as mc]
    [nrepl.core :as nrepl :refer [code]]
-   [nrepl.test-helpers :refer :all]))
+   [nrepl.test-helpers :refer [def-repl-test is+]]))
 
 (defn dummy-completion [prefix _ns _options]
   [{:candidate prefix}])

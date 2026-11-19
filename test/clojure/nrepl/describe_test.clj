@@ -4,7 +4,7 @@
    [matcher-combinators.matchers :as mc]
    [nrepl.middleware :as middleware]
    [nrepl.server :as server]
-   [nrepl.test-helpers :refer :all]
+   [nrepl.test-helpers :refer [def-repl-test is+]]
    [nrepl.version :as version]))
 
 (def built-in-ops

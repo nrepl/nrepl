@@ -12,7 +12,7 @@
             [matcher-combinators.matchers :as mc]
             [nrepl.core :as nrepl :refer [code]]
             [nrepl.middleware.print :as print]
-            [nrepl.test-helpers :refer :all]
+            [nrepl.test-helpers :refer [def-repl-test is+]]
             [nrepl.transport :as t])
   (:import (java.io Writer)))
 

@@ -12,7 +12,9 @@
    [nrepl.middleware :as middleware]
    [nrepl.server :as server]
    [nrepl.socket :refer [as-nrepl-uri unix-domain-flavor]]
-   [nrepl.test-helpers :refer :all]
+   [nrepl.test-helpers :refer [*server* *transport* eval-value1 free-port is+
+                               temp-file-name wait-for win? with-every-transport
+                               with-nrepl-server with-process with-timeout]]
    [nrepl.transport :as transport])
   (:import
    (clojure.lang LineNumberingPushbackReader)
