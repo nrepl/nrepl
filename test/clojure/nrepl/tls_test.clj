@@ -213,6 +213,24 @@
     (with-open [server (server/start-server :tls? true :tls-keys-str server-keys)]
       (is (evals-over-tls? server client-keys)))))
 
+(deftest keys-from-file
+  (let [key-file (fn [content]
+                   (str (doto (java.io.File/createTempFile "nrepl" ".keys")
+                          (.deleteOnExit)
+                          (spit content))))
+        [server-keys client-keys] (gen-key-pair)]
+    (testing "passing the keys is enough to turn TLS on, with no :tls? needed"
+      (with-open [server (server/start-server :tls-keys-file (key-file server-keys))
+                  transport (nrepl/connect :port (:port server)
+                                           :tls-keys-file (key-file client-keys))]
+        (is (= 2 (eval-value1 (nrepl/client transport 30000) '(+ 1 1))))))
+    (testing "a missing file is reported as such"
+      (is (thrown-with-msg? ExceptionInfo #"the file was not found"
+                            (server/start-server :tls-keys-file "no-such-file.keys"))))
+    (testing "so is a file that doesn't hold keys"
+      (is (thrown-with-msg? ExceptionInfo #"Could not create TLS context from file"
+                            (server/start-server :tls-keys-file (key-file "not keys")))))))
+
 (deftest accept-sets-tcp-nodelay
   (let [[server-keys client-keys] (gen-key-pair)]
     (with-open [server (tls/server-socket (tls/ssl-context-or-throw server-keys nil) "127.0.0.1" 0)]
