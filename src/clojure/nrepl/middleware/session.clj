@@ -389,7 +389,7 @@
 
 (set-descriptor! #'add-stdin
                  {:requires #{#'session}
-                  :expects #{"eval"}
+                  :expects #{}
                   :handles {"stdin"
                             {:doc "Add content from the value of \"stdin\" to *in* in the current session. Send it when an evaluation reports the 'need-input' status, which means the code is waiting to read from *in*."
                              :requires {"stdin" "Content to add to *in*. An empty value signals the end of the input."

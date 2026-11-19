@@ -60,19 +60,31 @@ appended or prepended to the default stack.
 To eliminate this tedium, the vars holding nREPL middleware functions may have
 a descriptor applied to them to specify certain constraints in how that
 middleware is applied.  For example, the descriptor for the
-`nrepl.middleware.session/add-stdin` middleware is set thusly:
+`nrepl.middleware.load-file/wrap-load-file` middleware is set like this
+(abridged):
 
 [source,clojure]
 ----
-(set-descriptor! #'add-stdin
-  {:requires #{#'session}
+(set-descriptor! #'wrap-load-file
+  {:requires #{#'caught/wrap-caught #'print/wrap-print}
    :expects #{"eval"}
-   :handles {"stdin"
-             {:doc "Add content from the value of \"stdin\" to *in* in the current session."
-              :requires {"stdin" "Content to add to *in*."}
-              :optional {}
-              :returns {"status" "A status of \"need-input\" will be sent if a session's *in* requires content in order to satisfy an attempted read operation."}}}})
+   :handles {"load-file"
+             {:doc "Loads a body of code, using supplied path and filename info to set source file and line number metadata. Delegates to underlying \"eval\" middleware/handler."
+              :requires {"file" "Full contents of a file of code."}
+              :optional {"file-path" "Source-path-relative path of the source file, e.g. clojure/java/io.clj"
+                         "file-name" "Name of source file, e.g. io.clj"}
+              :returns {"value" "The result of evaluating the last form in `file`."}}}})
 ----
+
+Both constraints are there because the middleware wouldn't work otherwise. It
+turns a `load-file` request into an `eval` one, so it has to see the request
+before whatever handles `eval` does. And the responses it lets through must
+still pass through the `caught` and `print` middleware, so those have to wrap
+it.
+
+TIP: Declare only the ordering your middleware depends on. A middleware that
+simply handles an op of its own, and needs nothing but the session, is fully
+described by `:requires #{"clone"}` (or `#{#'session}`).
 
 Middleware descriptors are implemented as a map in var metadata under a
 `:nrepl.middleware/descriptor` key.  Each descriptor can contain

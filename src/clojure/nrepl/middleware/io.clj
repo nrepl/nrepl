@@ -38,7 +38,7 @@
 
 (set-descriptor! #'wrap-out
                  {:requires #{"clone"}
-                  :expects #{"eval"}
+                  :expects #{}
                   :handles {"forward-system-output"
                             {:doc "Enable forwarding of System/out and System/err output to client. The output keeps arriving as responses to this request, after its 'done', until the session is closed. This is a Clojure-specific op, not part of general nREPL spec."
                              :requires {"session" "The ID of the session to forward the output to. Closing it is what stops the forwarding."}

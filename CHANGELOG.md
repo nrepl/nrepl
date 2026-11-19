@@ -19,6 +19,7 @@
 - [#512](https://github.com/nrepl/nrepl/pull/512): Uncaught exceptions inside session `:exec` handler now kill the session with a `:uncaught-session-exception` status.
 - [#517](https://github.com/nrepl/nrepl/pull/517): **(Breaking)** Eval: stop evaluation of remaining forms on first exception.
 - [#534](https://github.com/nrepl/nrepl/pull/534): **(Breaking)** `stdin` and `forward-system-output` reply with `unknown-session` when the request names no session, instead of a `done` that had no effect.
+- [#535](https://github.com/nrepl/nrepl/pull/535): The `stdin` and `forward-system-output` middleware no longer declare that they must wrap `eval`, which neither needs.
 
 ### Bugs fixed
 
