@@ -8,23 +8,19 @@
    [clojure.pprint :as pp]))
 
 (def ^:private pr-options
-  [:print-dup
-   :print-readably
-   :print-length
-   :print-level
-   :print-meta
-   :print-namespace-maps])
-
-(defn- option->var
-  [option]
-  (resolve (symbol "clojure.core" (str "*" (name option) "*"))))
+  {:print-dup            #'*print-dup*
+   :print-readably       #'*print-readably*
+   :print-length         #'*print-length*
+   :print-level          #'*print-level*
+   :print-meta           #'*print-meta*
+   :print-namespace-maps #'*print-namespace-maps*})
 
 (defn- pr-bindings
   [options]
-  (->> (select-keys options pr-options)
-       (into {} (keep (fn [[option value]]
-                        (when-let [var (option->var option)]
-                          [var value]))))))
+  (into {} (keep (fn [[option value]]
+                   (when-let [var (pr-options option)]
+                     [var value])))
+        options))
 
 (defn pr
   "Equivalent to `clojure.core/pr`. Any options corresponding to dynamic

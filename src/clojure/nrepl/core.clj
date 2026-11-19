@@ -115,11 +115,11 @@
    (fn [m [k v]]
      (case k
        (:id :ns) (assoc m k v)
-       :value (update-in m [k] (fnil conj []) v)
-       :status (update-in m [k] (fnil into #{}) v)
-       :session (update-in m [k] (fnil conj #{}) v)
+       :value (update m k (fnil conj []) v)
+       :status (update m k (fnil into #{}) v)
+       :session (update m k (fnil conj #{}) v)
        (if (string? v)
-         (update-in m [k] #(str % v))
+         (update m k #(str % v))
          (assoc m k v))))
    {} (apply concat responses)))
 
@@ -191,7 +191,7 @@
     (throw (IllegalArgumentException. "A host plus port or a socket must be supplied to connect."))))
 
 (defn- to-uri ^java.net.URI [x]
-  {:post [(instance? java.net.URI %)]}
+  {:post [(uri? %)]}
   (if (string? x)
     (java.net.URI. x)
     x))
