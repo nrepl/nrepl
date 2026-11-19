@@ -16,6 +16,7 @@
 
 (def-repl-test completions-op-error
   (is+ {:status #{:done :error :completions-error}
+        :message #"\"prefix\" parameter is required"
         :completions mc/absent}
        (message! session {:op "completions"})))
 

@@ -32,6 +32,8 @@
 
 (defn completion-reply
   [{:keys [prefix ns complete-fn options] :as msg}]
+  (when-not prefix
+    (throw (IllegalArgumentException. "The \"prefix\" parameter is required.")))
   (let [the-ns (if ns (symbol ns) (symbol (str (misc/resolve-in-session msg *ns*))))
         completion-fn (or (try
                             (some-> complete-fn symbol requiring-resolve)

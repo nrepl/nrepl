@@ -18,6 +18,7 @@
 - [#512](https://github.com/nrepl/nrepl/pull/512): **(Breaking)** Close persistent sessions when the connection that created them is closed.
 - [#512](https://github.com/nrepl/nrepl/pull/512): Uncaught exceptions inside session `:exec` handler now kill the session with a `:uncaught-session-exception` status.
 - [#517](https://github.com/nrepl/nrepl/pull/517): **(Breaking)** Eval: stop evaluation of remaining forms on first exception.
+- [#534](https://github.com/nrepl/nrepl/pull/534): **(Breaking)** `stdin` and `forward-system-output` reply with `unknown-session` when the request names no session, instead of a `done` that had no effect.
 
 ### Bugs fixed
 
@@ -32,6 +33,8 @@
 - [#524](https://github.com/nrepl/nrepl/pull/524): Report middleware that can't be found by name.
 - [#524](https://github.com/nrepl/nrepl/pull/524): Exit with an helpful message when filesystem sockets aren't available.
 - [#526](https://github.com/nrepl/nrepl/pull/526): `nrepl.core/new-session` and `client-session` accept the id of the session to clone as `:clone` again, which had been throwing since 1.4.0 changed it to a map.
+- [#534](https://github.com/nrepl/nrepl/pull/534): `forward-system-output` without a session no longer leaves a forwarder running for the life of the server.
+- [#534](https://github.com/nrepl/nrepl/pull/534): `completions` and `lookup` name the missing parameter when called without `prefix` or `sym`.
 
 ## 1.8.0 (2026-10-02)
 

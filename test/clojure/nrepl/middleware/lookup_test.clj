@@ -27,7 +27,8 @@
          (message! op))))
 
 (def-repl-test lookup-op-error
-  (is+ {:status #{:done :error :lookup-error}}
+  (is+ {:status #{:done :error :lookup-error}
+        :message #"\"sym\" parameter is required"}
        (message! session {:op "lookup"})))
 
 (def-repl-test lookup-op-custom-fn

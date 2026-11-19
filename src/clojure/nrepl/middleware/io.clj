@@ -4,19 +4,25 @@
   (:require
    [nrepl.middleware :refer [set-descriptor!]]
    [nrepl.transport :as t :refer [safe-handle]]
-   [nrepl.util.out :as out]))
+   [nrepl.util.out :as out]
+   [nrepl.util.session :as session-util]))
 
 (defn forward-system-output-reply
   "Starts sending what's written to `System/out` and `System/err` as responses
   to `msg`, until its session is closed."
   [{:keys [session] :as msg}]
-  (when-let [session-id (:id (meta session))]
-    ;; Idempotent - safe to call multiple times.
-    (out/wrap-standard-streams)
-    (doseq [stream [:out :err]]
-      (out/set-callback stream session-id #(t/respond-to msg {stream %
-                                                              :source :system})))
-    {:status :done}))
+  (let [session-id (:id (meta session))]
+    ;; Closing the session is what stops the forwarding, and the one-off
+    ;; session of a request that named none is never closed.
+    (if-not (session-util/resolve-session session-id)
+      {:status #{:error :unknown-session :done}}
+      (do
+        ;; Idempotent - safe to call multiple times.
+        (out/wrap-standard-streams)
+        (doseq [stream [:out :err]]
+          (out/set-callback stream session-id #(t/respond-to msg {stream %
+                                                                  :source :system})))
+        {:status :done}))))
 
 (defn wrap-out
   "Enable forwarding of System/out and System/err output to client. To cancel
